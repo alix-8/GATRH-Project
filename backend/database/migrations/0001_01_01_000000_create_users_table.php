@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->rememberToken();
+            $table->enum('role', ['secretary', 'program_head', 'cm_coordinator', 'chancellor']);
+            $table->string('program')->nullable();
+            $table->string('year_level')->nullable();
             $table->timestamps();
         });
 
