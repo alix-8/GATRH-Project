@@ -31,6 +31,7 @@ class AuthController extends Controller
         ]);
     }
 
+    // Get the authenticated user's information
     function me(Request $request)
     {
         return response()->json($request->user());
