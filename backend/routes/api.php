@@ -16,3 +16,10 @@ Route::get('/health', function () {
         'timestamp' => now()->toISOString(),
         ]);
 });
+
+Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', [App\Http\Controllers\Api\AuthController::class, 'me'])->middleware('auth:sanctum');
+    Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout'])->middleware('auth:sanctum');
+});
