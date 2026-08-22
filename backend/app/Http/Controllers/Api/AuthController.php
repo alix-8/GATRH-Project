@@ -28,13 +28,17 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,
+            'message' => 'Login successful',
         ]);
     }
 
     // Get the authenticated user's information
     function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json([
+            'user' => $request->user(),
+            'message' => 'User information retrieved successfully',
+        ]);
     }
 
     function logout(Request $request)
