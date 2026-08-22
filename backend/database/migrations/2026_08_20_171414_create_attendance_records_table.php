@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->string('batch')->nullable();
             $table->string('venue')->nullable();
             $table->enum('status', ['present', 'no_response'])->default('no_response');
-            $table->string('picture_url')->nullable();
             $table->enum('validation_status', ['unvalidated', 'approved', 'rejected'])->default('unvalidated');
             $table->foreignId('submitted_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('validated_by')->nullable()->constrained('users')->nullOnDelete();
