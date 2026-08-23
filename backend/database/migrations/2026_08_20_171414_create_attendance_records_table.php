@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->enum('gathering_type', ['pm', 'ws', 'tg', 'special']);
             $table->date('day');
-            $table->string('batch')->nullable();
+            $table->time('batch')->nullable();
             $table->string('venue')->nullable();
             $table->enum('status', ['present', 'no_response'])->default('no_response');
             $table->enum('validation_status', ['unvalidated', 'approved', 'rejected'])->default('unvalidated');

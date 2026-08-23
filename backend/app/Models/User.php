@@ -1,12 +1,11 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use App\Models\AttendanceRecord;
-use App\Models\AuditLog;
 
 class User extends Authenticatable
 {
@@ -17,8 +16,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',        // 'secretary', 'program_head', 'cm_coordinator', 'chancellor'
-        'program',     
-        'year_level',   // for spiritual secretaries
+        'program',
+        'year_level',
     ];
 
     protected $hidden = [
@@ -31,19 +30,58 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    // Attendance records submitted by this user (Secretary)
+    // ==========================================
+    // ROLE DETERMINATION FUNCTIONS
+    // ==========================================
+
+    /**
+     * Check if user has a specific role :D
+     * Usage: $user->hasRole(['secretary', 'program_head'])
+     */
+    public function hasRole(string|array $roles): bool
+    {
+        if (is_array($roles)) {
+            return in_array($this->role, $roles);
+        }
+
+        return $this->role === $roles;
+    }
+
+    /* individual role check helpers*/
+    public function isSecretary(): bool
+    {
+        return $this->role === 'secretary';
+    }
+
+    public function isProgramHead(): bool
+    {
+        return $this->role === 'program_head';
+    }
+
+    public function isCmCoordinator(): bool
+    {
+        return $this->role === 'cm_coordinator';
+    }
+
+    public function isChancellor(): bool
+    {
+        return $this->role === 'chancellor';
+    }
+
+    // ==========================================
+    // RELATIONSHIPS
+    // ==========================================
+
     public function submittedAttendanceRecords()
     {
         return $this->hasMany(AttendanceRecord::class, 'submitted_by');
     }
 
-    // Attendance records validated by this user (Program Head/Coordinator)
     public function validatedAttendanceRecords()
     {
         return $this->hasMany(AttendanceRecord::class, 'validated_by');
     }
 
-    // Actions logged by this user
     public function auditLogs()
     {
         return $this->hasMany(AuditLog::class, 'actor_id');
