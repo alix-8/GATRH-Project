@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use Illuminate\Http\Request;
+use App\Models\AttendanceRecord;
 
 class AttendanceController extends Controller
 {
@@ -11,8 +12,8 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'raw_text'   => 'required|string',
-            'program'    => 'required|string',     // e.g., 'BSIT'
-            'year_level' => 'required|string',  // e.g., '3'
+            'program'    => 'required|string',
+            'year_level' => 'required|string',
         ]);
 
         $rawText = $request->raw_text;
@@ -114,6 +115,99 @@ class AttendanceController extends Controller
                 'no_response_count' => $allSectionStudents->count() - count($parsedSubmissions),
             ],
             'records'  => $finalAttendanceList,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'records'                  => 'required|array|min:1',
+            'records.*.student_id'     => 'required|exists:students,id',
+            'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
+            'records.*.day'            => 'required|date',
+            'records.*.status'         => 'required|in:present,no_response,excused',
+            'records.*.time'           => 'nullable|string',
+            'records.*.batch'          => 'nullable|string',
+            'records.*.venue'          => 'nullable|string',
+        ]);
+
+        $submittedBy = $request->user()->id; // Logged-in Secretary ID
+        $savedRecords = [];
+
+        foreach ($request->records as $recordData) {
+            $record = AttendanceRecord::updateOrCreate(
+                [
+                    'student_id'     => $recordData['student_id'],
+                    'gathering_type' => $recordData['gathering_type'],
+                    'day'            => $recordData['day'],
+                ],
+                [
+                    'time'              => $recordData['time'] ?? null,
+                    'batch'             => $recordData['batch'] ?? null,
+                    'venue'             => $recordData['venue'] ?? null,
+                    'status'            => $recordData['status'],
+                    'validation_status' => 'unvalidated', // Awaits Program Head review
+                    'submitted_by'      => $submittedBy,
+                ]
+            );
+
+            $savedRecords[] = $record;
+        }
+
+        return response()->json([
+            'message' => 'Attendance batch submitted successfully and pending validation.',
+            'count'   => count($savedRecords),
+        ], 201);
+    }
+
+    /* Program Head or CM Coordinator validates/approves attendance submission.
+     */
+    public function validateRecord(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:validated,rejected',
+            'remarks' => 'nullable|string|max:255',
+        ]);
+
+        $record = AttendanceRecord::findOrFail($id);
+
+        $record->update([
+            'validation_status' => $request->status,
+            'validated_by'      => $request->user()->id,
+            'remarks'           => $request->remarks ?? null,
+        ]);
+
+        return response()->json([
+            'message' => "Attendance record status updated to {$request->status}.",
+            'record'  => $record,
+        ]);
+    }
+
+    /*Summary analytics for higher management (Coordinator / Chancellor).*/
+    public function summaryReport(Request $request)
+    {
+        $program = $request->query('program');
+
+        $query = AttendanceRecord::query();
+
+        if ($program) {
+            $query->whereHas('student', function ($q) use ($program) {
+                $q->where('program', $program);
+            });
+        }
+
+        $totalRecords    = $query->count();
+        $presentCount    = (clone $query)->where('status', 'present')->count();
+        $noResponseCount = (clone $query)->where('status', 'no_response')->count();
+        $excusedCount    = (clone $query)->where('status', 'excused')->count();
+
+        return response()->json([
+            'program_filter'    => $program ?? 'All Programs',
+            'total_records'     => $totalRecords,
+            'present_count'     => $presentCount,
+            'no_response_count' => $noResponseCount,
+            'excused_count'     => $excusedCount,
+            'attendance_rate'   => $totalRecords > 0 ? round(($presentCount / $totalRecords) * 100, 2) . '%' : '0%',
         ]);
     }
 }

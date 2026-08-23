@@ -31,7 +31,7 @@ class User extends Authenticatable
     ];
 
     // ==========================================
-    // ROLE DETERMINATION FUNCTIONS
+    // ROLE DETERMINATION FUNCTIONS (to be used for access control)
     // ==========================================
 
     /**

@@ -39,10 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---------------------------------------------------------------------
     Route::middleware('role:secretary,program_head')->group(function () {
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
-        Route::post('/attendance/submit', [AttendanceController::class, 'store']);
+        // Route::post('/attendance/submit', [AttendanceController::class, 'store']); // TODO: implement store() method
     });
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------        
     // Program Head & CM Coordinator Scopes (Validation & Escalations)
     // ---------------------------------------------------------------------
     Route::middleware('role:program_head,cm_coordinator')->group(function () {
