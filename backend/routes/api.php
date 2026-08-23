@@ -1,11 +1,16 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\EscalationController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| Public Routes Here
+|--------------------------------------------------------------------------
+*/
 
 // test route to check if the API is working
 Route::get('/health', function () {
@@ -17,9 +22,41 @@ Route::get('/health', function () {
         ]);
 });
 
-Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']);
 
+/*
+|--------------------------------------------------------------------------
+| Protected Sanctum Routes Here
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/me', [App\Http\Controllers\Api\AuthController::class, 'me'])->middleware('auth:sanctum');
-    Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    // ---------------------------------------------------------------------
+    // Secretary & Program Head Scopes (Submissions & Parsing)
+    // ---------------------------------------------------------------------
+    Route::middleware('role:secretary,program_head')->group(function () {
+        Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
+        Route::post('/attendance/submit', [AttendanceController::class, 'store']);
+    });
+
+    // ---------------------------------------------------------------------
+    // Program Head & CM Coordinator Scopes (Validation & Escalations)
+    // ---------------------------------------------------------------------
+    Route::middleware('role:program_head,cm_coordinator')->group(function () {
+        Route::get('/students', [StudentController::class, 'index']);
+        Route::post('/students', [StudentController::class, 'store']);
+        
+        Route::patch('/attendance/{id}/validate', [AttendanceController::class, 'validateRecord']);
+        Route::get('/escalations', [EscalationController::class, 'index']);
+    });
+
+    // ---------------------------------------------------------------------
+    // CM Coordinator & Chancellor Scopes (Report Summaries)
+    // ---------------------------------------------------------------------
+    Route::middleware('role:cm_coordinator,chancellor')->group(function () {
+        Route::get('/reports/summary', [AttendanceController::class, 'summaryReport']);
+    });
 });
