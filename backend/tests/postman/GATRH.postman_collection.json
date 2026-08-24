@@ -105,7 +105,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "2|vGjfuOVMo5kqk5VNBniy0rdrb31611VXc7p8mfRKbe185975",
+                  "value": "1|Jj2sbOVwqHEpMuMg8LHWUxMOmgGJXcKe9YwH5Z4Afa988508",
                   "type": "string"
                 }
               ]
@@ -142,6 +142,169 @@
         }
       ],
       "description": "```\n  POST       api/login ...................................... Api\\AuthController@login\n  POST       api/logout .................................... Api\\AuthController@logout\n  GET|HEAD   api/me ............................................ Api\\AuthController@me\n\n ```"
+    },
+    {
+      "name": "Functions",
+      "item": [
+        {
+          "name": "AttendanceController",
+          "item": [
+            {
+              "name": "Parse-text",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "1|7EnNTzACybIJtAqBgIZjlD70I2X8NXnQBgg7fmGne57e9681",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"program\": \"BSIS\",\r\n  \"year_level\": \"3\",\r\n  \"raw_text\": \"--- GATRH ATTENDANCE FORM ---\\nGathering: Prayer Meeting\\n\\n1. John Doe | 8:00AM | Chapel | 2026-08-25\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/attendance/parse-text",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "attendance",
+                    "parse-text"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Reparse",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            },
+            {
+              "name": "Submit Attendance",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "1|7EnNTzACybIJtAqBgIZjlD70I2X8NXnQBgg7fmGne57e9681",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"program\": \"BSIS\",\r\n  \"year_level\": \"3\",\r\n  \"raw_text\": \"--- GATRH ATTENDANCE FORM ---\\nGathering: Prayer Meeting\\n\\n1. John Doe | 8:00AM | Chapel | 2026-08-25\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/attendance/parse-text",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "attendance",
+                    "parse-text"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": "``` bash\n  POST       api/attendance/parse-text ................ AttendanceController@parseText\n  PATCH      api/attendance/reparse ........... AttendanceController@reparseSingleLine\n  POST       api/attendance/submit ........................ AttendanceController@store\n  PATCH      api/attendance/{id}/validate ........ AttendanceController@validateRecord\n\n ```"
+        },
+        {
+          "name": "Show Student",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "1|7EnNTzACybIJtAqBgIZjlD70I2X8NXnQBgg7fmGne57e9681",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"chancellor@laverdad.edu.ph\",\r\n    \"password\": \"Password123!\"\r\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/students",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "students"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }
