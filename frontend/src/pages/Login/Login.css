@@ -17,3 +17,11 @@
     padding: 22px;
     margin-left: 100px;
 }
+
+.lvcc-logo {
+    position: absolute;
+    left: 36px;
+    height: auto;
+    width: 80px;
+    margin-top: 35px;
+}
