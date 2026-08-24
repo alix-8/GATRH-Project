@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    font-family: 'Poppins', sans-serif;
+}
+
+.login-page {
+    background-color: white;
+    height: 100vh;
+}
+
+.page-title {
+    color: #172B4D;
+    font-weight: 600;
+    font-size: 20px;
+    text-align: left;
+    padding: 22px;
+    margin-left: 100px;
+}
