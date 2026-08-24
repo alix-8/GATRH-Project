@@ -34,28 +34,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // ---------------------------------------------------------------------
     // Secretary & Program Head Scopes (Submissions & Parsing)
-    // ---------------------------------------------------------------------
     Route::middleware('role:secretary,program_head')->group(function () {
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
-        // Route::post('/attendance/submit', [AttendanceController::class, 'store']); // TODO: implement store() method
+        Route::post('/attendance/submit', [AttendanceController::class, 'store']);
     });
-
-    // ---------------------------------------------------------------------        
+        
     // Program Head & CM Coordinator Scopes (Validation & Escalations)
-    // ---------------------------------------------------------------------
     Route::middleware('role:program_head,cm_coordinator')->group(function () {
         Route::get('/students', [StudentController::class, 'index']);
-        Route::post('/students', [StudentController::class, 'store']);
         
         Route::patch('/attendance/{id}/validate', [AttendanceController::class, 'validateRecord']);
         Route::get('/escalations', [EscalationController::class, 'index']);
+        Route::get('/escalations/{id}', [EscalationController::class, 'show']);
+        Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
     });
 
-    // ---------------------------------------------------------------------
     // CM Coordinator & Chancellor Scopes (Report Summaries)
-    // ---------------------------------------------------------------------
     Route::middleware('role:cm_coordinator,chancellor')->group(function () {
         Route::get('/reports/summary', [AttendanceController::class, 'summaryReport']);
     });
