@@ -20,22 +20,23 @@ class StudentController extends Controller
         return response()->json(Student::all());
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'program' => 'required|string',
-            'year_level' => 'required|string',
-        ]);
+    // //Add student
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'program' => 'required|string',
+    //         'year_level' => 'required|string',
+    //     ]);
 
-        $student = Student::create($validated);
+    //     $student = Student::create($validated);
 
-        // Auto-initialize escalation record
-        $student->escalation()->create([
-            'no_response_count' => 0,
-            'escalation_level' => 'None',
-        ]);
+    //     // Auto-initialize escalation record
+    //     $student->escalation()->create([
+    //         'no_response_count' => 0,
+    //         'escalation_level' => 'None',
+    //     ]);
 
-        return response()->json($student, 201);
-    }
+    //     return response()->json($student, 201);
+    // }
 }
