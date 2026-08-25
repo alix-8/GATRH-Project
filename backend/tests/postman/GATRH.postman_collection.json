@@ -150,6 +150,14 @@
           "name": "AttendanceController",
           "item": [
             {
+              "name": "Generate Template",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            },
+            {
               "name": "Parse-text",
               "request": {
                 "auth": {
@@ -157,7 +165,7 @@
                   "bearer": [
                     {
                       "key": "token",
-                      "value": "1|7EnNTzACybIJtAqBgIZjlD70I2X8NXnQBgg7fmGne57e9681",
+                      "value": "2|bBMHXIzewsHdutAdc4Svm6urmp6p2xib4Lm53DdKa42c9975",
                       "type": "string"
                     }
                   ]
@@ -172,7 +180,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n  \"program\": \"BSIS\",\r\n  \"year_level\": \"3\",\r\n  \"raw_text\": \"--- GATRH ATTENDANCE FORM ---\\nGathering: Prayer Meeting\\n\\n1. John Doe | 8:00AM | Chapel | 2026-08-25\"\r\n}",
+                  "raw": "{\r\n  \"program\": \"BSIS\",\r\n  \"year_level\": 3,\r\n  \"raw_text\": \"--- GATRH ATTENDANCE FORM ---\\nGathering: PM\\nProgram: BSIS\\nYear Level: 3\\n\\n[FILL OUT YOUR DETAILS BELOW]\\nName | Batch(Time) | Venue | Date(YYYY-MM-DD)\\n1. Diana Teves | 08:00 AM | Chapel | 2026-08-25\\n2. Melissa Estrella | 08:30 AM | Main Hall | 2026-08-25\\n3. Rimer Gabaleo | | |\\n4. Winston Gultiano | | |\\n5. Juan Dela Cruz | 09:00 AM | Chapel | 2026-08-25\\n6. Clarissa Santos | 10:00 AM | Extension | 2026-08-25\"\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -259,50 +267,55 @@
           "description": "``` bash\n  POST       api/attendance/parse-text ................ AttendanceController@parseText\n  PATCH      api/attendance/reparse ........... AttendanceController@reparseSingleLine\n  POST       api/attendance/submit ........................ AttendanceController@store\n  PATCH      api/attendance/{id}/validate ........ AttendanceController@validateRecord\n\n ```"
         },
         {
-          "name": "Show Student",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "1|7EnNTzACybIJtAqBgIZjlD70I2X8NXnQBgg7fmGne57e9681",
-                  "type": "string"
+          "name": "Chancellor",
+          "item": [
+            {
+              "name": "Show Student",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "1|7EnNTzACybIJtAqBgIZjlD70I2X8NXnQBgg7fmGne57e9681",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"email\": \"chancellor@laverdad.edu.ph\",\r\n    \"password\": \"Password123!\"\r\n}"
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/students",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "students"
+                  ]
                 }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"email\": \"chancellor@laverdad.edu.ph\",\r\n    \"password\": \"Password123!\"\r\n}"
-            },
-            "url": {
-              "raw": "http://127.0.0.1:8000/api/students",
-              "protocol": "http",
-              "host": [
-                "127",
-                "0",
-                "0",
-                "1"
-              ],
-              "port": "8000",
-              "path": [
-                "api",
-                "students"
-              ]
+              },
+              "response": []
             }
-          },
-          "response": []
+          ]
         }
       ]
     }
