@@ -36,8 +36,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Secretary & Program Head Scopes (Submissions & Parsing)
     Route::middleware('role:secretary,program_head')->group(function () {
+
+        // Template Generator
+        Route::get('/attendance/generate-template', [AttendanceController::class, 'generateTemplate']);
+
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
-        Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseSingleLine']);
+        Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseLines']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
     });
         

@@ -15,6 +15,7 @@ class AttendanceRecord extends Model
         'day',               // Date of gathering
         'batch',
         'venue',
+        'status',            // 'present', 'no_response'
         'validation_status', // 'unvalidated', 'approved', 'rejected'
         'submitted_by',
         'validated_by',
