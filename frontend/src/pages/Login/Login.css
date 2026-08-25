@@ -5,7 +5,8 @@
 }
 
 .login-page {
-    min-height: 100vh;
+    position: relative;
+    min-height: 120vh;
     background: linear-gradient(
         to right,
         white 0%,
@@ -16,37 +17,176 @@
 }
 
 .login-title {
+    position: absolute;
     color: #172B4D;
     font-weight: 600;
     font-size: 20px;
     text-align: left;
     margin-left: 124px;
-    padding-top: 24px;
+    padding-top: 18px;
 }
 
 .lvcc-logo {
     position: absolute;
     left: 36px;
-    height: auto;
     width: 80px;
-    margin-top: 10px;
+    margin-top: 30px;
 }
 
 .welcome-title {
+    position: absolute;
     color: #172B4D;
     font-weight: 700;
     font-size: 2.8rem;
     text-align: left;
     letter-spacing: 1px;
-    margin: 60px 0 0 48px;
-    padding: 0;
+    margin: 150px 0 0 48px;
 }
 
 .welcome-message {
+    position: absolute;
     text-align: left;
-    margin: 2px 0 0 48px;
+    color: #7c7a7a;
+    margin: 270px 0 0 48px;
     line-height: 1.4;
 }
+
+.login-form {
+    position: absolute;
+    top: 350px;
+    left: 50px
+}
+
+.login-form::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    height: 23%;
+    width: 3px;
+    background-color: #172B4D;
+}
+
+.form-group {
+    box-sizing: border-box;
+    border: 1px solid rgb(184, 180, 180);
+    width: 370px;
+    height: 55px;
+    margin-bottom: 16px;
+    padding: 8px 16px 0;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1;
+    padding-top: 4px;
+
+}
+
+.form-group input {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 12px;
+    font-weight: 700;
+    color: #172B4D;
+    background: transparent;
+    margin-top: 7px;
+    padding: 0;
+}
+
+.form-group input::placeholder {
+    color: #172B4D;
+    font-weight: 700;
+    font-size: 12px;
+
+}
+
+.form-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 370px;
+    margin: 20px 0;
+    color: #5f5f5f;
+    font-size: 12px;
+}
+
+.remember-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.remember-option input {
+    appearance: none;
+    width: 11px;
+    height: 11px;
+    margin: 0;
+    border: 1px solid #000;
+    background-color: #fff;
+}
+
+.remember-option input:checked {
+    appearance: auto;
+}
+
+.forgot-password,
+.button {
+    font: inherit;
+    cursor: pointer;
+}
+
+.forgot-password {
+    padding: 0;
+    color: #5f5f5f;
+    border: 0;
+    background: transparent;
+}
+
+.form-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.button {
+    box-sizing: border-box;
+    height: 45px;
+    border-radius: 11px;
+    font-size: 12px;
+}
+
+.login-button {
+    color: #fff;
+    background-color: #172b4d;
+    border: 1px solid #172b4d;
+    width: 180px;
+    box-shadow: 0 2px 3px rgb(0 0 0 / 25%);
+}
+
+.learn-button {
+    color: #172b4d;
+    background-color: #fff;
+    border: 1px solid #666;
+     width: 110px;
+    box-shadow: 0 2px 3px rgb(0 0 0 / 15%);
+}
+
+.account-help {
+    position: absolute;
+    color: #7c7a7a;
+    top: 680px;
+    left: 50px;
+    font-size: 12px;
+    flex-direction: left;
+    font-size: 14px;
+}
+
 
 
 
