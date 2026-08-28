@@ -139,6 +139,54 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "5|KbxSL0OlfSR43hRfEwdBmvhKFe9Ey2aOAeprg78u3d6d4c85",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"chancellor@laverdad.edu.ph\",\r\n    \"token\": \"5|KbxSL0OlfSR43hRfEwdBmvhKFe9Ey2aOAeprg78u3d6d4c85\",\r\n    \"password\": \"NewPassword123!\",\r\n    \"password_confirmation\": \"NewPassword123!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/resetPassword",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "resetPassword"
+              ]
+            }
+          },
+          "response": []
         }
       ],
       "description": "```\n  POST       api/login ...................................... Api\\AuthController@login\n  POST       api/logout .................................... Api\\AuthController@logout\n  GET|HEAD   api/me ............................................ Api\\AuthController@me\n\n ```"
@@ -147,7 +195,7 @@
       "name": "Functions",
       "item": [
         {
-          "name": "AttendanceController",
+          "name": "Secretary",
           "item": [
             {
               "name": "Generate Template",
@@ -270,7 +318,7 @@
           "name": "Chancellor",
           "item": [
             {
-              "name": "Show Student",
+              "name": "Reports Summary",
               "protocolProfileBehavior": {
                 "disableBodyPruning": true
               },
