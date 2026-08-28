@@ -16,6 +16,58 @@ class AttendanceController extends Controller
         $this->parsingService = $parsingService;
     }
 
+    /**
+     * Generate a pre-filled GATRH text template with student names sorted alphabetically.
+     */
+    public function generateTemplate(Request $request)
+    {
+        $request->validate([
+            'program'        => 'required|string',
+            'year_level'     => 'required|integer',
+            'gathering_type' => 'nullable|string|in:pm,ws,tg,special',
+        ]);
+
+        $program       = strtoupper(trim($request->program));
+        $yearLevel     = $request->year_level;
+        $gatheringType = strtoupper(trim($request->gathering_type ?? 'PM'));
+        $currentDate   = now()->toDateString(); // YYYY-MM-DD
+
+        // Fetch students belonging to the program & year level, ordered alphabetically by name
+        $students = \App\Models\Student::where('program', $program)
+            ->where('year_level', $yearLevel)
+            ->orderBy('name', 'asc')
+            ->get();
+
+        if ($students->isEmpty()) {
+            return response()->json([
+                'message' => "No active students found for {$program} Year {$yearLevel}.",
+                'template' => null,
+            ], 404);
+        }
+
+        // Build header template string
+        $template = "--- GATRH ATTENDANCE FORM ---\n";
+        $template .= "Gathering: {$gatheringType}\n";
+        $template .= "Program: {$program}\n";
+        $template .= "Year Level: {$yearLevel}\n\n";
+        $template .= "[FILL OUT YOUR DETAILS BELOW]\n";
+        $template .= "Name | Batch(Time) | Venue | Date(YYYY-MM-DD)\n";
+
+        // Append numbered list with student names pre-filled
+        foreach ($students as $index => $student) {
+            $number = $index + 1;
+            $template .= "{$number}. {$student->name} | | | {$currentDate}\n";
+        }
+
+        return response()->json([
+            'message'  => 'Attendance template generated successfully.',
+            'program'  => $program,
+            'year'     => $yearLevel,
+            'count'    => $students->count(),
+            'template' => $template,
+        ], 200);
+    }
+
     public function parseText(Request $request)
     {
         $request->validate([
@@ -61,7 +113,6 @@ class AttendanceController extends Controller
         ];
 
         $parsedSubmissions = [];
-        $unmatchedLines = [];
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -80,9 +131,8 @@ class AttendanceController extends Controller
 
                 if ($result['matched']) {
                     $studentId = $result['record']['student_id'];
+                    // Store the parsed record (which will have status 'no_response' if batch/venue/day are missing)
                     $parsedSubmissions[$studentId] = $result['record'];
-                } elseif (!empty($result['unmatched_data'])) {
-                    $unmatchedLines[] = $result['unmatched_data'];
                 }
             }
         }
@@ -95,63 +145,112 @@ class AttendanceController extends Controller
             $metadata['gathering_type']
         );
 
+        // Count present vs no_response from section records
+        $presentCount = 0;
+        $noResponseCount = 0;
+
+        foreach ($sectionData['records'] as $record) {
+            if (isset($record['status']) && $record['status'] === 'present') {
+                $presentCount++;
+            } else {
+                $noResponseCount++;
+            }
+        }
+
         return response()->json([
             'metadata' => $metadata,
             'summary'  => [
                 'gathering_type'    => strtoupper($metadata['gathering_type']),
                 'total_students'    => $sectionData['total_students'],
-                'present_count'     => count($parsedSubmissions),
-                'unmatched_count'   => count($unmatchedLines),
-                'no_response_count' => $sectionData['total_students'] - count($parsedSubmissions),
+                'present_count'     => $presentCount,
+                'no_response_count' => $noResponseCount,
             ],
-            'unmatched_lines' => $unmatchedLines,
-            'records'         => $sectionData['records'],
+            'records' => $sectionData['records'],
         ]);
     }
 
-    public function reparseSingleLine(Request $request)
+    public function reparseLines(Request $request)
     {
         $request->validate([
-            'line_text'       => 'required|string',
+            'raw_text'        => 'required|string',
             'program'         => 'required|string',
             'year_level'      => 'required|int',
             'gathering_type'  => 'nullable|string|in:pm,ws,tg,special',
-            'current_records' => 'nullable|array',
+            'day'             => 'nullable|date',
+            'current_records' => 'nullable',
         ]);
 
         $gatheringType = strtolower(trim($request->gathering_type ?? 'pm'));
-        $defaultDate   = now()->toDateString();
+        $defaultDate   = $request->day ?? now()->toDateString();
         $program       = trim($request->program);
-        $yearLevel     = $request->year_level;
+        $yearLevel     = (int) $request->year_level;
 
-        $result = $this->parsingService->buildRecordFromLine(
-            $request->line_text,
+        $parsedSubmissions = [];
+
+        // 1. Fetch latest stored records directly from DB for this program, year, gathering, and date
+        $existingDbRecords = AttendanceRecord::whereHas('student', function ($query) use ($program, $yearLevel) {
+                $query->where('program', $program)
+                      ->where('year_level', $yearLevel);
+            })
+            ->where('gathering_type', $gatheringType)
+            ->where('day', $defaultDate)
+            ->get();
+
+        foreach ($existingDbRecords as $record) {
+            $parsedSubmissions[(int) $record->student_id] = [
+                'student_id'     => (int) $record->student_id,
+                'student_name'   => $record->student->name ?? null,
+                'batch'          => $record->batch,
+                'venue'          => $record->venue,
+                'day'            => $record->day,
+                'gathering_type' => $record->gathering_type,
+                'status'         => $record->status,
+                'is_manual'      => false,
+            ];
+        }
+
+        // 2. Fallback: merge client payload 'current_records' if DB is empty or has missing keys
+        $rawCurrentRecords = $request->input('current_records', []);
+        if (is_string($rawCurrentRecords)) {
+            $rawCurrentRecords = json_decode($rawCurrentRecords, true) ?? [];
+        }
+
+        if (is_array($rawCurrentRecords)) {
+            foreach ($rawCurrentRecords as $rec) {
+                $id = $rec['student_id'] ?? $rec['id'] ?? null;
+                if ($id !== null) {
+                    $studentId = (int) $id;
+                    if (!isset($parsedSubmissions[$studentId])) {
+                        $parsedSubmissions[$studentId] = [
+                            'student_id'     => $studentId,
+                            'student_name'   => $rec['student_name'] ?? null,
+                            'batch'          => $rec['batch'] ?? null,
+                            'venue'          => $rec['venue'] ?? null,
+                            'day'            => $rec['day'] ?? $defaultDate,
+                            'gathering_type' => $rec['gathering_type'] ?? $gatheringType,
+                            'status'         => $rec['status'] ?? 'no_response',
+                            'is_manual'      => $rec['is_manual'] ?? false,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // 3. Parse incoming raw_text lines for newly updated students
+        $parsedResults = $this->parsingService->reparseLines(
+            $request->raw_text,
             $program,
             $yearLevel,
             $defaultDate,
             $gatheringType
         );
 
-        if (!$result['matched']) {
-            return response()->json([
-                'matched' => false,
-                'message' => "No student found matching input in {$program} Year {$yearLevel}.",
-                'record'  => null,
-            ], 404);
+        // 4. Overwrite matched students with updated parsed results
+        foreach ($parsedResults['matched_records'] as $studentId => $record) {
+            $parsedSubmissions[(int) $studentId] = $record;
         }
 
-        $parsedSubmissions = [];
-
-        if ($request->has('current_records') && is_array($request->current_records)) {
-            foreach ($request->current_records as $rec) {
-                if (isset($rec['student_id']) && isset($rec['status']) && $rec['status'] === 'present') {
-                    $parsedSubmissions[$rec['student_id']] = $rec;
-                }
-            }
-        }
-
-        $parsedSubmissions[$result['record']['student_id']] = $result['record'];
-
+        // 5. Rebuild full section masterlist
         $sectionData = $this->parsingService->buildFullSectionRecords(
             $program,
             $yearLevel,
@@ -160,17 +259,33 @@ class AttendanceController extends Controller
             $gatheringType
         );
 
+        $presentCount = 0;
+        $noResponseCount = 0;
+
+        foreach ($sectionData['records'] as $record) {
+            if ($record['status'] === 'present') {
+                $presentCount++;
+            } else {
+                $noResponseCount++;
+            }
+        }
+
         return response()->json([
-            'matched' => true,
-            'message' => 'Student successfully identified and records refreshed.',
-            'record'  => $result['record'],
-            'records' => $sectionData['records'],
+            'message' => count($parsedResults['matched_records']) . ' student line(s) updated successfully.',
+            'summary' => [
+                'gathering_type'    => strtoupper($gatheringType),
+                'total_students'    => $sectionData['total_students'],
+                'present_count'     => $presentCount,
+                'no_response_count' => $noResponseCount,
+            ],
+            'unmatched_lines' => $parsedResults['unmatched'],
+            'records'         => $sectionData['records'],
         ], 200);
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'records'                  => 'required|array|min:1',
             'records.*.student_id'     => 'required|exists:students,id',
             'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
@@ -182,21 +297,22 @@ class AttendanceController extends Controller
 
         $submittedBy = $request->user()->id;
 
-        $savedRecords = DB::transaction(function () use ($request, $submittedBy) {
+        $savedRecords = DB::transaction(function () use ($validated, $submittedBy) {
             $records = [];
-            foreach ($request->records as $recordData) {
+            
+            foreach ($validated['records'] as $recordData) {
                 $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
 
                 $records[] = AttendanceRecord::updateOrCreate(
                     [
                         'student_id'     => $recordData['student_id'],
                         'gathering_type' => $recordData['gathering_type'],
-                        'day'            => $recordData['day'],
+                        'day'            => \Carbon\Carbon::parse($recordData['day'])->toDateString(),
                     ],
                     [
                         'batch'             => $formattedBatch,
                         'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
-                        'status'            => $recordData['status'],
+                        'status'            => $recordData['status'], // Explicitly pass validated status
                         'validation_status' => 'unvalidated',
                         'submitted_by'      => $submittedBy,
                     ]
@@ -217,17 +333,17 @@ class AttendanceController extends Controller
      * Program Head or CM Coordinator validates/approves individual attendance submission.
      */
     /**
- * Validate all records belonging to a specific gathering session.
- */
+     * Validate all records belonging to a specific gathering session.
+     */
     public function validateRecord(Request $request)
     {
         $request->validate([
-            'program' => 'required|string',
-            'year_level' => 'required|integer',
+            'program'        => 'required|string',
+            'year_level'     => 'required|integer',
             'gathering_type' => 'required|in:pm,ws,tg,special',
-            'day' => 'required|date',
-            'status' => 'required|in:validated,rejected',
-            'remarks' => 'nullable|string|max:255',
+            'day'            => 'required|date',
+            'status'         => 'required|in:validated,rejected',
+            'remarks'        => 'nullable|string|max:255',
         ]);
 
         $updatedCount = AttendanceRecord::whereHas('student', function ($query) use ($request) {
@@ -238,13 +354,13 @@ class AttendanceController extends Controller
             ->where('day', $request->day)
             ->update([
                 'validation_status' => $request->status,
-                'validated_by' => $request->user()->id,
-                'remarks' => $request->remarks ?? null,
-                'updated_at' => now(),
+                'validated_by'      => $request->user()->id,
+                'remarks'           => $request->remarks ?? null,
+                'updated_at'        => now(),
             ]);
 
         return response()->json([
-            'message' => "Session attendance updated to {$request->status} across {$updatedCount} records.",
+            'message'       => "Session attendance updated to {$request->status} across {$updatedCount} records.",
             'updated_count' => $updatedCount,
         ], 200);
     }
@@ -254,28 +370,71 @@ class AttendanceController extends Controller
      */
     public function summaryReport(Request $request)
     {
-        $program = $request->query('program');
+        // Validate request inputs
+        $validated = $request->validate([
+            'program'   => 'nullable|string|max:50',
+            'year_level' => 'nullable|integer|min:1|max:4',
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date|after_or_equal:date_from',
+        ]);
 
+        $program   = $validated['program'] ?? null;
+        $yearLevel = $validated['year_level'] ?? null;
+
+        // Base query filtered by Student relation
         $query = AttendanceRecord::query();
 
-        if ($program) {
-            $query->whereHas('student', function ($q) use ($program) {
-                $q->where('program', $program);
+        if ($program || $yearLevel) {
+            $query->whereHas('student', function ($q) use ($program, $yearLevel) {
+                if ($program) {
+                    $q->where('program', $program);
+                }
+                if ($yearLevel) {
+                    $q->where('year_level', $yearLevel);
+                }
             });
         }
 
-        $totalRecords    = $query->count();
-        $presentCount    = (clone $query)->where('status', 'present')->count();
-        $noResponseCount = (clone $query)->where('status', 'no_response')->count();
-        $excusedCount    = (clone $query)->where('status', 'excused')->count();
+        if (!empty($validated['date_from'])) {
+            $query->whereDate('day', '>=', $validated['date_from']);
+        }
+
+        if (!empty($validated['date_to'])) {
+            $query->whereDate('day', '<=', $validated['date_to']);
+        }
+
+        // Execute single-query SQL conditional aggregation
+        $metrics = $query->selectRaw("
+            COUNT(*) as total_records,
+            SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN status = 'no_response' THEN 1 ELSE 0 END) as no_response_count,
+            SUM(CASE WHEN status = 'excused' THEN 1 ELSE 0 END) as excused_count
+        ")->first();
+
+        $totalRecords    = (int) ($metrics->total_records ?? 0);
+        $presentCount    = (int) ($metrics->present_count ?? 0);
+        $noResponseCount = (int) ($metrics->no_response_count ?? 0);
+        $excusedCount    = (int) ($metrics->excused_count ?? 0);
+
+        $attendanceRate = $totalRecords > 0 
+            ? round(($presentCount / $totalRecords) * 100, 2) 
+            : 0;
 
         return response()->json([
-            'program_filter'    => $program ?? 'All Programs',
-            'total_records'     => $totalRecords,
-            'present_count'     => $presentCount,
-            'no_response_count' => $noResponseCount,
-            'excused_count'     => $excusedCount,
-            'attendance_rate'   => $totalRecords > 0 ? round(($presentCount / $totalRecords) * 100, 2) . '%' : '0%',
-        ]);
+            'status' => 'success',
+            'filters' => [
+                'program'    => $program ?? 'All Programs',
+                'year_level' => $yearLevel ?? 'All Years',
+                'date_from'  => $validated['date_from'] ?? null,
+                'date_to'    => $validated['date_to'] ?? null,
+            ],
+            'data' => [
+                'total_records'     => $totalRecords,
+                'present_count'     => $presentCount,
+                'no_response_count' => $noResponseCount,
+                'excused_count'     => $excusedCount,
+                'attendance_rate'   => $attendanceRate . '%',
+            ],
+        ], 200);
     }
 }
