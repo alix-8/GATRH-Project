@@ -15,22 +15,22 @@ class StudentSeeder extends Seeder
     {
         $students = [
             [
-                'name' => 'Diana Teves',
+                'name' => 'Teves, Diana ',
                 'program' => 'BSIS',
                 'year_level' => 3,
             ],
             [
-                'name' => 'Melissa Estrella',
+                'name' => 'Estrella, Melissa ',
                 'program' => 'BSIS',
                 'year_level' => 3,
             ],
             [
-                'name' => 'Rimer Gabaleo',
+                'name' => 'Gabaleo, Rimer ',
                 'program' => 'BSIS',
                 'year_level' => 3
             ],
             [
-                'name' => 'Winston Gultiano',
+                'name' => 'Gultiano, Winston ',
                 'program' => 'BSIS',
                 'year_level' => 3
             ]
