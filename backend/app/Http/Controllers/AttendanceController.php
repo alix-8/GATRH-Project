@@ -370,28 +370,71 @@ class AttendanceController extends Controller
      */
     public function summaryReport(Request $request)
     {
-        $program = $request->query('program');
+        // Validate request inputs
+        $validated = $request->validate([
+            'program'   => 'nullable|string|max:50',
+            'year_level' => 'nullable|integer|min:1|max:4',
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date|after_or_equal:date_from',
+        ]);
 
+        $program   = $validated['program'] ?? null;
+        $yearLevel = $validated['year_level'] ?? null;
+
+        // Base query filtered by Student relation
         $query = AttendanceRecord::query();
 
-        if ($program) {
-            $query->whereHas('student', function ($q) use ($program) {
-                $q->where('program', $program);
+        if ($program || $yearLevel) {
+            $query->whereHas('student', function ($q) use ($program, $yearLevel) {
+                if ($program) {
+                    $q->where('program', $program);
+                }
+                if ($yearLevel) {
+                    $q->where('year_level', $yearLevel);
+                }
             });
         }
 
-        $totalRecords    = $query->count();
-        $presentCount    = (clone $query)->where('status', 'present')->count();
-        $noResponseCount = (clone $query)->where('status', 'no_response')->count();
-        $excusedCount    = (clone $query)->where('status', 'excused')->count();
+        if (!empty($validated['date_from'])) {
+            $query->whereDate('day', '>=', $validated['date_from']);
+        }
+
+        if (!empty($validated['date_to'])) {
+            $query->whereDate('day', '<=', $validated['date_to']);
+        }
+
+        // Execute single-query SQL conditional aggregation
+        $metrics = $query->selectRaw("
+            COUNT(*) as total_records,
+            SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN status = 'no_response' THEN 1 ELSE 0 END) as no_response_count,
+            SUM(CASE WHEN status = 'excused' THEN 1 ELSE 0 END) as excused_count
+        ")->first();
+
+        $totalRecords    = (int) ($metrics->total_records ?? 0);
+        $presentCount    = (int) ($metrics->present_count ?? 0);
+        $noResponseCount = (int) ($metrics->no_response_count ?? 0);
+        $excusedCount    = (int) ($metrics->excused_count ?? 0);
+
+        $attendanceRate = $totalRecords > 0 
+            ? round(($presentCount / $totalRecords) * 100, 2) 
+            : 0;
 
         return response()->json([
-            'program_filter'    => $program ?? 'All Programs',
-            'total_records'     => $totalRecords,
-            'present_count'     => $presentCount,
-            'no_response_count' => $noResponseCount,
-            'excused_count'     => $excusedCount,
-            'attendance_rate'   => $totalRecords > 0 ? round(($presentCount / $totalRecords) * 100, 2) . '%' : '0%',
-        ]);
+            'status' => 'success',
+            'filters' => [
+                'program'    => $program ?? 'All Programs',
+                'year_level' => $yearLevel ?? 'All Years',
+                'date_from'  => $validated['date_from'] ?? null,
+                'date_to'    => $validated['date_to'] ?? null,
+            ],
+            'data' => [
+                'total_records'     => $totalRecords,
+                'present_count'     => $presentCount,
+                'no_response_count' => $noResponseCount,
+                'excused_count'     => $excusedCount,
+                'attendance_rate'   => $attendanceRate . '%',
+            ],
+        ], 200);
     }
 }
