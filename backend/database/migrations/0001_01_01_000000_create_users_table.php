@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('role', ['secretary', 'program_head', 'cm_coordinator', 'chancellor']);
             $table->string('program')->nullable();
             $table->string('year_level')->nullable();
+            $table->string('contact_number');
             $table->timestamps();
         });
 
