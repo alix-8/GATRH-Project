@@ -196,13 +196,34 @@
     background-color: #AEBBCD;
 }
 
+.login-panel-content {
+    position: absolute;
+    inset: 0;
+}
+
+.panel-content {
+    height: 100%;
+    animation: panel-enter 260ms ease-out both;
+}
+
+@keyframes panel-enter {
+    from {
+        opacity: 0;
+        transform: translateX(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 .login-nav {
     display: flex;
     position: absolute;
+    z-index: 1;
     gap: 30px;
-    right: 270px;
-    justify-content: right;
     top: 50px;
+    margin-left: 150px;
 }
 
 .login-nav a {
@@ -232,4 +253,120 @@
     width: 100%;
     top: 150px;
     right: -50px;
+}
+
+.info-panel {
+    box-sizing: border-box;
+    height: 100%;
+    max-width: 610px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 145px 70px 50px;
+    color: #172B4D;
+    text-align: left;
+}
+
+.info-panel::-webkit-scrollbar {
+    display: none;
+}
+
+.panel-eyebrow {
+    margin-bottom: 10px;
+    color: #53677f;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.info-panel h2 {
+    max-width: 360px;
+    margin: 0 0 32px;
+    color: #172B4D;
+    font-size: 34px;
+    line-height: 1.1;
+}
+
+.info-list {
+    display: grid;
+    gap: 18px;
+}
+
+.info-list article {
+    border-top: 1px solid rgb(23 43 77 / 28%);
+    padding-top: 13px;
+}
+
+.info-list h3,
+.process-list h3 {
+    margin: 0 0 5px;
+    color: #172B4D;
+    font-size: 15px;
+}
+
+.info-list p,
+.info-list strong,
+.process-list p {
+    color: #53677f;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.info-list strong {
+    display: block;
+    margin-top: 4px;
+    color: #172B4D;
+}
+
+.process-list {
+    display: grid;
+    gap: 15px;
+}
+
+.process-list article {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 12px;
+    border-top: 1px solid rgb(23 43 77 / 28%);
+    padding-top: 12px;
+}
+
+.process-list article > span {
+    color: #53677f;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.faq-list {
+    max-width: 430px;
+}
+
+.faq-list details {
+    border-top: 1px solid rgb(23 43 77 / 28%);
+    padding: 17px 0;
+}
+
+.faq-list details:last-child {
+    border-bottom: 1px solid rgb(23 43 77 / 28%);
+}
+
+.faq-list summary {
+    cursor: pointer;
+    color: #172B4D;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.faq-list details p {
+    max-width: 390px;
+    padding-top: 10px;
+    color: #53677f;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel-content {
+        animation: none;
+    }
 }

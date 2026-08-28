@@ -96,6 +96,26 @@ function Login() {
                         Home
                     </a>
                     <a
+                        className={activeNav === 'features' ? 'active' : ''}
+                        href="/features"
+                        onClick={(event) => {
+                            event.preventDefault()
+                            setActiveNav('features')
+                        }}
+                    >
+                        Features
+                    </a>
+                    <a
+                        className={activeNav === 'how-it-works' ? 'active' : ''}
+                        href="/how-it-works"
+                        onClick={(event) => {
+                            event.preventDefault()
+                            setActiveNav('how-it-works')
+                        }}
+                    >
+                        How it works
+                    </a>
+                    <a
                         className={activeNav === 'faqs' ? 'active' : ''}
                         href="/faqs"
                         onClick={(event) => {
@@ -107,12 +127,83 @@ function Login() {
                     </a>
                 </nav>
 
-                <div className="login-illustration-section">
-                    <img
-                        className="login-illustration"
-                        src={Illustration}
-                        alt="Login illustration"
-                    />
+                <div className="login-panel-content" aria-live="polite">
+                    {activeNav === 'home' ? (
+                        <div className="panel-content" key={activeNav}>
+                            <img
+                                className="login-illustration"
+                                src={Illustration}
+                                alt="Students attending class"
+                            />
+                        </div>
+                    ) : activeNav === 'features' ? (
+                        <section className="panel-content info-panel" key={activeNav} aria-labelledby="features-title">
+                            <h2 id="features-title">Features</h2>
+                            <div className="info-list">
+                                <article>
+                                    <h3>Standardized Attendance Format</h3>
+                                    <p>Use a consistent format for PM, WS, and TG attendance collected through Messenger.</p>
+                                    <p>One format. Organized attendance.</p>
+                                </article>
+                                <article>
+                                    <h3>Paste & Convert</h3>
+                                    <p>Copy the standardized attendance report from Messenger and paste it into the system.</p>
+                                    <p>The system converts the text into structured attendance records.</p>
+                                </article>
+                                <article>
+                                    <h3>Attendance Validation</h3>
+                                    <p>Review converted attendance before saving and identify missing or incomplete entries.</p>
+                                    <p>Detects incomplete PM, WS, or TG information.</p>
+                                </article>
+                                <article>
+                                    <h3>Attendance Monitoring</h3>
+                                    <p>Monitor attendance and participation by gathering, course, and year level.</p>
+                                    <p>Track progress toward participation targets.</p>
+                                </article>
+                                <article>
+                                    <h3>Automated Reports</h3>
+                                    <p>Automatically consolidate submitted attendance records into organized reports.</p>
+                                    <p>Reduce manual consolidation and reporting delays.</p>
+                                </article>
+                            </div>
+                        </section>
+                    ) : activeNav === 'how-it-works' ? (
+                        <section className="panel-content info-panel process-panel" key={activeNav} aria-labelledby="how-title">
+                            <h2 id="how-title">How it works</h2>
+                            <div className="process-list">
+                                <article><span>01</span><div><h3>Collect</h3><p>Collect attendance through Messenger. Students submit their PM, WS, and TG attendance through the existing Messenger channel.</p></div></article>
+                                <article><span>02</span><div><h3>Standardize</h3><p>Organize using the standard format. The Spiritual Secretary prepares the attendance using the required template.</p></div></article>
+                                <article><span>03</span><div><h3>Paste &amp; Convert</h3><p>Paste the attendance report into GATRH. The secretary copies the formatted report and pastes it into the system.</p></div></article>
+                                <article><span>04</span><div><h3>Review</h3><p>Validate the converted records. GATRH organizes the information and identifies incomplete or missing entries.</p></div></article>
+                                <article><span>05</span><div><h3>Monitor &amp; Report</h3><p>Save, monitor, and generate reports. Attendance data is centralized and used for dashboards, monitoring, and consolidated reports.</p></div></article>
+                            </div>
+                        </section>
+                    ) : (
+                        <section className="panel-content info-panel faq-panel" key={activeNav} aria-labelledby="faq-title">
+                            <h2 id="faq-title">FAQs</h2>
+                            <div className="faq-list">
+                                <details>
+                                    <summary>What if PM, WS, or TG is blank?</summary>
+                                    <p>The system will identify the record as incomplete and mark it for review.</p>
+                                </details>
+
+                                <details>
+                                    <summary>Can I edit the converted attendance?</summary>
+                                    <p>Yes. Review and correct the information before submitting.</p>
+                                </details>
+
+                                <details>
+                                    <summary>What if the converter cannot read my input?</summary>
+                                    <p>Check if the attendance follows the required standardized format.</p>
+                                </details>
+
+                                <details>
+                                    <summary>Do we still use Messenger?</summary>
+                                    <p>Yes. Messenger remains the attendance collection channel. GATRH processes and organizes the collected attendance data.</p>
+                                </details>
+                            </div>
+                        </section>
+                    )}
                 </div>
 
             </section>
