@@ -33,11 +33,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::patch('/forgotPassword', [AuthController::class, 'forgotPassword']);
-    Route::patch('/resetPassword', [AuthController::class, 'resetPassword']);
+    Route::patch('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::patch('/reset-password', [AuthController::class, 'resetPassword']);
 
     // Secretary & Program Head Scopes (Submissions & Parsing)
-    Route::middleware('role:secretary,program_head')->group(function () {
+    Route::middleware('role:secretary')->group(function () {
 
         // Template Generator
         Route::get('/attendance/generate-template', [AttendanceController::class, 'generateTemplate']);
@@ -51,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:program_head,cm_coordinator')->group(function () {
         Route::get('/students', [StudentController::class, 'index']);
         
-        Route::patch('/attendance/{id}/validate', [AttendanceController::class, 'validateRecord']);
+        Route::patch('/attendance/validate', [AttendanceController::class, 'validateRecord']);
         Route::get('/escalations', [EscalationController::class, 'index']);
         Route::get('/escalations/{id}', [EscalationController::class, 'show']);
         Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
