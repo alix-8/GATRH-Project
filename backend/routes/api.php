@@ -18,7 +18,7 @@ Route::get('/health', function () {
         'message' => 'API is working',
         'status' => 'success',
         'app'=> config('app.name'),
-        'timestamp' => now()->toISOString(),
+        'timestamp' => now()->setTimezone('Asia/Manila')->toIso8601String(),
         ]);
 });
 
