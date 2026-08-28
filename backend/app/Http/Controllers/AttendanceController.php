@@ -343,7 +343,6 @@ class AttendanceController extends Controller
             'gathering_type' => 'required|in:pm,ws,tg,special',
             'day'            => 'required|date',
             'status'         => 'required|in:validated,rejected',
-            'remarks'        => 'nullable|string|max:255',
         ]);
 
         $updatedCount = AttendanceRecord::whereHas('student', function ($query) use ($request) {
@@ -355,7 +354,6 @@ class AttendanceController extends Controller
             ->update([
                 'validation_status' => $request->status,
                 'validated_by'      => $request->user()->id,
-                'remarks'           => $request->remarks ?? null,
                 'updated_at'        => now(),
             ]);
 
