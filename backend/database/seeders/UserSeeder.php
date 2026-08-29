@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
                 'role' => 'chancellor',
                 'program' => null,
                 'year_level' => null,
+                'contact_number' => '09205202527'
             ],
             [
                 'name' => 'Rommel Alba',
@@ -27,6 +28,7 @@ class UserSeeder extends Seeder
                 'role' => 'cm_coordinator',
                 'program' => null,
                 'year_level' => null,
+                'contact_number' => '09205542527'
             ],
             [
                 'name' => 'Jerreck Navalta',
@@ -35,6 +37,7 @@ class UserSeeder extends Seeder
                 'role' => 'program_head',
                 'program' => 'BSIS',
                 'year_level' => null,
+                'contact_number' => '09123456789'
             ],
             [
                 'name' => 'Mel Magdaraog',
@@ -43,6 +46,7 @@ class UserSeeder extends Seeder
                 'role' => 'secretary',
                 'program' => 'BSIS',
                 'year_level' => '3',
+                'contact_number' => '09205212345'
             ],
         ];
 
