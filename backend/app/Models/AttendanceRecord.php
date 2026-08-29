@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Student;
 
 class AttendanceRecord extends Model
 {
@@ -25,12 +27,6 @@ class AttendanceRecord extends Model
         'day' => 'date',
     ];
 
-    // The student this record belongs to
-    public function student()
-    {
-        return $this->belongsTo(Student::class);
-    }
-
     // The Secretary who submitted this record
     public function submitter()
     {
@@ -41,5 +37,10 @@ class AttendanceRecord extends Model
     public function validator()
     {
         return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class, 'student_id');
     }
 }
