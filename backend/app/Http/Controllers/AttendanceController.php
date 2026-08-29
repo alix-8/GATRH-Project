@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AttendanceRecord;
-use App\Services\AttendanceParsingService;
+
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\AttendanceRecord;
+use App\Services\AttendanceParsingService;
 
 class AttendanceController extends Controller
 {
@@ -30,7 +32,6 @@ class AttendanceController extends Controller
         $program       = strtoupper(trim($request->program));
         $yearLevel     = $request->year_level;
         $gatheringType = strtoupper(trim($request->gathering_type ?? 'PM'));
-        $currentDate   = now()->toDateString(); // YYYY-MM-DD
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
         $students = \App\Models\Student::where('program', $program)
@@ -56,7 +57,7 @@ class AttendanceController extends Controller
         // Append numbered list with student names pre-filled
         foreach ($students as $index => $student) {
             $number = $index + 1;
-            $template .= "{$number}. {$student->name} | | | {$currentDate}\n";
+            $template .= "{$number}. {$student->name} | | | \n";
         }
 
         return response()->json([
@@ -282,52 +283,83 @@ class AttendanceController extends Controller
             'records'         => $sectionData['records'],
         ], 200);
     }
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'records'                  => 'required|array|min:1',
+        'records.*.student_id'     => 'required|exists:students,id',
+        'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
+        'records.*.day'            => 'required|date',
+        'records.*.status'         => 'required|in:present,no_response,excused',
+        'records.*.batch'          => 'nullable|string',
+        'records.*.venue'          => 'nullable|string',
+    ]);
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'records'                  => 'required|array|min:1',
-            'records.*.student_id'     => 'required|exists:students,id',
-            'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
-            'records.*.day'            => 'required|date',
-            'records.*.status'         => 'required|in:present,no_response,excused',
-            'records.*.batch'          => 'nullable|string',
-            'records.*.venue'          => 'nullable|string',
-        ]);
+    $submittedBy = $request->user()->id;
+    $duplicateErrors = [];
+    $recordsToInsert = [];
 
-        $submittedBy = $request->user()->id;
+    // --- Step 1: Pre-validate duplicates before touching DB ---
+    foreach ($validated['records'] as $index => $recordData) {
 
-        $savedRecords = DB::transaction(function () use ($validated, $submittedBy) {
-            $records = [];
-            
-            foreach ($validated['records'] as $recordData) {
-                $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
+        // Check if attendance already exists in database with proper values
+        $exists = AttendanceRecord::where('student_id', $recordData['student_id'])
+            ->where('gathering_type', $recordData['gathering_type'])
+            ->where('day', $recordData['day'])
+            ->exists();
 
-                $records[] = AttendanceRecord::updateOrCreate(
-                    [
-                        'student_id'     => $recordData['student_id'],
-                        'gathering_type' => $recordData['gathering_type'],
-                        'day'            => \Carbon\Carbon::parse($recordData['day'])->toDateString(),
-                    ],
-                    [
-                        'batch'             => $formattedBatch,
-                        'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
-                        'status'            => $recordData['status'], // Explicitly pass validated status
-                        'validation_status' => 'unvalidated',
-                        'submitted_by'      => $submittedBy,
-                    ]
-                );
-            }
-            return $records;
-        });
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Attendance batch submitted successfully and flagged for validation.',
-            'count'   => count($savedRecords),
-            'records' => $savedRecords,
-        ], 201);
+        if ($exists) {
+            $duplicateErrors[] = [
+                'index'          => $index,
+                'student_id'     => $recordData['student_id'],
+                'gathering_type' => $recordData['gathering_type'],
+                'day'            => $recordData['day'],
+                'reason'         => 'Attendance record already submitted for this student and gathering date.',
+            ];
+        } else {
+            $recordsToInsert[] = $recordData; // <-- Fixed: Array merge is unnecessary here
+        }
     }
+
+    // --- Step 2: Reject batch if any duplicate constraint fails ---
+    if (!empty($duplicateErrors)) {
+        return response()->json([
+            'status'             => 'error',
+            'message'            => 'Submission rejected. One or more attendance records already exist in the system.',
+            'duplicates_count'   => count($duplicateErrors),
+            'duplicate_records'  => $duplicateErrors,
+        ], 422);
+    }
+
+    // --- Step 3: Atomic Bulk Insert within DB Transaction ---
+    $savedRecords = DB::transaction(function () use ($recordsToInsert, $submittedBy) {
+        $records = [];
+
+        foreach ($recordsToInsert as $recordData) {
+            $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
+
+            $records[] = AttendanceRecord::create([
+                'student_id'        => $recordData['student_id'],
+                'gathering_type'    => $recordData['gathering_type'],
+                'day'               => $recordData['day'],
+                'batch'             => $formattedBatch,
+                'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
+                'status'            => $recordData['status'],
+                'validation_status' => 'unvalidated',
+                'submitted_by'      => $submittedBy,
+            ]);
+        }
+
+        return $records;
+    });
+
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Attendance batch submitted successfully and flagged for validation.',
+        'count'   => count($savedRecords),
+        'records' => $savedRecords,
+    ], 201);
+}
 
     /**
      * Program Head or CM Coordinator validates/approves individual attendance submission.
