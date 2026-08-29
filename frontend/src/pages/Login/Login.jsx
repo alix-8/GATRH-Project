@@ -5,6 +5,63 @@ import { useState } from 'react'
 
 function Login() {
     const [activeNav, setActiveNav] = useState('home')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const [success, setSuccess] = useState('')
+
+    const handleSubmit = async (event) => {
+        event.preventDefault()
+
+        setError('')
+        setSuccess('')
+        setLoading(true)
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Invalid email or password.')
+                }
+
+                if (response.status === 422) {
+                    throw new Error(
+                        data.errors?.email?.[0] ||
+                        data.errors?.password?.[0] ||
+                        'Please check your email and password.'
+                    )
+                }
+
+                throw new Error(data.message || 'Something went wrong.')
+            }
+
+            // Store the token for authenticated API requests
+            localStorage.setItem('auth_token', data.access_token)
+
+            // Store the user information
+            localStorage.setItem('user', JSON.stringify(data.user))
+
+            setSuccess(`Login successful! Welcome, ${data.user.name}.`)
+        } catch (error) {
+            setError(error.message)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <main className="login-page">
@@ -36,14 +93,16 @@ function Login() {
             </section>
 
             <section className="login-form">
-                <form>
+                <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label htmlFor="email">Email Address</label>
                         <input
-                            type="text"
+                            type="email"
                             id="email"
                             name="email"
                             placeholder="rimer@gmail.com"
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
                             required
                         />
                     </div>
@@ -55,6 +114,9 @@ function Login() {
                             id="password"
                             name="password"
                             placeholder="************************"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                            required
                         />
                     </div>
 
@@ -63,21 +125,41 @@ function Login() {
                             <input type="checkbox" name="remember" />
                             <span>Remember Me</span>
                         </label>
-                        <button className="forgot-password" type="button">
+
+                        <button
+                            className="forgot-password"
+                            type="button">
                             Forgot Password?
                         </button>
                     </div>
 
+                    {error && (
+                        <p className="login-error" role="alert">
+                            {error}
+                        </p>
+                    )}
+
+                    {success && (
+                        <p className="login-success" role="status">
+                            {success}
+                        </p>
+                    )}
+
                     <div className="form-actions">
-                        <button className="button login-button" type="submit">
-                            Log In
+                        <button
+                            className="button login-button"
+                            type="submit"
+                        >
+                            {'Log In'}
                         </button>
-                        <button className="button learn-button" type="button">
+
+                        <button
+                            className="button learn-button"
+                            type="button">
                             Learn more
                         </button>
                     </div>
                 </form>
-
             </section>
 
             <p className="account-help">Need help accessing your account? Contact your administrator</p>
