@@ -1,21 +1,24 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
 import LVCCLogo from '../../assets/lvcc-logo.png'
 import Illustration from '../../assets/login-illustration.png'
 import './Login.css'
-import { useState } from 'react'
+
 
 function Login() {
+    const navigate = useNavigate()
+
     const [activeNav, setActiveNav] = useState('home')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-    const [success, setSuccess] = useState('')
 
     const handleSubmit = async (event) => {
         event.preventDefault()
 
         setError('')
-        setSuccess('')
         setLoading(true)
 
         try {
@@ -55,7 +58,9 @@ function Login() {
             // Store the user information
             localStorage.setItem('user', JSON.stringify(data.user))
 
-            setSuccess(`Login successful! Welcome, ${data.user.name}.`)
+            // Redirect to Dashboard
+            navigate('/dashboard')
+
         } catch (error) {
             setError(error.message)
         } finally {
@@ -65,6 +70,8 @@ function Login() {
 
     return (
         <main className="login-page">
+
+            {/* LEFT SIDE */}
             <section className="login-content">
                 <img
                     className="lvcc-logo"
@@ -92,6 +99,8 @@ function Login() {
 
             </section>
 
+
+            {/* LOGIN FORM */}
             <section className="login-form">
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
@@ -139,18 +148,13 @@ function Login() {
                         </p>
                     )}
 
-                    {success && (
-                        <p className="login-success" role="status">
-                            {success}
-                        </p>
-                    )}
-
                     <div className="form-actions">
                         <button
                             className="button login-button"
                             type="submit"
+                            disabled={loading}
                         >
-                            {'Log In'}
+                            {loading ? 'Logging in...' : 'Log In'}
                         </button>
 
                         <button
@@ -162,8 +166,13 @@ function Login() {
                 </form>
             </section>
 
-            <p className="account-help">Need help accessing your account? Contact your administrator</p>
-
+            {/* ACCOUNT HELP */}
+            <p className="account-help">
+                Need help accessing your account? 
+                Contact your administrator
+            </p>
+                
+            {/* RIGHT SIDE */}
             <section className="login-right">
 
                 <nav className="login-nav">
@@ -209,18 +218,32 @@ function Login() {
                     </a>
                 </nav>
 
-                <div className="login-panel-content" aria-live="polite">
-                    {activeNav === 'home' ? (
-                        <div className="panel-content" key={activeNav}>
+                <div className="login-panel-content" 
+                    aria-live="polite"
+                    >
+
+                    {activeNav === 'home' && (
+                        <div 
+                            className="panel-content" 
+                            key={activeNav}
+                        >
                             <img
                                 className="login-illustration"
                                 src={Illustration}
                                 alt="Students attending class"
                             />
                         </div>
-                    ) : activeNav === 'features' ? (
-                        <section className="panel-content info-panel" key={activeNav} aria-labelledby="features-title">
-                            <h2 id="features-title">Features</h2>
+                    )}
+
+                    {activeNav === 'features' && (
+                        <section 
+                            className="panel-content info-panel" 
+                            aria-labelledby="features-title"
+                            >
+                            <h2 id="features-title">
+                                Features
+                            </h2>
+
                             <div className="info-list">
                                 <article>
                                     <h3>Standardized Attendance Format</h3>
@@ -249,9 +272,17 @@ function Login() {
                                 </article>
                             </div>
                         </section>
-                    ) : activeNav === 'how-it-works' ? (
-                        <section className="panel-content info-panel process-panel" key={activeNav} aria-labelledby="how-title">
-                            <h2 id="how-title">How it works</h2>
+                    )}
+
+                    {activeNav === 'how-it-works' && (
+                        <section 
+                            className="panel-content info-panel process-panel" 
+                            aria-labelledby="how-title"
+                            >
+                            <h2 id="how-title">
+                                How it works
+                            </h2>
+
                             <div className="process-list">
                                 <article><span>01</span><div><h3>Collect</h3><p>Collect attendance through Messenger. Students submit their PM, WS, and TG attendance through the existing Messenger channel.</p></div></article>
                                 <article><span>02</span><div><h3>Standardize</h3><p>Organize using the standard format. The Spiritual Secretary prepares the attendance using the required template.</p></div></article>
@@ -260,9 +291,16 @@ function Login() {
                                 <article><span>05</span><div><h3>Monitor &amp; Report</h3><p>Save, monitor, and generate reports. Attendance data is centralized and used for dashboards, monitoring, and consolidated reports.</p></div></article>
                             </div>
                         </section>
-                    ) : (
-                        <section className="panel-content info-panel faq-panel" key={activeNav} aria-labelledby="faq-title">
-                            <h2 id="faq-title">FAQs</h2>
+                    )}
+
+                    {activeNav === 'faqs' && (
+                        <section className="panel-content info-panel faq-panel" 
+                        aria-labelledby="faq-title"
+                        >
+                            <h2 id="faq-title">
+                                FAQs
+                            </h2>
+
                             <div className="faq-list">
                                 <details>
                                     <summary>What if PM, WS, or TG is blank?</summary>
