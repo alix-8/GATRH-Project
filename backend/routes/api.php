@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EscalationController;
+use App\Http\Controllers\ReminderController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,7 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::patch('/reset-password', [AuthController::class, 'resetPassword']);
 
-    // Secretary & Program Head Scopes (Submissions & Parsing)
+    // Secretary (Submission, Parsing, and Reminders)
     Route::middleware('role:secretary')->group(function () {
 
         // Template Generator
@@ -45,6 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
         Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseLines']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
+
+        Route::apiResource('reminders', ReminderController::class);
     });
         
     // Program Head & CM Coordinator Scopes (Validation & Escalations)
