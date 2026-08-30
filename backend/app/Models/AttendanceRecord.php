@@ -14,11 +14,11 @@ class AttendanceRecord extends Model
     protected $fillable = [
         'student_id',
         'gathering_type',    // 'pm', 'ws', 'tg', 'special'
-        'day',               // Date of gathering
+        'day',               // date of gathering
         'batch',
         'venue',
         'status',            // 'present', 'no_response'
-        'validation_status', // 'unvalidated', 'approved', 'rejected'
+        'validation_status', // 'unvalidated', 'approved'
         'submitted_by',
         'validated_by',
     ];
