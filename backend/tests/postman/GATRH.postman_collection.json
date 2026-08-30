@@ -209,6 +209,211 @@
               "name": "Secretary",
               "item": [
                 {
+                  "name": "Reminders",
+                  "item": [
+                    {
+                      "name": "List Reminders",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": {
+                          "type": "bearer",
+                          "bearer": [
+                            {
+                              "key": "token",
+                              "value": "11|c8yHJkXsVNEWUo373pY4K2Qp4iWYPDO8SJf45Rli1758d80c",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json",
+                            "type": "text"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": ""
+                        },
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/reminders",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1"
+                          ],
+                          "port": "8000",
+                          "path": [
+                            "api",
+                            "reminders"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Add Reminder",
+                      "request": {
+                        "auth": {
+                          "type": "bearer",
+                          "bearer": [
+                            {
+                              "key": "token",
+                              "value": "11|c8yHJkXsVNEWUo373pY4K2Qp4iWYPDO8SJf45Rli1758d80c",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json",
+                            "type": "text"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\r\n    \"title\": \"Submit Worship Service Attendance\",\r\n    \"description\": \"Submit the attendance for last saturday\",\r\n    \"due_date\": \"2026-09-13\"\r\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/reminders",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1"
+                          ],
+                          "port": "8000",
+                          "path": [
+                            "api",
+                            "reminders"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Show Reminder",
+                      "request": {
+                        "method": "GET",
+                        "header": []
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Edit Reminder",
+                      "request": {
+                        "auth": {
+                          "type": "bearer",
+                          "bearer": [
+                            {
+                              "key": "token",
+                              "value": "11|c8yHJkXsVNEWUo373pY4K2Qp4iWYPDO8SJf45Rli1758d80c",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json",
+                            "type": "text"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\r\n    \"title\": \"Submit Thanksgiving Attendance\"\r\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/reminders/1",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1"
+                          ],
+                          "port": "8000",
+                          "path": [
+                            "api",
+                            "reminders",
+                            "1"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Edit Reminder Copy",
+                      "request": {
+                        "auth": {
+                          "type": "bearer",
+                          "bearer": [
+                            {
+                              "key": "token",
+                              "value": "11|c8yHJkXsVNEWUo373pY4K2Qp4iWYPDO8SJf45Rli1758d80c",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json",
+                            "type": "text"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\r\n    \"title\": \"Submit Thanksgiving Attendance\"\r\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/reminders/3",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1"
+                          ],
+                          "port": "8000",
+                          "path": [
+                            "api",
+                            "reminders",
+                            "3"
+                          ]
+                        }
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
                   "name": "Generate Template",
                   "request": {
                     "method": "GET",

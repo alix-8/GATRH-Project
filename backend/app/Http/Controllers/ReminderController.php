@@ -66,9 +66,19 @@ class ReminderController extends Controller
     /**
      * Display the specified reminder.
      */
-    public function show(Request $request, Reminder $reminder): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
-        // Enforce ownership check
+        $reminder = Reminder::find($id);
+
+        // Check for null FIRST, before touching any property on $reminder
+        if (!$reminder) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Reminder not found',
+            ], 404);
+        }
+
+        // Now it's safe to access $reminder->user_id
         if ($reminder->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized action.'], 403);
         }
@@ -108,8 +118,17 @@ class ReminderController extends Controller
     /**
      * Remove the specified reminder from storage.
      */
-    public function destroy(Request $request, Reminder $reminder): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
+        $reminder = Reminder::find($id);
+
+        if (!$reminder) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Reminder not found',
+            ], 404);
+        }
+
         // Enforce ownership check
         if ($reminder->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized action.'], 403);
