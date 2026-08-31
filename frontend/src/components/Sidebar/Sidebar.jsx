@@ -1,6 +1,6 @@
 ﻿import LVCCLogo from '../../assets/lvcc-logo.png'
 import DashboardIcon from '../../assets/dashboard-icon.png'
-// import StudentsIcon from '../../assets/students-icon.png'
+import StudentsIcon from '../../assets/students-icon.png'
 import './Sidebar.css'
 
 function Sidebar() {
@@ -23,17 +23,17 @@ function Sidebar() {
                         src={DashboardIcon}
                         alt="Dashboard"
                     />
-                    <p>Dashboard</p>
+                    <span>Dashboard</span>
                 </a>
 
-                {/* <a href="/students" className="sidebar-link">
+                <a href="/students" className="sidebar-link">
                      <img
                         src={StudentsIcon}
                         alt="Students"
                         className="sidebar-icon"
                     />
                     <span>Students</span>
-                </a> */}
+                </a>
 
                 {/* <a href="/import" className="sidebar-link">
                     <span className="sidebar-icon">↗</span>
