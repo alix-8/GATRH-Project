@@ -2,15 +2,14 @@
     width: 188px;
     min-height: 100vh;
     background-color: #172B4D;
-    color: white;
     padding: 20px 12px;
     box-sizing: border-box;
 }
 
 .lvcc-logo {
     position: absolute;
-    left: 50px;
-    margin-top: 30px;
+    left: 30px;
+    margin-bottom: 20px;
 }
 
 .sidebar-logo img {
@@ -23,6 +22,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    margin-top: 140px;
 }
 
 .sidebar-link {
@@ -46,6 +46,4 @@
 
 .sidebar-icon {
     width: 20px;
-    text-align: center;
-    font-size: 18px;
 }
