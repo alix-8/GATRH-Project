@@ -86,6 +86,8 @@ class AttendanceController extends Controller
         $lines = explode("\n", trim($request->raw_text));
         $parsedSubmissions = [];
         $unmatchedLines = [];
+        $incompleteRecords = [];
+        $formatErrorLines = [];
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -106,8 +108,32 @@ class AttendanceController extends Controller
                 $metadata['gathering_type']
             );
 
+            // capture format errors regardless of match status
+            if (!empty($result['format_errors'])) {
+                $formatErrorLines[] = [
+                    'raw_line' => $line,
+                    'errors'   => $result['format_errors'],
+                ];
+            }
+
             if ($result['matched']) {
                 $parsedSubmissions[$result['record']['student_id']] = $result['record'];
+
+                $hasBatch = !empty($result['record']['batch']);
+                $hasVenue = !empty($result['record']['venue']);
+
+                if ($hasBatch xor $hasVenue) {
+                    $incompleteRecords[] = [
+                        'student_id'     => $result['record']['student_id'],
+                        'student_name'   => $result['record']['student_name'],
+                        'raw_line'       => $line,
+                        'missing'        => array_values(array_filter([
+                            !$hasBatch ? 'batch' : null,
+                            !$hasVenue ? 'venue' : null,
+                        ])),
+                        'current_status' => $result['record']['status'],
+                    ];
+                }
             } elseif ($result['unmatched_data']) {
                 $unmatchedLines[] = $result['unmatched_data'];
             }
@@ -143,10 +169,14 @@ class AttendanceController extends Controller
                 'no_response_count'   => $sectionData['total_students'] - $presentCount,
                 'unmatched_count'     => count($unmatchedLines),
                 'missing_count'       => count($missingStudents),
+                'incomplete_count'    => count($incompleteRecords),
+                'format_error_count'  => count($formatErrorLines),
             ],
-            'unmatched_lines'   => $unmatchedLines,
-            'missing_students'  => $missingStudents,
-            'records'           => $sectionData['records'],
+            'unmatched_lines'    => $unmatchedLines,
+            'missing_students'   => $missingStudents,
+            'incomplete_records' => $incompleteRecords,
+            'format_errors'      => $formatErrorLines,
+            'records'            => $sectionData['records'],
         ]);
     }
 
@@ -187,7 +217,7 @@ class AttendanceController extends Controller
                     'reason'         => 'Attendance record already submitted for this student and gathering date.',
                 ];
             } else {
-                $recordsToInsert[] = $recordData; // <-- Fixed: Array merge is unnecessary here
+                $recordsToInsert[] = $recordData;
             }
         }
 
