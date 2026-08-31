@@ -25,132 +25,49 @@ class AttendanceParsingService
     }
 
     /**
-     * Helper to extract header metadata (Gathering, Program, Year Level) from text block.
+     * Extracts header metadata (Gathering, Program, Year Level) from raw text,
+     * preferring explicit overrides over values detected in the text.
      */
-    public function extractHeaderMetadata(string $rawText): array
+    public function extractHeaderMetadata(string $rawText, ?string $overrideProgram = null, ?int $overrideYearLevel = null): array
     {
-        $metadata = [
-            'gathering_type' => 'pm',
-            'program'        => null,
-            'year_level'     => null,
-            'default_date'   => now()->toDateString(),
-        ];
-
-        if (preg_match('/Gathering:\s*([A-Za-z0-9_-]+)/i', $rawText, $m)) {
-            $metadata['gathering_type'] = strtolower(trim($m[1]));
-        }
-
-        if (preg_match('/Program:\s*([A-Za-z0-9_-]+)/i', $rawText, $m)) {
-            $metadata['program'] = strtoupper(trim($m[1]));
-        }
-
-        if (preg_match('/Year\s*Level:\s*(\d+)/i', $rawText, $m)) {
-            $metadata['year_level'] = (int) $m[1];
-        }
-
-        return $metadata;
-    }
-
-    /**
-     * Parses the initial raw text block and builds the full section masterlist.
-     */
-    public function parseFullText(string $rawText, ?string $overrideProgram = null, ?int $overrideYearLevel = null): array
-    {
-        $metadata = $this->extractHeaderMetadata($rawText);
-
-        $program = strtoupper(trim($overrideProgram ?? $metadata['program'] ?? ''));
-        $yearLevel = (int) ($overrideYearLevel ?? $metadata['year_level'] ?? 0);
-        $gatheringType = strtolower(trim($metadata['gathering_type'] ?? 'pm'));
-        $defaultDate = $metadata['default_date'];
-
-        $metadata['program'] = $program;
-        $metadata['year_level'] = $yearLevel;
-        $metadata['gathering_type'] = $gatheringType;
-
-        // Parse line entries
-        $reparseResult = $this->reparseLinesInternal($rawText, $program, $yearLevel, $defaultDate, $gatheringType);
-        
-        // Build complete masterlist against section students
-        $sectionData = $this->buildFullSectionRecords($program, $yearLevel, $reparseResult['matched_records'], $defaultDate, $gatheringType);
-
-        $presentCount = count(array_filter($sectionData['records'], fn($r) => $r['status'] === 'present'));
-
-        return [
-            'metadata' => $metadata,
-            'summary'  => [
-                'total_section_students' => $sectionData['total_students'],
-                'present_count'          => $presentCount,
-                'no_response_count'      => $sectionData['total_students'] - $presentCount,
-                'unmatched_lines_count'  => count($reparseResult['unmatched']),
-            ],
-            'unmatched_lines' => $reparseResult['unmatched'],
-            'records'         => $sectionData['records'],
-        ];
-    }
-
-    /**
-     * Internal line-by-line parser for raw lines.
-     */
-    private function reparseLinesInternal(string $rawText, string $program, int $yearLevel, string $defaultDate, string $gatheringType): array
-    {
-        $lines = explode("\n", trim($rawText));
-        $newlyMatched = [];
-        $unmatchedLines = [];
+        $lines = explode("\n", $rawText);
+        $detectedGathering = 'pm';
+        $detectedProgram = $overrideProgram ? trim($overrideProgram) : null;
+        $detectedYear = $overrideYearLevel;
 
         foreach ($lines as $line) {
             $line = trim($line);
-            if (empty($line) || str_contains($line, '---') || str_contains($line, '[')) {
-                continue;
+
+            if (preg_match('/Gathering:\s*(Prayer Meeting|Worship Service|Thanksgiving|Special|PM|WS|TG)/i', $line, $m)) {
+                $detectedGathering = match (strtolower(trim($m[1]))) {
+                    'prayer meeting', 'pm'  => 'pm',
+                    'worship service', 'ws' => 'ws',
+                    'thanksgiving', 'tg'    => 'tg',
+                    default                 => 'special',
+                };
             }
 
-            $result = $this->buildRecordFromLine($line, $program, $yearLevel, $defaultDate, $gatheringType);
+            if (!$detectedProgram && preg_match('/Program:\s*([A-Za-z0-9]+)/i', $line, $m)) {
+                $detectedProgram = strtoupper(trim($m[1]));
+            }
 
-            if ($result['matched']) {
-                $studentId = $result['record']['student_id'];
-                $newlyMatched[$studentId] = $result['record'];
-            } elseif (!empty($result['unmatched_data'])) {
-                $unmatchedLines[] = $result['unmatched_data'];
+            if (!$detectedYear && preg_match('/Year\s*Level:\s*(\d+)/i', $line, $m)) {
+                $detectedYear = (int) trim($m[1]);
             }
         }
 
         return [
-            'matched_records' => $newlyMatched,
-            'unmatched'       => $unmatchedLines,
+            'gathering_type' => $detectedGathering,
+            'program'        => $detectedProgram,
+            'year_level'     => $detectedYear,
+            'default_date'   => now()->toDateString(),
         ];
     }
 
     /**
-     * Reparses delta text lines and patches existing SQLite staged records (Accepts 6 arguments).
+     * Extracts name/batch/venue/date parts from a single raw line.
      */
-    public function reparseLines(string $rawText, string $program, int $yearLevel, string $defaultDate, string $gatheringType, array $existingStaged = []): array
-    {
-        $internalResult = $this->reparseLinesInternal($rawText, $program, $yearLevel, $defaultDate, $gatheringType);
-        $newlyMatched = $internalResult['matched_records'];
-
-        // Patch newly matched records over existing staged draft
-        foreach ($newlyMatched as $studentId => $record) {
-            $existingStaged[$studentId] = $record;
-        }
-
-        $allRecords = array_values($existingStaged);
-        $presentCount = count(array_filter($allRecords, fn($r) => $r['status'] === 'present'));
-
-        return [
-            'summary' => [
-                'total_staged_records'  => count($allRecords),
-                'present_count'         => $presentCount,
-                'no_response_count'     => count($allRecords) - $presentCount,
-                'unmatched_lines_count' => count($internalResult['unmatched']),
-            ],
-            'unmatched_lines' => $internalResult['unmatched'],
-            'records'         => $allRecords,
-        ];
-    }
-
-    /**
-     * Parses a single text line and matches it against student records.
-     */
-    public function buildRecordFromLine(string $line, string $program, int $yearLevel, string $defaultDate, string $gatheringType): array
+    private function extractLineParts(string $line, string $defaultDate): array
     {
         $cleanLine = trim($line);
 
@@ -173,47 +90,159 @@ class AttendanceParsingService
             $venue = null;
         }
 
-        if (!$studentName) {
-            return ['matched' => false, 'unmatched_data' => null];
-        }
+        return [
+            'student_name' => $studentName,
+            'raw_batch'    => $rawBatch,
+            'venue'        => $venue,
+            'date'         => $date,
+        ];
+    }
 
-        $student = Student::where('program', $program)
+    /**
+     * Finds a student matching the given program, year level, and (fuzzy) name.
+     */
+    private function findMatchingStudent(string $program, int $yearLevel, string $studentName): ?Student
+    {
+        return Student::where('program', $program)
             ->where('year_level', $yearLevel)
             ->where('name', 'LIKE', "%{$studentName}%")
             ->first();
+    }
 
-        $formattedBatch = $this->formatBatchTime($rawBatch);
+    /**
+     * Finds students belonging to the section who were not mentioned at all in the parsed submissions.
+     */
+    public function findMissingStudents(string $program, int $yearLevel, array $parsedSubmissions): array
+    {
+        return Student::where('program', $program)
+            ->where('year_level', $yearLevel)
+            ->whereNotIn('id', array_keys($parsedSubmissions))
+            ->get(['id', 'name'])
+            ->map(fn($s) => ['student_id' => $s->id, 'student_name' => $s->name])
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Builds the "unmatched" record shape for a line that couldn't be matched to a student.
+     */
+    private function buildUnmatchedRecord(string $rawLine, ?string $studentName, ?string $formattedBatch, ?string $venue, string $date): array
+    {
+        return [
+            'raw_line'       => trim($rawLine),
+            'extracted_name' => $studentName,
+            'batch'          => $formattedBatch,
+            'venue'          => $venue,
+            'day'            => $date,
+        ];
+    }
+
+    /**
+     * Builds the "matched" record shape for a line successfully linked to a student.
+     */
+    private function buildMatchedRecord(Student $student, ?string $formattedBatch, ?string $venue, string $date, string $gatheringType): array
+    {
+        $hasAttendanceDetails = !empty($formattedBatch) || !empty($venue);
+
+        return [
+            'student_id'     => $student->id,
+            'student_name'   => $student->name,
+            'gathering_type' => $gatheringType,
+            'batch'          => $formattedBatch,
+            'venue'          => $venue,
+            'day'            => $date,
+            'status'         => $hasAttendanceDetails ? 'present' : 'no_response',
+            'is_manual'      => false,
+        ];
+    }
+
+    /**
+     * Parses a single text line and matches it against student records.
+     */
+    public function buildRecordFromLine(string $line, string $program, int $yearLevel, string $defaultDate, string $gatheringType): array
+    {
+        $parts = $this->extractLineParts($line, $defaultDate);
+
+        if (!$parts['student_name']) {
+            return ['matched' => false, 'unmatched_data' => null];
+        }
+
+        $formattedBatch = $this->formatBatchTime($parts['raw_batch']);
+        $student = $this->findMatchingStudent($program, $yearLevel, $parts['student_name']);
 
         if (!$student) {
             return [
                 'matched'        => false,
-                'unmatched_data' => [
-                    'raw_line'       => trim($line),
-                    'extracted_name' => $studentName,
-                    'batch'          => $formattedBatch,
-                    'venue'          => $venue,
-                    'day'            => $date,
-                ],
+                'unmatched_data' => $this->buildUnmatchedRecord(
+                    $line,
+                    $parts['student_name'],
+                    $formattedBatch,
+                    $parts['venue'],
+                    $parts['date']
+                ),
             ];
         }
 
-        $hasAttendanceDetails = !empty($formattedBatch) || !empty($venue);
-        $status = $hasAttendanceDetails ? 'present' : 'no_response';
-
         return [
             'matched' => true,
-            'record'  => [
-                'student_id'     => $student->id,
-                'student_name'   => $student->name,
-                'gathering_type' => $gatheringType,
-                'batch'          => $formattedBatch,
-                'venue'          => $venue,
-                'day'            => $date,
-                'status'         => $status,
-                'is_manual'      => false,
-            ],
+            'record'  => $this->buildMatchedRecord($student, $formattedBatch, $parts['venue'], $parts['date'], $gatheringType),
         ];
     }
+
+    // /**
+    //  * Shared line-by-line parser: splits raw text into candidate student lines,
+    //  * skips headers/labels/blank lines, and matches each against a student record.
+    //  */
+    // private function parseLines(string $rawText, string $program, int $yearLevel, string $defaultDate, string $gatheringType): array
+    // {
+    //     $lines = explode("\n", trim($rawText));
+    //     $matchedRecords = [];
+    //     $unmatchedLines = [];
+
+    //     foreach ($lines as $line) {
+    //         $line = trim($line);
+
+    //         if (empty($line) || str_contains($line, '---') || str_contains($line, '[')) {
+    //             continue;
+    //         }
+
+    //         if (!preg_match('/^\d+[\.\)\-]?\s*(.+)$/i', $line)) {
+    //             continue;
+    //         }
+
+    //         $result = $this->buildRecordFromLine($line, $program, $yearLevel, $defaultDate, $gatheringType);
+
+    //         if ($result['matched']) {
+    //             $matchedRecords[$result['record']['student_id']] = $result['record'];
+    //         } elseif ($result['unmatched_data']) {
+    //             $unmatchedLines[] = $result['unmatched_data'];
+    //         }
+    //     }
+
+    //     return [
+    //         'matched_records' => $matchedRecords,
+    //         'unmatched'       => $unmatchedLines,
+    //     ];
+    // }
+
+    // /**
+    //  * Reparses delta text lines and patches over existing staged records
+    //  * (used when a user edits/adds a few lines instead of resubmitting the whole form).
+    //  */
+    // public function reparseLines(string $rawText, string $program, int $yearLevel, string $defaultDate, string $gatheringType, array $existingStaged = []): array
+    // {
+    //     $result = $this->parseLines($rawText, $program, $yearLevel, $defaultDate, $gatheringType);
+
+    //     foreach ($result['matched_records'] as $studentId => $record) {
+    //         $existingStaged[$studentId] = $record;
+    //     }
+
+    //     return [
+    //         'matched_records' => $result['matched_records'],
+    //         'unmatched'       => $result['unmatched'],
+    //         'staged_records'  => $existingStaged,
+    //     ];
+    // }
 
     /**
      * Rebuilds complete section masterlist combining parsed matches and missing students.

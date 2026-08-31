@@ -77,64 +77,39 @@ class AttendanceController extends Controller
             'year_level' => 'nullable|int',
         ]);
 
-        $rawText = trim($request->raw_text);
-        $lines = explode("\n", $rawText);
+        $metadata = $this->parsingService->extractHeaderMetadata(
+            $request->raw_text,
+            $request->program,
+            $request->year_level
+        );
 
-        $detectedGathering = 'pm';
-        $detectedProgram   = $request->program ? trim($request->program) : null;
-        $detectedYear      = $request->year_level;
-
-        foreach ($lines as $line) {
-            $line = trim($line);
-
-            if (preg_match('/Gathering:\s*(Prayer Meeting|Worship Service|Thanksgiving|Special|PM|WS|TG)/i', $line, $m)) {
-                $inputGathering = strtolower(trim($m[1]));
-                $detectedGathering = match ($inputGathering) {
-                    'prayer meeting', 'pm'  => 'pm',
-                    'worship service', 'ws' => 'ws',
-                    'thanksgiving', 'tg'    => 'tg',
-                    default                 => 'special',
-                };
-            }
-
-            if (!$detectedProgram && preg_match('/Program:\s*([A-Za-z0-9]+)/i', $line, $m)) {
-                $detectedProgram = strtoupper(trim($m[1]));
-            }
-
-            if (!$detectedYear && preg_match('/Year\s*Level:\s*(\d+)/i', $line, $m)) {
-                $detectedYear = (int) trim($m[1]);
-            }
-        }
-
-        $metadata = [
-            'gathering_type' => $detectedGathering,
-            'program'        => $detectedProgram ?? $request->program,
-            'year_level'     => $detectedYear ?? $request->year_level,
-            'default_date'   => now()->toDateString(),
-        ];
-
+        $lines = explode("\n", trim($request->raw_text));
         $parsedSubmissions = [];
+        $unmatchedLines = [];
 
         foreach ($lines as $line) {
             $line = trim($line);
+
             if (empty($line) || str_contains($line, '---') || str_contains($line, '[')) {
                 continue;
             }
 
-            if (preg_match('/^\d+[\.\)\-]?\s*(.+)$/i', $line)) {
-                $result = $this->parsingService->buildRecordFromLine(
-                    $line,
-                    $metadata['program'],
-                    $metadata['year_level'],
-                    $metadata['default_date'],
-                    $metadata['gathering_type']
-                );
+            if (!preg_match('/^\d+[\.\)\-]?\s*(.+)$/i', $line)) {
+                continue;
+            }
 
-                if ($result['matched']) {
-                    $studentId = $result['record']['student_id'];
-                    // Store the parsed record (which will have status 'no_response' if batch/venue/day are missing)
-                    $parsedSubmissions[$studentId] = $result['record'];
-                }
+            $result = $this->parsingService->buildRecordFromLine(
+                $line,
+                $metadata['program'],
+                $metadata['year_level'],
+                $metadata['default_date'],
+                $metadata['gathering_type']
+            );
+
+            if ($result['matched']) {
+                $parsedSubmissions[$result['record']['student_id']] = $result['record'];
+            } elseif ($result['unmatched_data']) {
+                $unmatchedLines[] = $result['unmatched_data'];
             }
         }
 
@@ -146,220 +121,115 @@ class AttendanceController extends Controller
             $metadata['gathering_type']
         );
 
-        // Count present vs no_response from section records
         $presentCount = 0;
-        $noResponseCount = 0;
-
         foreach ($sectionData['records'] as $record) {
-            if (isset($record['status']) && $record['status'] === 'present') {
+            if ($record['status'] === 'present') {
                 $presentCount++;
-            } else {
-                $noResponseCount++;
             }
         }
+
+        $missingStudents = $this->parsingService->findMissingStudents(
+            $metadata['program'],
+            $metadata['year_level'],
+            $parsedSubmissions
+        );
 
         return response()->json([
             'metadata' => $metadata,
             'summary'  => [
-                'gathering_type'    => strtoupper($metadata['gathering_type']),
-                'total_students'    => $sectionData['total_students'],
-                'present_count'     => $presentCount,
-                'no_response_count' => $noResponseCount,
+                'gathering_type'      => strtoupper($metadata['gathering_type']),
+                'total_students'      => $sectionData['total_students'],
+                'present_count'       => $presentCount,
+                'no_response_count'   => $sectionData['total_students'] - $presentCount,
+                'unmatched_count'     => count($unmatchedLines),
+                'missing_count'       => count($missingStudents),
             ],
-            'records' => $sectionData['records'],
+            'unmatched_lines'   => $unmatchedLines,
+            'missing_students'  => $missingStudents,
+            'records'           => $sectionData['records'],
         ]);
     }
 
-    public function reparseLines(Request $request)
+    public function reparseLines(Request $request){
+        //
+    }
+    public function store(Request $request)
     {
-        $request->validate([
-            'raw_text'        => 'required|string',
-            'program'         => 'required|string',
-            'year_level'      => 'required|int',
-            'gathering_type'  => 'nullable|string|in:pm,ws,tg,special',
-            'day'             => 'nullable|date',
-            'current_records' => 'nullable',
+        $validated = $request->validate([
+            'records'                  => 'required|array|min:1',
+            'records.*.student_id'     => 'required|exists:students,id',
+            'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
+            'records.*.day'            => 'required|date',
+            'records.*.status'         => 'required|in:present,no_response,excused',
+            'records.*.batch'          => 'nullable|string',
+            'records.*.venue'          => 'nullable|string',
         ]);
 
-        $gatheringType = strtolower(trim($request->gathering_type ?? 'pm'));
-        $defaultDate   = $request->day ?? now()->toDateString();
-        $program       = trim($request->program);
-        $yearLevel     = (int) $request->year_level;
+        $submittedBy = $request->user()->id;
+        $duplicateErrors = [];
+        $recordsToInsert = [];
 
-        $parsedSubmissions = [];
+        // --- Step 1: Pre-validate duplicates before touching DB ---
+        foreach ($validated['records'] as $index => $recordData) {
 
-        // 1. Fetch latest stored records directly from DB for this program, year, gathering, and date
-        $existingDbRecords = AttendanceRecord::whereHas('student', function ($query) use ($program, $yearLevel) {
-                $query->where('program', $program)
-                      ->where('year_level', $yearLevel);
-            })
-            ->where('gathering_type', $gatheringType)
-            ->where('day', $defaultDate)
-            ->get();
+            // Check if attendance already exists in database with proper values
+            $exists = AttendanceRecord::where('student_id', $recordData['student_id'])
+                ->where('gathering_type', $recordData['gathering_type'])
+                ->where('day', $recordData['day'])
+                ->exists();
 
-        foreach ($existingDbRecords as $record) {
-            $parsedSubmissions[(int) $record->student_id] = [
-                'student_id'     => (int) $record->student_id,
-                'student_name'   => $record->student->name ?? null,
-                'batch'          => $record->batch,
-                'venue'          => $record->venue,
-                'day'            => $record->day,
-                'gathering_type' => $record->gathering_type,
-                'status'         => $record->status,
-                'is_manual'      => false,
-            ];
-        }
-
-        // 2. Fallback: merge client payload 'current_records' if DB is empty or has missing keys
-        $rawCurrentRecords = $request->input('current_records', []);
-        if (is_string($rawCurrentRecords)) {
-            $rawCurrentRecords = json_decode($rawCurrentRecords, true) ?? [];
-        }
-
-        if (is_array($rawCurrentRecords)) {
-            foreach ($rawCurrentRecords as $rec) {
-                $id = $rec['student_id'] ?? $rec['id'] ?? null;
-                if ($id !== null) {
-                    $studentId = (int) $id;
-                    if (!isset($parsedSubmissions[$studentId])) {
-                        $parsedSubmissions[$studentId] = [
-                            'student_id'     => $studentId,
-                            'student_name'   => $rec['student_name'] ?? null,
-                            'batch'          => $rec['batch'] ?? null,
-                            'venue'          => $rec['venue'] ?? null,
-                            'day'            => $rec['day'] ?? $defaultDate,
-                            'gathering_type' => $rec['gathering_type'] ?? $gatheringType,
-                            'status'         => $rec['status'] ?? 'no_response',
-                            'is_manual'      => $rec['is_manual'] ?? false,
-                        ];
-                    }
-                }
-            }
-        }
-
-        // 3. Parse incoming raw_text lines for newly updated students
-        $parsedResults = $this->parsingService->reparseLines(
-            $request->raw_text,
-            $program,
-            $yearLevel,
-            $defaultDate,
-            $gatheringType
-        );
-
-        // 4. Overwrite matched students with updated parsed results
-        foreach ($parsedResults['matched_records'] as $studentId => $record) {
-            $parsedSubmissions[(int) $studentId] = $record;
-        }
-
-        // 5. Rebuild full section masterlist
-        $sectionData = $this->parsingService->buildFullSectionRecords(
-            $program,
-            $yearLevel,
-            $parsedSubmissions,
-            $defaultDate,
-            $gatheringType
-        );
-
-        $presentCount = 0;
-        $noResponseCount = 0;
-
-        foreach ($sectionData['records'] as $record) {
-            if ($record['status'] === 'present') {
-                $presentCount++;
+            if ($exists) {
+                $duplicateErrors[] = [
+                    'index'          => $index,
+                    'student_id'     => $recordData['student_id'],
+                    'gathering_type' => $recordData['gathering_type'],
+                    'day'            => $recordData['day'],
+                    'reason'         => 'Attendance record already submitted for this student and gathering date.',
+                ];
             } else {
-                $noResponseCount++;
+                $recordsToInsert[] = $recordData; // <-- Fixed: Array merge is unnecessary here
             }
         }
 
-        return response()->json([
-            'message' => count($parsedResults['matched_records']) . ' student line(s) updated successfully.',
-            'summary' => [
-                'gathering_type'    => strtoupper($gatheringType),
-                'total_students'    => $sectionData['total_students'],
-                'present_count'     => $presentCount,
-                'no_response_count' => $noResponseCount,
-            ],
-            'unmatched_lines' => $parsedResults['unmatched'],
-            'records'         => $sectionData['records'],
-        ], 200);
-    }
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'records'                  => 'required|array|min:1',
-        'records.*.student_id'     => 'required|exists:students,id',
-        'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
-        'records.*.day'            => 'required|date',
-        'records.*.status'         => 'required|in:present,no_response,excused',
-        'records.*.batch'          => 'nullable|string',
-        'records.*.venue'          => 'nullable|string',
-    ]);
-
-    $submittedBy = $request->user()->id;
-    $duplicateErrors = [];
-    $recordsToInsert = [];
-
-    // --- Step 1: Pre-validate duplicates before touching DB ---
-    foreach ($validated['records'] as $index => $recordData) {
-
-        // Check if attendance already exists in database with proper values
-        $exists = AttendanceRecord::where('student_id', $recordData['student_id'])
-            ->where('gathering_type', $recordData['gathering_type'])
-            ->where('day', $recordData['day'])
-            ->exists();
-
-        if ($exists) {
-            $duplicateErrors[] = [
-                'index'          => $index,
-                'student_id'     => $recordData['student_id'],
-                'gathering_type' => $recordData['gathering_type'],
-                'day'            => $recordData['day'],
-                'reason'         => 'Attendance record already submitted for this student and gathering date.',
-            ];
-        } else {
-            $recordsToInsert[] = $recordData; // <-- Fixed: Array merge is unnecessary here
-        }
-    }
-
-    // --- Step 2: Reject batch if any duplicate constraint fails ---
-    if (!empty($duplicateErrors)) {
-        return response()->json([
-            'status'             => 'error',
-            'message'            => 'Submission rejected. One or more attendance records already exist in the system.',
-            'duplicates_count'   => count($duplicateErrors),
-            'duplicate_records'  => $duplicateErrors,
-        ], 422);
-    }
-
-    // --- Step 3: Atomic Bulk Insert within DB Transaction ---
-    $savedRecords = DB::transaction(function () use ($recordsToInsert, $submittedBy) {
-        $records = [];
-
-        foreach ($recordsToInsert as $recordData) {
-            $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
-
-            $records[] = AttendanceRecord::create([
-                'student_id'        => $recordData['student_id'],
-                'gathering_type'    => $recordData['gathering_type'],
-                'day'               => $recordData['day'],
-                'batch'             => $formattedBatch,
-                'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
-                'status'            => $recordData['status'],
-                'validation_status' => 'unvalidated',
-                'submitted_by'      => $submittedBy,
-            ]);
+        // --- Step 2: Reject batch if any duplicate constraint fails ---
+        if (!empty($duplicateErrors)) {
+            return response()->json([
+                'status'             => 'error',
+                'message'            => 'Submission rejected. One or more attendance records already exist in the system.',
+                'duplicates_count'   => count($duplicateErrors),
+                'duplicate_records'  => $duplicateErrors,
+            ], 422);
         }
 
-        return $records;
-    });
+        // --- Step 3: Atomic Bulk Insert within DB Transaction ---
+        $savedRecords = DB::transaction(function () use ($recordsToInsert, $submittedBy) {
+            $records = [];
 
-    return response()->json([
-        'status'  => 'success',
-        'message' => 'Attendance batch submitted successfully and flagged for validation.',
-        'count'   => count($savedRecords),
-        'records' => $savedRecords,
-    ], 201);
-}
+            foreach ($recordsToInsert as $recordData) {
+                $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
+
+                $records[] = AttendanceRecord::create([
+                    'student_id'        => $recordData['student_id'],
+                    'gathering_type'    => $recordData['gathering_type'],
+                    'day'               => $recordData['day'],
+                    'batch'             => $formattedBatch,
+                    'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
+                    'status'            => $recordData['status'],
+                    'validation_status' => 'unvalidated',
+                    'submitted_by'      => $submittedBy,
+                ]);
+            }
+
+            return $records;
+        });
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Attendance batch submitted successfully and flagged for validation.',
+            'count'   => count($savedRecords),
+            'records' => $savedRecords,
+        ], 201);
+    }
 
     /**
      * Program Head or CM Coordinator validates/approves individual attendance submission.
