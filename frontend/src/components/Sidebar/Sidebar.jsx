@@ -1,7 +1,9 @@
-﻿import LVCCLogo from '../../assets/lvcc-logo.png'
+﻿import { NavLink } from 'react-router-dom'
+import LVCCLogo from '../../assets/lvcc-logo.png'
 import DashboardIcon from '../../assets/dashboard-icon.png'
 import StudentsIcon from '../../assets/students-icon.png'
 import ImportIcon from '../../assets/import-icon.png'
+import AttendanceIcon from '../../assets/attendance-icon.png'
 import './Sidebar.css'
 
 function Sidebar() {
@@ -16,50 +18,55 @@ function Sidebar() {
                 />
             </div>
 
-            {/* Navigation */}
             <nav className="sidebar-nav">
-                <a href="/dashboard" className="sidebar-link active">
+                <NavLink
+                    to="/dashboard"
+                    end
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                >
                     <img
                         className="sidebar-icon"
                         src={DashboardIcon}
                         alt="Dashboard"
                     />
                     <span>Dashboard</span>
-                </a>
+                </NavLink>
 
-                <a href="/students" className="sidebar-link">
+                <NavLink
+                    to="/students"
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                >
                     <img
                         className="sidebar-icon"
                         src={StudentsIcon}
                         alt="Students"
                     />
                     <span>Students</span>
-                </a>
+                </NavLink>
 
-                <a href="/import" className="sidebar-link">
+                <NavLink
+                    to="/import"
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                >
                     <img
                         className="sidebar-icon"
                         src={ImportIcon}
                         alt="Import"
                     />
                     <span>Import</span>
-                </a>
+                </NavLink>
 
-                {/* <a href="/attendance" className="sidebar-link">
-                    <span className="sidebar-icon">✓</span>
+                <NavLink
+                    to="/attendance"
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                >
+                    <img
+                        className="sidebar-icon"
+                        src={AttendanceIcon}
+                        alt="Attendance"
+                    />
                     <span>Attendance</span>
-                </a>
-
-                <a href="/records" className="sidebar-link">
-                    <span className="sidebar-icon">▱</span>
-                    <span>Records</span>
-                </a>
-
-                <a href="/reminders" className="sidebar-link">
-                    <span className="sidebar-icon">▣</span>
-                    <span>Reminders</span>
-                </a> */}
-
+                </NavLink>
             </nav>
 
         </aside>
