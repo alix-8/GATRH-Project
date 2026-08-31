@@ -44,7 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/attendance/generate-template', [AttendanceController::class, 'generateTemplate']);
 
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
-        Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseLines']);
+        // Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseLines']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
 
         Route::apiResource('reminders', ReminderController::class);
