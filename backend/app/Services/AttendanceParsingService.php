@@ -7,7 +7,7 @@ use App\Models\Student;
 class AttendanceParsingService
 {
     /**
-     * Converts raw time strings (e.g., "10:30 AM", "2:15 PM") into MySQL TIME format (HH:MM:SS).
+     * FOR SUBMIT: Converts raw time strings (e.g., "10:30 AM", "2:15 PM") into MySQL TIME format (HH:MM:SS).
      */
     public function formatBatchTime(?string $batchTime): ?string
     {
@@ -22,6 +22,69 @@ class AttendanceParsingService
         }
 
         return date('H:i:s', $timestamp);
+    }
+
+    /**
+     * Validates that a batch/time string matches an expected time format
+     * (e.g. "8:30 AM", "08:30", "2:15 PM"). Returns true if valid or empty (optional field).
+     */
+    private function isValidBatchFormat(?string $rawBatch): bool
+    {
+        if (empty($rawBatch)) {
+            return true; // empty is allowed — it's optional
+        }
+
+        // Accepts: "8:30 AM", "08:30 PM", "8:30", "08:30:00"
+        return (bool) preg_match('/^\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM|am|pm)?$/', trim($rawBatch));
+    }
+
+    /**
+     * Validates that a date string matches strict YYYY-MM-DD format.
+     * Returns true if valid or empty (falls back to default date).
+     */
+    private function isValidDateFormat(?string $rawDate): bool
+    {
+        if (empty($rawDate)) {
+            return true; // empty is allowed — falls back to default
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($rawDate))) {
+            return false;
+        }
+
+        // Also confirm it's a real calendar date, not just the right shape (e.g. rejects 2026-13-40)
+        [$year, $month, $day] = explode('-', trim($rawDate));
+        return checkdate((int) $month, (int) $day, (int) $year);
+    }
+
+    /**
+     * Validates that a date string is not in the future and not more than
+     * $maxDaysInPast days old (defaults to 7 days = 1 week).
+     */
+    private function isDateWithinAllowedRange(?string $rawDate, int $maxDaysInPast = 7): bool
+    {
+        if (empty($rawDate)) {
+            return true; // empty falls back to default date — not this check's concern
+        }
+
+        try {
+            $inputDate = \Carbon\Carbon::createFromFormat('Y-m-d', trim($rawDate))->startOfDay();
+        } catch (\Exception $e) {
+            return true; // malformed dates are caught by isValidDateFormat(), not here
+        }
+
+        $today = \Carbon\Carbon::today();
+        $earliestAllowed = $today->copy()->subDays($maxDaysInPast);
+
+        if ($inputDate->greaterThan($today)) {
+            return false; // future date
+        }
+
+        if ($inputDate->lessThan($earliestAllowed)) {
+            return false; // too far in the past
+        }
+
+        return true;
     }
 
     /**
@@ -71,7 +134,6 @@ class AttendanceParsingService
     {
         $cleanLine = trim($line);
 
-        // Strip leading numbers/bullets: "1. Name | Batch..." -> "Name | Batch..."
         if (preg_match('/^\d+[\.\)\-]?\s*(.+)$/i', $cleanLine, $matches)) {
             $cleanLine = trim($matches[1]);
         }
@@ -81,10 +143,14 @@ class AttendanceParsingService
         $studentName = isset($parts[0]) && $parts[0] !== '' ? trim($parts[0]) : null;
         $rawBatch    = isset($parts[1]) && $parts[1] !== '' ? trim($parts[1]) : null;
         $venue       = isset($parts[2]) && $parts[2] !== '' ? trim($parts[2]) : null;
+        $rawDate     = null;
         $date        = $defaultDate;
 
-        if (isset($parts[3]) && preg_match('/\d{4}-\d{2}-\d{2}/', $parts[3])) {
-            $date = trim($parts[3]);
+        if (isset($parts[3]) && $parts[3] !== '') {
+            $rawDate = trim($parts[3]);
+            if (preg_match('/\d{4}-\d{2}-\d{2}/', $rawDate)) {
+                $date = $rawDate;
+            }
         } elseif (isset($parts[2]) && preg_match('/\d{4}-\d{2}-\d{2}/', $parts[2])) {
             $date = trim($parts[2]);
             $venue = null;
@@ -95,6 +161,7 @@ class AttendanceParsingService
             'raw_batch'    => $rawBatch,
             'venue'        => $venue,
             'date'         => $date,
+            'raw_date'     => $rawDate,
         ];
     }
 
@@ -142,7 +209,7 @@ class AttendanceParsingService
      */
     private function buildMatchedRecord(Student $student, ?string $formattedBatch, ?string $venue, string $date, string $gatheringType): array
     {
-        $hasAttendanceDetails = !empty($formattedBatch) || !empty($venue);
+        $hasAttendanceDetails = !empty($formattedBatch) && !empty($venue);
 
         return [
             'student_id'     => $student->id,
@@ -164,7 +231,33 @@ class AttendanceParsingService
         $parts = $this->extractLineParts($line, $defaultDate);
 
         if (!$parts['student_name']) {
-            return ['matched' => false, 'unmatched_data' => null];
+            return ['matched' => false, 'unmatched_data' => null, 'format_errors' => []];
+        }
+
+        $formatErrors = [];
+
+        if (!$this->isValidBatchFormat($parts['raw_batch'])) {
+            $formatErrors[] = [
+                'field'  => 'batch',
+                'value'  => $parts['raw_batch'],
+                'reason' => 'Batch time must be in a valid time format, e.g. "8:30 AM".',
+            ];
+        }
+
+        if (!$this->isValidDateFormat($parts['raw_date'])) {
+            $formatErrors[] = [
+                'field'  => 'day',
+                'value'  => $parts['raw_date'],
+                'reason' => 'Date must be in YYYY-MM-DD format, e.g. "2026-08-28".',
+            ];
+        } elseif (!$this->isDateWithinAllowedRange($parts['raw_date'])) {
+            // Only check the range if the format was already valid — no point
+            // flagging a range issue on a date that's malformed anyway
+            $formatErrors[] = [
+                'field'  => 'day',
+                'value'  => $parts['raw_date'],
+                'reason' => 'Date must not be in the future and must be within the last 7 days.',
+            ];
         }
 
         $formattedBatch = $this->formatBatchTime($parts['raw_batch']);
@@ -180,12 +273,14 @@ class AttendanceParsingService
                     $parts['venue'],
                     $parts['date']
                 ),
+                'format_errors' => $formatErrors,
             ];
         }
 
         return [
-            'matched' => true,
-            'record'  => $this->buildMatchedRecord($student, $formattedBatch, $parts['venue'], $parts['date'], $gatheringType),
+            'matched'       => true,
+            'record'        => $this->buildMatchedRecord($student, $formattedBatch, $parts['venue'], $parts['date'], $gatheringType),
+            'format_errors' => $formatErrors,
         ];
     }
 
