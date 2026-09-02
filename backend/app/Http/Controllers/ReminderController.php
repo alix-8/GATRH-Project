@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Reminder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Services\ReminderService;
 
 class ReminderController extends Controller
 {
@@ -28,11 +29,23 @@ class ReminderController extends Controller
 
         // Utilizes our compound index: (user_id, status, due_date)
         $reminders = $query->orderBy('due_date', 'asc')->get();
+        $countdown = app(ReminderService::class)->ReminderCountdown($userId);
+        app(ReminderService::class)->StatusSetter($userId);
+        $data = $reminders->map(function ($reminder) use ($countdown) {
+            return [
+                'id'          => $reminder->id,
+                'title'       => $reminder->title,
+                'description' => $reminder->description,
+                'due_date'    => $reminder->due_date,
+                'status'      => $reminder->status,
+                'countdown'   => $countdown[$reminder->id] ?? null, // Get countdown for this reminder
+            ];
+        });
 
         return response()->json([
             'status' => 'success',
             'count'  => $reminders->count(),
-            'data'   => $reminders,
+            'data'   => $data,
         ], 200);
     }
 
@@ -86,6 +99,7 @@ class ReminderController extends Controller
         return response()->json([
             'status' => 'success',
             'data'   => $reminder,
+            'countdown' => app(ReminderService::class)->ReminderCountdown($request->user()->id),
         ], 200);
     }
 
