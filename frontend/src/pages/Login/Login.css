@@ -227,7 +227,7 @@
 .login-nav a {
     font-size: 18px;
     text-decoration: none;
-    color: black;
+    color: white;
     position: relative;
 }
 
@@ -236,9 +236,9 @@
     right: 0;
     bottom: -8px;
     left: 0;
-    height: 2px;
+    height: 1px;
     content: '';
-    background: #172B4D;
+    background: white;
     transform: scaleX(0);
 }
 
