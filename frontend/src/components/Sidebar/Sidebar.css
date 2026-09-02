@@ -1,49 +1,59 @@
 ﻿.sidebar {
-    width: 188px;
+    width: 214px;
     min-height: 100vh;
     background-color: #172B4D;
     padding: 20px 12px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
-.lvcc-logo {
+.sidebar-lvcc-logo {
     position: absolute;
-    left: 30px;
-    margin-bottom: 20px;
-}
-
-.sidebar-logo img {
+    top: 12px;
+    left: 84px;
+    transform: translateX(-50%);
     width: 100px;
     height: 100px;
-    display: block;
 }
 
 .sidebar-nav {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-top: 140px;
+    margin-top: 120px;
+    flex: 1;
 }
 
 .sidebar-link {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     padding: 10px 8px;
     color: #aebbd0;
     text-decoration: none;
     font-size: 13px;
-    border-radius: 6px;
-}
-
-.sidebar-link:hover {
-    color: white;
+    border-left: 2px solid transparent;
+    transition: all 0.2s ease;
 }
 
 .sidebar-link.active {
     color: white;
+    border-left-color: #F2C94C;
 }
 
 .sidebar-icon {
     width: 20px;
+}
+
+.sidebar-signout {
+    margin-top: auto;
+}
+
+.sidebar-signout {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    height: 46px;
+    display: flex;
 }

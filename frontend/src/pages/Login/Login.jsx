@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
 import LVCCLogo from '../../assets/lvcc-logo.png'
 import Illustration from '../../assets/login-illustration.png'
+import ShowPasswordIcon from '../../assets/show-password-icon.png'
+import AttendanceTrackingIcon from '../../assets/attendance-tracking-icon.png'
+import AttendanceConverterIcon from '../../assets/attendance-converter-icon.png'
+import RecordManagementIcon from '../../assets/record-management.png'
+import ReportSubmissionIcon from '../../assets/report-submission-icon.png'
 import './Login.css'
 
 
@@ -12,6 +16,7 @@ function Login() {
     const [activeNav, setActiveNav] = useState('home')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -74,7 +79,7 @@ function Login() {
             {/* LEFT SIDE */}
             <section className="login-content">
                 <img
-                    className="lvcc-logo"
+                    className="login-lvcc-logo"
                     src={LVCCLogo}
                     alt="LVCC Logo"
                 />
@@ -116,10 +121,10 @@ function Login() {
                         />
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group password-group">
                         <label htmlFor="password">Password</label>
                         <input
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             id="password"
                             name="password"
                             placeholder="************************"
@@ -127,6 +132,18 @@ function Login() {
                             onChange={(event) => setPassword(event.target.value)}
                             required
                         />
+                        <button
+                            type="button"
+                            className="show-password-toggle"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                            <img
+                                className="show-password-icon"
+                                src={ShowPasswordIcon}
+                                alt={showPassword ? 'Hide Password Icon' : 'Show Password Icon'}
+                            />
+                        </button>
                     </div>
 
                     <div className="form-options">
@@ -142,11 +159,13 @@ function Login() {
                         </button>
                     </div>
 
-                    {error && (
-                        <p className="login-error" role="alert">
-                            {error}
-                        </p>
-                    )}
+                    <p
+                        className={`login-error ${error ? 'visible' : ''}`}
+                        role={error ? 'alert' : undefined}
+                        aria-live={error ? 'polite' : undefined}
+                    >
+                        {error || ' '}
+                    </p>
 
                     <div className="form-actions">
                         <button
@@ -156,22 +175,18 @@ function Login() {
                         >
                             {loading ? 'Logging in...' : 'Log In'}
                         </button>
-
-                        <button
-                            className="button learn-button"
-                            type="button">
-                            Learn more
-                        </button>
                     </div>
                 </form>
             </section>
 
             {/* ACCOUNT HELP */}
             <p className="account-help">
-                Need help accessing your account? 
-                Contact your administrator
+                <span>Need help accessing your account?</span>
+                <a className="account-help-link" href="">
+                    Contact your administrator
+                </a>
             </p>
-                
+
             {/* RIGHT SIDE */}
             <section className="login-right">
 
@@ -236,39 +251,93 @@ function Login() {
                     )}
 
                     {activeNav === 'features' && (
-                        <section 
-                            className="panel-content info-panel" 
+                        <section
+                            className="panel-content features-panel"
                             aria-labelledby="features-title"
-                            >
-                            <h2 id="features-title">
-                                Features
-                            </h2>
+                        >
+                            <div className="feature-grid">
+                                <article className="feature-card">
+                                    <div className="feature-icon-wrap">
+                                        <img
+                                            className="feature-icon"
+                                            src={AttendanceTrackingIcon}
+                                            alt="Attendance Tracking"
+                                        />
+                                    </div>
 
-                            <div className="info-list">
-                                <article>
-                                    <h3>Standardized Attendance Format</h3>
-                                    <p>Use a consistent format for PM, WS, and TG attendance collected through Messenger.</p>
-                                    <p>One format. Organized attendance.</p>
+                                    <h3>Attendance Tracking</h3>
+
+                                    <p>
+                                        Easily record and monitor student attendance for every gathering.
+                                        Track responses and keep attendance information organized in one place.
+                                    </p>
+
+                                    <div className="feature-footer">
+                                        <span className="feature-index">01</span>
+                                    </div>
                                 </article>
-                                <article>
-                                    <h3>Paste & Convert</h3>
-                                    <p>Copy the standardized attendance report from Messenger and paste it into the system.</p>
-                                    <p>The system converts the text into structured attendance records.</p>
+
+                                <article className="feature-card feature-card-alt">
+                                    <div className="feature-icon-wrap feature-icon-wrap-alt">
+                                        <img
+                                            className="feature-icon"
+                                            src={AttendanceConverterIcon}
+                                            alt="Attendance Converter"
+                                        />
+                                    </div>
+
+                                    <h3>Attendance Converter</h3>
+
+                                    <p>
+                                        Easily record and monitor student attendance for every gathering.
+                                        Track responses and keep attendance information organized in one place.
+                                    </p>
+
+                                    <div className="feature-footer">
+                                        <span className="feature-index">02</span>
+                                    </div>
                                 </article>
-                                <article>
-                                    <h3>Attendance Validation</h3>
-                                    <p>Review converted attendance before saving and identify missing or incomplete entries.</p>
-                                    <p>Detects incomplete PM, WS, or TG information.</p>
+
+                                <article className="feature-card">
+                                    <div className="feature-icon-wrap">
+                                        <img
+                                            className="feature-icon"
+                                            src={RecordManagementIcon}
+                                            alt="Record Management"
+                                        />
+                                    </div>
+
+                                    <h3>Record Management</h3>
+
+                                    <p>
+                                        Review validated attendance records, organize gathering data,
+                                        and prepare reports for submission.
+                                    </p>
+
+                                    <div className="feature-footer">
+                                        <span className="feature-index">03</span>
+                                    </div>
                                 </article>
-                                <article>
-                                    <h3>Attendance Monitoring</h3>
-                                    <p>Monitor attendance and participation by gathering, course, and year level.</p>
-                                    <p>Track progress toward participation targets.</p>
-                                </article>
-                                <article>
-                                    <h3>Automated Reports</h3>
-                                    <p>Automatically consolidate submitted attendance records into organized reports.</p>
-                                    <p>Reduce manual consolidation and reporting delays.</p>
+
+                                <article className="feature-card feature-card-alt">
+                                    <div className="feature-icon-wrap feature-icon-wrap-alt">
+                                        <img
+                                            className="feature-icon"
+                                            src={ReportSubmissionIcon}
+                                            alt="Report Submission"
+                                        />
+                                    </div>
+
+                                    <h3>Report Submission</h3>
+
+                                    <p>
+                                        Prepare completed attendance reports and submit them to higher
+                                        administration for review and recording.
+                                    </p>
+
+                                    <div className="feature-footer">
+                                        <span className="feature-index">04</span>
+                                    </div>
                                 </article>
                             </div>
                         </section>

@@ -1,0 +1,28 @@
+.records {
+    display: flex;
+    background-color: #ffffff;
+}
+
+.records-main {
+    flex: 1;
+    background-color: #ffffff;
+}
+
+.records-header {
+    box-sizing: border-box;
+    border-bottom: 1px solid #c7c6c6;
+    line-height: 1.2;
+    padding: 28px 24px 28px 24px;
+}
+
+.records-header h3 {
+    display: flex;
+    margin: 0;
+    color: #172B4D;
+}
+
+.records-header p {
+    display: flex;
+    color: #172B4D;
+    font-size: 14px;
+}

@@ -1,18 +1,27 @@
-﻿import { NavLink } from 'react-router-dom'
+﻿import { NavLink, useNavigate } from 'react-router-dom'
 import LVCCLogo from '../../assets/lvcc-logo.png'
 import DashboardIcon from '../../assets/dashboard-icon.png'
 import StudentsIcon from '../../assets/students-icon.png'
 import ImportIcon from '../../assets/import-icon.png'
 import AttendanceIcon from '../../assets/attendance-icon.png'
+import RecordsIcon from '../../assets/records-icon.png'
+import RemindersIcon from '../../assets/reminders-icon.png'
+import SignOutIcon from '../../assets/sign-out-icon.png'
 import './Sidebar.css'
 
 function Sidebar() {
+    const navigate = useNavigate()
+
+    const handleSignOut = () => {
+        navigate('/')
+    }
+
     return (
         <aside className="sidebar">
 
             <div className="sidebar-logo">
                 <img
-                    className="lvcc-logo"
+                    className="sidebar-lvcc-logo"
                     src={LVCCLogo}
                     alt="LVCC Logo"
                 />
@@ -67,6 +76,38 @@ function Sidebar() {
                     />
                     <span>Attendance</span>
                 </NavLink>
+
+                <NavLink
+                    to="/records"
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                >
+                    <img
+                        className="sidebar-icon"
+                        src={RecordsIcon}
+                        alt="Records"
+                    />
+                    <span>Records</span>
+                </NavLink>
+
+                <NavLink
+                    to="/reminders"
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                >
+                    <img
+                        className="sidebar-icon"
+                        src={RemindersIcon}
+                        alt="Reminders"
+                    />
+                    <span>Reminders</span>
+                </NavLink>
+
+                <button type="button" className="sidebar-signout" onClick={handleSignOut}>
+                    <img
+                        className="sign-out-icon"
+                        src={SignOutIcon}
+                        alt="Sign Out"
+                    />
+                </button>
             </nav>
 
         </aside>

@@ -11,8 +11,8 @@
         to right,
         white 0%,
         white 50%,
-        #AEBBCD 50%,
-        #AEBBCD 100%
+        #172B4D 50%,
+        #172B4D 100%
     );
 }
 
@@ -26,7 +26,7 @@
     padding-top: 18px;
 }
 
-.lvcc-logo {
+.login-lvcc-logo {
     position: absolute;
     left: 66px;
     width: 80px;
@@ -54,7 +54,12 @@
 .login-form {
     position: absolute;
     top: 350px;
-    left: 80px
+    left: 80px;
+    width: 370px;
+}
+
+.login-form form {
+    width: 100%;
 }
 
 .login-form::before {
@@ -67,6 +72,7 @@
 }
 
 .form-group {
+    position: relative;
     box-sizing: border-box;
     border: 1px solid rgb(184, 180, 180);
     width: 370px;
@@ -74,6 +80,10 @@
     margin-bottom: 16px;
     padding: 8px 16px 0;
     text-align: left;
+}
+
+.password-group {
+    padding-right: 42px;
 }
 
 .form-group label {
@@ -103,6 +113,23 @@
     font-weight: 700;
     font-size: 12px;
 
+}
+
+.show-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.show-password-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    opacity: 0.8;
 }
 
 .form-options {
@@ -151,12 +178,12 @@
 .form-actions {
     display: flex;
     gap: 6px;
+    margin-top: 0;
 }
 
 .button {
     box-sizing: border-box;
     height: 45px;
-    border-radius: 11px;
     font-size: 12px;
 }
 
@@ -164,27 +191,26 @@
     color: #fff;
     background-color: #172b4d;
     border: 1px solid #172b4d;
-    width: 180px;
+    border-radius: 16px;
+    width: 370px;
     box-shadow: 0 2px 3px rgb(0 0 0 / 25%);
-}
-
-.learn-button {
-    color: #172b4d;
-    background-color: #fff;
-    border: 1px solid #666;
-    width: 110px;
-    box-shadow: 0 2px 3px rgb(0 0 0 / 15%);
 }
 
 .account-help {
     position: absolute;
-    color: #7c7a7a;
     top: 680px;
     left: 80px;
-    font-size: 12px;
-    flex-direction: left;
-    font-size: 14px;
+    display: flex;
+    gap: 4px;
+    color: #7c7a7a;
+    font-size: 13px;
 }
+
+.account-help-link {
+    color: #172B4D;
+    text-decoration: none;
+}
+
 
 .login-right {
     position: absolute;
@@ -193,7 +219,7 @@
     bottom: 0;
     width: 50%;
     overflow: hidden;
-    background-color: #AEBBCD;
+    background-color: #172B4D;
 }
 
 .login-panel-content {
@@ -229,7 +255,7 @@
 .login-nav a {
     font-size: 18px;
     text-decoration: none;
-    color: black;
+    color: white;
     position: relative;
 }
 
@@ -238,9 +264,9 @@
     right: 0;
     bottom: -8px;
     left: 0;
-    height: 2px;
+    height: 1px;
     content: '';
-    background: #172B4D;
+    background: white;
     transform: scaleX(0);
 }
 
@@ -253,6 +279,64 @@
     width: 100%;
     top: 150px;
     right: -50px;
+}
+
+.features-panel {
+    box-sizing: border-box;
+    height: 100%;
+    max-width: 760px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 130px 55px 40px;
+    color: #172B4D;
+    text-align: left;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(270px, 1fr));
+    gap: 26px;
+}
+
+.feature-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+    padding: 20px 22px 16px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.96);
+}
+
+.feature-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+}
+
+.feature-card p {
+    margin: 0;
+    color: #53677f;
+    font-size: 15px;
+    line-height: 1.45;
+}
+
+.feature-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 24px;
+}
+
+.feature-index {
+    color: #172B4D;
+    font-size: 18px;
+    font-weight: 600;
 }
 
 .info-panel {
@@ -365,14 +449,12 @@
     line-height: 1.5;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .panel-content {
-        animation: none;
-    }
+.login-error {
+    margin: 8px 0 0;
+    color: transparent;
+    font-size: 14px;
 }
 
-.login-error {
-    margin-top: 10px;
+.login-error.visible {
     color: #c0392b;
-    font-size: 14px;
 }

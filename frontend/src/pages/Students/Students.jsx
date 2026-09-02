@@ -1,12 +1,16 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
+import './Students.css'
 
 function Students() {
     return (
-        <div className="dashboard">
+        <div className="students">
             <Sidebar />
-            <main className="dashboard-main">
-                <h1>Students</h1>
-                <p>Manage student records and attendance.</p>
+
+            <main className="students-main">
+                <header className="students-header">
+                    <h3>Students</h3>
+                    <p>Manage student information and attendance history.</p>
+                </header>
             </main>
         </div>
     )
