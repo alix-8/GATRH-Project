@@ -5,8 +5,10 @@ function Import() {
         <div className="dashboard">
             <Sidebar />
             <main className="dashboard-main">
-                <h1>Import</h1>
-                <p>Upload and process attendance files.</p>
+                <header className="dashboard-header">
+                    <h3>Import</h3>
+                    <p>Upload and process attendance files.</p>
+                </header>
             </main>
         </div>
     )

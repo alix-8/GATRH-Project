@@ -5,8 +5,10 @@ function Attendance() {
         <div className="dashboard">
             <Sidebar />
             <main className="dashboard-main">
-                <h1>Attendance</h1>
-                <p>Take and submit student attendance</p>
+                <header className="dashboard-header">
+                    <h3>Attendance</h3>
+                    <p>Take and submit student attendance</p>
+                </header>
             </main>
         </div>
     )
