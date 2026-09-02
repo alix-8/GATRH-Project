@@ -156,12 +156,6 @@ function Login() {
                         >
                             {loading ? 'Logging in...' : 'Log In'}
                         </button>
-
-                        <button
-                            className="button learn-button"
-                            type="button">
-                            Learn more
-                        </button>
                     </div>
                 </form>
             </section>
