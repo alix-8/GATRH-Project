@@ -8,7 +8,7 @@ function Import() {
             <main className="import-main">
                 <header className="import-header">
                     <h3>Import</h3>
-                    <p>Paste raw attendance logs to get a formatted spreadsheet</p>
+                    <p>Paste raw attendance logs to get a formatted spreadsheet.</p>
                 </header>
             </main>
         </div>

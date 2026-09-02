@@ -8,7 +8,7 @@ function Attendance() {
             <main className="attendance-main">
                 <header className="attendance-header">
                     <h3>Attendance</h3>
-                    <p>Take and submit student attendance</p>
+                    <p>Take and submit student attendance.</p>
                 </header>
             </main>
         </div>
