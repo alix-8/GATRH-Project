@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
 import LVCCLogo from '../../assets/lvcc-logo.png'
 import Illustration from '../../assets/login-illustration.png'
+import ShowPasswordIcon from '../../assets/show-password-icon.png'
 import './Login.css'
 
 
@@ -12,6 +12,7 @@ function Login() {
     const [activeNav, setActiveNav] = useState('home')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -74,7 +75,7 @@ function Login() {
             {/* LEFT SIDE */}
             <section className="login-content">
                 <img
-                    className="lvcc-logo"
+                    className="login-lvcc-logo"
                     src={LVCCLogo}
                     alt="LVCC Logo"
                 />
@@ -116,10 +117,10 @@ function Login() {
                         />
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group password-group">
                         <label htmlFor="password">Password</label>
                         <input
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             id="password"
                             name="password"
                             placeholder="************************"
@@ -127,6 +128,18 @@ function Login() {
                             onChange={(event) => setPassword(event.target.value)}
                             required
                         />
+                        <button
+                            type="button"
+                            className="show-password-toggle"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                            <img
+                                className="show-password-icon"
+                                src={ShowPasswordIcon}
+                                alt={showPassword ? 'Hide Password Icon' : 'Show Password Icon'}
+                            />
+                        </button>
                     </div>
 
                     <div className="form-options">
@@ -142,11 +155,13 @@ function Login() {
                         </button>
                     </div>
 
-                    {error && (
-                        <p className="login-error" role="alert">
-                            {error}
-                        </p>
-                    )}
+                    <p
+                        className={`login-error ${error ? 'visible' : ''}`}
+                        role={error ? 'alert' : undefined}
+                        aria-live={error ? 'polite' : undefined}
+                    >
+                        {error || ' '}
+                    </p>
 
                     <div className="form-actions">
                         <button

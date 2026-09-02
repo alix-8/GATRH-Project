@@ -12,7 +12,7 @@ function Sidebar() {
 
             <div className="sidebar-logo">
                 <img
-                    className="lvcc-logo"
+                    className="sidebar-lvcc-logo"
                     src={LVCCLogo}
                     alt="LVCC Logo"
                 />
