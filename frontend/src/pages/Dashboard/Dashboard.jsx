@@ -9,7 +9,7 @@ function Dashboard() {
             <main className="dashboard-main">
                 <header className="dashboard-header">
                     <h3>Dashboard</h3>
-                    <p>Monitor student attendance.</p>
+                    <p>Monitor student attendance</p>
                 </header>
             </main>
         </div>

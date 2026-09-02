@@ -1,11 +1,12 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
+import './Attendance.css'
 
 function Attendance() {
     return (
-        <div className="dashboard">
+        <div className="attendance">
             <Sidebar />
-            <main className="dashboard-main">
-                <header className="dashboard-header">
+            <main className="attendance-main">
+                <header className="attendance-header">
                     <h3>Attendance</h3>
                     <p>Take and submit student attendance</p>
                 </header>
