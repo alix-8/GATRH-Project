@@ -162,10 +162,12 @@ function Login() {
 
             {/* ACCOUNT HELP */}
             <p className="account-help">
-                Need help accessing your account? 
-                Contact your administrator
+                <span>Need help accessing your account?</span>
+                <a className="account-help-link" href="">
+                    Contact your administrator
+                </a>
             </p>
-                
+
             {/* RIGHT SIDE */}
             <section className="login-right">
 

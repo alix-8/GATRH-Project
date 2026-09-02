@@ -170,13 +170,19 @@
 
 .account-help {
     position: absolute;
-    color: #7c7a7a;
     top: 680px;
     left: 80px;
-    font-size: 12px;
-    flex-direction: left;
-    font-size: 14px;
+    display: flex;
+    gap: 4px;
+    color: #7c7a7a;
+    font-size: 13px;
 }
+
+.account-help-link {
+    color: #172B4D;
+    text-decoration: none;
+}
+
 
 .login-right {
     position: absolute;
