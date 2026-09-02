@@ -11,8 +11,8 @@
         to right,
         white 0%,
         white 50%,
-        #AEBBCD 50%,
-        #AEBBCD 100%
+        #172B4D 50%,
+        #172B4D 100%
     );
 }
 
@@ -193,7 +193,7 @@
     bottom: 0;
     width: 50%;
     overflow: hidden;
-    background-color: #AEBBCD;
+    background-color: #172B4D;
 }
 
 .login-panel-content {
