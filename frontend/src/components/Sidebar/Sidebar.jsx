@@ -5,6 +5,7 @@ import StudentsIcon from '../../assets/students-icon.png'
 import ImportIcon from '../../assets/import-icon.png'
 import AttendanceIcon from '../../assets/attendance-icon.png'
 import RecordsIcon from '../../assets/records-icon.png'
+import RemindersIcon from '../../assets/reminders-icon.png'
 import './Sidebar.css'
 
 function Sidebar() {
@@ -79,6 +80,18 @@ function Sidebar() {
                         alt="Records"
                     />
                     <span>Records</span>
+                </NavLink>
+
+                <NavLink
+                    to="/reminders"
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                >
+                    <img
+                        className="sidebar-icon"
+                        src={RemindersIcon}
+                        alt="Reminders"
+                    />
+                    <span>Reminders</span>
                 </NavLink>
             </nav>
 
