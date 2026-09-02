@@ -7,8 +7,10 @@ function Dashboard() {
             <Sidebar />
 
             <main className="dashboard-main">
-                <h1>Dashboard</h1>
-                <p>Monitor student attendance</p>
+                <header className="dashboard-header">
+                    <h3>Dashboard</h3>
+                    <p>Monitor student attendance</p>
+                </header>
             </main>
         </div>
     )
