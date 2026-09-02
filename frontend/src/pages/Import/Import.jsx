@@ -1,13 +1,14 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
+import './Import.css'
 
 function Import() {
     return (
-        <div className="dashboard">
+        <div className="import">
             <Sidebar />
-            <main className="dashboard-main">
-                <header className="dashboard-header">
+            <main className="import-main">
+                <header className="import-header">
                     <h3>Import</h3>
-                    <p>Upload and process attendance files.</p>
+                    <p>Paste raw attendance logs to get a formatted spreadsheet.</p>
                 </header>
             </main>
         </div>
