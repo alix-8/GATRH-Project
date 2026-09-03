@@ -20,13 +20,12 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
+                "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\": \"chancellor@laverdad.edu.ph\",\r\n    \"password\": \"Password123!\"\r\n}",
+              "raw": "{\r\n    // \"email\": \"sec.bsis3@laverdad.edu.ph\",\r\n    // \"email\": \"bsis.head@laverdad.edu.ph\",\r\n    // \"email\": \"cm.coordinator@laverdad.edu.ph\",\r\n    // \"email\": \"chancellor@laverdad.edu.ph\",\r\n\r\n    \"password\": \"Password123!\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -307,9 +306,52 @@
                     },
                     {
                       "name": "Show Reminder",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
                       "request": {
+                        "auth": {
+                          "type": "bearer",
+                          "bearer": [
+                            {
+                              "key": "token",
+                              "value": "17|87FDTAmAO7KPTGgeekl60Gf46U3ABn4s4JET4B6k41b0f69f",
+                              "type": "string"
+                            }
+                          ]
+                        },
                         "method": "GET",
-                        "header": []
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/reminders/1",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1"
+                          ],
+                          "port": "8000",
+                          "path": [
+                            "api",
+                            "reminders",
+                            "1"
+                          ]
+                        }
                       },
                       "response": []
                     },
@@ -363,7 +405,103 @@
                       "response": []
                     },
                     {
-                      "name": "Edit Reminder Copy",
+                      "name": "Add Gathering Reminders",
+                      "request": {
+                        "auth": {
+                          "type": "bearer",
+                          "bearer": [
+                            {
+                              "key": "token",
+                              "value": "11|c8yHJkXsVNEWUo373pY4K2Qp4iWYPDO8SJf45Rli1758d80c",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\r\n    \"title\": \"Submit Thanksgiving Attendance\"\r\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/reminders/gathering",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1"
+                          ],
+                          "port": "8000",
+                          "path": [
+                            "api",
+                            "reminders",
+                            "gathering"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Mark Reminder Complete",
+                      "request": {
+                        "auth": {
+                          "type": "bearer",
+                          "bearer": [
+                            {
+                              "key": "token",
+                              "value": "11|c8yHJkXsVNEWUo373pY4K2Qp4iWYPDO8SJf45Rli1758d80c",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\r\n    \"title\": \"Submit Thanksgiving Attendance\"\r\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/reminders/gathering",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1"
+                          ],
+                          "port": "8000",
+                          "path": [
+                            "api",
+                            "reminders",
+                            "gathering"
+                          ]
+                        }
+                      },
+                      "response": []
+                    },
+                    {
+                      "name": "Delete Reminder",
                       "request": {
                         "auth": {
                           "type": "bearer",
@@ -379,8 +517,7 @@
                         "header": [
                           {
                             "key": "Content-Type",
-                            "value": "application/json",
-                            "type": "text"
+                            "value": "application/json"
                           }
                         ],
                         "body": {
@@ -429,7 +566,7 @@
                       "bearer": [
                         {
                           "key": "token",
-                          "value": "2|bBMHXIzewsHdutAdc4Svm6urmp6p2xib4Lm53DdKa42c9975",
+                          "value": "13|SiFUiuXFv7OkJNBkAayzuMdUDnkfTYbqWTJXWVwP2a130569",
                           "type": "string"
                         }
                       ]
@@ -444,7 +581,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\r\n  \"program\": \"BSIS\",\r\n  \"year_level\": 3,\r\n  \"raw_text\": \"--- GATRH ATTENDANCE FORM ---\\nGathering: PM\\nProgram: BSIS\\nYear Level: 3\\n\\n[FILL OUT YOUR DETAILS BELOW]\\nName | Batch(Time) | Venue | Date(YYYY-MM-DD)\\n1. Diana Teves | 08:00 AM | Chapel | 2026-08-25\\n2. Melissa Estrella | 08:30 AM | Main Hall | 2026-08-25\\n3. Rimer Gabaleo | | |\\n4. Winston Gultiano | | |\\n5. Juan Dela Cruz | 09:00 AM | Chapel | 2026-08-25\\n6. Clarissa Santos | 10:00 AM | Extension | 2026-08-25\"\r\n}",
+                      "raw": "{\r\n  \"program\": \"BSIS\",\r\n  \"year_level\": 3,\r\n  \"raw_text\": \"Gathering: WS\\nProgram: BSIS\\nYear Level: 3\\n1. Bon, Alexandrian | 8:30 AM | Chapel | 2026-08-28\\n2. Gabaleo, Rimer | 8:30 AM | Locale | 2026-09-28\\n3. Gultiano, Winston | | Chapel | 2026-08-28\\n4. Teves, Diana | | | 2026-08-28\\n\"\r\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -467,14 +604,6 @@
                         "parse-text"
                       ]
                     }
-                  },
-                  "response": []
-                },
-                {
-                  "name": "Reparse",
-                  "request": {
-                    "method": "GET",
-                    "header": []
                   },
                   "response": []
                 },
