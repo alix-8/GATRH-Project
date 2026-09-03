@@ -1,5 +1,6 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PencilIcon from '../../assets/pencil-icon.png'
+import EraserIcon from '../../assets/eraser-icon.png'
 import './Dashboard.css'
 
 function Dashboard() {
@@ -42,6 +43,15 @@ function Dashboard() {
                     />
                 </div>
                 <p className="week-attendance">This Week's Attendance</p>
+
+                <div className="dashboard-eraser-container">
+                    <img
+                        className="dashboard-eraser-icon"
+                        src={EraserIcon}
+                        alt="Eraser Icon"
+                    />
+                </div>
+                <p className="week-absences">This Week's Absences</p>
             </main>
         </div>
     )
