@@ -11,7 +11,6 @@ function Dashboard() {
         day: 'numeric'
     })
 
-
     return (
         <div className="dashboard">
             <Sidebar />
@@ -22,6 +21,17 @@ function Dashboard() {
                     <p>Monitor student attendance.</p>
                     <span className="dashboard-date">{formattedDate}</span>
                 </header>
+
+                <div className="dashboard-content">
+                    <h2>Attendance at
+                        <br />
+                        a glance.
+                    </h2>
+                    <p>Monitor student attendance, absences, and records in one
+                        <br />
+                        place.
+                        </p>
+                </div>
             </main>
         </div>
     )

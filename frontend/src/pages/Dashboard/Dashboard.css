@@ -34,3 +34,30 @@
     color: #172B4D;
     font-size: 16px;
 }
+
+.dashboard-content {
+    background-color: #172B4D;
+    width: 96%;
+    height: 50%;
+    margin: 20px 24px;
+    border-radius: 10px;
+}
+
+.dashboard-content h2 {
+    display: flex;
+    text-align: left;
+    flex-direction: left;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 60px 30px;
+}
+
+.dashboard-content p {
+    position: relative;
+    display: flex;
+    text-align: left;
+    flex-direction: left;
+    font-size: 14px;
+    padding: 0px 30px;
+    top: -50px;
+}
