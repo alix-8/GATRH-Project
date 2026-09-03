@@ -82,6 +82,11 @@ class User extends Authenticatable
         return $this->hasMany(AttendanceRecord::class, 'validated_by');
     }
 
+    public function reminders()
+    {
+        return $this->hasMany(Reminder::class);
+    }
+
     public function auditLogs()
     {
         return $this->hasMany(AuditLog::class, 'actor_id');

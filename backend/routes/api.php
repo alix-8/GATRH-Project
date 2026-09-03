@@ -47,7 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseLines']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
 
+        // Reminder routes for custom reminders
         Route::apiResource('reminders', ReminderController::class);
+        // Reminder routes for gathering reminders and submission countdowns
+        Route::post('reminders/gathering', [ReminderController::class, 'storeGathering']);
+        Route::get('reminders', [ReminderController::class, 'index']);
+        Route::patch('reminders/{id}/complete', [ReminderController::class, 'markCompleted']);
     });
         
     // Program Head & CM Coordinator Scopes (Validation & Escalations)
