@@ -1,4 +1,5 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
+import NotificationIcon from '../../assets/notification-icon.png'
 import PencilIcon from '../../assets/pencil-icon.png'
 import EraserIcon from '../../assets/eraser-icon.png'
 import DashboardIllustration from '../../assets/dashboard-illustration.png'
@@ -23,6 +24,15 @@ function Dashboard() {
                     <h3>Dashboard</h3>
                     <p>Monitor student attendance.</p>
                     <span className="dashboard-date">{formattedDate}</span>
+                    <button type="button" 
+                        className="notification-icon"
+                        aria-label="Notifications"
+                    >
+                        <img 
+                            src={NotificationIcon} 
+                            alt="Notification Icon" 
+                    />
+                    </button>
                 </header>
 
                 <div className="dashboard-content">
