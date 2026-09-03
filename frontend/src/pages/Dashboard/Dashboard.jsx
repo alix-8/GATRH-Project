@@ -1,4 +1,5 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
+import PencilIcon from '../../assets/pencil-icon.png'
 import './Dashboard.css'
 
 function Dashboard() {
@@ -30,8 +31,17 @@ function Dashboard() {
                     <p>Monitor student attendance, absences, and records in one
                         <br />
                         place.
-                        </p>
+                    </p>
                 </div>
+
+                <div className="dashboard-pencil-container">
+                    <img
+                        className="dashboard-pencil-icon"
+                        src={PencilIcon}
+                        alt="Pencil Icon"
+                    />
+                </div>
+                <p className="week-attendance">This Week's Attendance</p>
             </main>
         </div>
     )
