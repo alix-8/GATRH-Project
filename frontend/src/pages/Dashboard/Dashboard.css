@@ -26,3 +26,112 @@
     color: #172B4D;
     font-size: 14px;
 }
+
+.dashboard-date {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    color: #172B4D;
+    font-size: 16px;
+}
+
+.dashboard-header .notification-icon {
+    position: absolute;
+    background-color: transparent;
+    border: 0;
+    top: 32px;
+    right: 22px;
+    cursor: pointer;
+}
+
+.notification-icon img {
+    width: 30px;
+    height: 30px;
+}
+
+.dashboard-content {
+    background-color: #172B4D;
+    width: 96%;
+    height: 40%;
+    margin: 20px 24px;
+    border-radius: 10px;
+}
+
+.dashboard-illustration {
+    position: relative;
+    display: flex;
+    top: -225px;
+    left: 50%;
+    width: 500px;
+}
+
+.dashboard-content h2 {
+    display: flex;
+    text-align: left;
+    flex-direction: left;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 60px 30px;
+}
+
+.dashboard-content p {
+    position: relative;
+    display: flex;
+    text-align: left;
+    flex-direction: left;
+    font-size: 14px;
+    padding: 0px 30px;
+    top: -50px;
+}
+
+.dashboard-pencil-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: -110px;
+    left: 50px;
+    width: 40px;
+    height: 40px;
+    background-color: #F2C94C;
+    border-radius: 50%;
+}
+
+.dashboard-pencil-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.week-attendance {
+    position: relative;
+    display: flex;
+    font-size: 12px;
+    top: -150px;
+    padding: 0px 100px;
+}
+
+.dashboard-eraser-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: -174px;
+    left: 250px;
+    width: 40px;
+    height: 40px;
+    background-color: #F2994A;
+    border-radius: 50%;
+}
+
+.dashboard-eraser-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.week-absences {
+    position: relative;
+    display: flex;
+    font-size: 12px;
+    top: -216px;
+    padding: 0px 300px;
+}

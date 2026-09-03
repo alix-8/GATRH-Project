@@ -37,13 +37,23 @@
     transition: all 0.2s ease;
 }
 
+.sidebar-link:not(.active) {
+    color: #aebbd0;
+}
+
 .sidebar-link.active {
-    color: white;
+    color: #ffffff;
     border-left-color: #F2C94C;
 }
 
 .sidebar-icon {
     width: 20px;
+    opacity: 0.62;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar-link.active .sidebar-icon {
+    opacity: 1;
 }
 
 .sidebar-signout {
