@@ -1,6 +1,7 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PencilIcon from '../../assets/pencil-icon.png'
 import EraserIcon from '../../assets/eraser-icon.png'
+import DashboardIllustration from '../../assets/dashboard-illustration.png'
 import './Dashboard.css'
 
 function Dashboard() {
@@ -33,6 +34,12 @@ function Dashboard() {
                         <br />
                         place.
                     </p>
+
+                    <img
+                        className="dashboard-illustration"
+                        src={DashboardIllustration}
+                        alt="Dashboard Illustration"
+                    />
                 </div>
 
                 <div className="dashboard-pencil-container">

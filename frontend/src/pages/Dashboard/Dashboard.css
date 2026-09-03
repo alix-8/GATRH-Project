@@ -38,9 +38,17 @@
 .dashboard-content {
     background-color: #172B4D;
     width: 96%;
-    height: 50%;
+    height: 40%;
     margin: 20px 24px;
     border-radius: 10px;
+}
+
+.dashboard-illustration {
+    position: relative;
+    display: flex;
+    top: -225px;
+    left: 50%;
+    width: 500px;
 }
 
 .dashboard-content h2 {
