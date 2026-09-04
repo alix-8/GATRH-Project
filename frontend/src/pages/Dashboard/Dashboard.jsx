@@ -1,11 +1,33 @@
+import { useEffect, useState } from 'react'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import NotificationIcon from '../../assets/notification-icon.png'
 import PencilIcon from '../../assets/pencil-icon.png'
 import EraserIcon from '../../assets/eraser-icon.png'
 import DashboardIllustration from '../../assets/dashboard-illustration.png'
+import ArrowIcon from '../../assets/arrow-icon.png'
 import './Dashboard.css'
 
 function Dashboard() {
+    const [overview, setOverview] = useState([])
+
+    useEffect(() => {
+        const token = localStorage.getItem('auth_token')
+
+        if (!token) {
+            return
+        }
+
+        fetch('http://127.0.0.1:8000/api/attendance/overview', {
+            headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => setOverview(data?.data ?? []))
+            .catch(() => setOverview([]))
+    }, [])
+
     const today = new Date()
 
     const formattedDate = today.toLocaleDateString('en-US', {
@@ -31,7 +53,7 @@ function Dashboard() {
                         <img 
                             src={NotificationIcon} 
                             alt="Notification Icon" 
-                    />
+                        />
                     </button>
                 </header>
 
@@ -69,6 +91,42 @@ function Dashboard() {
                     />
                 </div>
                 <p className="week-absences">This Week's Absences</p>
+
+                <section className="attendance-overview">
+                    <div className="overview-heading">
+                        <div>
+                            <h2>Attendance Overview</h2>
+                            <div className="overview-legend">
+                                <span><i className="overview-present" />present</span>
+                                <span><i className="overview-absent" />absent</span>
+                            </div>
+                        </div>
+
+                        <button type="button">
+                            This Week
+                            <img
+                                className="attendance-arrow-icon"
+                                src={ArrowIcon} 
+                                alt="Arrow Icon"
+                            />
+                        </button>
+                    </div>
+                    <div className="overview-chart">
+                        {overview.length === 0 ? (
+                            <span className="overview-empty">No attendance data yet</span>
+                        ) : overview.map(group => (
+                            <div className="overview-group" key={group.gathering_type}>
+                                <div className="overview-bars">
+                                    <span className="overview-bar overview-present-bar" style={{ height: `${Math.max(group.present, 1) * 12}px` }} />
+                                    <span className="overview-bar overview-absent-bar" style={{ height: `${Math.max(group.absent, 1) * 12}px` }} />
+                                </div>
+                                <small>{group.gathering_type.toUpperCase()}</small>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                
             </main>
         </div>
     )
