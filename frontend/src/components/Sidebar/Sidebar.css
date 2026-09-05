@@ -1,11 +1,12 @@
 ﻿.sidebar {
+    position: sticky;
+    top: 0;
     width: 214px;
     min-height: 100vh;
     background-color: #172B4D;
     padding: 20px 12px;
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    align-self: flex-start;
 }
 
 .sidebar-lvcc-logo {
@@ -57,13 +58,10 @@
 }
 
 .sidebar-signout {
-    margin-top: auto;
-}
-
-.sidebar-signout {
     border: none;
     background: transparent;
     cursor: pointer;
     height: 46px;
     display: flex;
+    margin-top: 100px;
 }
