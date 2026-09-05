@@ -9,6 +9,7 @@ import './Dashboard.css'
 
 function Dashboard() {
     const [overview, setOverview] = useState([])
+    const attendanceRecords = []
 
     useEffect(() => {
         const token = localStorage.getItem('auth_token')
@@ -123,6 +124,40 @@ function Dashboard() {
                                 <small>{group.gathering_type.toUpperCase()}</small>
                             </div>
                         ))}
+                    </div>
+                </section>
+
+                <section className="attendance-records">
+                    <div className="records-heading">
+                        <h2>This Week's Attendance Records</h2>
+                        <button type="button">View All Records</button>
+                    </div>
+
+                    <div className="records-table-wrapper">
+                        <table className="records-table">
+                            <thead>
+                                <tr>
+                                    <th>Gathering</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Response</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {attendanceRecords.length === 0 ? (
+                                    <tr>
+                                        <td className="records-empty" colSpan="4">No attendance records yet</td>
+                                    </tr>
+                                ) : attendanceRecords.map(record => (
+                                    <tr key={record.id}>
+                                        <td>{record.gathering_type}</td>
+                                        <td>{record.day}</td>
+                                        <td>{record.batch || '-'}</td>
+                                        <td>{record.status}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </section>
 
