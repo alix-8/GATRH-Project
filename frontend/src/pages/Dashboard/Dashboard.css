@@ -203,12 +203,12 @@
     font-weight: bold;
     height: 40px;
     width: 120px;
+    cursor: pointer;
 }
 
 .attendance-arrow-icon {
     width: 10px;
     height: 7px;
-    cursor: pointer;
 }
 
 .overview-chart {
