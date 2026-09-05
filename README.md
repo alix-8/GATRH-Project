@@ -7,9 +7,9 @@
 
 ## Table of Contents
 - [Local Installation & Setup](#local-installation--setup-for-development-and-testing)
-  - [Backend Setup](#backend-setup)
-  - [Frontend Setup](#frontend-setup)
-  - [Important Commands](#important-commands)🔵
+  - [Backend Setup](#-backend-setup)
+  - [Frontend Setup](#-frontend-setup)
+  - [Important Commands](#-important-commands)🔵
 
 ---
 
@@ -72,7 +72,7 @@ The following instructions cover setup for both the `backend` and `frontend` pro
    php artisan serve
 ```
 
-### 🔵Frontend Setup
+### 🔵 Frontend Setup
 
 > **Prerequisites**
 > Ensure you have the following installed on your local machine:
