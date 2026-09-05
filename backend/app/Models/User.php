@@ -72,6 +72,11 @@ class User extends Authenticatable
     // RELATIONSHIPS
     // ==========================================
 
+    public function attendanceDrafts()
+    {
+        return $this->hasMany(AttendanceDraft::class);
+    }
+
     public function submittedAttendanceRecords()
     {
         return $this->hasMany(AttendanceRecord::class, 'submitted_by');
