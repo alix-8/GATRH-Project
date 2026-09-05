@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceDraftController;
 use App\Http\Controllers\EscalationController;
 use App\Http\Controllers\ReminderController;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +47,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
         // Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseLines']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
+
+        // Attendance Drafts Routes
+        Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);
+        Route::post('/attendance/drafts/{id}/submit', [AttendanceDraftController::class, 'submit']);
 
         // Reminder routes for custom reminders
         Route::apiResource('reminders', ReminderController::class);
