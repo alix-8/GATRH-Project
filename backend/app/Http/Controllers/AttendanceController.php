@@ -71,9 +71,11 @@ class AttendanceController extends Controller
     public function parseText(Request $request)
     {
         $request->validate([
-            'raw_text'   => 'required|string',
-            'program'    => 'nullable|string',
-            'year_level' => 'nullable|int',
+            'raw_text'     => 'required|string',
+            'program'      => 'nullable|string',
+            'year_level'   => 'nullable|int',
+            'gathering_id' => 'nullable|exists:gatherings,id',
+            'draft_id'     => 'nullable|exists:attendance_drafts,id',
         ]);
 
         $metadata = $this->parsingService->extractHeaderMetadata(
@@ -107,7 +109,6 @@ class AttendanceController extends Controller
                 $metadata['gathering_type']
             );
 
-            // capture format errors regardless of match status
             if (!empty($result['format_errors'])) {
                 $formatErrorLines[] = [
                     'raw_line' => $line,
@@ -159,7 +160,19 @@ class AttendanceController extends Controller
             $parsedSubmissions
         );
 
+        $draft = $this->parsingService->saveDraft([
+            'draft_id'       => $request->draft_id ?? null,
+            'gathering_id'   => $request->gathering_id ?? null,
+            'raw_text'       => $request->raw_text,
+            'parsed_data'    => $sectionData['records'],
+            'unparsed_data'  => $unmatchedLines,
+            'total_detected' => $sectionData['total_students'],
+            'matched_count'  => $presentCount,
+        ], $request->user()->id);
+
         return response()->json([
+            'message'  => 'Attendance text parsed successfully and saved as draft.',
+            'draft_id' => $draft->id,
             'metadata' => $metadata,
             'summary'  => [
                 'gathering_type'      => strtoupper($metadata['gathering_type']),
@@ -176,7 +189,7 @@ class AttendanceController extends Controller
             'incomplete_records' => $incompleteRecords,
             'format_errors'      => $formatErrorLines,
             'records'            => $sectionData['records'],
-        ]);
+        ], 200);
     }
 
     public function reparseLines(Request $request){
