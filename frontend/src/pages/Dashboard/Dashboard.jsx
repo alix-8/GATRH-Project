@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import NotificationIcon from '../../assets/notification-icon.png'
 import PencilIcon from '../../assets/pencil-icon.png'
@@ -10,6 +11,7 @@ import './Dashboard.css'
 function Dashboard() {
     const [overview, setOverview] = useState([])
     const attendanceRecords = []
+    const navigate = useNavigate()
 
     useEffect(() => {
         const token = localStorage.getItem('auth_token')
@@ -130,7 +132,7 @@ function Dashboard() {
                 <section className="attendance-records">
                     <div className="records-heading">
                         <h2>This Week's Attendance Records</h2>
-                        <button type="button">View All Records</button>
+                        <button type="button" onClick={() => navigate('/records')}>View All Records</button>
                     </div>
 
                     <div className="records-table-wrapper">
