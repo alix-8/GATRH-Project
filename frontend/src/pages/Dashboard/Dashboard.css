@@ -1,16 +1,19 @@
 .dashboard {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     background-color: #ffffff;
 }
 
 .dashboard-main {
     flex: 1;
-    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
     background-color: #ffffff;
 }
 
 .dashboard-header {
+    position: relative;
     box-sizing: border-box;
     border-bottom: 1px solid #c7c6c6;
     line-height: 1.2;
@@ -54,7 +57,7 @@
 .dashboard-content {
     background-color: #172B4D;
     width: 96%;
-    height: 26%;
+    height: 50%;
     margin: 20px 24px;
     border-radius: 10px;
 }
@@ -274,7 +277,7 @@
     border: 1px solid #d8d8d8;
     border-radius: 10px;
     background: #f0f0f0;
-    margin: 18px 0 24px 24px;
+    margin: 18px 24px 0;
 }
 
 .records-heading {
@@ -329,16 +332,9 @@
     border-right: 0;
 }
 
-.records-table td {
-    height: 46px;
-    padding: 0 12px;
-    text-align: center;
-    border-bottom: 1px solid #e5e5e5;
-}
-
 .records-empty {
     color: #999;
-    height: 72px !important;
+    height: 180px !important;
 }
 
 @media (max-width: 700px) {
@@ -349,7 +345,7 @@
 
     .attendance-records {
         width: calc(100% - 48px);
-        margin: 18px 24px 24px;
+        margin: 18px 24px 0;
     }
 
     .overview-chart {
