@@ -7,6 +7,7 @@ import AttendanceIcon from '../../assets/attendance-icon.png'
 import RecordsIcon from '../../assets/records-icon.png'
 import RemindersIcon from '../../assets/reminders-icon.png'
 import SignOutIcon from '../../assets/sign-out-icon.png'
+import ProfileIcon from '../../assets/profile-icon.png'
 import './Sidebar.css'
 
 function Sidebar() {
@@ -108,6 +109,18 @@ function Sidebar() {
                         alt="Sign Out"
                     />
                 </button>
+
+                <NavLink
+                    to="/profile"
+                    className={({ isActive }) => `sidebar-profile ${isActive ? 'active' : ''}`}
+                >
+                    <img
+                        className="profile-icon"
+                        src={ProfileIcon}
+                        alt="Profile"
+                    />
+                </NavLink>
+
             </nav>
 
         </aside>

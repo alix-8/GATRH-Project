@@ -116,6 +116,19 @@
 
 }
 
+.form-group input::selection {
+    color: #172B4D;
+    background: #e9edf2;
+}
+
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #172B4D;
+    -webkit-box-shadow: 0 0 0 1000px #fff inset;
+    transition: background-color 9999s ease-out;
+}
+
 .show-password-toggle {
     position: absolute;
     top: 50%;
