@@ -6,6 +6,7 @@ import Import from './pages/Import/Import'
 import Attendance from './pages/Attendance/Attendance'
 import Records from './pages/Records/Records'
 import Reminders from './pages/Reminders/Reminders'
+import Profile from './pages/Profile/Profile'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/records" element={<Records />} />
         <Route path="/reminders" element={<Reminders />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   )

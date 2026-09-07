@@ -58,10 +58,28 @@
 }
 
 .sidebar-signout {
+    display: flex;
     border: none;
     background: transparent;
     cursor: pointer;
     height: 46px;
-    display: flex;
     margin-top: 100px;
+}
+
+.sidebar-profile {
+    position: absolute;
+    left: 160px;
+    bottom: 14px;
+
+}
+
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+}
+
+.sidebar-profile.active .profile-icon {
+    border-color: #F2C94C;
 }
