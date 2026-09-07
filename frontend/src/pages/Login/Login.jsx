@@ -107,7 +107,7 @@ function Login() {
 
             {/* LOGIN FORM */}
             <section className="login-form">
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} autoComplete="on">
                     <div className="form-group">
                         <label htmlFor="email">Email Address</label>
                         <input
@@ -117,6 +117,7 @@ function Login() {
                             placeholder="rimer@gmail.com"
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
+                            autoComplete="email"
                             required
                         />
                     </div>
@@ -130,6 +131,7 @@ function Login() {
                             placeholder="************************"
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
+                            autoComplete="current-password"
                             required
                         />
                         <button
