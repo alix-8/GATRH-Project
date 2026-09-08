@@ -1,4 +1,5 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
+import PageDate from '../../components/PageDate/PageDate'
 import './Attendance.css'
 
 function Attendance() {
@@ -6,9 +7,10 @@ function Attendance() {
         <div className="attendance">
             <Sidebar />
             <main className="attendance-main">
-                <header className="attendance-header">
+                <header className="attendance-header page-header">
                     <h3>Attendance</h3>
                     <p>Take and submit student attendance.</p>
+                    <PageDate />
                 </header>
             </main>
         </div>

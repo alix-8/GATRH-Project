@@ -34,7 +34,7 @@ function Login() {
                     'Accept': 'application/json',
                 },
                 body: JSON.stringify({
-                    email,
+                    email: email.trim().toLowerCase(),
                     password,
                 }),
             })
