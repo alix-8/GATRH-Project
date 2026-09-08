@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceDraft;
 use App\Models\Reminder;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,21 @@ class AttendanceDraftController extends Controller
                 'status'  => 'error',
                 'message' => 'Draft not found or already processed.',
             ], 404);
+        }
+
+        $studentIds = collect($draft->parsed_data)
+            ->pluck('student_id')
+            ->filter()
+            ->unique();
+        $accessibleStudentCount = Student::whereKey($studentIds)
+            ->accessibleTo($request->user())
+            ->count();
+
+        if ($accessibleStudentCount !== $studentIds->count()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to submit attendance for one or more students.',
+            ], 403);
         }
 
         DB::transaction(function () use ($draft, $request) {

@@ -69,6 +69,27 @@ class User extends Authenticatable
         return $this->role === 'chancellor';
     }
 
+    /**
+     * Check if the user can manage a specific student's record.
+     */
+    public function canManageStudent(Student $student): bool
+    {
+        if (in_array($this->role, ['chancellor', 'cm_coordinator'])) {
+            return true;
+        }
+
+        if ($this->role === 'program_head') {
+            return $this->program === $student->program;
+        }
+
+        if ($this->role === 'secretary') {
+            return $this->program === $student->program 
+                && (string)$this->year_level === (string)$student->year_level;
+        }
+
+        return false;
+    }
+
     // ==========================================
     // RELATIONSHIPS
     // ==========================================
