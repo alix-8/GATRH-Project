@@ -14,39 +14,39 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'name' => 'Sharene Labung',
-                'email' => 'sharenelabung@laverdad.edu.ph',
+                'email' => 'chancellor@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'chancellor',
                 'program' => null,
                 'year_level' => null,
-                'contact_number' => '09205202527'
+                'contact_number' => '09000000000'
             ],
             [
                 'name' => 'Rommel Alba',
-                'email' => 'rommelalba@laverdad.edu.ph',
+                'email' => 'cm.coordinator@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'cm_coordinator',
                 'program' => null,
                 'year_level' => null,
-                'contact_number' => '09205542527'
+                'contact_number' => '09123456789'
             ],
             [
                 'name' => 'Jerreck Navalta',
-                'email' => 'jerreckreynaldnavalta@laverdad.edu.ph',
+                'email' => 'program.head@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'program_head',
                 'program' => 'BSIS',
                 'year_level' => null,
-                'contact_number' => '09123456789'
+                'contact_number' => '09111111111'
             ],
             [
                 'name' => 'Mel Magdaraog',
-                'email' => 'mel.magdaraog@student.laverdad.edu.ph',
+                'email' => 'sec.bsis3@student.laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'secretary',
                 'program' => 'BSIS',
                 'year_level' => '3',
-                'contact_number' => '09205212345'
+                'contact_number' => '09222222222'
             ],
             [
                 'name' => 'Alexandrian Bon',
@@ -55,7 +55,7 @@ class UserSeeder extends Seeder
                 'role' => 'secretary',
                 'program' => 'BSIS',
                 'year_level' => '3',
-                'contact_number' => '096307303968'
+                'contact_number' => '09333333333'
             ]
         ];
 
