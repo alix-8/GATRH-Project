@@ -19,7 +19,7 @@ class StudentPolicy
 
         // 2. Program Heads can access any student in their assigned program
         if ($user->role === 'program_head') {
-            return $user->program === $student->program;
+            return in_array($student->program, $user->assignedProgramCodes(), true);
         }
 
         // 3. Secretaries can ONLY access students in their program AND year level

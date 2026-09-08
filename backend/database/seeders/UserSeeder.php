@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Program;
 
 class UserSeeder extends Seeder
 {
@@ -30,15 +31,30 @@ class UserSeeder extends Seeder
                 'year_level' => null,
                 'contact_number' => '09123456789'
             ],
+
+            //Program Heads
             [
                 'name' => 'Jerreck Navalta',
-                'email' => 'program.head@laverdad.edu.ph',
+                'email' => 'bsis.head@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'program_head',
                 'program' => 'BSIS',
+                'programs' => ['BSIS', 'ACT'],
                 'year_level' => null,
                 'contact_number' => '09111111111'
             ],
+            [
+                'name' => 'Pedro Santos',
+                'email' => 'bssw.head@laverdad.edu.ph',
+                'password' => Hash::make('Password123!'),
+                'role' => 'program_head',
+                'program' => 'BSSW',
+                'programs' => ['BSSW'],
+                'year_level' => null,
+                'contact_number' => '09111111222'
+            ],
+
+            // Secretaries
             [
                 'name' => 'Mel Magdaraog',
                 'email' => 'sec.bsis3@student.laverdad.edu.ph',
@@ -96,8 +112,18 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
-            // User::updateOrCreate(['email' => $userData['email']], $userData);
-            User::firstOrCreate(['email' => $userData['email']], $userData);
+            $programs = $userData['programs'] ?? (isset($userData['program']) ? [$userData['program']] : []);
+            unset($userData['programs']);
+
+            $user = User::firstOrCreate(['email' => $userData['email']], $userData);
+
+            foreach ($programs as $programCode) {
+                $program = Program::firstOrCreate([
+                    'code' => strtoupper(trim($programCode)),
+                ]);
+
+                $user->programs()->syncWithoutDetaching($program->id);
+            }
         }
     }
 }

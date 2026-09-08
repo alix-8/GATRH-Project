@@ -14,6 +14,13 @@ class StudentSeeder extends Seeder
     public function run(): void
     {
         $students = [
+            // ACT - Year 1
+            [
+                'name' => 'Adams, John',
+                'program' => 'ACT',
+                'year_level' => 1,
+            ],
+
             // BSIS - Year 1
             [
                 'name' => 'Abrigo, Marielle',
