@@ -76,7 +76,7 @@ function Profile() {
                         </div>
                     </div>
 
-                    {/* <div className="profile-details-layer">
+                    <div className="profile-details-layer">
                         <section className="profile-details" aria-labelledby="personal-information-title">
                             <h2 id="personal-information-title">PERSONAL INFORMATION</h2>
                             <div className="profile-fields">
@@ -98,7 +98,7 @@ function Profile() {
                                 </label>
                             </div>
                         </section>
-                    </div> */}
+                    </div>
                 </section>
             </main>
         </div>

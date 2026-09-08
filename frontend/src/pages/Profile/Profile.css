@@ -83,7 +83,7 @@
     font-size: 12px;
 }
 
-/* .profile-details-layer {
+.profile-details-layer {
     padding: 18px 88px 30px;
     background: #ffffff;
     border: 1px solid #c9ced6;
@@ -130,4 +130,4 @@
     color: #172b4d;
     background: transparent;
     font: inherit;
-} */
+}
