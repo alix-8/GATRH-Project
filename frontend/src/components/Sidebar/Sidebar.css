@@ -83,3 +83,71 @@
 .sidebar-profile.active .profile-icon {
     border-color: #F2C94C;
 }
+
+.logout-modal-backdrop {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    inset: 0;
+    z-index: 1000;
+    place-items: center;
+    background: rgba(12, 16, 22, 0.58);
+}
+
+.logout-modal {
+    width: 25%;
+    box-sizing: border-box;
+    padding: 10px 40px 20px;
+    border-radius: 20px;
+    background: white;
+}
+
+.logout-modal-icon {
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+}
+
+.logout-modal h2 {
+    color: #172B4D;
+    font-size: 25px;
+    text-align: center;
+}
+
+.logout-modal-divider {
+    height: 1px;
+    margin: 10px;
+    background: #d6d9de;
+}
+
+.logout-modal p {
+    color: #6b7482;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.logout-modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.logout-modal-actions button {
+    min-height: 34px;
+    flex: 1;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.logout-modal-cancel {
+    border: 1px solid #8c96a4;
+    background: white;
+    color: #6b7482;
+}
+
+.logout-modal-confirm {
+    border: 1px solid #e52328;
+    background: #e52328;
+    color: white;
+}

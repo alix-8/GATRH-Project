@@ -1,4 +1,6 @@
-﻿import { NavLink, useNavigate } from 'react-router-dom'
+﻿import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import LVCCLogo from '../../assets/lvcc-logo.png'
 import DashboardIcon from '../../assets/dashboard-icon.png'
 import StudentsIcon from '../../assets/students-icon.png'
@@ -7,15 +9,32 @@ import AttendanceIcon from '../../assets/attendance-icon.png'
 import RecordsIcon from '../../assets/records-icon.png'
 import RemindersIcon from '../../assets/reminders-icon.png'
 import SignOutIcon from '../../assets/sign-out-icon.png'
+import LogoutIcon from '../../assets/logout-icon.png'
 import ProfileIcon from '../../assets/profile-icon.png'
 import './Sidebar.css'
 
 function Sidebar() {
     const navigate = useNavigate()
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
 
     const handleSignOut = () => {
         navigate('/')
     }
+
+    useEffect(() => {
+        if (!isLogoutModalOpen) {
+            return undefined
+        }
+
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') {
+                setIsLogoutModalOpen(false)
+            }
+        }
+
+        document.addEventListener('keydown', handleEscape)
+        return () => document.removeEventListener('keydown', handleEscape)
+    }, [isLogoutModalOpen])
 
     return (
         <aside className="sidebar">
@@ -102,7 +121,7 @@ function Sidebar() {
                     <span>Reminders</span>
                 </NavLink>
 
-                <button type="button" className="sidebar-signout" onClick={handleSignOut}>
+                <button type="button" className="sidebar-signout" onClick={() => setIsLogoutModalOpen(true)}>
                     <img
                         className="sign-out-icon"
                         src={SignOutIcon}
@@ -122,6 +141,47 @@ function Sidebar() {
                 </NavLink>
 
             </nav>
+
+            {isLogoutModalOpen && createPortal(
+                <div
+                    className="logout-modal-backdrop"
+                    role="presentation"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) {
+                            setIsLogoutModalOpen(false)
+                        }
+                    }}
+                >
+                    <section
+                        className="logout-modal"
+                    >
+                        <img
+                            className="logout-modal-icon"
+                            src={LogoutIcon}
+                            alt=""
+                            aria-hidden="true" />
+
+                        <h2 id="logout-modal-title">Confirm logout?</h2>
+                        <div className="logout-modal-divider" />
+                        <p>
+                            Are you sure you want to log out? You will need to sign in again to access your account.
+                        </p>
+                        <div className="logout-modal-actions">
+                            <button
+                                type="button"
+                                className="logout-modal-cancel"
+                                onClick={() => setIsLogoutModalOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button type="button" className="logout-modal-confirm" onClick={handleSignOut}>
+                                Log out
+                            </button>
+                        </div>
+                    </section>
+                </div>,
+                document.body,
+            )}
 
         </aside>
     )
