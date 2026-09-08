@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceDraftController;
@@ -37,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::patch('/profile/contact', [ProfileController::class, 'changeContact']);
 
     // Secretary (Submission, Parsing, and Reminders)
     Route::middleware('role:secretary')->group(function () {
