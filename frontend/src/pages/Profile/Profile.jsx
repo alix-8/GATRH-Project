@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
-import NotificationIcon from '../../assets/notification-icon.png'
 import './Profile.css'
 
 const API_URL = 'http://127.0.0.1:8000/api'
