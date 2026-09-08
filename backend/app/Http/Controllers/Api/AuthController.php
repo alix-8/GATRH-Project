@@ -62,6 +62,36 @@ class AuthController extends Controller
     }
 
     /**
+     * Change the authenticated user's password after verifying the current one.
+     */
+    function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'confirmed', $this->passwordRules()],
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'message' => 'The current password is incorrect.',
+                'errors' => [
+                    'current_password' => ['The current password is incorrect.'],
+                ],
+            ], 422);
+        }
+
+        $user->update([
+            'password' => $validated['password'],
+        ]);
+
+        return response()->json([
+            'message' => 'Password changed successfully.',
+        ]);
+    }
+
+    /**
      * Send a password reset link to the user's email.
      */
     function forgotPassword(Request $request)
@@ -77,38 +107,6 @@ class AuthController extends Controller
         return $status === PasswordBroker::RESET_LINK_SENT
             ? response()->json([
                 'message' => 'Password reset link sent to your email.'
-            ], 200)
-            : response()->json([
-                'message' => __($status)
-            ], 400);
-    }
-
-    /**
-     * Reset user password using token and enforce strict password policy.
-     */
-    function resetPassword(Request $request)
-    {
-        $request->validate([
-            'token'                 => 'required|string',
-            'email'                 => 'required|email',
-            'password'              => ['required', 'confirmed', $this->passwordRules()],
-        ]);
-
-        $status = PasswordBroker::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password),
-                ])->save();
-
-                // Revoke all existing Sanctum tokens upon reset for security
-                $user->tokens()->delete();
-            }
-        );
-
-        return $status === PasswordBroker::PASSWORD_RESET
-            ? response()->json([
-                'message' => 'Password has been reset successfully. Please Login.'
             ], 200)
             : response()->json([
                 'message' => __($status)

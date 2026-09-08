@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceDraftController;
@@ -25,6 +26,7 @@ Route::get('/health', function () {
 });
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 /*
 |--------------------------------------------------------------------------
@@ -35,8 +37,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::patch('/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::patch('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::patch('/profile/contact', [ProfileController::class, 'changeContact']);
 
     // Secretary (Submission, Parsing, and Reminders)
     Route::middleware('role:secretary')->group(function () {
