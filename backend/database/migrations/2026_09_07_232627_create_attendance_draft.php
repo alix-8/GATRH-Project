@@ -17,7 +17,6 @@ return new class extends Migration
             
             $table->longText('raw_text');
             $table->json('parsed_data');   // Holds structured records array
-            $table->json('unparsed_data'); // Holds nested unmatched, incomplete, and format errors
             
             $table->integer('total_detected')->default(0);
             $table->integer('matched_count')->default(0);

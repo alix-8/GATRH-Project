@@ -387,11 +387,6 @@ class AttendanceParsingService
             [
                 'raw_text'       => $data['raw_text'],
                 'parsed_data'    => $data['parsed_data'],
-                'unparsed_data'  => [
-                    'unmatched'    => $data['unmatched_lines'] ?? [],
-                    'incomplete'   => $data['incomplete_records'] ?? [],
-                    'format_errors'=> $data['format_errors'] ?? [],
-                ],
                 'total_detected' => $data['total_detected'],
                 'matched_count'  => $data['matched_count'],
                 'status'         => 'draft',
