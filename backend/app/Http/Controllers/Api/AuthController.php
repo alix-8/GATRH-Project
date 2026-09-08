@@ -35,6 +35,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
+        $user->load('programs');
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -48,6 +50,8 @@ class AuthController extends Controller
     // Get the authenticated user's information
     function me(Request $request)
     {
+        $request->user()->load('programs');
+
         return response()->json([
             'user'    => $request->user(),
             'message' => 'User information retrieved successfully',

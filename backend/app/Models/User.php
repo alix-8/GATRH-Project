@@ -69,6 +69,16 @@ class User extends Authenticatable
         return $this->role === 'chancellor';
     }
 
+    public function programs()
+    {
+        return $this->belongsToMany(Program::class);
+    }
+
+    public function assignedProgramCodes(): array
+    {
+        return $this->programs()->pluck('code')->all();
+    }
+
     /**
      * Check if the user can manage a specific student's record.
      */
@@ -79,7 +89,7 @@ class User extends Authenticatable
         }
 
         if ($this->role === 'program_head') {
-            return $this->program === $student->program;
+            return in_array($student->program, $this->assignedProgramCodes(), true);
         }
 
         if ($this->role === 'secretary') {

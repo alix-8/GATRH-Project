@@ -18,9 +18,11 @@ class EscalationController extends Controller
             ->where('no_response_count', '>', 0);
 
         // Scope by program if user is a Program Head
-        if ($user->role === 'program_head' && $user->program) {
-            $query->whereHas('student', function ($q) use ($user) {
-                $q->where('program', $user->program);
+        if ($user->role === 'program_head') {
+            $programs = $user->assignedProgramCodes();
+
+            $query->whereHas('student', function ($q) use ($programs) {
+                $q->whereIn('program', $programs);
             });
         }
 
