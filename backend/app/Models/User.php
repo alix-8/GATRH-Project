@@ -18,6 +18,7 @@ class User extends Authenticatable
         'role',        // 'secretary', 'program_head', 'cm_coordinator', 'chancellor'
         'program',
         'year_level',
+        'contact_number',
     ];
 
     protected $hidden = [

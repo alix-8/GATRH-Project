@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'name' => 'Sharene Labung',
-                'email' => 'chancellor@laverdad.edu.ph',
+                'email' => 'sharenelabung@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'chancellor',
                 'program' => null,
@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Rommel Alba',
-                'email' => 'cm.coordinator@laverdad.edu.ph',
+                'email' => 'rommelalba@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'cm_coordinator',
                 'program' => null,
@@ -32,7 +32,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Jerreck Navalta',
-                'email' => 'head.bsis@laverdad.edu.ph',
+                'email' => 'jerreckreynaldnavalta@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'program_head',
                 'program' => 'BSIS',
@@ -41,13 +41,22 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Mel Magdaraog',
-                'email' => 'sec.bsis3@laverdad.edu.ph',
+                'email' => 'mel.magdaraog@student.laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'secretary',
                 'program' => 'BSIS',
                 'year_level' => '3',
                 'contact_number' => '09205212345'
             ],
+            [
+                'name' => 'Alexandrian Bon',
+                'email' => 'alexandrian.bon@student.laverdad.edu.ph',
+                'password' => Hash::make('Password123!'),
+                'role' => 'secretary',
+                'program' => 'BSIS',
+                'year_level' => '3',
+                'contact_number' => '096307303968'
+            ]
         ];
 
         foreach ($users as $userData) {
