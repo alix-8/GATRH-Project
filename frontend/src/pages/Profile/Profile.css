@@ -1,18 +1,17 @@
 .profile {
     display: flex;
-    background-color: #ffffff;
+    background-color: #eef0f4;
 }
 
 .profile-main {
     flex: 1;
-    background-color: #ffffff;
 }
 
 .profile-header {
-    box-sizing: border-box;
     border-bottom: 1px solid #c7c6c6;
     line-height: 1.2;
     padding: 28px 24px 28px 24px;
+    background-color: white;
 }
 
 .profile-header h3 {
@@ -25,4 +24,110 @@
     display: flex;
     color: #172B4D;
     font-size: 14px;
+    margin: 2px 0 0;
 }
+
+.profile-content {
+    margin: 18px auto 28px;
+    padding: 0 20px;
+}
+
+.profile-banner {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 86px;
+    box-sizing: border-box;
+    border-radius: 12px 12px 0 0;
+    background: #172b4d;
+}
+
+.profile-avatar {
+    display: grid;
+    flex: 0 0 96px;
+    place-items: center;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    color: #172b4d;
+    background: white;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.profile-identity {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    padding: 16px;
+    border-radius: 12px;
+    background: white;
+    width: 100%;
+}
+
+.profile-identity h1 {
+    margin: 2px;
+    color: #172b4d;
+    font-size: 18px;
+}
+
+.profile-identity span {
+    display: block;
+    margin: 0;
+    color: #647590;
+    font-size: 12px;
+}
+
+.profile-identity p {
+    color: #159bea;
+    font-size: 12px;
+}
+
+/* .profile-details-layer {
+    padding: 18px 88px 30px;
+    background: #ffffff;
+    border: 1px solid #c9ced6;
+    border-radius: 0 0 20px 20px;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    padding: 26px 28px 30px;
+    border: 1px solid #c9ced6;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.profile-details h2 {
+    margin: 0 0 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #d9dde3;
+    color: #172b4d;
+    font-size: 14px;
+}
+
+.profile-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 28px;
+}
+
+.profile-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #172b4d;
+    font-size: 12px;
+}
+
+.profile-fields input {
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid #cdd2d9;
+    border-radius: 7px;
+    color: #172b4d;
+    background: transparent;
+    font: inherit;
+} */
