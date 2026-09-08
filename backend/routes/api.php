@@ -35,6 +35,8 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 */
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::get('/students', [StudentController::class, 'index']);
+
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
@@ -64,7 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
     // Program Head & CM Coordinator Scopes (Validation & Escalations)
     Route::middleware('role:program_head,cm_coordinator')->group(function () {
-        Route::get('/students', [StudentController::class, 'index']);
+        // Route::get('/students', [StudentController::class, 'index']);
         
         Route::patch('/attendance/validate', [AttendanceController::class, 'validateRecord']);
         Route::get('/escalations', [EscalationController::class, 'index']);

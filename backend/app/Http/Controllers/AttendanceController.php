@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\AttendanceRecord;
+use App\Models\Student;
 use App\Services\AttendanceParsingService;
 
 class AttendanceController extends Controller
@@ -28,8 +29,8 @@ class AttendanceController extends Controller
             'gathering_type' => 'nullable|string|in:pm,ws,tg,special',
         ]);
 
-        $program       = strtoupper(trim($request->program));
-        $yearLevel     = $request->year_level;
+        $program = strtoupper($request->user()->program);
+        $yearLevel = (int) $request->user()->year_level;
         $gatheringType = strtoupper(trim($request->gathering_type ?? 'PM'));
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
@@ -78,10 +79,17 @@ class AttendanceController extends Controller
             'draft_id'     => 'nullable|exists:attendance_drafts,id',
         ]);
 
+        $program = $request->user()->isSecretary()
+            ? $request->user()->program
+            : $request->program;
+        $yearLevel = $request->user()->isSecretary()
+            ? $request->user()->year_level
+            : $request->year_level;
+
         $metadata = $this->parsingService->extractHeaderMetadata(
             $request->raw_text,
-            $request->program,
-            $request->year_level
+            $program,
+            $yearLevel
         );
 
         $lines = explode("\n", trim($request->raw_text));
@@ -206,6 +214,18 @@ class AttendanceController extends Controller
             'records.*.batch'          => 'nullable|string',
             'records.*.venue'          => 'nullable|string',
         ]);
+
+        $studentIds = collect($validated['records'])->pluck('student_id')->unique();
+        $accessibleStudentCount = Student::whereKey($studentIds)
+            ->accessibleTo($request->user())
+            ->count();
+
+        if ($accessibleStudentCount !== $studentIds->count()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to submit attendance for one or more students.',
+            ], 403);
+        }
 
         $submittedBy = $request->user()->id;
         $duplicateErrors = [];
