@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
+import PageDate from '../../components/PageDate/PageDate'
 import NotificationIcon from '../../assets/notification-icon.png'
 import PencilIcon from '../../assets/pencil-icon.png'
 import EraserIcon from '../../assets/eraser-icon.png'
@@ -31,24 +32,15 @@ function Dashboard() {
             .catch(() => setOverview([]))
     }, [])
 
-    const today = new Date()
-
-    const formattedDate = today.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    })
-
     return (
         <div className="dashboard">
             <Sidebar />
 
             <main className="dashboard-main">
-                <header className="dashboard-header">
+                <header className="dashboard-header page-header">
                     <h3>Dashboard</h3>
                     <p>Monitor student attendance.</p>
-                    <span className="dashboard-date">{formattedDate}</span>
+                    <PageDate className="dashboard-date" />
                     <button type="button" 
                         className="notification-icon"
                         aria-label="Notifications"
