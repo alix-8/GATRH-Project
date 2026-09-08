@@ -25,6 +25,7 @@ Route::get('/health', function () {
 });
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 /*
 |--------------------------------------------------------------------------
@@ -35,8 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::patch('/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::patch('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
 
     // Secretary (Submission, Parsing, and Reminders)
     Route::middleware('role:secretary')->group(function () {
