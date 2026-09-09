@@ -34,7 +34,7 @@ class AttendanceController extends Controller
         $gatheringType = strtoupper(trim($request->gathering_type ?? 'PM'));
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
-        $students = \App\Models\Student::where('program', $program)
+        $students = Student::where('program', $program)
             ->where('year_level', $yearLevel)
             ->orderBy('name', 'asc')
             ->get();
@@ -129,8 +129,9 @@ class AttendanceController extends Controller
 
                 $hasBatch = !empty($result['record']['batch']);
                 $hasVenue = !empty($result['record']['venue']);
+                $hasDate = !empty($result['record']['day']);
 
-                if ($hasBatch xor $hasVenue) {
+                if ($hasBatch xor $hasVenue xor $hasDate) {
                     $incompleteRecords[] = [
                         'student_id'     => $result['record']['student_id'],
                         'student_name'   => $result['record']['student_name'],
@@ -138,6 +139,7 @@ class AttendanceController extends Controller
                         'missing'        => array_values(array_filter([
                             !$hasBatch ? 'batch' : null,
                             !$hasVenue ? 'venue' : null,
+                            !$hasDate ? 'date' : null,
                         ])),
                         'current_status' => $result['record']['status'],
                     ];
