@@ -57,7 +57,7 @@ class UserSeeder extends Seeder
             // Secretaries
             [
                 'name' => 'Mel Magdaraog',
-                'email' => 'sec.bsis3@student.laverdad.edu.ph',
+                'email' => 'sec.bsis3@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'secretary',
                 'program' => 'BSIS',
@@ -102,7 +102,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Jane Smith',
-                'email' => 'sec.bsa3@student.laverdad.edu.ph',
+                'email' => 'sec.bsa3@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'secretary',
                 'program' => 'BSA',
