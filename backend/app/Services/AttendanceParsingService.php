@@ -41,12 +41,12 @@ class AttendanceParsingService
 
     /**
      * Validates that a date string matches strict YYYY-MM-DD format.
-     * Returns true if valid or empty (falls back to default date).
+        * Returns true if valid or empty (missing values are allowed during parsing).
      */
     private function isValidDateFormat(?string $rawDate): bool
     {
         if (empty($rawDate)) {
-            return true; // empty is allowed — falls back to default
+            return true; // empty is allowed — it remains missing until submission
         }
 
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($rawDate))) {
@@ -65,7 +65,7 @@ class AttendanceParsingService
     private function isDateWithinAllowedRange(?string $rawDate, int $maxDaysInPast = 7): bool
     {
         if (empty($rawDate)) {
-            return true; // empty falls back to default date — not this check's concern
+            return true; // empty is missing — not this check's concern
         }
 
         try {
@@ -145,7 +145,7 @@ class AttendanceParsingService
         $rawBatch    = isset($parts[1]) && $parts[1] !== '' ? trim($parts[1]) : null;
         $venue       = isset($parts[2]) && $parts[2] !== '' ? trim($parts[2]) : null;
         $rawDate     = null;
-        $date        = $defaultDate;
+        $date        = null;
 
         if (isset($parts[3]) && $parts[3] !== '') {
             $rawDate = trim($parts[3]);
@@ -194,7 +194,7 @@ class AttendanceParsingService
     /**
      * Builds the "unmatched" record shape for a line that couldn't be matched to a student.
      */
-    private function buildUnmatchedRecord(string $rawLine, ?string $studentName, ?string $formattedBatch, ?string $venue, string $date): array
+    private function buildUnmatchedRecord(string $rawLine, ?string $studentName, ?string $formattedBatch, ?string $venue, ?string $date): array
     {
         return [
             'raw_line'       => trim($rawLine),
@@ -208,9 +208,9 @@ class AttendanceParsingService
     /**
      * Builds the "matched" record shape for a line successfully linked to a student.
      */
-    private function buildMatchedRecord(Student $student, ?string $formattedBatch, ?string $venue, string $date, string $gatheringType): array
+    private function buildMatchedRecord(Student $student, ?string $formattedBatch, ?string $venue, ?string $date, string $gatheringType): array
     {
-        $hasAttendanceDetails = !empty($formattedBatch) && !empty($venue);
+        $hasAttendanceDetails = !empty($formattedBatch) && !empty($venue) && !empty($date);
 
         return [
             'student_id'     => $student->id,

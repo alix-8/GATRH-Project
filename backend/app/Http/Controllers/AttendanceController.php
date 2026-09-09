@@ -34,7 +34,7 @@ class AttendanceController extends Controller
         $gatheringType = strtoupper(trim($request->gathering_type ?? 'PM'));
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
-        $students = \App\Models\Student::where('program', $program)
+        $students = Student::where('program', $program)
             ->where('year_level', $yearLevel)
             ->orderBy('name', 'asc')
             ->get();
@@ -129,8 +129,11 @@ class AttendanceController extends Controller
 
                 $hasBatch = !empty($result['record']['batch']);
                 $hasVenue = !empty($result['record']['venue']);
+                $hasDate = !empty($result['record']['day']);
 
-                if ($hasBatch xor $hasVenue) {
+                $hasAnyAttendanceDetail = $hasBatch || $hasVenue || $hasDate;
+
+                if (empty($result['format_errors']) && $hasAnyAttendanceDetail && (!$hasBatch || !$hasVenue || !$hasDate)) {
                     $incompleteRecords[] = [
                         'student_id'     => $result['record']['student_id'],
                         'student_name'   => $result['record']['student_name'],
@@ -138,6 +141,7 @@ class AttendanceController extends Controller
                         'missing'        => array_values(array_filter([
                             !$hasBatch ? 'batch' : null,
                             !$hasVenue ? 'venue' : null,
+                            !$hasDate ? 'date' : null,
                         ])),
                         'current_status' => $result['record']['status'],
                     ];
@@ -145,6 +149,23 @@ class AttendanceController extends Controller
             } elseif ($result['unmatched_data']) {
                 $unmatchedLines[] = $result['unmatched_data'];
             }
+        }
+
+        $missingStudents = $this->parsingService->findMissingStudents(
+            $metadata['program'],
+            $metadata['year_level'],
+            $parsedSubmissions
+        );
+
+        if (!empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines)) {
+            return response()->json([
+                'message'            => 'Attendance text contains errors. Please correct them before saving the draft.',
+                'metadata'           => $metadata,
+                'unmatched_lines'    => $unmatchedLines,
+                'missing_students'   => $missingStudents,
+                'incomplete_records' => $incompleteRecords,
+                'format_errors'      => $formatErrorLines,
+            ], 422);
         }
 
         $sectionData = $this->parsingService->buildFullSectionRecords(
@@ -161,12 +182,6 @@ class AttendanceController extends Controller
                 $presentCount++;
             }
         }
-
-        $missingStudents = $this->parsingService->findMissingStudents(
-            $metadata['program'],
-            $metadata['year_level'],
-            $parsedSubmissions
-        );
 
         $draft = $this->parsingService->saveDraft([
             'draft_id'       => $request->draft_id ?? null,
@@ -200,9 +215,9 @@ class AttendanceController extends Controller
         ], 200);
     }
 
-    public function reparseLines(Request $request){
-        //
-    }
+    // public function reparseLines(Request $request){
+    //     //
+    // }
     public function store(Request $request)
     {
         $validated = $request->validate([
