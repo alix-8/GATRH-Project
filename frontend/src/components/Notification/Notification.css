@@ -1,0 +1,13 @@
+.notification-icon {
+    position: absolute;
+    background-color: transparent;
+    border: 0;
+    top: 32px;
+    right: 22px;
+    cursor: pointer;
+}
+
+.notification-icon img {
+    width: 30px;
+    height: 30px;
+}

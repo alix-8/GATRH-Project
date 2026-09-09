@@ -1,5 +1,6 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
+import Notification from '../../components/Notification/Notification'
 import './Records.css'
 
 function Records() {
@@ -11,6 +12,7 @@ function Records() {
                     <h3>Records</h3>
                     <p>Review and manage recorded attendance.</p>
                     <PageDate />
+                    <Notification />
                 </header>
             </main>
         </div>
