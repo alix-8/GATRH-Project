@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
-import NotificationIcon from '../../assets/notification-icon.png'
+import Notification from '../../components/Notification/Notification'
 import PencilIcon from '../../assets/pencil-icon.png'
 import EraserIcon from '../../assets/eraser-icon.png'
 import DashboardIllustration from '../../assets/dashboard-illustration.png'
@@ -41,15 +41,7 @@ function Dashboard() {
                     <h3>Dashboard</h3>
                     <p>Monitor student attendance.</p>
                     <PageDate className="dashboard-date" />
-                    <button type="button" 
-                        className="notification-icon"
-                        aria-label="Notifications"
-                    >
-                        <img 
-                            src={NotificationIcon} 
-                            alt="Notification Icon" 
-                        />
-                    </button>
+                    <Notification />
                 </header>
 
                 <div className="dashboard-content">

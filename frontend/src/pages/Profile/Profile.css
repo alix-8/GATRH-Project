@@ -131,3 +131,33 @@
     background: transparent;
     font: inherit;
 }
+
+.profile-field-title {
+    color: #172b4d;
+}
+
+.profile-contact-row input {
+    width: 100%;
+}
+
+.profile-contact-action {
+    position: relative;
+    left: 76%;
+    margin-top: 10px;
+    width: 100px;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    background: #17A1FA;
+    cursor: pointer;
+    font: inherit;
+}
+
+.profile-contact-action:hover {
+    background: #17A1FA;
+}
+
+.profile-contact-message {
+    color: #15803d;
+    font-size: 12px;
+}

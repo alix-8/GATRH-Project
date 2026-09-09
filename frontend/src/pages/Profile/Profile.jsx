@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
+import Notification from '../../components/Notification/Notification'
 import './Profile.css'
 
 const API_URL = 'http://127.0.0.1:8000/api'
@@ -29,6 +30,10 @@ function Profile() {
             return {}
         }
     })
+    const [isEditingContact, setIsEditingContact] = useState(false)
+    const [contactDraft, setContactDraft] = useState(user.contact_number || '')
+    const [savingContact, setSavingContact] = useState(false)
+    const [contactMessage, setContactMessage] = useState('')
 
     useEffect(() => {
         const token = localStorage.getItem('auth_token')
@@ -48,11 +53,51 @@ function Profile() {
             .then(data => {
                 if (data?.user) {
                     setUser(data.user)
+                    setContactDraft(data.user.contact_number || '')
                     localStorage.setItem('user', JSON.stringify(data.user))
                 }
             })
             .catch(() => {})
     }, [navigate])
+
+    const handleContactSave = () => {
+        const token = localStorage.getItem('auth_token')
+        const contactNumber = contactDraft.trim()
+
+        setSavingContact(true)
+
+        fetch(`${API_URL}/profile/contact`, {
+            method: 'PATCH',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ contact_number: contactNumber }),
+        })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                if (data?.message) {
+                    setContactMessage(data.message)
+
+                    window.setTimeout(() => {
+                        setContactMessage('')
+                    }, 2000)
+                }
+
+                if (data?.user) {
+                    setUser(data.user)
+                    setContactDraft(data.user.contact_number || '')
+                    localStorage.setItem('user', JSON.stringify(data.user))
+                }
+
+                setIsEditingContact(false)
+            })
+            .catch(() => {})
+            .finally(() => {
+                setSavingContact(false)
+            })
+    }
 
     return (
         <div className="profile">
@@ -63,6 +108,7 @@ function Profile() {
                     <h3>Profile</h3>
                     <p>Manage your account information and preferences.</p>
                     <PageDate />
+                    <Notification />
                 </header>
 
                 <section className="profile-content">
@@ -88,8 +134,38 @@ function Profile() {
                                     <input type="email" value={user.email || ''} readOnly />
                                 </label>
                                 <label>
-                                    Contact Number
-                                    <input value={user.contact_number || ''} readOnly />
+                                    <span className="profile-field-title">Contact Number</span>
+                                    <div className="profile-contact-row">
+                                        <input
+                                            type="text"
+                                            value={contactDraft}
+                                            readOnly={!isEditingContact}
+                                            maxLength={11}
+                                            inputMode="numeric"
+                                            onChange={event => {
+                                                const onlyDigits = event.target.value.replace(/\D/g, '')
+                                                setContactDraft(onlyDigits)
+                                            }}
+                                            className={isEditingContact ? 'profile-contact-edit-input' : ''}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="profile-contact-action"
+                                            disabled={savingContact}
+                                            onClick={() => {
+                                                if (isEditingContact) {
+                                                    handleContactSave()
+                                                    return
+                                                }
+
+                                                setContactDraft(user.contact_number || '')
+                                                setIsEditingContact(true)
+                                            }}
+                                        >
+                                            {savingContact ? 'Saving...' : isEditingContact ? 'Save' : 'Edit'}
+                                        </button>
+                                    </div>
+                                    {contactMessage && <small className="profile-contact-message">{contactMessage}</small>}
                                 </label>
                                 <label>
                                     Position

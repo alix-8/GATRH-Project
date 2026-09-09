@@ -1,5 +1,6 @@
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
+import Notification from '../../components/Notification/Notification'
 import './Students.css'
 
 function Students() {
@@ -12,6 +13,7 @@ function Students() {
                     <h3>Students</h3>
                     <p>Manage student information and attendance history.</p>
                     <PageDate />
+                    <Notification />
                 </header>
             </main>
         </div>
