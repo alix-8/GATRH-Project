@@ -7,6 +7,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceDraftController;
 use App\Http\Controllers\EscalationController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,6 +37,7 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/students', [StudentController::class, 'index']);
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
