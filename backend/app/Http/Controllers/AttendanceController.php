@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\AttendanceRecord;
+use App\Models\AttendanceDraft;
 use App\Models\Student;
 use App\Services\AttendanceParsingService;
 
@@ -218,9 +219,11 @@ class AttendanceController extends Controller
     // public function reparseLines(Request $request){
     //     //
     // }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'draft_id'                  => 'nullable|exists:attendance_drafts,id',
             'records'                  => 'required|array|min:1',
             'records.*.student_id'     => 'required|exists:students,id',
             'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
@@ -279,7 +282,7 @@ class AttendanceController extends Controller
         }
 
         // --- Step 3: Atomic Bulk Insert within DB Transaction ---
-        $savedRecords = DB::transaction(function () use ($recordsToInsert, $submittedBy) {
+        $savedRecords = DB::transaction(function () use ($recordsToInsert, $submittedBy, $validated, $request) {
             $records = [];
 
             foreach ($recordsToInsert as $recordData) {
@@ -296,6 +299,18 @@ class AttendanceController extends Controller
                     'submitted_by'      => $submittedBy,
                 ]);
             }
+
+            $draftQuery = AttendanceDraft::where('user_id', $request->user()->id)
+                ->where('status', 'draft');
+
+            if (!empty($validated['draft_id'])) {
+                $draftQuery->where('id', $validated['draft_id']);
+            } else {
+                $draftQuery->latest('updated_at');
+            }
+
+            $draft = $draftQuery->first();
+            $draft?->delete();
 
             return $records;
         });
