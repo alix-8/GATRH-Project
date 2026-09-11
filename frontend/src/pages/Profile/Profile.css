@@ -161,3 +161,100 @@
     color: #15803d;
     font-size: 12px;
 }
+
+.profile-change-password {
+    margin-top: 10px;
+    padding: 20px 0 0;
+}
+
+.profile-password-fields {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 10px;
+    width: 415px;
+}
+
+.password-field-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.password-field-label span:first-child {
+    color: #172b4d;
+}
+
+.profile-password-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.profile-password-input-wrap input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 42px 8px 10px;
+    border: 1px solid #cdd2d9;
+    border-radius: 7px;
+    color: #172b4d;
+    background: transparent;
+    font: inherit;
+}
+
+.profile-password-toggle {
+    position: absolute;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.profile-show-password-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.profile-password-slash {
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: #172b4d;
+    transform: rotate(45deg);
+}
+
+.profile-password-action-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.profile-password-save {
+    padding: 4px 36px;
+    border: none;
+    border-radius: 7px;
+    background: #17A1FA;
+    color: white;
+    font: inherit;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.profile-password-error {
+    display: block;
+    color: #c0392b;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.profile-password-message {
+    display: block;
+    color: #15803d;
+    font-size: 12px;
+    margin-top: 10px;
+}

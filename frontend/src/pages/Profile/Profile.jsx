@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
 import Notification from '../../components/Notification/Notification'
+import ShowPasswordIcon from '../../assets/show-password-icon.png'
 import './Profile.css'
 
 const API_URL = 'http://127.0.0.1:8000/api'
@@ -35,6 +36,24 @@ function Profile() {
     const [savingContact, setSavingContact] = useState(false)
     const [contactMessage, setContactMessage] = useState('')
 
+    const [passwordForm, setPasswordForm] = useState({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    })
+    const [showPasswords, setShowPasswords] = useState({
+        current: false,
+        new: false,
+        confirm: false,
+    })
+    const [passwordMessage, setPasswordMessage] = useState('')
+    const [passwordMessageType, setPasswordMessageType] = useState('success')
+    const [passwordErrors, setPasswordErrors] = useState({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    })
+
     useEffect(() => {
         const token = localStorage.getItem('auth_token')
 
@@ -57,7 +76,7 @@ function Profile() {
                     localStorage.setItem('user', JSON.stringify(data.user))
                 }
             })
-            .catch(() => {})
+            .catch(() => { })
     }, [navigate])
 
     const handleContactSave = () => {
@@ -93,9 +112,48 @@ function Profile() {
 
                 setIsEditingContact(false)
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => {
                 setSavingContact(false)
+            })
+    }
+
+    const handlePasswordSubmit = () => {
+        const token = localStorage.getItem('auth_token')
+
+        fetch(`${API_URL}/change-password`, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(passwordForm),
+        })
+            .then(async response => {
+                const data = await response.json().catch(() => null)
+
+                if (!response.ok) {
+                    setPasswordMessageType('error')
+                    setPasswordMessage(data?.message || 'Unable to change password.')
+                    return
+                }
+
+                setPasswordMessageType('success')
+                setPasswordMessage(data?.message || 'Password changed successfully.')
+                setPasswordForm({
+                    current_password: '',
+                    password: '',
+                    password_confirmation: '',
+                })
+
+                window.setTimeout(() => {
+                    setPasswordMessage('')
+                }, 2000)
+            })
+            .catch(() => {
+                setPasswordMessageType('error')
+                setPasswordMessage('Unable to change password.')
             })
     }
 
@@ -172,6 +230,99 @@ function Profile() {
                                     <input value={formatRole(user.role)} readOnly />
                                 </label>
                             </div>
+
+                            <section className="profile-change-password" aria-labelledby="change-password-title">
+                                <h2 id="change-password-title">CHANGE PASSWORD</h2>
+                                <div className="profile-password-fields">
+                                    <label className="password-field-label">
+                                        <span>Current Password</span>
+                                        <span className="profile-password-input-wrap">
+                                            <input
+                                                type={showPasswords.current ? 'text' : 'password'}
+                                                value={passwordForm.current_password}
+                                                onChange={event => setPasswordForm({ ...passwordForm, current_password: event.target.value })}
+                                                placeholder=""
+                                            />
+                                            {passwordForm.current_password && (
+                                                <button
+                                                    type="button"
+                                                    className="profile-password-toggle"
+                                                    onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                                                    aria-label={showPasswords.current ? 'Hide current password' : 'Show current password'}
+                                                >
+                                                    <img className="profile-show-password-icon" src={ShowPasswordIcon} alt="" />
+                                                    {!showPasswords.current && <span className="profile-password-slash" />}
+                                                </button>
+                                            )}
+                                        </span>
+                                        {passwordErrors.current_password && <small className="profile-password-error">{passwordErrors.current_password}</small>}
+                                    </label>
+
+                                    <label className="password-field-label">
+                                        <span>New Password</span>
+                                        <span className="profile-password-input-wrap">
+                                            <input
+                                                type={showPasswords.new ? 'text' : 'password'}
+                                                value={passwordForm.password}
+                                                onChange={event => setPasswordForm({ ...passwordForm, password: event.target.value })}
+                                                placeholder=""
+                                            />
+                                            {passwordForm.password && (
+                                                <button
+                                                    type="button"
+                                                    className="profile-password-toggle"
+                                                    onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                                                    aria-label={showPasswords.new ? 'Hide new password' : 'Show new password'}
+                                                >
+                                                    <img className="profile-show-password-icon" src={ShowPasswordIcon} alt="" />
+                                                    {!showPasswords.new && <span className="profile-password-slash" />}
+                                                </button>
+                                            )}
+                                        </span>
+                                        {passwordErrors.password && <small className="profile-password-error">{passwordErrors.password}</small>}
+                                    </label>
+
+                                    <label className="password-field-label">
+                                        <span>Confirm Password</span>
+                                        <span className="profile-password-input-wrap">
+                                            <input
+                                                type={showPasswords.confirm ? 'text' : 'password'}
+                                                value={passwordForm.password_confirmation}
+                                                onChange={event => setPasswordForm({ ...passwordForm, password_confirmation: event.target.value })}
+                                                placeholder=""
+                                            />
+                                            {passwordForm.password_confirmation && (
+                                                <button
+                                                    type="button"
+                                                    className="profile-password-toggle"
+                                                    onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                                                    aria-label={showPasswords.confirm ? 'Hide confirm password' : 'Show confirm password'}
+                                                >
+                                                    <img className="profile-show-password-icon" src={ShowPasswordIcon} alt="" />
+                                                    {!showPasswords.confirm && <span className="profile-password-slash" />}
+                                                </button>
+                                            )}
+                                        </span>
+                                        {passwordErrors.password_confirmation && <small className="profile-password-error">{passwordErrors.password_confirmation}</small>}
+                                    </label>
+                                </div>
+
+                                {passwordMessage && (
+                                    <small className={passwordMessageType === 'error' ? 'profile-password-error' : 'profile-password-message'}>
+                                        {passwordMessage}
+                                    </small>
+                                )}
+
+                                <div className="profile-password-action-row">
+                                    <button
+                                        type="button"
+                                        className="profile-password-save"
+                                        onClick={handlePasswordSubmit}
+                                    >
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </section>
                         </section>
                     </div>
                 </section>

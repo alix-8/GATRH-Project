@@ -121,6 +121,9 @@ function Sidebar() {
                     <span>Reminders</span>
                 </NavLink>
 
+            </nav>
+
+            <div className="sidebar-footer">
                 <button type="button" className="sidebar-signout" onClick={() => setIsLogoutModalOpen(true)}>
                     <img
                         className="sign-out-icon"
@@ -139,8 +142,7 @@ function Sidebar() {
                         alt="Profile"
                     />
                 </NavLink>
-
-            </nav>
+            </div>
 
             {isLogoutModalOpen && createPortal(
                 <div
