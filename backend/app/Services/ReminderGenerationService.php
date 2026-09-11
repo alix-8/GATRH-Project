@@ -3,10 +3,60 @@
 namespace App\Services;
 
 use App\Models\Reminder;
+use App\Models\User;
 use Carbon\Carbon;
 
 class ReminderGenerationService
 {
+    public function __construct(private GatheringService $gatheringService)
+    {
+    }
+
+    /**
+     * Create the next weekly PM, WS, and TG reminders for every secretary.
+     * Existing reminders for the same user, type, and date are left untouched.
+     */
+    public function generateWeeklyGatheringReminders(): int
+    {
+        $created = 0;
+
+        User::where('role', 'secretary')
+            ->whereNotNull('program')
+            ->whereNotNull('year_level')
+            ->each(function (User $secretary) use (&$created): void {
+                foreach (['pm', 'ws', 'tg'] as $type) {
+                    $gatheringDate = $this->gatheringService->nextDate($type);
+
+                    $alreadyExists = Reminder::where('user_id', $secretary->id)
+                        ->where('reminder_type', 'gathering')
+                        ->where('gathering_type', $type)
+                        ->whereDate('gathering_date', $gatheringDate)
+                        ->exists();
+
+                    if ($alreadyExists) {
+                        continue;
+                    }
+
+                    Reminder::create([
+                        'user_id'        => $secretary->id,
+                        'reminder_type'  => 'gathering',
+                        'gathering_type' => $type,
+                        'program'        => strtoupper($secretary->program),
+                        'year_level'     => $secretary->year_level,
+                        'gathering_date' => $gatheringDate,
+                        'title'          => ucfirst($this->gatheringService->label($type)),
+                        'description'    => strtoupper($secretary->program) . '-' . $secretary->year_level,
+                        'due_date'       => $gatheringDate,
+                        'status'         => 'upcoming',
+                    ]);
+
+                    $created++;
+                }
+            });
+
+        return $created;
+    }
+
     /**
      * For every 'gathering' reminder whose gathering_date has arrived,
      * spawn a linked 'submission_countdown' reminder if one doesn't exist yet.
@@ -57,6 +107,25 @@ class ReminderGenerationService
         }
     }
 
+    /**
+     * Remove reminders that have remained expired beyond their retention window.
+     */
+    public function deleteExpiredReminders(int $gatheringRetentionDays = 30, int $submissionRetentionDays = 7): int
+    {
+        $submissionCutoff = Carbon::today()->subDays($submissionRetentionDays);
+        $gatheringCutoff = Carbon::today()->subDays($gatheringRetentionDays);
+
+        $deleted = Reminder::where('reminder_type', 'submission_countdown')
+            ->whereDate('due_date', '<=', $submissionCutoff)
+            ->delete();
+
+        $deleted += Reminder::where('reminder_type', 'gathering')
+            ->whereDate('gathering_date', '<=', $gatheringCutoff)
+            ->delete();
+
+        return $deleted;
+    }
+
     private function buildSubmissionDescription(Reminder $reminder, ?int $responded = null, ?int $total = null): string
     {
         $responded ??= $reminder->respondedCount();
@@ -64,21 +133,11 @@ class ReminderGenerationService
 
         return sprintf(
             '%s · %s — %d/%d students responded',
-            ucfirst($this->gatheringLabel($reminder->gathering_type)),
+            ucfirst($this->gatheringService->label($reminder->gathering_type)),
             $reminder->gathering_date->format('F j, Y'),
             $responded,
             $total
         );
     }
 
-    private function gatheringLabel(string $type): string
-    {
-        return match ($type) {
-            'pm'      => 'Prayer meeting',
-            'ws'      => 'Worship service',
-            'tg'      => 'Thanksgiving',
-            'special' => 'Special gathering',
-            default   => $type,
-        };
-    }
 }

@@ -13,7 +13,6 @@ class AttendanceDraft extends Model
         'user_id',
         'raw_text',
         'parsed_data',
-        'unparsed_data',
         'total_detected',
         'matched_count',
         'status',

@@ -25,15 +25,22 @@ class DashboardController extends Controller
             ], 401);
         }
 
+        $request->validate([
+            'month' => ['nullable', 'integer', 'between:1,12'],
+            'year' => ['nullable', 'integer', 'between:2000,2100'],
+        ]);
+
         $filter = $request->input('range', 'this_week');
         $dateRange = $this->resolveDateRange($filter);
+        $calendarMonth = $request->integer('month', now()->month);
+        $calendarYear = $request->integer('year', now()->year);
 
         return response()->json([
             'summary' => $this->getAttendanceSummary($user, $dateRange),
             'chart_data' => $this->getAttendanceChartData($user, $filter, $dateRange),
             'pending_list' => $this->getPendingAttendance($user),
             'recent_records' => $this->getRecentRecords($user, $dateRange),
-            'calendar_marks' => $this->getCalendarHighlights($user),
+            'calendar_marks' => $this->getCalendarMarks($user, $calendarMonth, $calendarYear),
         ]);
     }
 
@@ -68,7 +75,7 @@ class DashboardController extends Controller
             ->groupBy('gathering_type', 'status')
             ->get();
 
-        $categories = ['pm', 'ws', 'tg', 'special'];
+        $categories = ['pm', 'ws', 'tg'];
         $chartData = [];
 
         foreach ($categories as $cat) {
@@ -89,7 +96,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * 3. Recent draft submissions for the current user.
+     * 3. Recent draft submissions for the current user (Secretary).
      */
     private function getPendingAttendance($user): array
     {
@@ -107,7 +114,7 @@ class DashboardController extends Controller
                 return [
                     'id' => $draft->id,
                     'program_label' => $firstRecord['program'] ?? 'Attendance Draft',
-                    'gathering' => $this->formatGatheringName($gatheringType ?? 'special'),
+                    'gathering' => $this->formatGatheringName($gatheringType ?? 'pm'),
                     'submitted_ago' => $draft->created_at->diffForHumans(),
                 ];
             })
@@ -142,24 +149,49 @@ class DashboardController extends Controller
     }
 
     /**
-     * 5. Highlighted attendance dates for the current month.
+     * 5. Calendar marks for attendance records and active drafts in the current month.
      */
-    private function getCalendarHighlights($user): array
+    private function getCalendarMarks($user, int $monthNumber, int $year): array
     {
-        $currentMonthStart = now()->startOfMonth()->toDateString();
-        $currentMonthEnd = now()->endOfMonth()->toDateString();
+        $month = Carbon::create($year, $monthNumber, 1)->startOfDay();
+        $monthStart = $month->toDateString();
+        $monthEnd = $month->copy()->endOfMonth()->toDateString();
 
-        $activeDates = AttendanceRecord::query()
+        $recordDays = AttendanceRecord::query()
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->whereBetween('day', [$currentMonthStart, $currentMonthEnd])
+            ->whereBetween('day', [$monthStart, $monthEnd])
             ->distinct()
             ->pluck('day')
             ->map(fn ($date) => Carbon::parse($date)->day)
+            ->unique()
+            ->values();
+
+        $pendingDays = AttendanceDraft::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['draft', 'pending'])
+            ->get()
+            ->flatMap(function ($draft) use ($monthStart, $monthEnd) {
+                return collect($draft->parsed_data ?? [])
+                    ->pluck('day')
+                    ->filter(fn ($date) => $date >= $monthStart && $date <= $monthEnd)
+                    ->map(fn ($date) => Carbon::parse($date)->day);
+            })
+            ->unique()
+            ->values();
+
+        $highlightDays = $recordDays
+            ->map(fn ($day) => ['day' => $day, 'type' => 'has_records'])
+            ->concat($pendingDays->map(fn ($day) => ['day' => $day, 'type' => 'pending']))
+            ->values()
             ->toArray();
 
         return [
-            'month' => now()->format('F Y'),
-            'highlight_days' => array_values(array_unique($activeDates)),
+            'month' => $month->format('F Y'),
+            'year' => $month->year,
+            'days_in_month' => $month->daysInMonth,
+            'starts_on' => $month->format('l'),
+            'today' => now()->year === $year && now()->month === $monthNumber ? now()->day : null,
+            'highlight_days' => $highlightDays,
         ];
     }
 
@@ -185,7 +217,6 @@ class DashboardController extends Controller
             'pm' => 'Prayer Meeting',
             'ws' => 'Worship Service',
             'tg' => 'Thanks Giving',
-            'special' => 'Special Gathering',
             default => $type ?? 'Unknown',
         };
     }

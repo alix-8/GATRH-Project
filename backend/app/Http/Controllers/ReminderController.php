@@ -4,16 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Reminder;
 use App\Services\ReminderCountdownService;
+use App\Services\GatheringService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class ReminderController extends Controller
 {
     protected ReminderCountdownService $countdownService;
+    protected GatheringService $gatheringService;
 
-    public function __construct(ReminderCountdownService $countdownService)
+    public function __construct(
+        ReminderCountdownService $countdownService,
+        GatheringService $gatheringService
+    )
     {
         $this->countdownService = $countdownService;
+        $this->gatheringService = $gatheringService;
     }
 
     public function index(Request $request)
@@ -137,8 +144,20 @@ class ReminderController extends Controller
             'gathering_type' => 'required|in:pm,ws,tg,special',
             'program'        => 'required|string',
             'year_level'     => 'required|integer',
-            'gathering_date' => 'required|date',
+            'gathering_date' => 'nullable|date|required_if:gathering_type,special',
         ]);
+
+        $gatheringDate = $validated['gathering_date'] ?? $this->gatheringService->nextDate($validated['gathering_type']);
+
+        if ($validated['gathering_type'] !== 'special' && ! $this->gatheringService->isScheduledDay($validated['gathering_type'], Carbon::parse($gatheringDate))) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => sprintf('%s reminders can only be scheduled on %s.',
+                    strtoupper($validated['gathering_type']),
+                    $validated['gathering_type'] === 'pm' ? 'Wednesday' : 'Saturday'
+                ),
+            ], 422);
+        }
 
         $reminder = Reminder::create([
             'user_id'        => $request->user()->id,
@@ -146,10 +165,10 @@ class ReminderController extends Controller
             'gathering_type' => $validated['gathering_type'],
             'program'        => strtoupper($validated['program']),
             'year_level'     => $validated['year_level'],
-            'gathering_date' => $validated['gathering_date'],
-            'title'          => ucfirst($this->gatheringLabel($validated['gathering_type'])),
+            'gathering_date' => $gatheringDate,
+            'title'          => ucfirst($this->gatheringService->label($validated['gathering_type'])),
             'description'    => strtoupper($validated['program']) . '-' . $validated['year_level'],
-            'due_date'       => $validated['gathering_date'],
+            'due_date'       => $gatheringDate,
             'status'         => 'upcoming',
         ]);
 
@@ -158,17 +177,6 @@ class ReminderController extends Controller
             'message' => 'Gathering reminder created.',
             'data'    => $reminder,
         ], 201);
-    }
-
-    private function gatheringLabel(string $type): string
-    {
-        return match ($type) {
-            'pm'      => 'Prayer meeting',
-            'ws'      => 'Worship service',
-            'tg'      => 'Thanksgiving',
-            'special' => 'Special gathering',
-            default   => $type,
-        };
     }
 
     public function markCompleted(Request $request, $id)

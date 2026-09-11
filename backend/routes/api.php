@@ -41,7 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/change-password', [ProfileController::class, 'changePassword']);
     Route::patch('/profile/contact', [ProfileController::class, 'changeContact']);
 
     // Secretary (Submission, Parsing, and Reminders)
