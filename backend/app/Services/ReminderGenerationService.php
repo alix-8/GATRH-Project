@@ -107,6 +107,25 @@ class ReminderGenerationService
         }
     }
 
+    /**
+     * Remove reminders that have remained expired beyond their retention window.
+     */
+    public function deleteExpiredReminders(int $gatheringRetentionDays = 30, int $submissionRetentionDays = 7): int
+    {
+        $submissionCutoff = Carbon::today()->subDays($submissionRetentionDays);
+        $gatheringCutoff = Carbon::today()->subDays($gatheringRetentionDays);
+
+        $deleted = Reminder::where('reminder_type', 'submission_countdown')
+            ->whereDate('due_date', '<=', $submissionCutoff)
+            ->delete();
+
+        $deleted += Reminder::where('reminder_type', 'gathering')
+            ->whereDate('gathering_date', '<=', $gatheringCutoff)
+            ->delete();
+
+        return $deleted;
+    }
+
     private function buildSubmissionDescription(Reminder $reminder, ?int $responded = null, ?int $total = null): string
     {
         $responded ??= $reminder->respondedCount();
