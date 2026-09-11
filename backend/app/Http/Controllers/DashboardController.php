@@ -68,7 +68,7 @@ class DashboardController extends Controller
             ->groupBy('gathering_type', 'status')
             ->get();
 
-        $categories = ['pm', 'ws', 'tg', 'special'];
+        $categories = ['pm', 'ws', 'tg'];
         $chartData = [];
 
         foreach ($categories as $cat) {
@@ -89,7 +89,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * 3. Recent draft submissions for the current user.
+     * 3. Recent draft submissions for the current user (Secretary).
      */
     private function getPendingAttendance($user): array
     {
@@ -107,7 +107,7 @@ class DashboardController extends Controller
                 return [
                     'id' => $draft->id,
                     'program_label' => $firstRecord['program'] ?? 'Attendance Draft',
-                    'gathering' => $this->formatGatheringName($gatheringType ?? 'special'),
+                    'gathering' => $this->formatGatheringName($gatheringType ?? 'pm'),
                     'submitted_ago' => $draft->created_at->diffForHumans(),
                 ];
             })
@@ -185,7 +185,6 @@ class DashboardController extends Controller
             'pm' => 'Prayer Meeting',
             'ws' => 'Worship Service',
             'tg' => 'Thanks Giving',
-            'special' => 'Special Gathering',
             default => $type ?? 'Unknown',
         };
     }
