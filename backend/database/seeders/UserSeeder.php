@@ -74,8 +74,8 @@ class UserSeeder extends Seeder
                 'contact_number' => '09444444444'
             ],
             [
-                'name' => 'Maria Rosario',
-                'email' => 'sec.bsis2@laverdad.edu.ph',
+                'name' => 'Winston Gultiano',
+                'email' => 'winston.gultiano@student.laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'secretary',
                 'program' => "BSIS",
@@ -83,8 +83,8 @@ class UserSeeder extends Seeder
                 'contact_number' => '09555555555'
             ],
             [
-                'name' => 'Juan Dela Cruz',
-                'email' => 'sec.bsis4@laverdad.edu.ph',
+                'name' => 'Melissa Estrella',
+                'email' => 'melissa.estrella@student.laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'secretary',
                 'program' => "BSIS",

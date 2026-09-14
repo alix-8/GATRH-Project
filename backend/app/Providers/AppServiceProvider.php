@@ -3,7 +3,7 @@
 namespace App\Providers;
 use App\Models\AttendanceRecord;
 use App\Observers\AttendanceRecordObserver;
-
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,5 +23,11 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         AttendanceRecord::observe(AttendanceRecordObserver::class);
+
+        ResetPassword::createUrlUsing(function ($notifiable, string $token): string {
+            return config('app.password_reset_url')
+                . '?token=' . urlencode($token)
+                . '&email=' . urlencode($notifiable->getEmailForPasswordReset());
+        });
     }
 }
