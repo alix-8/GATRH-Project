@@ -7,6 +7,7 @@ import AttendanceTrackingIcon from '../../assets/attendance-tracking-icon.png'
 import AttendanceConverterIcon from '../../assets/attendance-converter-icon.png'
 import RecordManagementIcon from '../../assets/record-management.png'
 import ReportSubmissionIcon from '../../assets/report-submission-icon.png'
+import DropDownIcon from '../../assets/drop-down-icon.png'
 import './Login.css'
 
 
@@ -16,9 +17,11 @@ function Login() {
     const [activeNav, setActiveNav] = useState('home')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [remember, setRemember] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [errorType, setErrorType] = useState('error')
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -36,6 +39,7 @@ function Login() {
                 body: JSON.stringify({
                     email,
                     password,
+                    remember,
                 }),
             })
 
@@ -70,6 +74,36 @@ function Login() {
             setError(error.message)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleForgotPassword = async () => {
+        if (!email.trim()) {
+            setError('Please enter your email address first.')
+            return
+        }
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Unable to send password reset link.')
+            }
+
+            setError(data.message || 'Password reset link sent to your email.')
+            setErrorType('success')
+        } catch (error) {
+            setError(error.message)
+            setErrorType('error')
         }
     }
 
@@ -134,35 +168,45 @@ function Login() {
                             autoComplete="current-password"
                             required
                         />
-                        <button
-                            type="button"
-                            className="show-password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                            <img
-                                className="show-password-icon"
-                                src={ShowPasswordIcon}
-                                alt={showPassword ? 'Hide Password Icon' : 'Show Password Icon'}
-                            />
-                        </button>
+                        {password.length > 0 && (
+                            <button
+                                type="button" 
+                                className="show-password-toggle"
+                                onClick={() => setShowPassword(!showPassword)}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                <img
+                                    className="show-password-icon"
+                                    src={ShowPasswordIcon}
+                                    alt={showPassword ? 'Hide Password Icon' : 'Show Password Icon'}
+                                />
+                                {!showPassword && <span className="login-password-slash" />}
+                            </button>
+                        )}
                     </div>
 
                     <div className="form-options">
                         <label className="remember-option">
-                            <input type="checkbox" name="remember" />
+                            <input
+                                type="checkbox"
+                                name="remember"
+                                checked={remember}
+                                onChange={(event) => setRemember(event.target.checked)}
+                            />
                             <span>Remember Me</span>
                         </label>
 
                         <button
                             className="forgot-password"
-                            type="button">
+                            type="button"
+                            onClick={handleForgotPassword}
+                        >
                             Forgot Password?
                         </button>
                     </div>
 
                     <p
-                        className={`login-error ${error ? 'visible' : ''}`}
+                        className={`login-error ${error ? 'visible' : ''} ${errorType === 'success' ? 'login-success' : ''}`}
                         role={error ? 'alert' : undefined}
                         aria-live={error ? 'polite' : undefined}
                     >
@@ -235,13 +279,13 @@ function Login() {
                     </a>
                 </nav>
 
-                <div className="login-panel-content" 
+                <div className="login-panel-content"
                     aria-live="polite"
-                    >
+                >
 
                     {activeNav === 'home' && (
-                        <div 
-                            className="panel-content" 
+                        <div
+                            className="panel-content"
                             key={activeNav}
                         >
                             <img
@@ -346,50 +390,98 @@ function Login() {
                     )}
 
                     {activeNav === 'how-it-works' && (
-                        <section 
-                            className="panel-content info-panel process-panel" 
+                        <section
+                            className="panel-content info-panel process-panel"
                             aria-labelledby="how-title"
-                            >
-                            <h2 id="how-title">
-                                How it works
-                            </h2>
+                        >
+                            <div className="process-flow">
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Collect</h3>
+                                        <span className="process-card-number">01</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        Students submit their PM, WS, and TG attendance through the existing Messenger channel.
+                                    </p>
+                                </article>
 
-                            <div className="process-list">
-                                <article><span>01</span><div><h3>Collect</h3><p>Collect attendance through Messenger. Students submit their PM, WS, and TG attendance through the existing Messenger channel.</p></div></article>
-                                <article><span>02</span><div><h3>Standardize</h3><p>Organize using the standard format. The Spiritual Secretary prepares the attendance using the required template.</p></div></article>
-                                <article><span>03</span><div><h3>Paste &amp; Convert</h3><p>Paste the attendance report into GATRH. The secretary copies the formatted report and pastes it into the system.</p></div></article>
-                                <article><span>04</span><div><h3>Review</h3><p>Validate the converted records. GATRH organizes the information and identifies incomplete or missing entries.</p></div></article>
-                                <article><span>05</span><div><h3>Monitor &amp; Report</h3><p>Save, monitor, and generate reports. Attendance data is centralized and used for dashboards, monitoring, and consolidated reports.</p></div></article>
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Standardize</h3>
+                                        <span className="process-card-number">02</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        The Spiritual Secretary prepares the attendance using the required template.
+                                    </p>
+                                </article>
+
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Paste & Convert</h3>
+                                        <span className="process-card-number">03</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        The secretary copies the formatted report and pastes it into the system.
+                                    </p>
+                                </article>
+
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Review</h3>
+                                        <span className="process-card-number">04</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        GATRH organizes the information and identifies incomplete or missing entries.
+                                    </p>
+                                </article>
+
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Monitor & Report</h3>
+                                        <span className="process-card-number">05</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        Attendance data is centralized and used for dashboards, monitoring, and consolidated reports
+                                    </p>
+                                </article>
                             </div>
                         </section>
                     )}
 
                     {activeNav === 'faqs' && (
-                        <section className="panel-content info-panel faq-panel" 
-                        aria-labelledby="faq-title"
+                        <section className="panel-content info-panel faq-panel"
+                            aria-labelledby="faq-title"
                         >
-                            <h2 id="faq-title">
-                                FAQs
-                            </h2>
-
                             <div className="faq-list">
                                 <details>
-                                    <summary>What if PM, WS, or TG is blank?</summary>
+                                    <summary>
+                                        <span>What if PM, WS, or TG is blank?</span>
+                                        <img className="faq-dropdown-icon" src={DropDownIcon} alt="" />
+                                    </summary>
                                     <p>The system will identify the record as incomplete and mark it for review.</p>
                                 </details>
 
                                 <details>
-                                    <summary>Can I edit the converted attendance?</summary>
+                                    <summary>
+                                        <span>Can I edit the converted attendance?</span>
+                                        <img className="faq-dropdown-icon" src={DropDownIcon} alt="" />
+                                    </summary>
                                     <p>Yes. Review and correct the information before submitting.</p>
                                 </details>
 
                                 <details>
-                                    <summary>What if the converter cannot read my input?</summary>
+                                    <summary>
+                                        <span>What if the converter cannot read my input?</span>
+                                        <img className="faq-dropdown-icon" src={DropDownIcon} alt="" />
+                                    </summary>
                                     <p>Check if the attendance follows the required standardized format.</p>
                                 </details>
 
                                 <details>
-                                    <summary>Do we still use Messenger?</summary>
+                                    <summary>
+                                        <span>Do we still use Messenger?</span>
+                                        <img className="faq-dropdown-icon" src={DropDownIcon} alt="" />
+                                    </summary>
                                     <p>Yes. Messenger remains the attendance collection channel. GATRH processes and organizes the collected attendance data.</p>
                                 </details>
                             </div>
