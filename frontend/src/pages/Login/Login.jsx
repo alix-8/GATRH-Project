@@ -17,6 +17,7 @@ function Login() {
     const [activeNav, setActiveNav] = useState('home')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [remember, setRemember] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -38,6 +39,7 @@ function Login() {
                 body: JSON.stringify({
                     email,
                     password,
+                    remember,
                 }),
             })
 
@@ -185,6 +187,12 @@ function Login() {
 
                     <div className="form-options">
                         <label className="remember-option">
+                            <input
+                                type="checkbox"
+                                name="remember"
+                                checked={remember}
+                                onChange={(event) => setRemember(event.target.checked)}
+                            />
                             <span>Remember Me</span>
                         </label>
 
