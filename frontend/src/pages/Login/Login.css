@@ -7,13 +7,11 @@
 .login-page {
     position: relative;
     min-height: 120vh;
-    background: linear-gradient(
-        to right,
-        white 0%,
-        white 50%,
-        #172B4D 50%,
-        #172B4D 100%
-    );
+    background: linear-gradient(to right,
+            white 0%,
+            white 50%,
+            #172B4D 50%,
+            #172B4D 100%);
 }
 
 .login-title {
@@ -297,25 +295,20 @@
 
 .features-panel {
     box-sizing: border-box;
-    height: 100%;
-    max-width: 760px;
-    overflow-y: auto;
-    scrollbar-width: none;
     padding: 130px 55px 40px;
     color: #172B4D;
-    text-align: left;
+    text-align: center;
 }
 
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(270px, 1fr));
-    gap: 26px;
+    gap: 20px;
 }
 
 .feature-card {
     display: flex;
     flex-direction: column;
-    min-height: 300px;
     padding: 20px 22px 16px;
     border-radius: 24px;
     background: rgba(255, 255, 255, 0.96);
@@ -333,10 +326,11 @@
 }
 
 .feature-card p {
-    margin: 0;
     color: #53677f;
-    font-size: 15px;
+    font-size: 12px;
     line-height: 1.45;
+    text-align: left;
+    margin-left: 10px;
 }
 
 .feature-footer {
@@ -429,7 +423,7 @@
     padding-top: 12px;
 }
 
-.process-list article > span {
+.process-list article>span {
     color: #53677f;
     font-size: 12px;
     font-weight: 700;
