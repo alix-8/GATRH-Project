@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password as PasswordBroker;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -16,17 +18,37 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'remember' => 'sometimes|boolean',
         ]);
+
+        $throttleKey = 'login:' . strtolower(trim($request->input('email'))) . '|' . $request->ip();
+        $maxAttempts = config('auth.login_throttle.max_attempts');
+        $decaySeconds = config('auth.login_throttle.decay_seconds');
+
+        if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+            return response()->json([
+                'message' => 'Too many failed login attempts. Please try again later.',
+                'retry_after' => RateLimiter::availableIn($throttleKey),
+            ], 429);
+        }
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
+            RateLimiter::hit($throttleKey, $decaySeconds);
+
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
+        RateLimiter::clear($throttleKey);
+
         $user->load('programs');
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $remember = $request->boolean('remember');
+        $expiresAt = $remember
+            ? null
+            : now()->addMinutes(config('auth.token.session_minutes'));
+        $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
             'access_token' => $token,
@@ -74,5 +96,30 @@ class AuthController extends Controller
             : response()->json([
                 'message' => __($status)
             ], 400);
+    }
+
+    /**
+     * Reset a user's password with a valid password reset token.
+     */
+    function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $status = PasswordBroker::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password): void {
+                $user->password = $password;
+                $user->setRememberToken(Str::random(60));
+                $user->save();
+            }
+        );
+
+        return $status === PasswordBroker::PASSWORD_RESET
+            ? response()->json(['message' => 'Password reset successfully.'])
+            : response()->json(['message' => __($status)], 400);
     }
 }
