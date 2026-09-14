@@ -347,86 +347,58 @@
     font-weight: 600;
 }
 
-.info-panel {
-    box-sizing: border-box;
-    height: 100%;
-    max-width: 610px;
-    overflow-y: auto;
-    scrollbar-width: none;
-    padding: 145px 70px 50px;
+.process-panel {
+    padding: 135px 20px;
+    margin-left: 30px;
+}
+
+.process-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.process-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px 22px;
+    height: 77px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-right: 20px;
+}
+
+.process-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.process-card-title  {
     color: #172B4D;
+    margin-top: 50px;
+}
+
+.process-card-copy {
     text-align: left;
-}
-
-.info-panel::-webkit-scrollbar {
-    display: none;
-}
-
-.panel-eyebrow {
-    margin-bottom: 10px;
-    color: #53677f;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-}
-
-.info-panel h2 {
-    max-width: 360px;
-    margin: 0 0 32px;
-    color: #172B4D;
-    font-size: 34px;
-    line-height: 1.1;
-}
-
-.info-list {
-    display: grid;
-    gap: 18px;
-}
-
-.info-list article {
-    border-top: 1px solid rgb(23 43 77 / 28%);
-    padding-top: 13px;
-}
-
-.info-list h3,
-.process-list h3 {
-    margin: 0 0 5px;
-    color: #172B4D;
-    font-size: 15px;
-}
-
-.info-list p,
-.info-list strong,
-.process-list p {
-    color: #53677f;
+    color: #526174;
     font-size: 12px;
-    line-height: 1.45;
+    margin-bottom: 40px;
 }
 
-.info-list strong {
-    display: block;
-    margin-top: 4px;
-    color: #172B4D;
-}
-
-.process-list {
-    display: grid;
-    gap: 15px;
-}
-
-.process-list article {
-    display: grid;
-    grid-template-columns: 32px 1fr;
-    gap: 12px;
-    border-top: 1px solid rgb(23 43 77 / 28%);
-    padding-top: 12px;
-}
-
-.process-list article>span {
-    color: #53677f;
-    font-size: 12px;
-    font-weight: 700;
+.process-card-number {
+    width: 42px;
+    height: 40px;
+    border-radius: 30%;
+    background-color: #172B4D;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30px;
 }
 
 .faq-list {

@@ -235,13 +235,13 @@ function Login() {
                     </a>
                 </nav>
 
-                <div className="login-panel-content" 
+                <div className="login-panel-content"
                     aria-live="polite"
-                    >
+                >
 
                     {activeNav === 'home' && (
-                        <div 
-                            className="panel-content" 
+                        <div
+                            className="panel-content"
                             key={activeNav}
                         >
                             <img
@@ -346,27 +346,67 @@ function Login() {
                     )}
 
                     {activeNav === 'how-it-works' && (
-                        <section 
-                            className="panel-content info-panel process-panel" 
+                        <section
+                            className="panel-content info-panel process-panel"
                             aria-labelledby="how-title"
-                            >
-                            <h2 id="how-title">
-                                How it works
-                            </h2>
+                        >
+                            <div className="process-flow">
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Collect</h3>
+                                        <span className="process-card-number">01</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        Students submit their PM, WS, and TG attendance through the existing Messenger channel.
+                                    </p>
+                                </article>
 
-                            <div className="process-list">
-                                <article><span>01</span><div><h3>Collect</h3><p>Collect attendance through Messenger. Students submit their PM, WS, and TG attendance through the existing Messenger channel.</p></div></article>
-                                <article><span>02</span><div><h3>Standardize</h3><p>Organize using the standard format. The Spiritual Secretary prepares the attendance using the required template.</p></div></article>
-                                <article><span>03</span><div><h3>Paste &amp; Convert</h3><p>Paste the attendance report into GATRH. The secretary copies the formatted report and pastes it into the system.</p></div></article>
-                                <article><span>04</span><div><h3>Review</h3><p>Validate the converted records. GATRH organizes the information and identifies incomplete or missing entries.</p></div></article>
-                                <article><span>05</span><div><h3>Monitor &amp; Report</h3><p>Save, monitor, and generate reports. Attendance data is centralized and used for dashboards, monitoring, and consolidated reports.</p></div></article>
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Standardize</h3>
+                                        <span className="process-card-number">02</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        The Spiritual Secretary prepares the attendance using the required template.
+                                    </p>
+                                </article>
+
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Paste & Convert</h3>
+                                        <span className="process-card-number">03</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        The secretary copies the formatted report and pastes it into the system.
+                                    </p>
+                                </article>
+
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Review</h3>
+                                        <span className="process-card-number">04</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        GATRH organizes the information and identifies incomplete or missing entries.
+                                    </p>
+                                </article>
+
+                                <article className="process-card">
+                                    <div className="process-card-row">
+                                        <h3 className="process-card-title">Monitor & Report</h3>
+                                        <span className="process-card-number">05</span>
+                                    </div>
+                                    <p className="process-card-copy">
+                                        Attendance data is centralized and used for dashboards, monitoring, and consolidated reports
+                                    </p>
+                                </article>
                             </div>
                         </section>
                     )}
 
                     {activeNav === 'faqs' && (
-                        <section className="panel-content info-panel faq-panel" 
-                        aria-labelledby="faq-title"
+                        <section className="panel-content info-panel faq-panel"
+                            aria-labelledby="faq-title"
                         >
                             <h2 id="faq-title">
                                 FAQs
