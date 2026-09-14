@@ -219,6 +219,10 @@
     color: #c0392b;
 }
 
+.login-error.login-success {
+    color: #2f9d68;
+}
+
 .account-help {
     position: absolute;
     top: 680px;

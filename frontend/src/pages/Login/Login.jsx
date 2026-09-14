@@ -20,6 +20,7 @@ function Login() {
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [errorType, setErrorType] = useState('error')
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -71,6 +72,36 @@ function Login() {
             setError(error.message)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleForgotPassword = async () => {
+        if (!email.trim()) {
+            setError('Please enter your email address first.')
+            return
+        }
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Unable to send password reset link.')
+            }
+
+            setError(data.message || 'Password reset link sent to your email.')
+            setErrorType('success')
+        } catch (error) {
+            setError(error.message)
+            setErrorType('error')
         }
     }
 
@@ -157,13 +188,15 @@ function Login() {
 
                         <button
                             className="forgot-password"
-                            type="button">
+                            type="button"
+                            onClick={handleForgotPassword}
+                        >
                             Forgot Password?
                         </button>
                     </div>
 
                     <p
-                        className={`login-error ${error ? 'visible' : ''}`}
+                        className={`login-error ${error ? 'visible' : ''} ${errorType === 'success' ? 'login-success' : ''}`}
                         role={error ? 'alert' : undefined}
                         aria-live={error ? 'polite' : undefined}
                     >
