@@ -145,6 +145,16 @@
     opacity: 0.8;
 }
 
+.login-password-slash {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2px;
+    height: 20px;
+    background: #172b4d;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
 .form-options {
     display: flex;
     align-items: center;

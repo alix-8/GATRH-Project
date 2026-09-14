@@ -166,23 +166,25 @@ function Login() {
                             autoComplete="current-password"
                             required
                         />
-                        <button
-                            type="button"
-                            className="show-password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                            <img
-                                className="show-password-icon"
-                                src={ShowPasswordIcon}
-                                alt={showPassword ? 'Hide Password Icon' : 'Show Password Icon'}
-                            />
-                        </button>
+                        {password.length > 0 && (
+                            <button
+                                type="button" 
+                                className="show-password-toggle"
+                                onClick={() => setShowPassword(!showPassword)}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                <img
+                                    className="show-password-icon"
+                                    src={ShowPasswordIcon}
+                                    alt={showPassword ? 'Hide Password Icon' : 'Show Password Icon'}
+                                />
+                                {!showPassword && <span className="login-password-slash" />}
+                            </button>
+                        )}
                     </div>
 
                     <div className="form-options">
                         <label className="remember-option">
-                            <input type="checkbox" name="remember" />
                             <span>Remember Me</span>
                         </label>
 
