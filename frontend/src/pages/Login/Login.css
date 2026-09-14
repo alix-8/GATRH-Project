@@ -6,6 +6,7 @@
 
 .login-page {
     position: relative;
+    height: 100vh;
     min-height: 120vh;
     background: linear-gradient(to right,
             white 0%,
@@ -208,6 +209,16 @@
     box-shadow: 0 2px 3px rgb(0 0 0 / 25%);
 }
 
+.login-error {
+    margin: 8px 0 0;
+    color: transparent;
+    font-size: 14px;
+}
+
+.login-error.visible {
+    color: #c0392b;
+}
+
 .account-help {
     position: absolute;
     top: 680px;
@@ -290,7 +301,7 @@
     position: absolute;
     width: 100%;
     top: 150px;
-    right: -50px;
+    right: -74px;
 }
 
 .features-panel {
@@ -298,6 +309,7 @@
     padding: 130px 55px 40px;
     color: #172B4D;
     text-align: center;
+    margin-top: 30px;
 }
 
 .feature-grid {
@@ -349,6 +361,7 @@
 
 .process-panel {
     padding: 135px 20px;
+    margin-top: 26px;
     margin-left: 30px;
 }
 
@@ -402,39 +415,43 @@
 }
 
 .faq-list {
-    max-width: 430px;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    margin-left: 70px;
+    margin-top: 160px;
+    gap: 14px;
 }
 
 .faq-list details {
-    border-top: 1px solid rgb(23 43 77 / 28%);
-    padding: 17px 0;
-}
-
-.faq-list details:last-child {
-    border-bottom: 1px solid rgb(23 43 77 / 28%);
+    border-radius: 12px;
+    background: #fff;
+    color: #172B4D;
+    padding: 16px 20px;
 }
 
 .faq-list summary {
     cursor: pointer;
-    color: #172B4D;
-    font-size: 15px;
-    font-weight: 700;
+    font-weight: bold;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.faq-list .faq-dropdown-icon {
+    width: 28px;
+    height: 28px;
+}
+
+.faq-list details[open] .faq-dropdown-icon {
+    transform: rotate(180deg);
 }
 
 .faq-list details p {
-    max-width: 390px;
+    text-align: left;
+    max-width: 620px;
     padding-top: 10px;
     color: #53677f;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.login-error {
-    margin: 8px 0 0;
-    color: transparent;
     font-size: 14px;
-}
-
-.login-error.visible {
-    color: #c0392b;
 }

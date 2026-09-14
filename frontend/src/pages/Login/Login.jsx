@@ -7,6 +7,7 @@ import AttendanceTrackingIcon from '../../assets/attendance-tracking-icon.png'
 import AttendanceConverterIcon from '../../assets/attendance-converter-icon.png'
 import RecordManagementIcon from '../../assets/record-management.png'
 import ReportSubmissionIcon from '../../assets/report-submission-icon.png'
+import DropDownIcon from '../../assets/drop-down-icon.png'
 import './Login.css'
 
 
@@ -408,28 +409,36 @@ function Login() {
                         <section className="panel-content info-panel faq-panel"
                             aria-labelledby="faq-title"
                         >
-                            <h2 id="faq-title">
-                                FAQs
-                            </h2>
-
                             <div className="faq-list">
                                 <details>
-                                    <summary>What if PM, WS, or TG is blank?</summary>
+                                    <summary>
+                                        <span>What if PM, WS, or TG is blank?</span>
+                                        <img className="faq-dropdown-icon" src={DropDownIcon} alt="" />
+                                    </summary>
                                     <p>The system will identify the record as incomplete and mark it for review.</p>
                                 </details>
 
                                 <details>
-                                    <summary>Can I edit the converted attendance?</summary>
+                                    <summary>
+                                        <span>Can I edit the converted attendance?</span>
+                                        <img className="faq-dropdown-icon" src={DropDownIcon} alt="" />
+                                    </summary>
                                     <p>Yes. Review and correct the information before submitting.</p>
                                 </details>
 
                                 <details>
-                                    <summary>What if the converter cannot read my input?</summary>
+                                    <summary>
+                                        <span>What if the converter cannot read my input?</span>
+                                        <img className="faq-dropdown-icon" src={DropDownIcon} alt="" />
+                                    </summary>
                                     <p>Check if the attendance follows the required standardized format.</p>
                                 </details>
 
                                 <details>
-                                    <summary>Do we still use Messenger?</summary>
+                                    <summary>
+                                        <span>Do we still use Messenger?</span>
+                                        <img className="faq-dropdown-icon" src={DropDownIcon} alt="" />
+                                    </summary>
                                     <p>Yes. Messenger remains the attendance collection channel. GATRH processes and organizes the collected attendance data.</p>
                                 </details>
                             </div>
