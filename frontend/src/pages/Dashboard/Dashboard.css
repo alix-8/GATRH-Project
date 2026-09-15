@@ -129,13 +129,239 @@
 
 .attendance-overview {
     box-sizing: border-box;
-    width: 58%;
+    width: 100%;
     padding: 18px;
     border: 1px solid #d8d8d8;
     border-radius: 10px;
     background: #f0f0f0;
-    margin-left: 24px;
-    margin-top: -130px;
+    margin: 0;
+}
+
+.dashboard-grid {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin: -130px 24px 20px;
+}
+
+.dashboard-left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 0 0 59%;
+}
+
+.pending-attendance {
+    box-sizing: border-box;
+    height: 180px;
+    padding: 14px 10px 10px;
+    border: 1px solid #d8d8d8;
+    border-radius: 8px;
+    background: #f0f0f0;
+}
+
+.pending-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px 10px;
+}
+
+.pending-heading h2 {
+    margin: 0;
+    color: #172B4D;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.pending-heading button {
+    border: 1px solid #d7dce3;
+    border-radius: 16px;
+    background: #fff;
+    color: #172B4D;
+    font-size: 11px;
+    font-weight: bold;
+    height: 40px;
+    padding: 0 18px;
+    cursor: pointer;
+}
+
+.pending-heading button span {
+    color: #172B4D;
+    font-size: 16px;
+    vertical-align: middle;
+}
+
+.pending-list {
+    display: grid;
+    gap: 8px;
+}
+
+.pending-item {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 10px;
+    min-height: 52px;
+    padding: 0 10px 0 8px;
+    border: 1px solid #d1d5da;
+    border-radius: 16px;
+    background: #fff;
+    color: #172B4D;
+    font-size: 11px;
+}
+
+.pending-status {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f2c94c;
+}
+
+.pending-item strong,
+.pending-item span:not(.pending-status),
+.pending-item em {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pending-item strong {
+    font-weight: normal;
+}
+
+.pending-item em {
+    color: #18a34a;
+    font-style: normal;
+}
+
+.pending-empty {
+    margin: 12px 6px;
+    color: #999;
+    font-size: 11px;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 40%;
+}
+
+.attendance-calendar {
+    box-sizing: border-box;
+    padding: 12px 12px 35px;
+    border: 1px solid #d8d8d8;
+    border-radius: 8px;
+    background: #f0f0f0;
+    height: 435px;
+    margin-top: 5px;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.calendar-header h3 {
+    margin: 0;
+    color: #172B4D;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.calendar-view-button {
+    border: 0;
+    background: transparent;
+    color: #172B4D;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.calendar-body {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 14px 40px;
+    min-height: 310px;
+}
+
+.calendar-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #172B4D;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.calendar-nav {
+    border: 0;
+    background: transparent;
+    color: #172B4D;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 6px;
+}
+
+.calendar-month-label {
+    color: #172B4D;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.calendar-weekdays {
+    color: #6c7585;
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.calendar-grid {
+    grid-auto-rows: 28px;
+}
+
+.calendar-day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #172B4D;
+    border-radius: 6px;
+    background: transparent;
+    min-height: 28px;
+}
+
+.calendar-day.empty {
+    visibility: hidden;
+}
+
+.calendar-day-record {
+    background: #172B4D;
+    color: #fff;
+    font-weight: 600;
+}
+
+.calendar-day-pending {
+    background: #f2c94c;
+    color: #172B4D;
+    font-weight: 600;
+}
+
+.calendar-day-today {
+    outline: 1px solid #172B4D;
+    outline-offset: -1px;
 }
 
 .overview-heading {
@@ -258,12 +484,10 @@
 
 .attendance-records {
     box-sizing: border-box;
-    width: 58%;
     padding: 18px;
     border: 1px solid #d8d8d8;
     border-radius: 10px;
     background: #f0f0f0;
-    margin: 18px 24px 0;
 }
 
 .records-heading {
@@ -321,20 +545,4 @@
 .records-empty {
     color: #999;
     height: 180px !important;
-}
-
-@media (max-width: 700px) {
-    .attendance-overview {
-        width: calc(100% - 48px);
-        margin: -180px 24px 24px;
-    }
-
-    .attendance-records {
-        width: calc(100% - 48px);
-        margin: 18px 24px 0;
-    }
-
-    .overview-chart {
-        gap: 5%;
-    }
 }
