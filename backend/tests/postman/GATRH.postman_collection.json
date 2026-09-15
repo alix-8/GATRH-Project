@@ -11,6 +11,85 @@
       "name": "Authentication",
       "item": [
         {
+          "name": "Forgot Password",
+          "item": [
+            {
+              "name": "Forgot Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"alexandrian.bon@student.laverdad.edu.ph\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/forgot-password",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "forgot-password"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Reset Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"token\": \"30a7eb60c9022f6eccc1dfcc92e5d0867ac6294935aa8fadc7c4a254e82ff5de\",\r\n  \"email\": \"alexandrian.bon@student.laverdad.edu.ph\",\r\n  \"password\": \"NewPassword123!\",\r\n  \"password_confirmation\": \"NewPassword123!\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/reset-password",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "reset-password"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
           "name": "Log in",
           "request": {
             "auth": {
@@ -148,7 +227,7 @@
           "response": []
         },
         {
-          "name": "Reset Password",
+          "name": "Change Password",
           "request": {
             "auth": {
               "type": "bearer",
@@ -191,14 +270,6 @@
                 "change-password"
               ]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Forgot Password",
-          "request": {
-            "method": "GET",
-            "header": []
           },
           "response": []
         }
