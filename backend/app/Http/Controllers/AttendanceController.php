@@ -25,13 +25,18 @@ class AttendanceController extends Controller
     public function generateTemplate(Request $request)
     {
         $request->validate([
-            'program'        => 'required|string',
-            'year_level'     => 'required|integer',
             'gathering_type' => 'nullable|string|in:pm,ws,tg,special',
         ]);
 
-        $program = strtoupper($request->user()->program);
-        $yearLevel = (int) $request->user()->year_level;
+        $user = $request->user();
+        $program = strtoupper((string) $user->program);
+        $yearLevel = (int) $user->year_level;
+
+        if (!$program || !$yearLevel) {
+            return response()->json([
+                'message' => 'Your account is not assigned to a program and year level.',
+            ], 422);
+        }
         $gatheringType = strtoupper(trim($request->gathering_type ?? 'PM'));
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
@@ -74,18 +79,20 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'raw_text'     => 'required|string',
-            'program'      => 'nullable|string',
-            'year_level'   => 'nullable|int',
+            'gathering_type'=> 'nullable|string|in:pm,ws,tg,special',
             'gathering_id' => 'nullable|exists:gatherings,id',
             'draft_id'     => 'nullable|exists:attendance_drafts,id',
         ]);
 
-        $program = $request->user()->isSecretary()
-            ? $request->user()->program
-            : $request->program;
-        $yearLevel = $request->user()->isSecretary()
-            ? $request->user()->year_level
-            : $request->year_level;
+        $user = $request->user();
+        $program = $user->program;
+        $yearLevel = $user->year_level;
+
+        if (!$program || !$yearLevel) {
+            return response()->json([
+                'message' => 'Your account is not assigned to a program and year level.',
+            ], 422);
+        }
 
         $metadata = $this->parsingService->extractHeaderMetadata(
             $request->raw_text,
@@ -98,6 +105,7 @@ class AttendanceController extends Controller
         $unmatchedLines = [];
         $incompleteRecords = [];
         $formatErrorLines = [];
+        $hasAnyAttendanceDetail = false;
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -132,9 +140,10 @@ class AttendanceController extends Controller
                 $hasVenue = !empty($result['record']['venue']);
                 $hasDate = !empty($result['record']['day']);
 
-                $hasAnyAttendanceDetail = $hasBatch || $hasVenue || $hasDate;
+                $hasRecordAttendanceDetail = $hasBatch || $hasVenue || $hasDate;
+                $hasAnyAttendanceDetail = $hasAnyAttendanceDetail || $hasRecordAttendanceDetail;
 
-                if (empty($result['format_errors']) && $hasAnyAttendanceDetail && (!$hasBatch || !$hasVenue || !$hasDate)) {
+                if (empty($result['format_errors']) && $hasRecordAttendanceDetail && (!$hasBatch || !$hasVenue || !$hasDate)) {
                     $incompleteRecords[] = [
                         'student_id'     => $result['record']['student_id'],
                         'student_name'   => $result['record']['student_name'],
@@ -158,14 +167,39 @@ class AttendanceController extends Controller
             $parsedSubmissions
         );
 
-        if (!empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines)) {
-            return response()->json([
-                'message'            => 'Attendance text contains errors. Please correct them before saving the draft.',
-                'metadata'           => $metadata,
+        $allStudentsNoResponse = !empty($parsedSubmissions)
+            && empty($missingStudents)
+            && empty($unmatchedLines)
+            && !$hasAnyAttendanceDetail
+            && collect($parsedSubmissions)->every(
+                fn (array $record): bool => $record['status'] === 'no_response'
+            );
+
+        $allNoResponseWarning = $allStudentsNoResponse
+            ? 'Are you sure the data is correct? All the students will be marked no response since all the fields are blank.'
+            : null;
+
+        if (!empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines) || !empty($missingStudents) || $allNoResponseWarning) {
+            $validationErrors = [
                 'unmatched_lines'    => $unmatchedLines,
                 'missing_students'   => $missingStudents,
                 'incomplete_records' => $incompleteRecords,
                 'format_errors'      => $formatErrorLines,
+            ];
+
+            if ($allNoResponseWarning) {
+                $validationErrors['all_no_response_warning'] = $allNoResponseWarning;
+            }
+
+            return response()->json([
+                'message'            => 'Attendance text contains errors. Please correct them before saving the draft.',
+                'metadata'           => $metadata,
+                'errors'             => $validationErrors,
+                'unmatched_lines'    => $unmatchedLines,
+                'missing_students'   => $missingStudents,
+                'incomplete_records' => $incompleteRecords,
+                'format_errors'      => $formatErrorLines,
+                'all_no_response_warning' => $allNoResponseWarning,
             ], 422);
         }
 
@@ -190,6 +224,9 @@ class AttendanceController extends Controller
             'raw_text'       => $request->raw_text,
             'parsed_data'    => $sectionData['records'],
             'unparsed_data'  => $unmatchedLines,
+            'unmatched_lines'=> $unmatchedLines,
+            'incomplete_records' => $incompleteRecords,
+            'format_errors'  => $formatErrorLines,
             'total_detected' => $sectionData['total_students'],
             'matched_count'  => $presentCount,
         ], $request->user()->id);
