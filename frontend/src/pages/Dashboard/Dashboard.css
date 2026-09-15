@@ -129,7 +129,7 @@
 
 .attendance-overview {
     box-sizing: border-box;
-    width: 59%;
+    width: 100%;
     padding: 18px;
     border: 1px solid #d8d8d8;
     border-radius: 10px;
@@ -137,18 +137,23 @@
     margin: 0;
 }
 
-.dashboard-top-row {
+.dashboard-grid {
     display: flex;
-    align-items: stretch;
-    gap: 10px;
-    width: calc(100% - 48px);
-    margin: -130px 24px 0;
+    align-items: flex-start;
+    gap: 14px;
+    margin: -130px 24px 20px;
+}
+
+.dashboard-left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 0 0 59%;
 }
 
 .pending-attendance {
     box-sizing: border-box;
     height: 180px;
-    width: 40%;
     padding: 14px 10px 10px;
     border: 1px solid #d8d8d8;
     border-radius: 8px;
@@ -160,7 +165,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 6px 10px;
-    
 }
 
 .pending-heading h2 {
@@ -235,6 +239,129 @@
     margin: 12px 6px;
     color: #999;
     font-size: 11px;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 40%;
+}
+
+.attendance-calendar {
+    box-sizing: border-box;
+    padding: 12px 12px 35px;
+    border: 1px solid #d8d8d8;
+    border-radius: 8px;
+    background: #f0f0f0;
+    height: 435px;
+    margin-top: 5px;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.calendar-header h3 {
+    margin: 0;
+    color: #172B4D;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.calendar-view-button {
+    border: 0;
+    background: transparent;
+    color: #172B4D;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.calendar-body {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 14px 40px;
+    min-height: 310px;
+}
+
+.calendar-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #172B4D;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.calendar-nav {
+    border: 0;
+    background: transparent;
+    color: #172B4D;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 6px;
+}
+
+.calendar-month-label {
+    color: #172B4D;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.calendar-weekdays {
+    color: #6c7585;
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.calendar-grid {
+    grid-auto-rows: 28px;
+}
+
+.calendar-day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #172B4D;
+    border-radius: 6px;
+    background: transparent;
+    min-height: 28px;
+}
+
+.calendar-day.empty {
+    visibility: hidden;
+}
+
+.calendar-day-record {
+    background: #172B4D;
+    color: #fff;
+    font-weight: 600;
+}
+
+.calendar-day-pending {
+    background: #f2c94c;
+    color: #172B4D;
+    font-weight: 600;
+}
+
+.calendar-day-today {
+    outline: 1px solid #172B4D;
+    outline-offset: -1px;
 }
 
 .overview-heading {
@@ -357,12 +484,10 @@
 
 .attendance-records {
     box-sizing: border-box;
-    width: 56.5%;
     padding: 18px;
     border: 1px solid #d8d8d8;
     border-radius: 10px;
     background: #f0f0f0;
-    margin: 18px 24px 0;
 }
 
 .records-heading {
