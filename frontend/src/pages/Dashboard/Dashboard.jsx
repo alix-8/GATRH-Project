@@ -11,6 +11,7 @@ import './Dashboard.css'
 
 function Dashboard() {
     const [overview, setOverview] = useState([])
+    const [pendingAttendance, setPendingAttendance] = useState([])
     const attendanceRecords = []
     const navigate = useNavigate()
 
@@ -21,15 +22,22 @@ function Dashboard() {
             return
         }
 
-        fetch('http://127.0.0.1:8000/api/attendance/overview', {
+        fetch('http://127.0.0.1:8000/api/dashboard', {
             headers: {
                 Accept: 'application/json',
                 Authorization: `Bearer ${token}`,
             },
         })
             .then(response => response.ok ? response.json() : null)
-            .then(data => setOverview(data?.data ?? []))
-            .catch(() => setOverview([]))
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                setOverview(data?.chart_data?.series ?? [])
+                setPendingAttendance(data?.pending_list ?? [])
+            })
+            .catch(() => {
+                setOverview([])
+                setPendingAttendance([])
+            })
     }, [])
 
     return (
@@ -79,7 +87,8 @@ function Dashboard() {
                 </div>
                 <p className="week-absences">This Week's Absences</p>
 
-                <section className="attendance-overview">
+                <div className="dashboard-top-row">
+                    <section className="attendance-overview">
                     <div className="overview-heading">
                         <div>
                             <h2>Attendance Overview</h2>
@@ -102,16 +111,36 @@ function Dashboard() {
                         {overview.length === 0 ? (
                             <span className="overview-empty">No attendance data yet</span>
                         ) : overview.map(group => (
-                            <div className="overview-group" key={group.gathering_type}>
+                                <div className="overview-group" key={group.category}>
                                 <div className="overview-bars">
                                     <span className="overview-bar overview-present-bar" style={{ height: `${Math.max(group.present, 1) * 12}px` }} />
                                     <span className="overview-bar overview-absent-bar" style={{ height: `${Math.max(group.absent, 1) * 12}px` }} />
                                 </div>
-                                <small>{group.gathering_type.toUpperCase()}</small>
+                                    <small>{group.category}</small>
                             </div>
                         ))}
                     </div>
-                </section>
+                    </section>
+
+                    <section className="pending-attendance">
+                        <div className="pending-heading">
+                            <h2>Pending Attendance</h2>
+                            <button type="button" onClick={() => navigate('/attendance')}>View All Attendance</button>
+                        </div>
+                        <div className="pending-list">
+                            {pendingAttendance.length === 0 ? (
+                                <p className="pending-empty">No pending attendance</p>
+                            ) : pendingAttendance.map(item => (
+                                <div className="pending-item" key={item.id}>
+                                    <span className="pending-status" aria-hidden="true" />
+                                    <strong>{item.program_label || item.program || 'Attendance'}</strong>
+                                    <span>{item.year_level ? `${item.year_level} YEAR` : item.submitted_ago || 'Pending'}</span>
+                                    <em>{item.gathering || 'Attendance'}</em>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                </div>
 
                 <section className="attendance-records">
                     <div className="records-heading">
