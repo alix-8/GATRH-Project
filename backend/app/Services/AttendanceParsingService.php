@@ -245,14 +245,6 @@ class AttendanceParsingService
 
         $formatErrors = [];
 
-        if (!$parts['raw_batch'] && !$parts['venue'] && !$parts['raw_date']) {
-            $formatErrors[] = [
-                'field'  => 'attendance_details',
-                'value'  => null,
-                'reason' => 'Batch, venue, and date cannot all be empty.',
-            ];
-        }
-
         if (!$this->isValidBatchFormat($parts['raw_batch'])) {
             $formatErrors[] = [
                 'field'  => 'batch',

@@ -105,6 +105,7 @@ class AttendanceController extends Controller
         $unmatchedLines = [];
         $incompleteRecords = [];
         $formatErrorLines = [];
+        $hasAnyAttendanceDetail = false;
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -139,9 +140,10 @@ class AttendanceController extends Controller
                 $hasVenue = !empty($result['record']['venue']);
                 $hasDate = !empty($result['record']['day']);
 
-                $hasAnyAttendanceDetail = $hasBatch || $hasVenue || $hasDate;
+                $hasRecordAttendanceDetail = $hasBatch || $hasVenue || $hasDate;
+                $hasAnyAttendanceDetail = $hasAnyAttendanceDetail || $hasRecordAttendanceDetail;
 
-                if (empty($result['format_errors']) && $hasAnyAttendanceDetail && (!$hasBatch || !$hasVenue || !$hasDate)) {
+                if (empty($result['format_errors']) && $hasRecordAttendanceDetail && (!$hasBatch || !$hasVenue || !$hasDate)) {
                     $incompleteRecords[] = [
                         'student_id'     => $result['record']['student_id'],
                         'student_name'   => $result['record']['student_name'],
@@ -165,13 +167,29 @@ class AttendanceController extends Controller
             $parsedSubmissions
         );
 
-        if (!empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines) || !empty($missingStudents)) {
+        $allStudentsNoResponse = !empty($parsedSubmissions)
+            && empty($missingStudents)
+            && empty($unmatchedLines)
+            && !$hasAnyAttendanceDetail
+            && collect($parsedSubmissions)->every(
+                fn (array $record): bool => $record['status'] === 'no_response'
+            );
+
+        $allNoResponseWarning = $allStudentsNoResponse
+            ? 'Are you sure the data is correct? All the students will be marked no response since all the fields are blank.'
+            : null;
+
+        if (!empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines) || !empty($missingStudents) || $allNoResponseWarning) {
             $validationErrors = [
                 'unmatched_lines'    => $unmatchedLines,
                 'missing_students'   => $missingStudents,
                 'incomplete_records' => $incompleteRecords,
                 'format_errors'      => $formatErrorLines,
             ];
+
+            if ($allNoResponseWarning) {
+                $validationErrors['all_no_response_warning'] = $allNoResponseWarning;
+            }
 
             return response()->json([
                 'message'            => 'Attendance text contains errors. Please correct them before saving the draft.',
@@ -181,6 +199,7 @@ class AttendanceController extends Controller
                 'missing_students'   => $missingStudents,
                 'incomplete_records' => $incompleteRecords,
                 'format_errors'      => $formatErrorLines,
+                'all_no_response_warning' => $allNoResponseWarning,
             ], 422);
         }
 

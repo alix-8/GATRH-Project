@@ -494,7 +494,7 @@ textarea {
     font-size: 0.8rem;
 }
 
-.import-error-section pre {
+.import-error-items {
     max-height: 110px;
     margin: 0;
     overflow: auto;
@@ -502,8 +502,32 @@ textarea {
     color: #6b5760;
     font-size: 0.68rem;
     line-height: 1.4;
-    white-space: pre-wrap;
     background: #fffafa;
+}
+
+.import-error-item {
+    margin: 0;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid #f1d9d9;
+}
+
+.import-error-line,
+.import-error-reason {
+    display: block;
+}
+
+.import-error-reason {
+    margin-top: 0.15rem;
+    font-weight: 700;
+}
+
+.import-error-item + .import-error-item {
+    margin-top: 0.45rem;
+}
+
+.import-error-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
 .import-modal-summary-title {

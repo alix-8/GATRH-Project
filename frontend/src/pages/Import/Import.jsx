@@ -111,11 +111,11 @@ function Import({ onGoToAttendance = () => {} }) {
             return
         }
 
-        const parseErrorKeys = ['unmatched_lines', 'missing_students', 'incomplete_records', 'format_errors']
+        const parseErrorKeys = ['unmatched_lines', 'missing_students', 'incomplete_records', 'format_errors', 'all_no_response_warning']
         const getStructuredParseErrors = payload => {
             const nestedErrors = payload?.errors && typeof payload.errors === 'object' ? payload.errors : {}
             const directErrors = parseErrorKeys.reduce((errors, key) => {
-                if (Array.isArray(payload?.[key]) && payload[key].length > 0) {
+                if ((Array.isArray(payload?.[key]) && payload[key].length > 0) || (typeof payload?.[key] === 'string' && payload[key])) {
                     errors[key] = payload[key]
                 }
                 return errors
@@ -200,6 +200,14 @@ function Import({ onGoToAttendance = () => {} }) {
                         <label className="import-textarea-label">
                             <p className="import-textarea-label-title">
                                 Attendance Text
+                                <label className="import-modal-label">
+                                    Gathering
+                                    {/* <select name="gathering_type" placeholder="Gathering" value={form.gathering_type} onChange={handleGatheringChange}>
+                                        <option value="pm">Prayer Meeting</option>
+                                        <option value="ws">Worship Service</option>
+                                        <option value="tg">Thanksgiving</option>
+                                    </select> */}
+                                </label>
                             </p>
                             <textarea name="raw_text" value={form.raw_text} onChange={updateField} placeholder="Paste your attendance text here..." rows="12" />
                         </label>

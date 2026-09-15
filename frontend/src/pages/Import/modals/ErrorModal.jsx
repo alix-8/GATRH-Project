@@ -13,6 +13,7 @@ const errorLabels = {
     missing_students: ['Missing Students', 'Students were not included in the attendance text'],
     incomplete_records: ['Incomplete Records', 'Required attendance information is missing'],
     format_errors: ['Format Errors', 'Attendance lines contain invalid formatting'],
+    all_no_response_warning: ['No Response Warning', 'Every student has blank attendance fields'],
 }
 
 const getErrorItems = (errorDetails = {}) => {
@@ -21,9 +22,11 @@ const getErrorItems = (errorDetails = {}) => {
         ['missing_students', errorDetails.missing_students || []],
         ['incomplete_records', errorDetails.incomplete_records || []],
         ['format_errors', errorDetails.format_errors || []],
+        ['all_no_response_warning', errorDetails.all_no_response_warning || ''],
     ].filter(([, items]) => items.length > 0)
 }
 
+//icon for each error type, used in the error modal
 function ErrorTypeIcon({ type }) {
     if (type === 'unmatched_lines' || type === 'missing_students') {
         return <span className="import-error-type-icon">&#9679;</span>
@@ -38,6 +41,61 @@ function ErrorTypeIcon({ type }) {
     }
 
     return <span className="import-error-type-icon">&#9632;</span>
+}
+
+//renders the list of error items for each error type
+function ErrorItems({ type, items }) {
+    if (type === 'unmatched_lines') {
+        return items.map((item, index) => (
+            <p className="import-error-item" key={`${type}-${index}`}>
+                {item.extracted_name || item.student_name || 'Unknown student'}
+            </p>
+        ))
+    }
+
+    if (type === 'missing_students') {
+        return items.map((item, index) => (
+            <p className="import-error-item" key={`${type}-${index}`}>
+                {item.student_name || 'Unknown student'}
+            </p>
+        ))
+    }
+
+    if (type === 'format_errors') {
+        return items.flatMap((item, itemIndex) => (
+            (item.errors || []).map((error, errorIndex) => {
+                const isBlankFieldsError = error.field === 'attendance_details' || error.field === 'name'
+
+                return (
+                    <p className="import-error-item" key={`${type}-${itemIndex}-${errorIndex}`}>
+                        {!isBlankFieldsError && <span className="import-error-line">{item.raw_line}</span>}
+                        <strong className="import-error-reason">{error.reason}</strong>
+                    </p>
+                )
+            })
+        ))
+    }
+
+    if (type === 'incomplete_records') {
+        return items.map((item, index) => (
+            <p className="import-error-item" key={`${type}-${index}`}>
+                <span className="import-error-line">{item.raw_line}</span>
+                <strong className="import-error-reason">
+                    Missing: {(item.missing || []).join(', ') || 'required attendance information'}
+                </strong>
+            </p>
+        ))
+    }
+
+    if (type === 'all_no_response_warning') {
+        return <p className="import-error-item">{items}</p>
+    }
+
+    return items.map((item, index) => (
+        <p className="import-error-item" key={`${type}-${index}`}>
+            {item.student_name || item.reason || 'Attendance information is incomplete.'}
+        </p>
+    ))
 }
 
 function ErrorModal({ errorMessage, errorDetails, onClose }) {
@@ -75,7 +133,11 @@ function ErrorModal({ errorMessage, errorDetails, onClose }) {
                                         </span>
                                         <span className="import-error-chevron">{isExpanded ? '^' : 'v'}</span>
                                     </button>
-                                    {isExpanded && <pre>{JSON.stringify(items, null, 2)}</pre>}
+                                    {isExpanded && (
+                                        <div className="import-error-items">
+                                            <ErrorItems type={type} items={items} />
+                                        </div>
+                                    )}
                                 </section>
                             )
                         })}
