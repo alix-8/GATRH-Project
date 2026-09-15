@@ -25,13 +25,18 @@ class AttendanceController extends Controller
     public function generateTemplate(Request $request)
     {
         $request->validate([
-            'program'        => 'required|string',
-            'year_level'     => 'required|integer',
             'gathering_type' => 'nullable|string|in:pm,ws,tg,special',
         ]);
 
-        $program = strtoupper($request->user()->program);
-        $yearLevel = (int) $request->user()->year_level;
+        $user = $request->user();
+        $program = strtoupper((string) $user->program);
+        $yearLevel = (int) $user->year_level;
+
+        if (!$program || !$yearLevel) {
+            return response()->json([
+                'message' => 'Your account is not assigned to a program and year level.',
+            ], 422);
+        }
         $gatheringType = strtoupper(trim($request->gathering_type ?? 'PM'));
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
@@ -74,18 +79,20 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'raw_text'     => 'required|string',
-            'program'      => 'nullable|string',
-            'year_level'   => 'nullable|int',
+            'gathering_type'=> 'nullable|string|in:pm,ws,tg,special',
             'gathering_id' => 'nullable|exists:gatherings,id',
             'draft_id'     => 'nullable|exists:attendance_drafts,id',
         ]);
 
-        $program = $request->user()->isSecretary()
-            ? $request->user()->program
-            : $request->program;
-        $yearLevel = $request->user()->isSecretary()
-            ? $request->user()->year_level
-            : $request->year_level;
+        $user = $request->user();
+        $program = $user->program;
+        $yearLevel = $user->year_level;
+
+        if (!$program || !$yearLevel) {
+            return response()->json([
+                'message' => 'Your account is not assigned to a program and year level.',
+            ], 422);
+        }
 
         $metadata = $this->parsingService->extractHeaderMetadata(
             $request->raw_text,
@@ -158,10 +165,18 @@ class AttendanceController extends Controller
             $parsedSubmissions
         );
 
-        if (!empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines)) {
+        if (!empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines) || !empty($missingStudents)) {
+            $validationErrors = [
+                'unmatched_lines'    => $unmatchedLines,
+                'missing_students'   => $missingStudents,
+                'incomplete_records' => $incompleteRecords,
+                'format_errors'      => $formatErrorLines,
+            ];
+
             return response()->json([
                 'message'            => 'Attendance text contains errors. Please correct them before saving the draft.',
                 'metadata'           => $metadata,
+                'errors'             => $validationErrors,
                 'unmatched_lines'    => $unmatchedLines,
                 'missing_students'   => $missingStudents,
                 'incomplete_records' => $incompleteRecords,
@@ -190,6 +205,9 @@ class AttendanceController extends Controller
             'raw_text'       => $request->raw_text,
             'parsed_data'    => $sectionData['records'],
             'unparsed_data'  => $unmatchedLines,
+            'unmatched_lines'=> $unmatchedLines,
+            'incomplete_records' => $incompleteRecords,
+            'format_errors'  => $formatErrorLines,
             'total_detected' => $sectionData['total_students'],
             'matched_count'  => $presentCount,
         ], $request->user()->id);

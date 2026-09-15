@@ -92,10 +92,10 @@ class AttendanceParsingService
      * Extracts header metadata (Gathering, Program, Year Level) from raw text,
      * preferring explicit overrides over values detected in the text.
      */
-    public function extractHeaderMetadata(string $rawText, ?string $overrideProgram = null, ?int $overrideYearLevel = null): array
+    public function extractHeaderMetadata(string $rawText, ?string $overrideProgram = null, ?int $overrideYearLevel = null, ?string $overrideGathering = null): array
     {
         $lines = explode("\n", $rawText);
-        $detectedGathering = 'pm';
+        $detectedGathering = $overrideGathering ?: 'pm';
         $detectedProgram = $overrideProgram ? trim($overrideProgram) : null;
         $detectedYear = $overrideYearLevel;
 
