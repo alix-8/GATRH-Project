@@ -232,10 +232,26 @@ class AttendanceParsingService
         $parts = $this->extractLineParts($line, $defaultDate);
 
         if (!$parts['student_name']) {
-            return ['matched' => false, 'unmatched_data' => null, 'format_errors' => []];
+            return [
+                'matched'        => false,
+                'unmatched_data' => null,
+                'format_errors'  => [[
+                    'field'  => 'name',
+                    'value'  => null,
+                    'reason' => 'Student name and attendance details cannot all be empty.',
+                ]],
+            ];
         }
 
         $formatErrors = [];
+
+        if (!$parts['raw_batch'] && !$parts['venue'] && !$parts['raw_date']) {
+            $formatErrors[] = [
+                'field'  => 'attendance_details',
+                'value'  => null,
+                'reason' => 'Batch, venue, and date cannot all be empty.',
+            ];
+        }
 
         if (!$this->isValidBatchFormat($parts['raw_batch'])) {
             $formatErrors[] = [
