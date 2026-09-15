@@ -201,7 +201,6 @@ function Import({ onGoToAttendance = () => {} }) {
                             <p className="import-textarea-label-title">
                                 Attendance Text
                                 <label className="import-modal-label">
-                                    Gathering
                                     {/* <select name="gathering_type" placeholder="Gathering" value={form.gathering_type} onChange={handleGatheringChange}>
                                         <option value="pm">Prayer Meeting</option>
                                         <option value="ws">Worship Service</option>
