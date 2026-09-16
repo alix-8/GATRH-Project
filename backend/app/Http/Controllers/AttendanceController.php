@@ -37,7 +37,7 @@ class AttendanceController extends Controller
                 'message' => 'Your account is not assigned to a program and year level.',
             ], 422);
         }
-        $gatheringType = strtoupper(trim($request->gathering_type ?? 'PM'));
+        $gatheringType = strtoupper($request->gathering_type ?? 'pm');
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
         $students = Student::where('program', $program)
@@ -55,8 +55,7 @@ class AttendanceController extends Controller
         // Build header template string
         $template = "--- GATRH ATTENDANCE FORM ---\n";
         $template .= "Gathering: {$gatheringType}\n";
-        $template .= "Program: {$program}\n";
-        $template .= "Year Level: {$yearLevel}\n\n";
+        $template .= "\n";
         $template .= "[FILL OUT YOUR DETAILS BELOW]\n";
         $template .= "Name | Batch(Time) | Venue | Date(YYYY-MM-DD)\n";
 
@@ -97,8 +96,15 @@ class AttendanceController extends Controller
         $metadata = $this->parsingService->extractHeaderMetadata(
             $request->raw_text,
             $program,
-            $yearLevel
+            $yearLevel,
+            $request->gathering_type ?? 'pm'
         );
+
+        if ($metadata['gathering_type'] !== ($request->gathering_type ?? 'pm')) {
+            return response()->json([
+                'message' => "Check the gathering type, it doesn't match the one on the parsed text",
+            ], 422);
+        }
 
         $lines = explode("\n", trim($request->raw_text));
         $parsedSubmissions = [];

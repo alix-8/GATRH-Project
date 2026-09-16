@@ -20,6 +20,23 @@ const WarningIcon = () => (
     </svg>
 )
 
+const getGatheringTypeFromText = text => {
+    const match = text.match(/^\s*gathering\s*:\s*(.+?)\s*$/im)
+    if (!match) return null
+
+    const gathering = match[1].trim().toLowerCase()
+    return {
+        pm: 'pm',
+        'prayer meeting': 'pm',
+        ws: 'ws',
+        'worship service': 'ws',
+        tg: 'tg',
+        thanksgiving: 'tg',
+        special: 'special',
+        'special gathering': 'special',
+    }[gathering] || gathering
+}
+
 function Import({ onGoToAttendance = () => {} }) {
     const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
     const [form, setForm] = useState({
@@ -39,6 +56,8 @@ function Import({ onGoToAttendance = () => {} }) {
     const [parseErrors, setParseErrors] = useState(null)
     const [previewText, setPreviewText] = useState('')
     const [previewCount, setPreviewCount] = useState(0)
+    const parsedGatheringType = getGatheringTypeFromText(form.raw_text)
+    const gatheringTypeMismatch = parsedGatheringType && parsedGatheringType !== form.gathering_type
 
     const updateField = event => {
         const { name, value } = event.target
@@ -185,30 +204,28 @@ function Import({ onGoToAttendance = () => {} }) {
                             </div>
                         </div>
 
-                        {/* <div className="import-fields">
-                            <label>
-                                Gathering
-                                <select name="gathering_type" value={form.gathering_type} onChange={updateField}>
-                                    <option value="pm">Prayer Meeting</option>
-                                    <option value="ws">Worship Service</option>
-                                    <option value="tg">Thanksgiving</option>
-                                    <option value="special">Special</option>
-                                </select>
-                            </label>
-                        </div> */}
-
                         <label className="import-textarea-label">
                             <p className="import-textarea-label-title">
-                                Attendance Text
-                                <label className="import-modal-label">
-                                    {/* <select name="gathering_type" placeholder="Gathering" value={form.gathering_type} onChange={handleGatheringChange}>
-                                        <option value="pm">Prayer Meeting</option>
-                                        <option value="ws">Worship Service</option>
-                                        <option value="tg">Thanksgiving</option>
-                                    </select> */}
-                                </label>
+                                <div className="import-textarea-label-title-left">
+                                    Attendance Text
+                                </div>
+                                <div className="import-textarea-label-title-right">
+                                    <label>
+                                        <select
+                                            name="gathering_type"
+                                            value={form.gathering_type}
+                                            onChange={updateField}
+                                            className={gatheringTypeMismatch ? 'import-gathering-mismatch' : ''}
+                                            aria-invalid={gatheringTypeMismatch || undefined}
+                                        >
+                                            <option value="pm">Prayer Meeting</option>
+                                            <option value="ws">Worship Service</option>
+                                            <option value="tg">Thanksgiving</option>
+                                        </select>
+                                    </label>
+                                </div>
                             </p>
-                            <textarea name="raw_text" value={form.raw_text} onChange={updateField} placeholder="Paste your attendance text here..." rows="12" />
+                            <textarea name="raw_text" value={form.raw_text} onChange={updateField} placeholder="Select gathering type and paste your attendance text here..." rows="12" />
                         </label>
 
                         {fieldWarning && <p className="import-field-warning">{fieldWarning}</p>}
