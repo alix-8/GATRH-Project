@@ -29,6 +29,8 @@
 
 .filter-section {
     display: flex;
+    align-items: center;
+    gap: 12px;
     box-sizing: border-box;
     padding: 18px;
     border-radius: 10px;
