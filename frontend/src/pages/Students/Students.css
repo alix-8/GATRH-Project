@@ -34,7 +34,7 @@
     box-sizing: border-box;
     padding: 18px;
     border-radius: 10px;
-    margin-left: 10px;
+    margin-left: 40px;
     margin-top: 4px;
 }
 
@@ -50,6 +50,7 @@
     user-select: none;
     box-sizing: border-box;
     width: 165px;
+
 }
 
 .sort-dropdown-container,
@@ -90,7 +91,6 @@
 .level-dropdown-menu {
     position: absolute;
     width: 100%;
-    min-width: 100%;
     background-color: #ffffff;
     border: 1px solid #dcdfe4;
     border-radius: 6px;
@@ -148,4 +148,32 @@
 .search-students-input::placeholder {
     color: #6b778c;
     font-size: 12px;
+}
+
+.add-student-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: #1791f2;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    width: 180px;
+    font-size: 12px;
+    opacity: 0.9;
+    cursor: pointer;
+}
+
+.add-student-btn:hover {
+    background-color: #0e7ed8;
+}
+
+.add-student-btn:active {
+    transform: scale(0.98);
+}
+
+.add-student-plus {
+    font-size: 16px;
 }
