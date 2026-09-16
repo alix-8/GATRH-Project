@@ -5,10 +5,12 @@ import Notification from '../../components/Notification/Notification'
 import SortbyIcon from '../../assets/sort-by-icon.png'
 import DropdownIcon from '../../assets/drop-down-icon.png'
 import ResponseIcon from '../../assets/response-icon.png'
+import LevelIcon from '../../assets/level-icon.png'
 import './Students.css'
 
 const SORT_OPTIONS = ['Ascending', 'Descending', 'Alphabetically']
 const RESPONSE_OPTIONS = ['Responded', 'No Response']
+const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4']
 
 function Students() {
     const [selectedSort, setSelectedSort] = useState(null)
@@ -19,6 +21,10 @@ function Students() {
     const [isResponseOpen, setIsResponseOpen] = useState(false)
     const responseDropdownRef = useRef(null)
 
+    const [selectedLevel, setSelectedLevel] = useState(null)
+    const [isLevelOpen, setIsLevelOpen] = useState(false)
+    const levelDropdownRef = useRef(null)
+
     useEffect(() => {
         function handleClickOutside(event) {
             if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
@@ -26,6 +32,9 @@ function Students() {
             }
             if (responseDropdownRef.current && !responseDropdownRef.current.contains(event.target)) {
                 setIsResponseOpen(false)
+            }
+            if (levelDropdownRef.current && !levelDropdownRef.current.contains(event.target)) {
+                setIsLevelOpen(false)
             }
         }
         document.addEventListener('mousedown', handleClickOutside)
@@ -40,6 +49,11 @@ function Students() {
     const handleSelectResponse = (option) => {
         setSelectedResponse(option)
         setIsResponseOpen(false)
+    }
+
+    const handleSelectLevel = (option) => {
+        setSelectedLevel(option)
+        setIsLevelOpen(false)
     }
 
     return (
@@ -61,6 +75,7 @@ function Students() {
                             onClick={() => {
                                 setIsSortOpen((prev) => !prev)
                                 setIsResponseOpen(false)
+                                setIsLevelOpen(false)
                             }}
                         >
                             <img
@@ -91,20 +106,21 @@ function Students() {
                         )}
                     </div>
 
-                    <div className="sort-dropdown-container" ref={responseDropdownRef}>
+                    <div className="response-dropdown-container" ref={responseDropdownRef}>
                         <div
                             className={`filter-section-row ${isResponseOpen ? 'active' : ''}`}
                             onClick={() => {
                                 setIsResponseOpen((prev) => !prev)
                                 setIsSortOpen(false)
+                                setIsLevelOpen(false)
                             }}
                         >
                             <img
-                                className="sort-by-icon"
+                                className="response-icon"
                                 src={ResponseIcon}
                                 alt="Response Icon"
                             />
-                            <p className="sort-by-text">{selectedResponse || 'Response'}</p>
+                            <p className="response-text">{selectedResponse || 'Response'}</p>
                             <img
                                 className={`drop-down-icon ${isResponseOpen ? 'rotate' : ''}`}
                                 src={DropdownIcon}
@@ -113,12 +129,49 @@ function Students() {
                         </div>
 
                         {isResponseOpen && (
-                            <ul className="sort-dropdown-menu">
+                            <ul className="response-dropdown-menu">
                                 {RESPONSE_OPTIONS.map((option) => (
                                     <li
                                         key={option}
-                                        className={`sort-dropdown-item ${selectedResponse === option ? 'selected' : ''}`}
+                                        className={`response-dropdown-item ${selectedResponse === option ? 'selected' : ''}`}
                                         onClick={() => handleSelectResponse(option)}
+                                    >
+                                        {option}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    <div className="level-dropdown-container" ref={levelDropdownRef}>
+                        <div
+                            className={`filter-section-row ${isLevelOpen ? 'active' : ''}`}
+                            onClick={() => {
+                                setIsLevelOpen((prev) => !prev)
+                                setIsSortOpen(false)
+                                setIsResponseOpen(false)
+                            }}
+                        >
+                            <img
+                                className="level-icon"
+                                src={LevelIcon}
+                                alt="Level Icon"
+                            />
+                            <p className="level-text">{selectedLevel || 'Level'}</p>
+                            <img
+                                className={`drop-down-icon ${isLevelOpen ? 'rotate' : ''}`}
+                                src={DropdownIcon}
+                                alt="Dropdown Icon"
+                            />
+                        </div>
+
+                        {isLevelOpen && (
+                            <ul className="level-dropdown-menu">
+                                {LEVEL_OPTIONS.map((option) => (
+                                    <li
+                                        key={option}
+                                        className={`level-dropdown-item ${selectedLevel === option ? 'selected' : ''}`}
+                                        onClick={() => handleSelectLevel(option)}
                                     >
                                         {option}
                                     </li>
