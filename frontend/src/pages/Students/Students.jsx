@@ -14,6 +14,8 @@ const RESPONSE_OPTIONS = ['Responded', 'No Response']
 const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4']
 
 function Students() {
+    const [students, setStudents] = useState([])
+    const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedSort, setSelectedSort] = useState(null)
     const [isSortOpen, setIsSortOpen] = useState(false)
@@ -26,6 +28,30 @@ function Students() {
     const [selectedLevel, setSelectedLevel] = useState(null)
     const [isLevelOpen, setIsLevelOpen] = useState(false)
     const levelDropdownRef = useRef(null)
+
+    useEffect(() => {
+        const token = localStorage.getItem('auth_token')
+        if (!token) {
+            setLoading(false)
+            return
+        }
+
+        fetch('http://127.0.0.1:8000/api/students', {
+            headers: {
+                Accept: 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+                setStudents(Array.isArray(data) ? data : [])
+                setLoading(false)
+            })
+            .catch(() => {
+                setStudents([])
+                setLoading(false)
+            })
+    }, [])
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -200,6 +226,32 @@ function Students() {
                     <button className="add-student-btn">
                         <span className="add-student-plus">+</span> Add Student
                     </button>
+                </section>
+
+                <section className="students-stats-section">
+                    <div className="stat-card stat-card-total">
+                        <div className="stat-card-header">
+                            <h4 className="stat-card-title">Total Students</h4>
+                            <p className="stat-card-subtitle">Overall enrolled</p>
+                        </div>
+                        <h2 className="stat-card-value">{loading ? '—' : students.length}</h2>
+                    </div>
+
+                    <div className="stat-card stat-card-responded">
+                        <div className="stat-card-header">
+                            <h4 className="stat-card-title">Responded</h4>
+                            <p className="stat-card-subtitle">0% response rate</p>
+                        </div>
+                        <h2 className="stat-card-value">0<span className="stat-card-slash">/{loading ? '—' : students.length}</span></h2>
+                    </div>
+
+                    <div className="stat-card stat-card-no-response">
+                        <div className="stat-card-header">
+                            <h4 className="stat-card-title">No Response</h4>
+                            <p className="stat-card-subtitle">0% of overall</p>
+                        </div>
+                        <h2 className="stat-card-value">0</h2>
+                    </div>
                 </section>
             </main>
         </div>
