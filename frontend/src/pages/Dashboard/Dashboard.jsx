@@ -99,40 +99,49 @@ function Dashboard() {
                 </header>
 
                 <div className="dashboard-content">
-                    <h2>Attendance at
-                        <br />
-                        a glance.
-                    </h2>
-                    <p>Monitor student attendance, absences, and records in one
-                        <br />
-                        place.
-                    </p>
+                    <div className="dashboard-content-column-left">
+                        <div className="dashboard-text-upper">
+                            <h2>Attendance at
+                                <br />
+                                a glance.
+                            </h2>
+                            <p>Monitor student attendance, absences, and records in one
+                                <br />
+                                place.
+                            </p>
+                        </div>
 
-                    <img
-                        className="dashboard-illustration"
-                        src={DashboardIllustration}
-                        alt="Dashboard Illustration"
-                    />
+                        <div className="dashboard-text-lower">
+                            <div className="dashboard-pencil-container">
+                                <img
+                                    className="dashboard-pencil-icon"
+                                    src={PencilIcon}
+                                    alt="Pencil Icon"
+                                />
+                            </div>
+                            <p className="week-attendance">This Week's Attendance</p>
+
+                            <div className="dashboard-eraser-container">
+                                <img
+                                    className="dashboard-eraser-icon"
+                                    src={EraserIcon}
+                                    alt="Eraser Icon"
+                                />
+                            </div>
+                            <p className="week-absences">This Week's Absences</p>
+                        </div>
+                    </div>
+                    <div className="dashboard-content-column-right">
+                        <img
+                            className="dashboard-illustration"
+                            src={DashboardIllustration}
+                            alt="Dashboard Illustration"
+                        />
+                    </div>
+
                 </div>
 
-                <div className="dashboard-pencil-container">
-                    <img
-                        className="dashboard-pencil-icon"
-                        src={PencilIcon}
-                        alt="Pencil Icon"
-                    />
-                </div>
-                <p className="week-attendance">This Week's Attendance</p>
-
-                <div className="dashboard-eraser-container">
-                    <img
-                        className="dashboard-eraser-icon"
-                        src={EraserIcon}
-                        alt="Eraser Icon"
-                    />
-                </div>
-                <p className="week-absences">This Week's Absences</p>
-
+                
                 <div className="dashboard-grid">
                     <div className="dashboard-left-column">
                         <section className="attendance-overview">
