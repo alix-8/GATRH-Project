@@ -101,12 +101,20 @@
 }
 
 .import-fields input,
-.import-fields select {
+.import-fields select,
+.import-textarea-label-title .import-textarea-label-title-right select {
     border: 1px solid #dbe1ec;
-    border-radius: 20px;
+    border-radius: 10px;
     padding: 0.55rem 0.7rem;
     font-size: 0.85rem;
     color: #2c3648;
+    background-color: #ffffff;
+}
+
+.import-textarea-label-title .import-textarea-label-title-right select.import-gathering-mismatch {
+    border-color: #d9534f;
+    background-color: #fff1f0;
+    color: #b42318;
 }
 
 textarea {
@@ -134,11 +142,30 @@ textarea {
 }
 
 .import-textarea-label-title {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
     font-size: 0.6rem;
-    align-self: flex-start;
     color: #000000;
 }
-    
+
+.import-textarea-label-title .import-textarea-label-title-left {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+}
+
+.import-textarea-label-title .import-textarea-label-title-right {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* .import-textarea-label-title .import-textarea-label-title-right select{
+    background-color: #ffffff;
+    color: #000000;
+} */
 
 .import-textarea-label textarea::placeholder {
     color: #c3cad6;

@@ -89,43 +89,38 @@ class AttendanceParsingService
     }
 
     /**
-     * Extracts header metadata (Gathering, Program, Year Level) from raw text,
-     * preferring explicit overrides over values detected in the text.
+     * Extracts metadata used to parse the attendance form.
      */
     public function extractHeaderMetadata(string $rawText, ?string $overrideProgram = null, ?int $overrideYearLevel = null, ?string $overrideGathering = null): array
     {
-        $lines = explode("\n", $rawText);
-        $detectedGathering = $overrideGathering ?: 'pm';
+        $detectedGathering = $this->detectGatheringType($rawText);
         $detectedProgram = $overrideProgram ? trim($overrideProgram) : null;
         $detectedYear = $overrideYearLevel;
 
-        foreach ($lines as $line) {
-            $line = trim($line);
-
-            if (preg_match('/Gathering:\s*(Prayer Meeting|Worship Service|Thanksgiving|Special|PM|WS|TG)/i', $line, $m)) {
-                $detectedGathering = match (strtolower(trim($m[1]))) {
-                    'prayer meeting', 'pm'  => 'pm',
-                    'worship service', 'ws' => 'ws',
-                    'thanksgiving', 'tg'    => 'tg',
-                    default                 => 'special',
-                };
-            }
-
-            if (!$detectedProgram && preg_match('/Program:\s*([A-Za-z0-9]+)/i', $line, $m)) {
-                $detectedProgram = strtoupper(trim($m[1]));
-            }
-
-            if (!$detectedYear && preg_match('/Year\s*Level:\s*(\d+)/i', $line, $m)) {
-                $detectedYear = (int) trim($m[1]);
-            }
-        }
-
         return [
-            'gathering_type' => $detectedGathering,
+            'gathering_type' => $detectedGathering ?: ($overrideGathering ?: 'pm'),
             'program'        => $detectedProgram,
             'year_level'     => $detectedYear,
             'default_date'   => now()->toDateString(),
         ];
+    }
+
+    /**
+     * Reads the gathering value from the text header and normalizes it to its code.
+     */
+    private function detectGatheringType(string $rawText): ?string
+    {
+        if (!preg_match('/^\s*gathering\s*:\s*(.+?)\s*$/im', $rawText, $matches)) {
+            return null;
+        }
+
+        return match (strtolower(trim($matches[1]))) {
+            'pm', 'prayer meeting' => 'pm',
+            'ws', 'worship service' => 'ws',
+            'tg', 'thanksgiving' => 'tg',
+            'special', 'special gathering' => 'special',
+            default => strtolower(trim($matches[1])),
+        };
     }
 
     /**

@@ -27,6 +27,7 @@ function Login() {
         event.preventDefault()
 
         setError('')
+        setErrorType('error')
         setLoading(true)
 
         try {
@@ -43,7 +44,7 @@ function Login() {
                 }),
             })
 
-            const data = await response.json()
+            const data = await response.json().catch(() => ({}))
 
             if (!response.ok) {
                 if (response.status === 401) {
@@ -56,6 +57,10 @@ function Login() {
                         data.errors?.password?.[0] ||
                         'Please check your email and password.'
                     )
+                }
+
+                if (response.status === 503) {
+                    throw new Error(data.message || 'The database service is currently unavailable. Please try again later.')
                 }
 
                 throw new Error(data.message || 'Something went wrong.')
@@ -71,7 +76,11 @@ function Login() {
             navigate('/dashboard')
 
         } catch (error) {
-            setError(error.message)
+            setError(
+                error instanceof TypeError
+                    ? 'Unable to connect to the server. Please try again later.'
+                    : error.message
+            )
         } finally {
             setLoading(false)
         }
