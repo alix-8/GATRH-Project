@@ -356,11 +356,16 @@ class AttendanceParsingService
 
         foreach ($allSectionStudents as $student) {
             if (isset($parsedSubmissions[$student->id])) {
-                $finalAttendanceList[] = $parsedSubmissions[$student->id];
+                $finalAttendanceList[] = array_merge($parsedSubmissions[$student->id], [
+                    'program'    => $program,
+                    'year_level' => $yearLevel,
+                ]);
             } else {
                 $finalAttendanceList[] = [
                     'student_id'     => $student->id,
                     'student_name'   => $student->name,
+                    'program'        => $program,
+                    'year_level'     => $yearLevel,
                     'batch'          => null,
                     'venue'          => null,
                     'day'            => $defaultDate,

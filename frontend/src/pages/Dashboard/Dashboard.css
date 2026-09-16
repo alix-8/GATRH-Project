@@ -199,16 +199,16 @@
 
 .pending-item {
     display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) auto;
+    grid-template-columns: 50px minmax(0, 1fr) auto minmax(0, 1.55fr);
     align-items: center;
-    column-gap: 10px;
-    min-height: 52px;
-    padding: 0 10px 0 8px;
+    min-height: 82px;
+    column-gap: 18px;
+    padding: 0 16px 0 12px;
     border: 1px solid #d1d5da;
-    border-radius: 16px;
+    border-radius: 18px;
     background: #fff;
     color: #172B4D;
-    font-size: 11px;
+    font-size: 18px;
 }
 
 .pending-status {
