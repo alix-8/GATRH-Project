@@ -6,6 +6,7 @@ import SortbyIcon from '../../assets/sort-by-icon.png'
 import DropdownIcon from '../../assets/drop-down-icon.png'
 import ResponseIcon from '../../assets/response-icon.png'
 import LevelIcon from '../../assets/level-icon.png'
+import SearchIcon from '../../assets/search-icon.png'
 import './Students.css'
 
 const SORT_OPTIONS = ['Ascending', 'Descending', 'Alphabetically']
@@ -13,6 +14,7 @@ const RESPONSE_OPTIONS = ['Responded', 'No Response']
 const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4']
 
 function Students() {
+    const [searchQuery, setSearchQuery] = useState('')
     const [selectedSort, setSelectedSort] = useState(null)
     const [isSortOpen, setIsSortOpen] = useState(false)
     const sortDropdownRef = useRef(null)
@@ -178,6 +180,21 @@ function Students() {
                                 ))}
                             </ul>
                         )}
+                    </div>
+
+                    <div className="search-students-container">
+                        <img
+                            className="search-students-icon"
+                            src={SearchIcon}
+                            alt="Search Icon"
+                        />
+                        <input
+                            type="text"
+                            className="search-students-input"
+                            placeholder="Search Students..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                     </div>
                 </section>
             </main>

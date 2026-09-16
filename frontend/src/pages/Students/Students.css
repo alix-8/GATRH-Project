@@ -117,3 +117,35 @@
     background-color: #5c7499;
     color: #ffffff;
 }
+
+.search-students-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #dcdfe4;
+    padding: 12px 12px;
+    border-radius: 6px;
+    background-color: #ffffff;
+    box-sizing: border-box;
+    width: 300px;
+}
+
+.search-students-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.search-students-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: #172B4D;
+    width: 100%;
+    padding: 0;
+}
+
+.search-students-input::placeholder {
+    color: #6b778c;
+    font-size: 12px;
+}
