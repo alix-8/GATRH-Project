@@ -152,3 +152,49 @@
     background: #e52328;
     color: white;
 }
+
+@media (max-width: 900px) {
+    .sidebar {
+        position: relative;
+        width: 100%;
+        min-height: auto;
+        padding: 10px 16px;
+    }
+
+    .sidebar-logo {
+        display: none;
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+        margin-top: 0;
+        overflow-x: auto;
+    }
+
+    .sidebar-link {
+        flex: 0 0 auto;
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px 8px;
+        border-left: 0;
+        border-bottom: 2px solid transparent;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .sidebar-link.active {
+        border-left-color: transparent;
+        border-bottom-color: #F2C94C;
+    }
+
+    .sidebar-icon {
+        width: 18px;
+    }
+
+    .sidebar-footer {
+        display: none;
+    }
+}

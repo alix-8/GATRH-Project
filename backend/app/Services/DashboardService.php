@@ -117,14 +117,15 @@ class DashboardService
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get()
-            ->map(function ($draft) {
+            ->map(function ($draft) use ($user) {
                 $parsed = is_array($draft->parsed_data) ? $draft->parsed_data : (array) $draft->parsed_data;
                 $firstRecord = collect($parsed)->first();
                 $gatheringType = $firstRecord['gathering_type'] ?? null;
 
                 return [
                     'id' => $draft->id,
-                    'program_label' => $firstRecord['program'] ?? 'Attendance Draft',
+                    'program_label' => $firstRecord['program'] ?? $user->program ?? 'Attendance Draft',
+                    'year_level' => $firstRecord['year_level'] ?? $user->year_level,
                     'gathering' => $this->formatGatheringName($gatheringType ?? 'pm'),
                     'submitted_ago' => $draft->created_at->diffForHumans(),
                 ];
