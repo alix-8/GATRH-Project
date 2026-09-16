@@ -6,7 +6,6 @@ import DashboardIcon from '../../assets/dashboard-icon.png'
 import StudentsIcon from '../../assets/students-icon.png'
 import ImportIcon from '../../assets/import-icon.png'
 import AttendanceIcon from '../../assets/attendance-icon.png'
-import RecordsIcon from '../../assets/records-icon.png'
 import RemindersIcon from '../../assets/reminders-icon.png'
 import SignOutIcon from '../../assets/sign-out-icon.png'
 import LogoutIcon from '../../assets/logout-icon.png'
@@ -95,18 +94,6 @@ function Sidebar() {
                         alt="Attendance"
                     />
                     <span>Attendance</span>
-                </NavLink>
-
-                <NavLink
-                    to="/records"
-                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                >
-                    <img
-                        className="sidebar-icon"
-                        src={RecordsIcon}
-                        alt="Records"
-                    />
-                    <span>Records</span>
                 </NavLink>
 
                 <NavLink
