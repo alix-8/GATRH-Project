@@ -42,7 +42,7 @@ class AttendanceController extends Controller
         $sortBy  = $validated['sort_by']  ?? 'day';
         $sortDir = $validated['sort_dir'] ?? 'desc';
 
-        // --- Part 1: Drafts not yet submitted -> "validating" ---
+        // --- Part 1: Drafts not yet submitted
         $draftsQuery = AttendanceDraft::where('user_id', $user->id)
             ->where('status', 'draft');
 
@@ -51,19 +51,17 @@ class AttendanceController extends Controller
         }
 
         $drafts = $draftsQuery->get()->map(function ($draft) use ($program, $yearLevel) {
-        $gatheringType = $draft->parsed_data[0]['gathering_type'] ?? null;
-
             return [
                 'source'         => 'draft',
                 'id'             => 'draft-' . $draft->id,
                 'ref_id'         => $draft->id,
                 'course'         => $program,
                 'year'           => $yearLevel,
-                'date'           => optional($draft->created_at)->format('F j, Y'),
-                'raw_day'        => $draft->created_at,
-                'gathering_type' => $gatheringType,
-                'gathering'      => $this->gatheringLabel($gatheringType ?? ''),
-                'time'           => optional($draft->created_at)->format('g:i A'),
+                'date'           => optional($draft->updated_at)->format('F j, Y'),
+                'raw_day'        => $draft->updated_at,
+                'gathering_type' => $draft->gathering_type,
+                'gathering'      => $this->gatheringLabel($draft->gathering_type ?? ''),
+                'time'           => optional($draft->updated_at)->format('g:i A'),
                 'status'         => 'validating',
             ];
         })->filter(function ($row) use ($validated) {
@@ -381,7 +379,8 @@ private function aggregateStatus($group): string
 
         $draft = $this->parsingService->saveDraft([
             'draft_id'       => $request->draft_id ?? null,
-            'gathering_id'   => $request->gathering_id ?? null,
+            'gathering_type' => $metadata['gathering_type'],
+            'day'            => $metadata['default_date'],
             'raw_text'       => $request->raw_text,
             'parsed_data'    => $sectionData['records'],
             'unparsed_data'  => $unmatchedLines,

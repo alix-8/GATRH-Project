@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
 import Notification from '../../components/Notification/Notification'
@@ -49,6 +50,7 @@ function Import({ onGoToAttendance = () => {} }) {
     const [isGenerating, setIsGenerating] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [result, setResult] = useState(null)
+    const navigate = useNavigate()
 
     // modal: null | 'generate' | 'success' | 'error'
     const [modal, setModal] = useState(null)
@@ -297,7 +299,7 @@ function Import({ onGoToAttendance = () => {} }) {
                             <button
                                 className="import-primary-button"
                                 type="button"
-                                onClick={() => { setModal(null); onGoToAttendance() }}
+                                onClick={() => { setModal(null); onGoToAttendance(); navigate('/attendance');}}
                             >
                                 Go to Attendance
                             </button>
