@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
 
         // Attendance Drafts Routes
+        Route::get('/attendance', [AttendanceController::class, 'index']);
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);
         Route::post('/attendance/drafts/{id}/submit', [AttendanceDraftController::class, 'submit']);
 

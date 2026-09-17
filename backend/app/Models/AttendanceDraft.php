@@ -11,6 +11,8 @@ class AttendanceDraft extends Model
 
     protected $fillable = [
         'user_id',
+        'gathering_type',
+        'day',
         'raw_text',
         'parsed_data',
         'total_detected',
@@ -19,6 +21,7 @@ class AttendanceDraft extends Model
     ];
 
     protected $casts = [
+        'day'           => 'date',
         'parsed_data'   => 'array',
         'unparsed_data' => 'array',
     ];

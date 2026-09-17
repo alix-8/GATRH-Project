@@ -385,14 +385,19 @@ class AttendanceParsingService
     public function saveDraft(array $data, int $userId): AttendanceDraft
     {
         $attributes = ['user_id' => $userId];
-        
+
         if (!empty($data['draft_id'])) {
             $attributes['id'] = $data['draft_id'];
+        } else {
+            $attributes['gathering_type'] = $data['gathering_type'] ?? null;
+            $attributes['day'] = $data['day'] ?? null;
         }
 
         return AttendanceDraft::updateOrCreate(
             $attributes,
             [
+                'gathering_type' => $data['gathering_type'] ?? null,
+                'day'            => $data['day'] ?? null,
                 'raw_text'       => $data['raw_text'],
                 'parsed_data'    => $data['parsed_data'],
                 'total_detected' => $data['total_detected'],

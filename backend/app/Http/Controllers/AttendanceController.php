@@ -20,6 +20,159 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Paginated, filterable list of attendance records for the table view.
+     * GET /api/attendance
+     */
+   public function index(Request $request)
+    {
+        $validated = $request->validate([
+            'gathering_type' => 'nullable|in:pm,ws,tg,special',
+            'status'         => 'nullable|in:validating,pending,rejected,approved',
+            'date'           => 'nullable|date',
+            'sort_by'        => 'nullable|in:day,status,gathering_type',
+            'sort_dir'       => 'nullable|in:asc,desc',
+            'per_page'       => 'nullable|integer|min:1|max:100',
+            'page'           => 'nullable|integer|min:1',
+        ]);
+
+        $user = $request->user();
+        $program = strtoupper((string) $user->program);
+        $yearLevel = (int) $user->year_level;
+
+        $sortBy  = $validated['sort_by']  ?? 'day';
+        $sortDir = $validated['sort_dir'] ?? 'desc';
+
+        // --- Part 1: Drafts not yet submitted
+        $draftsQuery = AttendanceDraft::where('user_id', $user->id)
+            ->where('status', 'draft');
+
+        if (!empty($validated['date'])) {
+            $draftsQuery->whereDate('day', $validated['date']);
+        }
+
+        $drafts = $draftsQuery->get()->map(function ($draft) use ($program, $yearLevel) {
+            return [
+                'source'         => 'draft',
+                'id'             => 'draft-' . $draft->id,
+                'ref_id'         => $draft->id,
+                'course'         => $program,
+                'year'           => $yearLevel,
+                'date'           => optional($draft->updated_at)->format('F j, Y'),
+                'raw_day'        => $draft->updated_at,
+                'gathering_type' => $draft->gathering_type,
+                'gathering'      => $this->gatheringLabel($draft->gathering_type ?? ''),
+                'time'           => optional($draft->updated_at)->format('g:i A'),
+                'status'         => 'validating',
+            ];
+        })->filter(function ($row) use ($validated) {
+            if (!empty($validated['gathering_type']) && $row['gathering_type'] !== $validated['gathering_type']) return false;
+            if (!empty($validated['status']) && $row['status'] !== $validated['status']) return false;
+            return true;
+        })->values();
+
+        // --- Part 2: Submitted records, grouped by gathering session ---
+        $recordsQuery = AttendanceRecord::query()
+            ->whereHas('student', function ($q) use ($program, $yearLevel) {
+                $q->where('program', $program)->where('year_level', $yearLevel);
+            });
+
+        if (!empty($validated['gathering_type'])) {
+            $recordsQuery->where('gathering_type', $validated['gathering_type']);
+        }
+        if (!empty($validated['date'])) {
+            $recordsQuery->whereDate('day', $validated['date']);
+        }
+
+        $records = $recordsQuery->get()
+            ->groupBy(fn ($r) => $r->gathering_type . '|' . $r->day->format('Y-m-d'))
+            ->map(function ($group) use ($program, $yearLevel) {
+                $first = $group->first();
+
+                return [
+                    'source'         => 'record',
+                    'id'             => 'record-' . $first->gathering_type . '-' . $first->day->format('Y-m-d'),
+                    'ref_id'         => null,
+                    'course'         => $program,
+                    'year'           => $yearLevel,
+                    'date'           => $first->day->format('F j, Y'),
+                    'raw_day'        => $first->day,
+                    'gathering_type' => $first->gathering_type,
+                    'gathering'      => $this->gatheringLabel($first->gathering_type),
+                    'time'           => optional($first->created_at)->format('g:i A'),
+                    'status'         => $this->aggregateStatus($group),
+                ];
+            })
+            ->values();
+
+        if (!empty($validated['status'])) {
+            $records = $records->filter(fn ($r) => $r['status'] === $validated['status'])->values();
+        }
+
+        // --- Merge, sort, paginate manually ---
+        $combined = $drafts->concat($records)
+            ->sortBy(
+                fn ($row) => match ($sortBy) {
+                    'status'         => $row['status'],
+                    'gathering_type' => $row['gathering_type'],
+                    default          => $row['raw_day'],
+                },
+                SORT_REGULAR,
+                $sortDir === 'desc'
+            )
+            ->values();
+
+        $perPage  = $validated['per_page'] ?? 12;
+        $page     = (int) ($request->query('page', 1));
+        $total    = $combined->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page     = min(max(1, $page), $lastPage);
+
+        $pageItems = $combined->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $pageItems,
+            'meta'   => [
+                'current_page' => $page,
+                'last_page'    => $lastPage,
+                'total'        => $total,
+            ],
+        ], 200);
+    }
+
+private function aggregateStatus($group): string
+{
+    if ($group->contains('validation_status', 'rejected')) {
+        return 'rejected';
+    }
+    if ($group->every(fn ($r) => $r->validation_status === 'validated')) {
+        return 'approved';
+    }
+    return 'pending';
+}
+
+    private function gatheringLabel(string $type): string
+    {
+        return match ($type) {
+            'pm'      => 'Prayer Meeting',
+            'ws'      => 'Worship Service',
+            'tg'      => 'Thanksgiving',
+            'special' => 'Special Gathering',
+            default   => ucfirst($type),
+        };
+    }
+
+    private function mapStatus(string $validationStatus): string
+    {
+        return match ($validationStatus) {
+            'unvalidated' => 'pending',
+            'validated'   => 'approved',
+            'rejected'    => 'rejected',
+            default       => $validationStatus,
+        };
+    }
+
+    /**
      * Generate a pre-filled GATRH text template with student names sorted alphabetically.
      */
     public function generateTemplate(Request $request)
@@ -226,7 +379,8 @@ class AttendanceController extends Controller
 
         $draft = $this->parsingService->saveDraft([
             'draft_id'       => $request->draft_id ?? null,
-            'gathering_id'   => $request->gathering_id ?? null,
+            'gathering_type' => $metadata['gathering_type'],
+            'day'            => $metadata['default_date'],
             'raw_text'       => $request->raw_text,
             'parsed_data'    => $sectionData['records'],
             'unparsed_data'  => $unmatchedLines,
