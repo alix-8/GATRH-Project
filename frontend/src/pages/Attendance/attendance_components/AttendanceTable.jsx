@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import TrashIcon from '../../../assets/trash-icon.png'
 import PlusIcon from '../../../assets/plus-icon.png'
+import { request } from '../../../api/request'
 import './AttendanceTable.css'
 
 const STATUS_META = {
-    validating: { label: 'Validating', dot: '#8c96a4' },
     pending:    { label: 'Pending',    dot: '#F2994A' },
     rejected:   { label: 'Rejected',   dot: '#E52328' },
     approved:   { label: 'Approved',   dot: '#27AE60' },
@@ -32,14 +32,10 @@ function AttendanceTable() {
                 if (sortBy) params.set('sort_by', sortBy)
                 params.set('page', meta.current_page)
 
-                const res = await fetch(`/api/attendance?${params.toString()}`, {
+                const json = await request(`/attendance?${params.toString()}`, {
                     signal: controller.signal,
-                    headers: { Accept: 'application/json' },
                 })
 
-                if (!res.ok) throw new Error('Failed to load attendance records.')
-
-                const json = await res.json()
                 setRecords(json.data)
                 setMeta(json.meta)
             } catch (err) {
