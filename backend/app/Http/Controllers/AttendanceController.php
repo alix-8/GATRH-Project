@@ -20,6 +20,94 @@ class AttendanceController extends Controller
     }
 
     /**
+ * Paginated, filterable list of attendance records for the table view.
+ * GET /api/attendance
+ */
+    public function index(Request $request)
+    {
+        $validated = $request->validate([
+            'gathering_type' => 'nullable|in:pm,ws,tg,special',
+            'status'         => 'nullable|in:validated,rejected,unvalidated',
+            'date'           => 'nullable|date',
+            'sort_by'        => 'nullable|in:day,status,gathering_type',
+            'sort_dir'       => 'nullable|in:asc,desc',
+            'per_page'       => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $user = $request->user();
+
+        $query = AttendanceRecord::query()
+            ->with('student')
+            ->whereHas('student', function ($q) use ($user) {
+                $q->where('program', $user->program)
+                ->where('year_level', $user->year_level);
+            });
+
+        if (!empty($validated['gathering_type'])) {
+            $query->where('gathering_type', $validated['gathering_type']);
+        }
+
+        if (!empty($validated['date'])) {
+            $query->whereDate('day', $validated['date']);
+        }
+
+        if (!empty($validated['status'])) {
+            $query->where('validation_status', $validated['status']);
+        }
+
+        $sortBy  = $validated['sort_by']  ?? 'day';
+        $sortDir = $validated['sort_dir'] ?? 'desc';
+        $query->orderBy($sortBy === 'status' ? 'validation_status' : $sortBy, $sortDir);
+
+        $perPage = $validated['per_page'] ?? 12;
+        $records = $query->paginate($perPage);
+
+        $data = $records->getCollection()->map(function ($record) {
+            return [
+                'id'             => $record->id,
+                'course'         => $record->student->program ?? null,
+                'year'           => $record->student->year_level ?? null,
+                'date'           => optional($record->day)->format('F j, Y'),
+                'gathering'      => $this->gatheringLabel($record->gathering_type),
+                'time'           => optional($record->created_at)->format('g:i A'),
+                'status'         => $this->mapStatus($record->validation_status),
+                'raw_status'     => $record->validation_status,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $data,
+            'meta'   => [
+                'current_page' => $records->currentPage(),
+                'last_page'    => $records->lastPage(),
+                'total'        => $records->total(),
+            ],
+        ], 200);
+    }
+
+    private function gatheringLabel(string $type): string
+    {
+        return match ($type) {
+            'pm'      => 'Prayer Meeting',
+            'ws'      => 'Worship Service',
+            'tg'      => 'Thanksgiving',
+            'special' => 'Special Gathering',
+            default   => ucfirst($type),
+        };
+    }
+
+    private function mapStatus(string $validationStatus): string
+    {
+        return match ($validationStatus) {
+            'unvalidated' => 'pending',
+            'validated'   => 'approved',
+            'rejected'    => 'rejected',
+            default       => $validationStatus,
+        };
+    }
+
+    /**
      * Generate a pre-filled GATRH text template with student names sorted alphabetically.
      */
     public function generateTemplate(Request $request)
