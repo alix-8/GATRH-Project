@@ -179,7 +179,7 @@ function Login() {
                         />
                         {password.length > 0 && (
                             <button
-                                type="button" 
+                                type="button"
                                 className="show-password-toggle"
                                 onClick={() => setShowPassword(!showPassword)}
                                 aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -237,9 +237,7 @@ function Login() {
             {/* ACCOUNT HELP */}
             <p className="account-help">
                 <span>Need help accessing your account?</span>
-                <a className="account-help-link" href="">
-                    Contact your administrator
-                </a>
+                <span className="account-help-link">Contact your administrator</span>
             </p>
 
             {/* RIGHT SIDE */}
