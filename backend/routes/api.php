@@ -38,6 +38,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/students', [StudentController::class, 'index']);
+    Route::get('/students/attendance-snapshot', [StudentController::class, 'attendanceSnapshot']);
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/me', [AuthController::class, 'me']);
