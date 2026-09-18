@@ -10,6 +10,42 @@
     flex-wrap: wrap;
 }
 
+/* Ensure the wrapper positions the absolute icon cleanly */
+.select-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Position the absolute left icon */
+.select-img-left {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Any input/select inside a select-wrapper with an icon needs left padding */
+.select-wrapper .toolbar-select,
+.select-wrapper input {
+    padding-left: 36px; /* Moves text past the 16px icon + 12px offset */
+}
+
+.select-img-left {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    z-index: 2;
+}
+
 .toolbar-select {
     height: 38px;
     padding: 0 12px;
@@ -18,12 +54,26 @@
     color: #172B4D;
     font-size: 13px;
     background: #ffffff;
+    cursor: pointer;
 }
 
 .toolbar-select-primary {
-    background: #172B4D;
+    background-color: #172B4D;
     color: #ffffff;
     border-color: #172B4D;
+    padding-left: 38px; /* Room for left icon */
+    padding-right: 32px; /* Room for custom dropdown chevron */
+    appearance: none;
+    -webkit-appearance: none;
+    /* Custom SVG dropdown chevron arrow */
+    background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+.toolbar-select-primary option {
+    background-color: #172B4D;
+    color: #ffffff;
 }
 
 .toolbar-spacer {
@@ -145,4 +195,128 @@
     background: #172B4D;
     color: #ffffff;
     border-color: #172B4D;
+}
+
+.checkbox-col {
+    width: 36px;
+    text-align: center;
+}
+
+.toolbar-text-btn {
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1px solid #d6d9de;
+    background: #ffffff;
+    color: #6b7482;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.trash-btn {
+    color: #6b7482;
+}
+
+.toolbar-icon-btn-active.trash-btn {
+    background: #FFE6E6;
+    border-color: #EF3838;
+    color: #EF3838;
+}
+
+.trash-icon {
+    overflow: visible;
+}
+
+.trash-lid {
+    transform-origin: 6px 7px;
+    transition: transform 0.25s ease;
+}
+
+.trash-icon-open .trash-lid {
+    transform: rotate(-28deg) translate(-1px, -1px);
+}
+
+.delete-modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(12, 16, 22, 0.58);
+    z-index: 1000;
+}
+
+.delete-modal {
+    width: 360px;
+    max-width: 90vw;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px 32px 28px;
+    text-align: center;
+}
+
+.delete-modal-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+}
+
+.delete-modal-icon img {
+    width: 100%;
+    height: 100%;
+}
+
+.delete-modal h2 {
+    color: #172B4D;
+    font-size: 22px;
+    margin: 0 0 12px;
+}
+
+.delete-modal-divider {
+    height: 1px;
+    background: #d6d9de;
+    margin-bottom: 16px;
+}
+
+.delete-modal p {
+    color: #6b7482;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 24px;
+}
+
+.delete-modal-count {
+    color: #e52328;
+    font-weight: 500;
+}
+
+.delete-modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.delete-modal-actions button {
+    flex: 1;
+    min-height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.delete-modal-cancel {
+    border: 1px solid #8c96a4;
+    background: #ffffff;
+    color: #6b7482;
+}
+
+.delete-modal-confirm {
+    border: 1px solid #e52328;
+    background: #e52328;
+    color: #ffffff;
+}
+
+.delete-modal-confirm:disabled,
+.delete-modal-cancel:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }

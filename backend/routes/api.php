@@ -45,6 +45,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/change-password', [ProfileController::class, 'changePassword']);
     Route::patch('/profile/contact', [ProfileController::class, 'changeContact']);
 
+    //attendance page
+    Route::delete('/attendance/drafts', [AttendanceDraftController::class, 'destroyMany']);
+    Route::get('/attendance', [AttendanceController::class, 'index']);
+
     // Secretary (Submission, Parsing, and Reminders)
     Route::middleware('role:secretary')->group(function () {
 
@@ -56,7 +60,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
 
         // Attendance Drafts Routes
-        Route::get('/attendance', [AttendanceController::class, 'index']);
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);
         Route::post('/attendance/drafts/{id}/submit', [AttendanceDraftController::class, 'submit']);
 

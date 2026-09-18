@@ -29,9 +29,36 @@ class AttendanceDraftController extends Controller
             ], 404);
         }
 
+        $students = collect($draft->parsed_data)->map(function ($record) {
+            return [
+                'student_id'   => $record['student_id'] ?? null,
+                'student_name' => $record['student_name'] ?? 'Unknown',
+                'status'       => $record['status'] ?? 'no_response',
+                'venue'        => $record['venue'] ?? null,
+                'batch'        => $record['batch'] ?? null,
+                'day'          => $record['day'] ?? null,
+            ];
+        });
+
+        $responded = $students->where('status', 'present')->count();
+        $total = $students->count();
+
         return response()->json([
             'status' => 'success',
-            'data'   => $draft,
+            'data'   => [
+                'id'                 => $draft->id,
+                'gathering_type'     => $draft->gathering_type,
+                'day'                => optional($draft->day)->format('F j, Y'),
+                'day_iso'            => optional($draft->day)->toDateString(),
+                'submitted_by'       => [
+                    'name' => $request->user()->name,
+                    'role' => trim(strtoupper($request->user()->program) . ' ' . $request->user()->year_level . 'rd Year · Spiritual Secretary'),
+                ],
+                'total_students'     => $total,
+                'responded_count'    => $responded,
+                'no_response_count'  => $total - $responded,
+                'students'           => $students,
+            ],
         ], 200);
     }
 
@@ -98,4 +125,24 @@ class AttendanceDraftController extends Controller
             'message' => 'Attendance record submitted successfully.',
         ], 200);
     }
+
+        public function destroyMany(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $deleted = AttendanceDraft::whereIn('id', $validated['ids'])
+            ->where('user_id', $request->user()->id)
+            ->where('status', 'draft')
+            ->delete();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => "{$deleted} draft(s) deleted.",
+            'deleted' => $deleted,
+        ], 200);
+    }
 }
+
