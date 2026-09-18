@@ -222,10 +222,6 @@ function Students() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-
-                    <button className="add-student-btn">
-                        <span className="add-student-plus">+</span> Add Student
-                    </button>
                 </section>
 
                 <section className="students-stats-section">
