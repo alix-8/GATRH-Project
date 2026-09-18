@@ -49,7 +49,7 @@
     cursor: pointer;
     user-select: none;
     box-sizing: border-box;
-    width: 241px;
+    width: 236px;
 
 }
 
@@ -218,4 +218,138 @@
     color: #5e6c84;
     font-size: 42px;
     font-weight: bold;
+}
+
+.students-table-section {
+    margin: 20px 40px 40px;
+}
+
+.students-table-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.students-table-heading h2 {
+    margin: 0;
+    color: #172B4D;
+    font-size: 21px;
+}
+
+.students-table-heading span {
+    border: 1px solid #d6dce6;
+    border-radius: 999px;
+    color: #6b778c;
+    font-size: 10px;
+    padding: 5px 12px;
+}
+
+.students-table-wrapper {
+    overflow-x: auto;
+}
+
+.students-table {
+    border-spacing: 0;
+    width: 100%;
+    color: #172B4D;
+    font-size: 12px;
+    text-align: left;
+}
+
+.students-table th {
+    background: #172f56;
+    color: #fff;
+    padding: 8px 20px;
+    font-weight: 10;
+}
+
+.students-table th:first-child {
+    border-radius: 11px 0 0 0;
+}
+
+.students-table th:last-child {
+    border-radius: 0 11px 0 0;
+}
+
+.students-table td {
+    border-right: 1px solid #edf0f4;
+    padding: 2px 20px;
+}
+
+.students-table td:last-child {
+    border-right: 0;
+}
+
+.students-table-state {
+    color: #6b778c;
+    text-align: center;
+}
+
+.response-badge {
+    border-radius: 999px;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 100px;
+    padding: 1px 15px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.response-badge.responded {
+    margin-top: 4px;
+    border: 1px solid #24b85d;
+    color: #129946;
+}
+
+.response-badge.no-response {
+    margin-top: 4px;
+    border: 1px solid #ff5757;
+    color: #e43d3d;
+}
+
+.response-badge::before {
+    content: '●';
+    font-size: 17px;
+    margin-right: 6px;
+}
+
+.escalation-bars {
+    align-items: center;
+    border: 1px solid #d9e2da;
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 3px;
+    justify-content: center;
+    min-height: 20px;
+    min-width: 58px;
+    padding: 1px 4px;
+}
+
+.escalation-bars i {
+    background: #edf2ed;
+    border-radius: 4px;
+    display: block;
+    height: 15px;
+    width: 5px;
+}
+
+.escalation-bars i.filled {
+    background: #2ed258;
+}
+
+.student-view-button {
+    background: #1d9bf0;
+    border: 0;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    min-width: 86px;
+    padding: 6px 14px;
+}
+
+.student-view-button:hover {
+    background: #0b83d2;
 }
