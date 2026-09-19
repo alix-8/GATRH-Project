@@ -4,10 +4,11 @@ import PlusIcon from '../../../assets/plus-icon.png'
 import GatheringIcon from '../../../assets/gathering-icon.png'
 import CalendarIcon from '../../../assets/calendar-icon.png'
 import SortbyIcon from '../../../assets/sort-by-icon.png'
-import TrashIcon from '../../../assets/trash-icon.png' // Added missing import
 import { request } from '../../../api/request'
+import { TrashIcon } from '../../../components/Icons/Reusables'
 import './AttendanceTable.css'
 import ReviewDrawer from './ReviewDrawer'
+import AttendancePagination from './AttendancePagination'
 
 const STATUS_META = {
     validating: { label: 'Validating', dot: '#8c96a4' },
@@ -276,20 +277,13 @@ function AttendanceTable() {
                 </table>
             </div>
 
-            <div className="attendance-pagination">
-                <span>Showing {meta.current_page} out of {meta.last_page} pages</span>
-                <div className="pagination-controls">
-                    <button onClick={() => goToPage(page - 1)} disabled={page === 1}>‹</button>
-                    <button className="page-active">{meta.current_page}</button>
-                    <button onClick={() => goToPage(page + 1)} disabled={page === meta.last_page}>›</button>
-                </div>
-            </div>
+            <AttendancePagination/>
 
             {confirmOpen && (
                 <div className="delete-modal-overlay">
                     <div className="delete-modal">
                         <div className="delete-modal-icon">
-                            <img src={TrashIcon} alt="" />
+                            <TrashIcon/>
                         </div>
                         <h2>Confirm Deleting?</h2>
                         <div className="delete-modal-divider" />

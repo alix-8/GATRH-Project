@@ -205,9 +205,9 @@ class AttendanceController extends Controller
             'student_id'   => $r->student_id,
             'student_name' => $r->student->name ?? 'Unknown',
             'status'       => $r->status,
-            'venue'        => $r->venue,
-            'batch'        => $r->batch,
-            'day'          => $r->day->format('F j, Y'),
+            'venue'        => $r->venue ?: '---',
+            'batch'        => $r->batch ? \Carbon\Carbon::parse($r->batch)->format('g:ia') : '---',
+            'day'          => $r->day ? $r->day->format('Y-m-d') : '---',
         ]);
 
         $responded = $students->where('status', 'present')->count();

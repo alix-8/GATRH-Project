@@ -34,9 +34,9 @@ class AttendanceDraftController extends Controller
                 'student_id'   => $record['student_id'] ?? null,
                 'student_name' => $record['student_name'] ?? 'Unknown',
                 'status'       => $record['status'] ?? 'no_response',
-                'venue'        => $record['venue'] ?? null,
-                'batch'        => $record['batch'] ?? null,
-                'day'          => $record['day'] ?? null,
+                'batch' => !empty($record['batch']) ? \Carbon\Carbon::parse($record['batch'])->format('g:ia') : '---',
+                'venue' => $record['venue'] ?? '---',
+                'day'   => $record['day'] ?? '---',
             ];
         });
 
