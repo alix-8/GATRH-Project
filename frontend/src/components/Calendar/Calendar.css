@@ -1,0 +1,98 @@
+.rcal {
+    width: 250px;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 2px solid #819198;
+    border-radius: 16px;
+    padding: 12px 14px 16px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.rcal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.rcal-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+.rcal-nav-btn {
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    line-height: 1;
+}
+
+.rcal-nav-btn:hover {
+    background: #f2f2f2;
+}
+
+.rcal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 4px;
+}
+
+.rcal-weekday {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+.rcal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 4px;
+}
+
+.rcal-day {
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1a1a1a;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rcal-day:hover:not(.rcal-day-disabled) {
+    background: #f0f0f0;
+}
+
+.rcal-day-outside {
+    color: #c7c7c7;
+}
+
+.rcal-day-selected {
+    background: #1a1a1a;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.rcal-day-selected:hover {
+    background: #1a1a1a;
+}
+
+.rcal-day-disabled {
+    color: #e0e0e0;
+    cursor: not-allowed;
+}

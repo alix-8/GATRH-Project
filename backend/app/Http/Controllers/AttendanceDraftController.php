@@ -34,9 +34,9 @@ class AttendanceDraftController extends Controller
                 'student_id'   => $record['student_id'] ?? null,
                 'student_name' => $record['student_name'] ?? 'Unknown',
                 'status'       => $record['status'] ?? 'no_response',
-                'venue'        => $record['venue'] ?? null,
-                'batch'        => $record['batch'] ?? null,
-                'day'          => $record['day'] ?? null,
+                'batch' => !empty($record['batch']) ? \Carbon\Carbon::parse($record['batch'])->format('g:ia') : '---',
+                'venue' => $record['venue'] ?? '---',
+                'day'   => $record['day'] ?? '---',
             ];
         });
 
@@ -66,65 +66,65 @@ class AttendanceDraftController extends Controller
      * Submit a draft: Move valid entries to final attendance records and clear/mark draft.
      * POST /api/attendance/drafts/{id}/submit
      */
-    public function submit(Request $request, int $id): JsonResponse
-    {
-        $draft = AttendanceDraft::where('id', $id)
-            ->where('user_id', $request->user()->id)
-            ->where('status', 'draft')
-            ->first();
+    // public function submit(Request $request, int $id): JsonResponse
+    // {
+    //     $draft = AttendanceDraft::where('id', $id)
+    //         ->where('user_id', $request->user()->id)
+    //         ->where('status', 'draft')
+    //         ->first();
 
-        if (!$draft) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Draft not found or already processed.',
-            ], 404);
-        }
+    //     if (!$draft) {
+    //         return response()->json([
+    //             'status'  => 'error',
+    //             'message' => 'Draft not found or already processed.',
+    //         ], 404);
+    //     }
 
-        $studentIds = collect($draft->parsed_data)
-            ->pluck('student_id')
-            ->filter()
-            ->unique();
-        $accessibleStudentCount = Student::whereKey($studentIds)
-            ->accessibleTo($request->user())
-            ->count();
+    //     $studentIds = collect($draft->parsed_data)
+    //         ->pluck('student_id')
+    //         ->filter()
+    //         ->unique();
+    //     $accessibleStudentCount = Student::whereKey($studentIds)
+    //         ->accessibleTo($request->user())
+    //         ->count();
 
-        if ($accessibleStudentCount !== $studentIds->count()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You are not authorized to submit attendance for one or more students.',
-            ], 403);
-        }
+    //     if ($accessibleStudentCount !== $studentIds->count()) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => 'You are not authorized to submit attendance for one or more students.',
+    //         ], 403);
+    //     }
 
-        DB::transaction(function () use ($draft, $request) {
-            // 1. Insert parsed data into official attendance table (adjust table/model name as needed)
-            foreach ($draft->parsed_data as $record) {
-                DB::table('attendance_records')->insert([
-                    'user_id'      => $request->user()->id,
-                    'gathering_id' => $draft->gathering_id,
-                    'student_id'   => $record['student_id'] ?? null,
-                    'status'       => $record['status'] ?? 'present',
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
-                ]);
-            }
+    //     DB::transaction(function () use ($draft, $request) {
+    //         // 1. Insert parsed data into official attendance table (adjust table/model name as needed)
+    //         foreach ($draft->parsed_data as $record) {
+    //             DB::table('attendance_records')->insert([
+    //                 'user_id'      => $request->user()->id,
+    //                 'gathering_id' => $draft->gathering_id,
+    //                 'student_id'   => $record['student_id'] ?? null,
+    //                 'status'       => $record['status'] ?? 'present',
+    //                 'created_at'   => now(),
+    //                 'updated_at'   => now(),
+    //             ]);
+    //         }
 
-            // 2. Mark draft as submitted
-            $draft->update(['status' => 'submitted']);
+    //         // 2. Mark draft as submitted
+    //         $draft->update(['status' => 'submitted']);
 
-            // 3. Update related submission reminder status if applicable
-            if ($draft->gathering_id) {
-                Reminder::where('user_id', $request->user()->id)
-                    ->where('gathering_id', $draft->gathering_id)
-                    ->where('type', 'submission_deadline')
-                    ->update(['status' => 'completed']);
-            }
-        });
+    //         // 3. Update related submission reminder status if applicable
+    //         if ($draft->gathering_id) {
+    //             Reminder::where('user_id', $request->user()->id)
+    //                 ->where('gathering_id', $draft->gathering_id)
+    //                 ->where('type', 'submission_deadline')
+    //                 ->update(['status' => 'completed']);
+    //         }
+    //     });
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Attendance record submitted successfully.',
-        ], 200);
-    }
+    //     return response()->json([
+    //         'status'  => 'success',
+    //         'message' => 'Attendance record submitted successfully.',
+    //     ], 200);
+    // }
 
         public function destroyMany(Request $request): JsonResponse
     {

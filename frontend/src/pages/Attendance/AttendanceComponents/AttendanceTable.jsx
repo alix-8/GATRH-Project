@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PlusIcon from '../../../assets/plus-icon.png'
 import GatheringIcon from '../../../assets/gathering-icon.png'
 import CalendarIcon from '../../../assets/calendar-icon.png'
 import SortbyIcon from '../../../assets/sort-by-icon.png'
+import DropdownIcon from '../../../assets/drop-down-icon.png'
 import { request } from '../../../api/request'
+import { TrashIcon } from '../../../components/Icons/Reusables'
+import Calendar from '../../../components/Calendar/Calendar'
 import './AttendanceTable.css'
 import ReviewDrawer from './ReviewDrawer'
+import AttendancePagination from './AttendancePagination'
 
 const STATUS_META = {
     validating: { label: 'Validating', dot: '#8c96a4' },
@@ -15,17 +19,54 @@ const STATUS_META = {
     approved:   { label: 'Approved',   dot: '#27AE60' },
 }
 
+const GATHERING_OPTIONS = [
+    { value: '', label: 'Gathering' },
+    { value: 'pm', label: 'Prayer Meeting' },
+    { value: 'ws', label: 'Worship Service' },
+    { value: 'tg', label: 'Thanksgiving' },
+    { value: 'special', label: 'Special' },
+]
+
+const SORT_OPTIONS = [
+    { value: 'day', label: 'Sort by Date' },
+    { value: 'status', label: 'Sort by Status' },
+    { value: 'gathering_type', label: 'Sort by Gathering' },
+]
+
+// Local YYYY-MM-DD (avoids the UTC-shift bug from toISOString())
+function toDateParam(date) {
+    if (!date) return ''
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
+function formatDateLabel(date) {
+    if (!date) return 'Date'
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 function AttendanceTable() {
     const [records, setRecords] = useState([])
     const [meta, setMeta] = useState({ current_page: 1, last_page: 1 })
     const [page, setPage] = useState(1)
     const [gathering, setGathering] = useState('')
-    const [date, setDate] = useState('')
+    const [selectedDate, setSelectedDate] = useState(null)
     const [sortBy, setSortBy] = useState('day')
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-    // Drawer overlay here
+    const [isGatheringOpen, setIsGatheringOpen] = useState(false)
+    const gatheringDropdownRef = useRef(null)
+
+    const [isSortOpen, setIsSortOpen] = useState(false)
+    const sortDropdownRef = useRef(null)
+
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+    const calendarDropdownRef = useRef(null)
+
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [activeRecord, setActiveRecord] = useState(null)
 
@@ -35,70 +76,83 @@ function AttendanceTable() {
     const [deleting, setDeleting] = useState(false)
     const navigate = useNavigate()
 
-    // Reset pagination to page 1 whenever filters change
-    const handleGatheringChange = (e) => {
-        setGathering(e.target.value)
-        setPage(1)
-    }
-
-    const handleActionClick = (record) => {
-        setActiveRecord(record);
-        
-        if (record.status === 'validating') {
-            // Opens the drawer for review/validation mode
-            setDrawerOpen(true);
-        } else {
-            // Navigates to the detailed view page for approved/rejected/pending records
-            navigate(`/attendance/${record.ref_id || record.id}`);
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (gatheringDropdownRef.current && !gatheringDropdownRef.current.contains(event.target)) {
+                setIsGatheringOpen(false)
+            }
+            if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
+                setIsSortOpen(false)
+            }
+            if (calendarDropdownRef.current && !calendarDropdownRef.current.contains(event.target)) {
+                setIsCalendarOpen(false)
+            }
         }
-    };
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
-    const handleDateChange = (e) => {
-        setDate(e.target.value)
+    const handleSelectGathering = (value) => {
+        setGathering(value)
+        setPage(1)
+        setIsGatheringOpen(false)
+    }
+
+    const handleSelectSort = (value) => {
+        setSortBy(value)
+        setPage(1)
+        setIsSortOpen(false)
+    }
+
+    const handleSelectDate = (date) => {
+        setSelectedDate(date)
+        setPage(1)
+        setIsCalendarOpen(false)
+    }
+
+    const clearDate = (e) => {
+        e.stopPropagation()
+        setSelectedDate(null)
         setPage(1)
     }
 
-    const handleSortChange = (e) => {
-        setSortBy(e.target.value)
-        setPage(1)
-    }
+    const fetchRecords = useCallback(async (signal) => {
+        setLoading(true)
+        setError(null)
+        try {
+            const params = new URLSearchParams()
+            if (gathering) params.set('gathering_type', gathering)
+            if (selectedDate) params.set('date', toDateParam(selectedDate))
+            if (sortBy) params.set('sort_by', sortBy)
+            params.set('page', page)
+
+            const json = await request(`/attendance?${params.toString()}`, { signal })
+
+            setRecords(json.data)
+            setMeta(json.meta)
+        } catch (err) {
+            if (err.name !== 'AbortError') setError(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }, [gathering, selectedDate, sortBy, page])
 
     useEffect(() => {
         const controller = new AbortController()
-
-        async function fetchRecords() {
-            setLoading(true)
-            setError(null)
-            try {
-                const params = new URLSearchParams()
-                if (gathering) params.set('gathering_type', gathering)
-                if (date) params.set('date', date)
-                if (sortBy) params.set('sort_by', sortBy)
-                params.set('page', page)
-
-                const json = await request(`/attendance?${params.toString()}`, {
-                    signal: controller.signal,
-                })
-
-                setRecords(json.data)
-                setMeta(json.meta)
-            } catch (err) {
-                if (err.name !== 'AbortError') setError(err.message)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchRecords()
+        fetchRecords(controller.signal)
         return () => controller.abort()
-    }, [gathering, date, sortBy, page])
+    }, [fetchRecords, refreshTrigger])
+
+    const handleActionClick = (record) => {
+        setActiveRecord(record)
+        setDrawerOpen(true)
+    }
 
     const goToPage = (newPage) => {
         if (newPage < 1 || newPage > meta.last_page) return
         setPage(newPage)
     }
 
-    // Only drafts (source === 'draft') are ever deletable
     const deletableRecords = records.filter((r) => r.source === 'draft')
     const allSelected = deletableRecords.length > 0 && deletableRecords.every((r) => selectedIds.includes(r.ref_id))
 
@@ -136,10 +190,10 @@ function AttendanceTable() {
                 method: 'DELETE',
                 body: JSON.stringify({ ids: selectedIds }),
             })
-            setRecords((prev) => prev.filter((r) => !selectedIds.includes(r.ref_id)))
             setSelectedIds([])
             setDeleteMode(false)
             setConfirmOpen(false)
+            setRefreshTrigger((prev) => prev + 1)
         } catch (err) {
             setError(err.message)
             setConfirmOpen(false)
@@ -148,55 +202,108 @@ function AttendanceTable() {
         }
     }
 
+    const selectedGatheringLabel = GATHERING_OPTIONS.find((o) => o.value === gathering)?.label || 'Gathering'
+    const selectedSortLabel = SORT_OPTIONS.find((o) => o.value === sortBy)?.label || 'Sort by'
+
     return (
         <section className="attendance-table-section">
             <div className="attendance-toolbar">
-                <div className="select-wrapper">
-                    <img src={GatheringIcon} alt="" className="select-img-left" />
-                    <select 
-                        className="toolbar-select toolbar-select-primary" 
-                        value={gathering} 
-                        onChange={handleGatheringChange}
-                    >
-                        <option value="">Gathering</option>
-                        <option value="pm">Prayer Meeting</option>
-                        <option value="ws">Worship Service</option>
-                        <option value="tg">Thanksgiving</option>
-                        <option value="special">Special</option>
-                    </select>
-                </div>
-
-                <div className='select-wrapper'>
-                    <img src={CalendarIcon} alt="" className="select-img-left" />
-                    <input 
-                        type={date ? "date" : "text"} 
-                        placeholder="Date"
-                        className="toolbar-select toolbar-date-input" 
-                        value={date} 
-                        onChange={handleDateChange}
-                        onFocus={(e) => (e.target.type = "date")}
-                        onBlur={(e) => {
-                        if (!e.target.value) e.target.type = "text";
+                <div className="gathering-dropdown-container" ref={gatheringDropdownRef}>
+                    <div
+                        className={`toolbar-dropdown-row toolbar-dropdown-row-primary ${isGatheringOpen ? 'active' : ''}`}
+                        onClick={() => {
+                            setIsGatheringOpen((prev) => !prev)
+                            setIsSortOpen(false)
+                            setIsCalendarOpen(false)
                         }}
-                    />
+                    >
+                        <img className="toolbar-dropdown-icon" src={GatheringIcon} alt="" />
+                        <p className="toolbar-dropdown-text">{selectedGatheringLabel}</p>
+                        <img
+                            className={`toolbar-dropdown-chevron toolbar-dropdown-chevron-light ${isGatheringOpen ? 'rotate' : ''}`}
+                            src={DropdownIcon}
+                            alt=""
+                        />
+                    </div>
+
+                    {isGatheringOpen && (
+                        <ul className="toolbar-dropdown-menu">
+                            {GATHERING_OPTIONS.map((option) => (
+                                <li
+                                    key={option.value || 'all'}
+                                    className={`toolbar-dropdown-item ${gathering === option.value ? 'selected' : ''}`}
+                                    onClick={() => handleSelectGathering(option.value)}
+                                >
+                                    {option.label}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
-                <div className='select-wrapper'>
-                    <img src={SortbyIcon} alt="" className="select-img-left" />
-                        <select className="toolbar-select" value={sortBy} onChange={handleSortChange}>
-                        <option value="day">Sort by Date</option>
-                        <option value="status">Sort by Status</option>
-                        <option value="gathering_type">Sort by Gathering</option>
-                    </select>
+                <div className="calendar-dropdown-container" ref={calendarDropdownRef}>
+                    <div
+                        className={`toolbar-dropdown-row ${isCalendarOpen ? 'active' : ''}`}
+                        onClick={() => {
+                            setIsCalendarOpen((prev) => !prev)
+                            setIsGatheringOpen(false)
+                            setIsSortOpen(false)
+                        }}
+                    >
+                        <img className="toolbar-dropdown-icon" src={CalendarIcon} alt="" />
+                        <p className="toolbar-dropdown-text">{formatDateLabel(selectedDate)}</p>
+                        {selectedDate && (
+                            <button type="button" className="toolbar-dropdown-clear" onClick={clearDate} aria-label="Clear date">
+                                ×
+                            </button>
+                        )}
+                    </div>
+
+                    {isCalendarOpen && (
+                        <div className="toolbar-calendar-popover">
+                            <Calendar
+                                value={selectedDate}
+                                onChange={handleSelectDate}
+                                initialMonth={selectedDate || new Date()}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                <div className="sort-dropdown-container" ref={sortDropdownRef}>
+                    <div
+                        className={`toolbar-dropdown-row ${isSortOpen ? 'active' : ''}`}
+                        onClick={() => {
+                            setIsSortOpen((prev) => !prev)
+                            setIsGatheringOpen(false)
+                            setIsCalendarOpen(false)
+                        }}
+                    >
+                        <img className="toolbar-dropdown-icon" src={SortbyIcon} alt="" />
+                        <p className="toolbar-dropdown-text">{selectedSortLabel}</p>
+                        <img
+                            className={`toolbar-dropdown-chevron ${isSortOpen ? 'rotate' : ''}`}
+                            src={DropdownIcon}
+                            alt=""
+                        />
+                    </div>
+
+                    {isSortOpen && (
+                        <ul className="toolbar-dropdown-menu">
+                            {SORT_OPTIONS.map((option) => (
+                                <li
+                                    key={option.value}
+                                    className={`toolbar-dropdown-item ${sortBy === option.value ? 'selected' : ''}`}
+                                    onClick={() => handleSelectSort(option.value)}
+                                >
+                                    {option.label}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
                 <div className="toolbar-spacer" />
-
-                {deleteMode && (
-                    <button type="button" className="toolbar-text-btn" onClick={() => { setDeleteMode(false); setSelectedIds([]) }}>
-                        Cancel
-                    </button>
-                )}
 
                 <button
                     type="button"
@@ -214,7 +321,7 @@ function AttendanceTable() {
                         <line x1="14" y1="11" x2="14" y2="17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                 </button>
-                <button type="button" className="toolbar-icon-btn" aria-label="Add record" onClick={() => { navigate('/import') }}>
+                <button type="button" className="toolbar-icon-btn" aria-label="Add record" onClick={() => navigate('/import')}>
                     <img src={PlusIcon} alt="Add" />
                 </button>
             </div>
@@ -250,8 +357,10 @@ function AttendanceTable() {
                         {!loading && !error && records.map((record) => {
                             const statusMeta = STATUS_META[record.status] ?? STATUS_META.pending
                             const isDeletable = record.source === 'draft'
+                            const rowKey = `${record.source || 'rec'}-${record.ref_id || record.id}`
+
                             return (
-                                <tr key={record.id} className={`row-${record.status}`}>
+                                <tr key={rowKey} className={`row-${record.status}`}>
                                     {deleteMode && (
                                         <td className="checkbox-col">
                                             {isDeletable && (
@@ -290,20 +399,13 @@ function AttendanceTable() {
                 </table>
             </div>
 
-            <div className="attendance-pagination">
-                <span>Showing {meta.current_page} out of {meta.last_page} pages</span>
-                <div className="pagination-controls">
-                    <button onClick={() => goToPage(page - 1)} disabled={page === 1}>‹</button>
-                    <button className="page-active">{meta.current_page}</button>
-                    <button onClick={() => goToPage(page + 1)} disabled={page === meta.last_page}>›</button>
-                </div>
-            </div>
+            <AttendancePagination/>
 
             {confirmOpen && (
                 <div className="delete-modal-overlay">
                     <div className="delete-modal">
                         <div className="delete-modal-icon">
-                            <img src={TrashIcon} alt="" />
+                            <TrashIcon/>
                         </div>
                         <h2>Confirm Deleting?</h2>
                         <div className="delete-modal-divider" />
@@ -327,7 +429,11 @@ function AttendanceTable() {
             <ReviewDrawer 
                 isOpen={drawerOpen} 
                 onClose={() => setDrawerOpen(false)} 
-                record={activeRecord} 
+                record={activeRecord}
+                onSubmitted={() => {
+                    setDrawerOpen(false);
+                    setRefreshTrigger((prev) => prev + 1);
+                }}
             />
         </section>
     )

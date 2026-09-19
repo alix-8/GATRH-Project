@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
         // Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseLines']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
+        Route::get('/attendance/session', [AttendanceController::class, 'showGatheringRecords']);
 
         // Attendance Drafts Routes
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);

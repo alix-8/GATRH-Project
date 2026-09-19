@@ -12,6 +12,7 @@ class AttendanceRecord extends Model
     use HasFactory;
 
     protected $fillable = [
+        'batch_id',
         'student_id',
         'gathering_type',    // 'pm', 'ws', 'tg', 'special'
         'day',               // date of gathering
