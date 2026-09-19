@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Student;
 use App\Models\AttendanceDraft;
+use App\Models\AttendanceRecord;
+use App\Support\GatheringCycle;
 
 class AttendanceParsingService
 {
@@ -23,6 +25,18 @@ class AttendanceParsingService
         }
 
         return date('H:i:s', $timestamp);
+    }
+
+
+
+    public function hasSubmittedThisCycle(int $userId, string $gatheringType): bool
+    {
+        $cycleStart = GatheringCycle::currentCycleStart($gatheringType);
+
+        return AttendanceRecord::where('submitted_by', $userId)
+            ->where('gathering_type', $gatheringType)
+            ->whereDate('day', '>=', $cycleStart)
+            ->exists();
     }
 
     /**

@@ -526,6 +526,16 @@ class AttendanceController extends Controller
             'records.*.venue'          => 'nullable|string',
         ]);
 
+        $gatheringTypes = collect($validated['records'])->pluck('gathering_type')->unique();
+        foreach ($gatheringTypes as $type) {
+            if ($this->parsingService->hasSubmittedThisCycle($request->user()->id, $type)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "You have already submitted attendance for {$type} this cycle.",
+                ], 422);
+            }
+        }
+
         $studentIds = collect($validated['records'])->pluck('student_id')->unique();
         $accessibleStudentCount = Student::whereKey($studentIds)
             ->accessibleTo($request->user())
