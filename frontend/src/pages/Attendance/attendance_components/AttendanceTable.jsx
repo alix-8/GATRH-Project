@@ -79,13 +79,9 @@ function AttendanceTable() {
     }, [fetchRecords, refreshTrigger])
 
     const handleActionClick = (record) => {
-        setActiveRecord(record);
-        if (record.status === 'validating') {
-            setDrawerOpen(true);
-        } else {
-            navigate(`/attendance/${record.ref_id || record.id}`);
-        }
-    };
+        setActiveRecord(record)
+        setDrawerOpen(true)
+    }
 
     const goToPage = (newPage) => {
         if (newPage < 1 || newPage > meta.last_page) return

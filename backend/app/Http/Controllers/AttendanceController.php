@@ -59,6 +59,7 @@ class AttendanceController extends Controller
                 'course'         => $program,
                 'year'           => $yearLevel,
                 'date'           => optional($draft->updated_at)->format('F j, Y'),
+                'day_iso'        => optional($draft->updated_at)->toDateString(),
                 'raw_day'        => $draft->updated_at,
                 'gathering_type' => $draft->gathering_type,
                 'gathering'      => $this->gatheringLabel($draft->gathering_type ?? ''),
@@ -112,6 +113,7 @@ class AttendanceController extends Controller
                     'course'         => $program,
                     'year'           => $yearLevel,
                     'date'           => $dayCarbon->format('F j, Y'),
+                    'day_iso'        => $dayCarbon->toDateString(),
                     'raw_day'        => $dayCarbon,
                     'gathering_type' => $first->gathering_type,
                     'gathering'      => $this->gatheringLabel($first->gathering_type),
@@ -153,6 +155,83 @@ class AttendanceController extends Controller
                 'current_page' => $page,
                 'last_page'    => $lastPage,
                 'total'        => $total,
+            ],
+        ], 200);
+    }
+
+    private function ordinalYear(?int $year): string
+    {
+        if (!$year) return '';
+        $suffix = match (true) {
+            $year % 100 >= 11 && $year % 100 <= 13 => 'th',
+            $year % 10 === 1 => 'st',
+            $year % 10 === 2 => 'nd',
+            $year % 10 === 3 => 'rd',
+            default => 'th',
+        };
+        return "{$year}{$suffix} Year";
+    }
+
+    public function showGatheringRecords(Request $request)
+    {
+        $validated = $request->validate([
+            'batch_id'       => 'nullable|string',
+            'gathering_type' => 'required_without:batch_id|in:pm,ws,tg,special',
+            'day'            => 'required_without:batch_id|date',
+        ]);
+
+        $user = $request->user();
+        $program = strtoupper((string) $user->program);
+        $yearLevel = (int) $user->year_level;
+
+        $query = AttendanceRecord::whereHas('student', function ($q) use ($program, $yearLevel) {
+            $q->where('program', $program)->where('year_level', $yearLevel);
+        });
+
+        if (!empty($validated['batch_id'])) {
+            $query->where('batch_id', $validated['batch_id']);
+        } else {
+            $query->where('gathering_type', $validated['gathering_type'])
+                ->whereDate('day', $validated['day']);
+        }
+
+        $records = $query->with('student')->get();
+
+        if ($records->isEmpty()) {
+            return response()->json(['status' => 'error', 'message' => 'No records found.'], 404);
+        }
+
+        $students = $records->map(fn ($r) => [
+            'student_id'   => $r->student_id,
+            'student_name' => $r->student->name ?? 'Unknown',
+            'status'       => $r->status,
+            'venue'        => $r->venue,
+            'batch'        => $r->batch,
+            'day'          => $r->day->format('F j, Y'),
+        ]);
+
+        $responded = $students->where('status', 'present')->count();
+        $submitter = $records->first()->submitter;
+
+        $submitterProgram = $submitter?->program ? strtoupper($submitter->program) : '';
+        $submitterYear = $this->ordinalYear($submitter?->year_level);
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => [
+                'gathering_type'    => $records->first()->gathering_type,
+                'day'               => $records->first()->day->format('F j, Y'),
+                'submitted_by'      => [
+                    'name' => $submitter?->name ?? 'Unknown',
+                    'role' => trim(implode(' · ', array_filter([
+                        trim("{$submitterProgram} {$submitterYear}"),
+                        'Spiritual Secretary',
+                    ]))),
+                ],
+                'total_students'    => $students->count(),
+                'responded_count'   => $responded,
+                'no_response_count' => $students->count() - $responded,
+                'students'          => $students,
             ],
         ], 200);
     }

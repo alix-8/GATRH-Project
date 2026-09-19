@@ -18,12 +18,18 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [page, setPage] = useState(1)
 
     useEffect(() => {
-        if (!isOpen || !record?.ref_id) return
+        if (!isOpen || !record) return
         let cancelled = false
         setLoading(true)
         setError(null)
 
-        request(`/attendance/drafts/${record.ref_id}`)
+        const url = record.source === 'draft'
+        ? `/attendance/drafts/${record.ref_id}`
+        : record.batch_id
+            ? `/attendance/session?batch_id=${record.batch_id}`
+            : `/attendance/session?gathering_type=${record.gathering_type}&day=${record.day_iso}`
+
+        request(url)
             .then((json) => { if (!cancelled) setDraft(json.data) })
             .catch((err) => { if (!cancelled) setError(err.message) })
             .finally(() => { if (!cancelled) setLoading(false) })
@@ -168,20 +174,20 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                 <table className="drawer-table">
                                     <thead>
                                         <tr>
-                                            <th>Student</th>
-                                            <th>Venue</th>
-                                            <th>Batch</th>
+                                            <th>Name</th>
+                                            <th>Time</th>
                                             <th>Date</th>
+                                            <th>Location</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="drawer-table-body">
                                         {pageStudents.map((s, i) => (
                                             <tr key={s.student_id ?? i}>
                                                 <td>{s.student_name}</td>
-                                                <td>{s.venue || '—'}</td>
                                                 <td>{s.batch || '—'}</td>
                                                 <td>{s.day || '—'}</td>
+                                                 <td>{s.venue || '—'}</td>
                                                 <td>
                                                     <span className={`status-indicator status-${s.status === 'present' ? 'present' : 'no-response'}`}>
                                                         <span className="dot" /> {s.status === 'present' ? 'Present' : 'No response'}
