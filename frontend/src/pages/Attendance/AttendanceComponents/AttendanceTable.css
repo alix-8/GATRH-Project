@@ -291,3 +291,135 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* Add this block to the bottom of AttendanceTable.css */
+
+.gathering-dropdown-container,
+.sort-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.toolbar-dropdown-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid #d6d9de;
+    background: #ffffff;
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box;
+    min-width: 170px;
+}
+
+.toolbar-dropdown-row-primary {
+    background-color: #172B4D;
+    border-color: #172B4D;
+}
+
+.toolbar-dropdown-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.toolbar-dropdown-text {
+    margin: 0;
+    font-size: 13px;
+    color: #172B4D;
+    white-space: nowrap;
+}
+
+.toolbar-dropdown-row-primary .toolbar-dropdown-text {
+    color: #ffffff;
+}
+
+.toolbar-dropdown-chevron {
+    width: 16px;
+    height: 16px;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.toolbar-dropdown-chevron.rotate {
+    transform: rotate(180deg);
+}
+
+.toolbar-dropdown-chevron-light {
+    filter: brightness(0) invert(1);
+}
+
+.toolbar-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    min-width: 170px;
+    background-color: #ffffff;
+    border: 1px solid #dcdfe4;
+    border-radius: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    z-index: 50;
+    box-sizing: border-box;
+    box-shadow: 0 8px 20px rgba(23, 43, 77, 0.12);
+}
+
+.toolbar-dropdown-item {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #172B4D;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.toolbar-dropdown-item:hover {
+    background-color: #5c7499;
+    color: #ffffff;
+}
+
+.toolbar-dropdown-item.selected {
+    background-color: #eef2f8;
+    font-weight: 600;
+}
+
+.toolbar-dropdown-item.selected:hover {
+    background-color: #5c7499;
+    color: #ffffff;
+}
+
+/* Add this block to the bottom of AttendanceTable.css, after the dropdown block */
+
+.calendar-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.toolbar-dropdown-clear {
+    border: none;
+    background: transparent;
+    color: #8c96a4;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.toolbar-dropdown-clear:hover {
+    color: #172B4D;
+}
+
+.toolbar-calendar-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 60;
+}
