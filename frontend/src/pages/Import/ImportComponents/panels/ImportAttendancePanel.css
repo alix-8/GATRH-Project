@@ -1,0 +1,41 @@
+.import-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.import-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #172B4D;
+}
+
+.import-column-label {
+    margin: 0;
+}
+
+.import-column textarea {
+    border: 1px solid #dbe1ec;
+    border-radius: 10px;
+    padding: 1rem;
+    font-size: 0.85rem;
+    color: #0d0d0d;
+    resize: vertical;
+    min-height: 220px;
+}
+
+.import-column textarea::placeholder {
+    color: #c3cad6;
+}
+
+/* Shown until the parent passes a real `preview` component in */
+.import-preview-placeholder {
+    border: 1px solid #dbe1ec;
+    border-radius: 10px;
+    min-height: 220px;
+    background: #ffffff;
+}
