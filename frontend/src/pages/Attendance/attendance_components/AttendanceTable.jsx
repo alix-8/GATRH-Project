@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PlusIcon from '../../../assets/plus-icon.png'
 import GatheringIcon from '../../../assets/gathering-icon.png'
 import CalendarIcon from '../../../assets/calendar-icon.png'
 import SortbyIcon from '../../../assets/sort-by-icon.png'
+import TrashIcon from '../../../assets/trash-icon.png' // Added missing import
 import { request } from '../../../api/request'
 import './AttendanceTable.css'
 import ReviewDrawer from './ReviewDrawer'
@@ -24,8 +25,8 @@ function AttendanceTable() {
     const [sortBy, setSortBy] = useState('day')
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-    // Drawer overlay here
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [activeRecord, setActiveRecord] = useState(null)
 
@@ -35,23 +36,10 @@ function AttendanceTable() {
     const [deleting, setDeleting] = useState(false)
     const navigate = useNavigate()
 
-    // Reset pagination to page 1 whenever filters change
     const handleGatheringChange = (e) => {
         setGathering(e.target.value)
         setPage(1)
     }
-
-    const handleActionClick = (record) => {
-        setActiveRecord(record);
-        
-        if (record.status === 'validating') {
-            // Opens the drawer for review/validation mode
-            setDrawerOpen(true);
-        } else {
-            // Navigates to the detailed view page for approved/rejected/pending records
-            navigate(`/attendance/${record.ref_id || record.id}`);
-        }
-    };
 
     const handleDateChange = (e) => {
         setDate(e.target.value)
@@ -63,42 +51,47 @@ function AttendanceTable() {
         setPage(1)
     }
 
+    const fetchRecords = useCallback(async (signal) => {
+        setLoading(true)
+        setError(null)
+        try {
+            const params = new URLSearchParams()
+            if (gathering) params.set('gathering_type', gathering)
+            if (date) params.set('date', date)
+            if (sortBy) params.set('sort_by', sortBy)
+            params.set('page', page)
+
+            const json = await request(`/attendance?${params.toString()}`, { signal })
+
+            setRecords(json.data)
+            setMeta(json.meta)
+        } catch (err) {
+            if (err.name !== 'AbortError') setError(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }, [gathering, date, sortBy, page])
+
     useEffect(() => {
         const controller = new AbortController()
-
-        async function fetchRecords() {
-            setLoading(true)
-            setError(null)
-            try {
-                const params = new URLSearchParams()
-                if (gathering) params.set('gathering_type', gathering)
-                if (date) params.set('date', date)
-                if (sortBy) params.set('sort_by', sortBy)
-                params.set('page', page)
-
-                const json = await request(`/attendance?${params.toString()}`, {
-                    signal: controller.signal,
-                })
-
-                setRecords(json.data)
-                setMeta(json.meta)
-            } catch (err) {
-                if (err.name !== 'AbortError') setError(err.message)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchRecords()
+        fetchRecords(controller.signal)
         return () => controller.abort()
-    }, [gathering, date, sortBy, page])
+    }, [fetchRecords, refreshTrigger])
+
+    const handleActionClick = (record) => {
+        setActiveRecord(record);
+        if (record.status === 'validating') {
+            setDrawerOpen(true);
+        } else {
+            navigate(`/attendance/${record.ref_id || record.id}`);
+        }
+    };
 
     const goToPage = (newPage) => {
         if (newPage < 1 || newPage > meta.last_page) return
         setPage(newPage)
     }
 
-    // Only drafts (source === 'draft') are ever deletable
     const deletableRecords = records.filter((r) => r.source === 'draft')
     const allSelected = deletableRecords.length > 0 && deletableRecords.every((r) => selectedIds.includes(r.ref_id))
 
@@ -136,10 +129,10 @@ function AttendanceTable() {
                 method: 'DELETE',
                 body: JSON.stringify({ ids: selectedIds }),
             })
-            setRecords((prev) => prev.filter((r) => !selectedIds.includes(r.ref_id)))
             setSelectedIds([])
             setDeleteMode(false)
             setConfirmOpen(false)
+            setRefreshTrigger((prev) => prev + 1)
         } catch (err) {
             setError(err.message)
             setConfirmOpen(false)
@@ -153,11 +146,7 @@ function AttendanceTable() {
             <div className="attendance-toolbar">
                 <div className="select-wrapper">
                     <img src={GatheringIcon} alt="" className="select-img-left" />
-                    <select 
-                        className="toolbar-select toolbar-select-primary" 
-                        value={gathering} 
-                        onChange={handleGatheringChange}
-                    >
+                    <select className="toolbar-select toolbar-select-primary" value={gathering} onChange={handleGatheringChange}>
                         <option value="">Gathering</option>
                         <option value="pm">Prayer Meeting</option>
                         <option value="ws">Worship Service</option>
@@ -175,15 +164,13 @@ function AttendanceTable() {
                         value={date} 
                         onChange={handleDateChange}
                         onFocus={(e) => (e.target.type = "date")}
-                        onBlur={(e) => {
-                        if (!e.target.value) e.target.type = "text";
-                        }}
+                        onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
                     />
                 </div>
 
                 <div className='select-wrapper'>
                     <img src={SortbyIcon} alt="" className="select-img-left" />
-                        <select className="toolbar-select" value={sortBy} onChange={handleSortChange}>
+                    <select className="toolbar-select" value={sortBy} onChange={handleSortChange}>
                         <option value="day">Sort by Date</option>
                         <option value="status">Sort by Status</option>
                         <option value="gathering_type">Sort by Gathering</option>
@@ -214,7 +201,7 @@ function AttendanceTable() {
                         <line x1="14" y1="11" x2="14" y2="17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                 </button>
-                <button type="button" className="toolbar-icon-btn" aria-label="Add record" onClick={() => { navigate('/import') }}>
+                <button type="button" className="toolbar-icon-btn" aria-label="Add record" onClick={() => navigate('/import')}>
                     <img src={PlusIcon} alt="Add" />
                 </button>
             </div>
@@ -250,8 +237,11 @@ function AttendanceTable() {
                         {!loading && !error && records.map((record) => {
                             const statusMeta = STATUS_META[record.status] ?? STATUS_META.pending
                             const isDeletable = record.source === 'draft'
+                            // Composite unique key using source + ID to avoid React key collision
+                            const rowKey = `${record.source || 'rec'}-${record.ref_id || record.id}`
+
                             return (
-                                <tr key={record.id} className={`row-${record.status}`}>
+                                <tr key={rowKey} className={`row-${record.status}`}>
                                     {deleteMode && (
                                         <td className="checkbox-col">
                                             {isDeletable && (
@@ -327,7 +317,11 @@ function AttendanceTable() {
             <ReviewDrawer 
                 isOpen={drawerOpen} 
                 onClose={() => setDrawerOpen(false)} 
-                record={activeRecord} 
+                record={activeRecord}
+                onSubmitted={() => {
+                    setDrawerOpen(false);
+                    setRefreshTrigger((prev) => prev + 1);
+                }}
             />
         </section>
     )

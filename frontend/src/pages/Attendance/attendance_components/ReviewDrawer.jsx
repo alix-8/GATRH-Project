@@ -60,7 +60,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 venue: s.venue,
             }))
 
-            await request('/attendance', {
+            await request('/attendance/submit', {
                 method: 'POST',
                 body: JSON.stringify({ draft_id: draft.id, records }),
             })
