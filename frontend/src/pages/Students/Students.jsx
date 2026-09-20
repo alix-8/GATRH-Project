@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
 import Notification from '../../components/Notification/Notification'
@@ -8,15 +7,16 @@ import DropdownIcon from '../../assets/drop-down-icon.png'
 import ResponseIcon from '../../assets/response-icon.png'
 import LevelIcon from '../../assets/level-icon.png'
 import SearchIcon from '../../assets/search-icon.png'
+import CalendarIcon from '../../assets/calendar-icon.png'
 import './Students.css'
 
-const SORT_OPTIONS = ['Ascending', 'Descending', 'Alphabetically']
-const RESPONSE_OPTIONS = ['Responded', 'No Response']
-const LEVEL_OPTIONS = ['None', 'Level 1', 'Level 2', 'Level 3']
+const SORT_OPTIONS = ['Sort by', 'Ascending', 'Descending']
+const RESPONSE_OPTIONS = ['Response', 'Responded', 'No Response']
+const LEVEL_OPTIONS = ['Escalation', 'Level 1', 'Level 2', 'Level 3']
 
 function Students() {
-    const navigate = useNavigate()
     const [students, setStudents] = useState([])
+    const [attendanceSession, setAttendanceSession] = useState(null)
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedSort, setSelectedSort] = useState(null)
@@ -30,6 +30,14 @@ function Students() {
     const [selectedLevel, setSelectedLevel] = useState(null)
     const [isLevelOpen, setIsLevelOpen] = useState(false)
     const levelDropdownRef = useRef(null)
+    const [overview, setOverview] = useState(null)
+    const [overviewLoading, setOverviewLoading] = useState(false)
+    const [overviewError, setOverviewError] = useState(null)
+    const [overviewGathering, setOverviewGathering] = useState('')
+    const [overviewDate, setOverviewDate] = useState('')
+    const [overviewStatus, setOverviewStatus] = useState('')
+    const [overviewOpenFilter, setOverviewOpenFilter] = useState(null)
+    const overviewFiltersRef = useRef(null)
 
     useEffect(() => {
         const token = localStorage.getItem('auth_token')
@@ -46,10 +54,12 @@ function Students() {
             .then(res => res.ok ? res.json() : [])
             .then(data => {
                 setStudents(Array.isArray(data.students) ? data.students : [])
+                setAttendanceSession(data.session || null)
                 setLoading(false)
             })
             .catch(() => {
                 setStudents([])
+                setAttendanceSession(null)
                 setLoading(false)
             })
     }, [])
@@ -65,30 +75,37 @@ function Students() {
             if (levelDropdownRef.current && !levelDropdownRef.current.contains(event.target)) {
                 setIsLevelOpen(false)
             }
+            if (overviewFiltersRef.current && !overviewFiltersRef.current.contains(event.target)) {
+                setOverviewOpenFilter(null)
+            }
         }
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
     const handleSelectSort = (option) => {
-        setSelectedSort(option)
+        setSelectedSort(option === 'Sort by' ? null : option)
         setIsSortOpen(false)
     }
 
     const handleSelectResponse = (option) => {
-        setSelectedResponse(option)
+        setSelectedResponse(option === 'Response' ? null : option)
         setIsResponseOpen(false)
     }
 
     const handleSelectLevel = (option) => {
-        setSelectedLevel(option)
+        setSelectedLevel(option === 'Escalation' ? null : option)
         setIsLevelOpen(false)
     }
 
     const normalizedYear = (year) => String(year).replace(/^([1-4])$/, '$1 Year')
     const filteredStudents = students
         .filter((student) => !selectedResponse || student.response === selectedResponse)
-        .filter((student) => !selectedLevel || student.escalation_level === selectedLevel)
+        .filter((student) => {
+            if (!selectedLevel) return true
+            const bars = student.response === 'Responded' ? 0 : Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
+            return bars === Number(selectedLevel.replace('Level ', ''))
+        })
         .filter((student) => student.name.toLowerCase().includes(searchQuery.trim().toLowerCase()))
         .sort((a, b) => {
             if (!selectedSort) return 0
@@ -96,14 +113,40 @@ function Students() {
             return selectedSort === 'Descending' ? -comparison : comparison
         })
 
-    const respondedCount = students.filter((student) => student.response === 'Responded').length
-    const noResponseCount = students.length - respondedCount
+    const hasAttendanceSession = Boolean(attendanceSession)
+    const respondedCount = hasAttendanceSession ? students.filter((student) => student.response === 'Responded').length : 0
+    const noResponseCount = hasAttendanceSession ? students.filter((student) => student.response === 'No Response').length : 0
     const responseRate = students.length ? Math.round((respondedCount / students.length) * 100) : 0
     const noResponseRate = students.length ? Math.round((noResponseCount / students.length) * 100) : 0
     const escalationBars = (student) => {
         if (student.response === 'Responded') return 0
         return Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
     }
+    const formatOverviewDate = (date) => date ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${date}T00:00:00`)) : '—'
+    const openOverview = async (student) => {
+        setOverview({ student, month: '', summary: {}, history: [] })
+        setOverviewLoading(true)
+        setOverviewError(null)
+        setOverviewGathering('')
+        setOverviewDate('')
+        setOverviewStatus('')
+        setOverviewOpenFilter(null)
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/api/students/${student.id}/overview`, {
+                headers: { Accept: 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+            })
+            if (!response.ok) throw new Error('Unable to load this student’s overview.')
+            setOverview(await response.json())
+        } catch (error) {
+            setOverviewError(error.message)
+        } finally {
+            setOverviewLoading(false)
+        }
+    }
+    const overviewHistory = (overview?.history || [])
+        .filter((record) => !overviewGathering || record.gathering_type === overviewGathering)
+        .filter((record) => !overviewDate || record.date === overviewDate)
+        .filter((record) => !overviewStatus || record.status === overviewStatus)
 
     return (
         <div className="students">
@@ -206,7 +249,7 @@ function Students() {
                                 src={LevelIcon}
                                 alt="Level Icon"
                             />
-                            <p className="level-text">{selectedLevel || 'Level'}</p>
+                            <p className="level-text">{selectedLevel || 'Escalation'}</p>
                             <img
                                 className={`drop-down-icon ${isLevelOpen ? 'rotate' : ''}`}
                                 src={DropdownIcon}
@@ -274,7 +317,6 @@ function Students() {
                 <section className="students-table-section">
                     <div className="students-table-heading">
                         <h2>Students</h2>
-                        <span>Showing {filteredStudents.length} of {students.length}</span>
                     </div>
                     <div className="students-table-wrapper">
                         <table className="students-table">
@@ -291,13 +333,17 @@ function Students() {
                                         <td>{student.name}</td>
                                         <td>{normalizedYear(student.year_level)}</td>
                                         <td>{student.program}</td>
-                                        <td><span className={`response-badge ${student.response === 'Responded' ? 'responded' : 'no-response'}`}>{student.response}</span></td>
+                                        <td>
+                                            {student.response && (
+                                                <span className={`response-badge ${student.response === 'Responded' ? 'responded' : 'no-response'}`}>{student.response}</span>
+                                            )}
+                                        </td>
                                         <td>
                                             <span className="escalation-bars" aria-label={`${student.no_response_count} no-response records`}>
                                                 {[0, 1, 2].map((bar) => <i key={bar} className={bar < escalationBars(student) ? 'filled' : ''} />)}
                                             </span>
                                         </td>
-                                        <td><button type="button" className="student-view-button" onClick={() => navigate('/attendance')}>View&nbsp; ›</button></td>
+                                        <td><button type="button" className="student-view-button" onClick={() => openOverview(student)}>View&nbsp; ›</button></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -305,6 +351,40 @@ function Students() {
                     </div>
                 </section>
             </main>
+
+            {overview && (
+                <div className="student-overview-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setOverview(null)}>
+                    <aside className="student-overview-drawer" role="dialog" aria-modal="true" aria-label="Student overview">
+                        <h2>Student Overview</h2>
+                        <p className="overview-month">{overview.month || 'Loading…'}</p>
+
+                        <section className="overview-student-card">
+                            <span className="overview-avatar">{overview.student.name?.charAt(0)}</span>
+                            <div><strong>{overview.student.name}</strong><small>{overview.student.program} {normalizedYear(overview.student.year_level)}</small></div>
+                        </section>
+
+                        <div className="overview-filters" ref={overviewFiltersRef}>
+                            <div className="overview-filter-container"><button type="button" className="overview-filter-control" onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'gathering' ? null : 'gathering')}><img src={ResponseIcon} alt="" /><span>{overviewGathering ? { pm: 'Prayer Meeting', ws: 'Worship Service', tg: 'Thanksgiving', special: 'Special Gathering' }[overviewGathering] : 'Gathering'}</span><img className="overview-dropdown-icon" src={DropdownIcon} alt="" /></button>{overviewOpenFilter === 'gathering' && <ul className="overview-filter-menu"><li onClick={(event) => { event.stopPropagation(); setOverviewGathering(''); setOverviewOpenFilter(null) }}>Gathering</li>{[['pm', 'Prayer Meeting'], ['ws', 'Worship Service'], ['tg', 'Thanksgiving'], ['special', 'Special Gathering']].map(([value, label]) => <li key={value} onClick={(event) => { event.stopPropagation(); setOverviewGathering(value); setOverviewOpenFilter(null) }}>{label}</li>)}</ul>}</div>
+                            <div className="overview-filter-container"><button type="button" className="overview-filter-control" onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'date' ? null : 'date')}><img src={CalendarIcon} alt="" /><span>{overviewDate ? formatOverviewDate(overviewDate) : 'Date'}</span><img className="overview-dropdown-icon" src={DropdownIcon} alt="" /></button>{overviewOpenFilter === 'date' && <ul className="overview-filter-menu"><li onClick={(event) => { event.stopPropagation(); setOverviewDate(''); setOverviewOpenFilter(null) }}>Date</li>{[...new Set((overview?.history || []).map((record) => record.date).filter(Boolean))].map((date) => <li key={date} onClick={(event) => { event.stopPropagation(); setOverviewDate(date); setOverviewOpenFilter(null) }}>{formatOverviewDate(date)}</li>)}</ul>}</div>
+                            <div className="overview-filter-container"><button type="button" className="overview-filter-control" onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'status' ? null : 'status')}><img src={LevelIcon} alt="" /><span>{overviewStatus === 'present' ? 'Present' : overviewStatus === 'no_response' ? 'No Response' : 'Status'}</span><img className="overview-dropdown-icon" src={DropdownIcon} alt="" /></button>{overviewOpenFilter === 'status' && <ul className="overview-filter-menu"><li onClick={(event) => { event.stopPropagation(); setOverviewStatus(''); setOverviewOpenFilter(null) }}>Status</li><li onClick={(event) => { event.stopPropagation(); setOverviewStatus('present'); setOverviewOpenFilter(null) }}>Present</li><li onClick={(event) => { event.stopPropagation(); setOverviewStatus('no_response'); setOverviewOpenFilter(null) }}>No Response</li></ul>}</div>
+                        </div>
+
+                        <div className="overview-history-header">
+                            <h2>Attendance List</h2>
+                        </div>
+                        <div className="overview-history">
+
+                            {overviewLoading && <p className="overview-state">Loading attendance history…</p>}
+                            {overviewError && <p className="overview-state overview-error">{overviewError}</p>}
+                            {!overviewLoading && !overviewError && overviewHistory.length === 0 && <p className="overview-state">No attendance records yet.</p>}
+                            {!overviewLoading && !overviewError && overviewHistory.length > 0 && (
+                                <table><thead><tr><th>Gathering</th><th>Time</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
+                                    <tbody>{overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{record.time}</td><td>{formatOverviewDate(record.date)}</td><td>{record.location}</td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : 'No Response'}</span></td></tr>)}</tbody></table>
+                            )}
+                        </div>
+                    </aside>
+                </div>
+            )}
         </div>
     )
 }
