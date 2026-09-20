@@ -353,18 +353,15 @@ class AttendanceParsingService
         $current = null;
         $slotType = null;
 
-        $startIndex = 0;
-        if (preg_match('/^\s*(.+?)\s*[-–:]\s*year\s*\d+/i', trim($lines[0] ?? ''))) {
-            $startIndex = 1; // skip header line like "BSIS - Year 3"
-        }
-
-        for ($i = $startIndex; $i < count($lines); $i++) {
+        for ($i = 0; $i < count($lines); $i++) {
             $line = trim($lines[$i]);
             if ($line === '') continue;
+            if (preg_match('/^(gathering|prayer meeting|worship service|thanksgiving)\s*[:\-]/i', $line)) continue;
+            if (str_contains($line, '---') || str_contains($line, '[')) continue;
 
             if (preg_match('/^\d+[.)]\s*(.+)$/', $line, $m)) {
                 if ($current) $students[] = $current;
-                $current = ['name' => trim($m[1]), 'slots' => ['pm' => null, 'ws' => null, 'tg' => null]];
+                $current = ['name' => trim($m[1]), 'raw_line' => $line, 'slots' => ['pm' => null, 'ws' => null, 'tg' => null]];
                 $slotType = null;
                 continue;
             }
@@ -386,12 +383,40 @@ class AttendanceParsingService
         if ($current) $students[] = $current;
 
         $result = ['pm' => [], 'ws' => [], 'tg' => []];
-        $unmatched = [];
+        $unmatchedLines = [];
+        $incompleteRecords = [];
+        $formatErrorLines = [];
+        $blankEntries = [];
+        $matchedStudentIds = [];
 
         foreach ($students as $entry) {
             $student = $this->findMatchingStudent($program, $yearLevel, $entry['name']);
+
             if (!$student) {
-                $unmatched[] = $entry['name'];
+                $unmatchedLines[] = [
+                    'raw_line'       => $entry['raw_line'],
+                    'extracted_name' => $entry['name'],
+                ];
+                continue;
+            }
+
+            $matchedStudentIds[] = $student->id;
+
+            $hasAnySlotFilled = false;
+            foreach (['pm', 'ws', 'tg'] as $type) {
+                $slot = $entry['slots'][$type];
+                if ($slot && (!empty($slot['day']) || !empty($slot['time']) || !empty($slot['venue']))) {
+                    $hasAnySlotFilled = true;
+                    break;
+                }
+            }
+
+            if (!$hasAnySlotFilled) {
+                $blankEntries[] = [
+                    'student_id'   => $student->id,
+                    'student_name' => $student->name,
+                    'reason'       => 'All PM/WS/TG fields are blank for this student.',
+                ];
                 continue;
             }
 
@@ -399,20 +424,77 @@ class AttendanceParsingService
                 $slot = $entry['slots'][$type];
                 if (!$slot) continue;
 
+                $hasDay = !empty($slot['day']);
+                $hasTime = !empty($slot['time']);
+                $hasVenue = !empty($slot['venue']);
+
+                if ($hasTime && !$this->isValidBatchFormat($slot['time'])) {
+                    $formatErrorLines[] = [
+                        'student_name'   => $student->name,
+                        'gathering_type' => $type,
+                        'field'          => 'time',
+                        'value'          => $slot['time'],
+                        'reason'         => 'Time must be in a valid format, e.g. "8:30 AM".',
+                    ];
+                }
+
+                $anyFilled = $hasDay || $hasTime || $hasVenue;
+                $allFilled = $hasDay && $hasTime && $hasVenue;
+
+                if ($anyFilled && !$allFilled) {
+                    $incompleteRecords[] = [
+                        'student_id'     => $student->id,
+                        'student_name'   => $student->name,
+                        'gathering_type' => $type,
+                        'missing'        => array_values(array_filter([
+                            !$hasDay ? 'day' : null,
+                            !$hasTime ? 'time' : null,
+                            !$hasVenue ? 'venue' : null,
+                        ])),
+                    ];
+                }
+
                 $result[$type][] = [
                     'student_id'     => $student->id,
                     'student_name'   => $student->name,
                     'gathering_type' => $type,
-                    'batch'          => $this->formatBatchTime($slot['time'] ?? null),
-                    'venue'          => $slot['venue'] ?? null,
-                    'day'            => $this->resolveDateForWeekday($type, $slot['day'] ?? null),
-                    'status'         => 'present',
+                    'batch'          => $hasTime ? $this->formatBatchTime($slot['time']) : null,
+                    'venue'          => $hasVenue ? $slot['venue'] : null,
+                    'day'            => $this->resolveDateForWeekday($type, $hasDay ? $slot['day'] : null),
+                    'status'         => $allFilled ? 'present' : 'no_response',
                     'is_manual'      => false,
                 ];
             }
         }
 
-        return ['records' => $result, 'unmatched' => $unmatched];
+        $missingStudents = [];
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            $missingStudents[$type] = Student::where('program', $program)
+                ->where('year_level', $yearLevel)
+                ->whereNotIn('id', $matchedStudentIds)
+                ->get(['id', 'name'])
+                ->map(fn($s) => ['student_id' => $s->id, 'student_name' => $s->name])
+                ->values()
+                ->toArray();
+        }
+
+        $totalSlotsFilled = collect($result['pm'])->count() + collect($result['ws'])->count() + collect($result['tg'])->count();
+
+        $allNoResponseWarning = !empty($students)
+            && empty($unmatchedLines)
+            && $totalSlotsFilled === 0
+            ? 'Are you sure the data is correct? All students will be marked no response since all the fields are blank.'
+            : null;
+
+        return [
+            'records'                 => $result,
+            'unmatched_lines'         => $unmatchedLines,
+            'incomplete_records'      => $incompleteRecords,
+            'format_errors'           => $formatErrorLines,
+            'blank_entries'           => $blankEntries,
+            'missing_students'        => $missingStudents,
+            'all_no_response_warning' => $allNoResponseWarning,
+        ];
     }
 
     private function parseSlotLine(string $line): array

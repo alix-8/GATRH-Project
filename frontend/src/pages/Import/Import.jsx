@@ -55,8 +55,6 @@ function Import({ onGoToAttendance = () => {} }) {
     const [parseErrors, setParseErrors] = useState(null)
     const [previewText, setPreviewText] = useState('')
     const [previewCount, setPreviewCount] = useState(0)
-    const parsedGatheringType = getGatheringTypeFromText(form.raw_text)
-    const gatheringTypeMismatch = parsedGatheringType && parsedGatheringType !== form.gathering_type
 
     const updateField = event => {
         const { name, value } = event.target
@@ -98,6 +96,8 @@ function Import({ onGoToAttendance = () => {} }) {
     }
 
     const isWeekMode = form.gathering_type === 'week'
+    const parsedGatheringType = getGatheringTypeFromText(form.raw_text)
+    const gatheringTypeMismatch = !isWeekMode && parsedGatheringType && parsedGatheringType !== form.gathering_type
 
     const generateTemplate = async () => {
         setIsGenerating(true)
@@ -179,6 +179,10 @@ function Import({ onGoToAttendance = () => {} }) {
     const handleGeneratePreview = () => {
         if (!form.raw_text.trim()) {
             setFieldWarning('Paste some attendance text first.')
+            return
+        }
+        if (gatheringTypeMismatch) {
+            setFieldWarning(`The gathering type in your text doesn't match the selected dropdown ("${form.gathering_type.toUpperCase()}"). Fix one or the other before previewing.`)
             return
         }
         setFieldWarning(null)

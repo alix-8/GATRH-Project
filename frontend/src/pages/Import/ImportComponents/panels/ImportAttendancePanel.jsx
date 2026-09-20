@@ -1,13 +1,5 @@
 import './ImportAttendancePanel.css'
 
-/**
- * The "Import Attendance" card: gathering-type selector, the raw-text textarea,
- * and the Generate/Clear/Process actions.
- *
- * `preview` lets the parent page slot in a Preview component later without
- * this file needing to change — if omitted, a plain placeholder box is shown
- * so the two-column layout still looks right on its own.
- */
 function ImportAttendancePanel({
     form,
     updateField,
@@ -46,8 +38,10 @@ function ImportAttendancePanel({
                 </label>
             </div>
 
+            {fieldWarning && <p className="import-field-warning">{fieldWarning}</p>}
+
             <div className="import-columns">
-                <label className="import-column">
+                <div className="import-column">
                     <p className="import-column-label">Attendance Text</p>
                     <textarea
                         name="raw_text"
@@ -57,45 +51,44 @@ function ImportAttendancePanel({
                         placeholder="Paste your attendance here . . ."
                         rows="12"
                     />
+
+                    <div className="import-column-actions-row">
+                        <button className="import-clear-button" type="button" onClick={onClear} disabled={isPreviewing}>
+                            Clear
+                        </button>
+                        <button
+                            className="import-secondary-button"
+                            type="button"
+                            onClick={onOpenGenerateModal}
+                            disabled={isGenerating || isProcessing || isPreviewing}
+                        >
+                            {isGenerating ? 'Generating Format...' : 'Generate Format'}
+                        </button>
+                    </div>
+
                     <button
                         type="button"
-                        className="import-secondary-button import-parse-preview-btn"
+                        className="import-parse-preview-btn"
                         onClick={isPreviewing ? onBackToEdit : onGeneratePreview}
+                        disabled={!isPreviewing && gatheringTypeMismatch}
                     >
-                        {isPreviewing ? 'Back to Edit' : 'Parse and See Preview'}
+                        {isPreviewing ? 'Back to Raw Text' : 'Parse and See Preview'}
                     </button>
-                </label>
+                </div>
 
                 <div className="import-column">
                     <p className="import-column-label">Preview</p>
                     {preview ?? <div className="import-preview-placeholder" />}
-                </div>
-            </div>
 
-            {fieldWarning && <p className="import-field-warning">{fieldWarning}</p>}
-
-            <div className="import-actions">
-                <div className="import-actions-left">
-                    <button className="import-clear-button" type="button" onClick={onClear}>
-                        Clear
-                    </button>
-                </div>
-                <div className="import-actions-right">
                     <button
-                        className="import-secondary-button"
+                        className="import-primary-button import-process-btn"
                         type="button"
-                        onClick={onOpenGenerateModal}
-                        disabled={isGenerating || isProcessing || isPreviewing}
+                        onClick={onProcess}
+                        disabled={isGenerating || isProcessing}
                     >
-                        {isGenerating ? 'Generating Format...' : 'Generate Format'}
+                        {isProcessing ? 'Processing...' : 'Process Attendance'}
                     </button>
                 </div>
-            </div>
-
-            <div className="process-action">
-                <button className="import-primary-button" type="button" onClick={onProcess} disabled={isGenerating || isProcessing}>
-                    {isProcessing ? 'Processing...' : 'Process Attendance'}
-                </button>
             </div>
         </section>
     )
