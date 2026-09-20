@@ -164,7 +164,8 @@ function Import({ onGoToAttendance = () => {} }) {
             setResult(data)
             setModal('success')
         } catch (error) {
-            setModalMessage(error.message)
+            const specificMessage = error.details?.all_no_response_warning
+            setModalMessage(specificMessage || error.message)
             setParseErrors(error.details || null)
             setModal('error')
         } finally {
