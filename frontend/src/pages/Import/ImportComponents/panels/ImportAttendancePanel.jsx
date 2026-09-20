@@ -84,7 +84,7 @@ function ImportAttendancePanel({
                         className="import-primary-button import-process-btn"
                         type="button"
                         onClick={onProcess}
-                        disabled={isGenerating || isProcessing}
+                        disabled={isGenerating || isProcessing || !isPreviewing}
                     >
                         {isProcessing ? 'Processing...' : 'Process Attendance'}
                     </button>
