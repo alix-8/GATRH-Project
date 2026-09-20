@@ -3,21 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
 import Notification from '../../components/Notification/Notification'
-import GenerateTemplate from './modals/GenerateTemplate'
-import ErrorModal from './modals/ErrorModal'
+import GenerateTemplate from './ImportComponents/modals/GenerateTemplate'
+import ErrorModal from './ImportComponents/modals/ErrorModal'
+import ImportAttendancePanel from './ImportComponents/panels/ImportAttendancePanel'
+import PreviewImportPanel from './ImportComponents/panels/PreviewImportPanel'
+import PreviewIndividualPanel from './ImportComponents/panels/PreviewIndividualPanel'
 import './Import.css'
 
 const CheckIcon = () => (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
         <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-)
-
-const WarningIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M12 3l10 18H2L12 3z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-        <path d="M12 10v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="currentColor" />
     </svg>
 )
 
@@ -52,14 +47,14 @@ function Import({ onGoToAttendance = () => {} }) {
     const [result, setResult] = useState(null)
     const navigate = useNavigate()
 
+    const [batchMode, setBatchMode] = useState(false)
+
     // modal: null | 'generate' | 'success' | 'error'
     const [modal, setModal] = useState(null)
     const [modalMessage, setModalMessage] = useState('')
     const [parseErrors, setParseErrors] = useState(null)
     const [previewText, setPreviewText] = useState('')
     const [previewCount, setPreviewCount] = useState(0)
-    const parsedGatheringType = getGatheringTypeFromText(form.raw_text)
-    const gatheringTypeMismatch = parsedGatheringType && parsedGatheringType !== form.gathering_type
 
     const updateField = event => {
         const { name, value } = event.target
@@ -100,13 +95,17 @@ function Import({ onGoToAttendance = () => {} }) {
         setModal('generate')
     }
 
+    const isWeekMode = form.gathering_type === 'week'
+    const parsedGatheringType = getGatheringTypeFromText(form.raw_text)
+    const gatheringTypeMismatch = !isWeekMode && parsedGatheringType && parsedGatheringType !== form.gathering_type
+
     const generateTemplate = async () => {
         setIsGenerating(true)
         try {
             const query = new URLSearchParams({
                 program: form.program,
                 year_level: form.year_level,
-                gathering_type: form.gathering_type,
+                gathering_type: form.gathering_type, // 'week' now flows straight through
             })
             const data = await request(`/attendance/generate-template?${query}`)
             setPreviewText(data.template)
@@ -126,7 +125,7 @@ function Import({ onGoToAttendance = () => {} }) {
     }
 
     const processAttendance = async event => {
-        event.preventDefault()
+        event?.preventDefault?.()
         if (!form.program || !form.year_level || !form.raw_text.trim()) {
             setFieldWarning('Complete the program, year level, and attendance text.')
             return
@@ -141,21 +140,17 @@ function Import({ onGoToAttendance = () => {} }) {
                 }
                 return errors
             }, {})
-
-            return {
-                ...nestedErrors,
-                ...directErrors,
-            }
+            return { ...nestedErrors, ...directErrors }
         }
 
         setFieldWarning(null)
         setIsProcessing(true)
         setResult(null)
         try {
-            const data = await request('/attendance/parse-text', {
-                method: 'POST',
-                body: JSON.stringify(form),
-            })
+            const endpoint = isWeekMode ? '/attendance/parse-batch-text' : '/attendance/parse-text'
+            const payload = isWeekMode ? { raw_text: form.raw_text } : form
+
+            const data = await request(endpoint, { method: 'POST', body: JSON.stringify(payload) })
 
             const responseErrors = getStructuredParseErrors(data)
             const hasValidationFailure = Object.keys(responseErrors).length > 0 || /contains errors|correct them before saving|invalid attendance/i.test(data.message || '')
@@ -169,7 +164,8 @@ function Import({ onGoToAttendance = () => {} }) {
             setResult(data)
             setModal('success')
         } catch (error) {
-            setModalMessage(error.message)
+            const specificMessage = error.details?.all_no_response_warning
+            setModalMessage(specificMessage || error.message)
             setParseErrors(error.details || null)
             setModal('error')
         } finally {
@@ -177,10 +173,32 @@ function Import({ onGoToAttendance = () => {} }) {
         }
     }
 
+
+    //Previewing functions
+    const [isPreviewing, setIsPreviewing] = useState(false)
+
+    const handleGeneratePreview = () => {
+        if (!form.raw_text.trim()) {
+            setFieldWarning('Paste some attendance text first.')
+            return
+        }
+        if (gatheringTypeMismatch) {
+            setFieldWarning(`The gathering type in your text doesn't match the selected dropdown ("${form.gathering_type.toUpperCase()}"). Fix one or the other before previewing.`)
+            return
+        }
+        setFieldWarning(null)
+        setIsPreviewing(true)
+    }
+
+    const handleBackToEdit = () => {
+        setIsPreviewing(false)
+    }
+
     const clearForm = () => {
         setForm(current => ({ ...current, raw_text: '' }))
         setResult(null)
         setFieldWarning(null)
+        setIsPreviewing(false)
     }
 
     return (
@@ -198,59 +216,30 @@ function Import({ onGoToAttendance = () => {} }) {
                     </div>
                 </header>
 
-                <form className="import-content" onSubmit={processAttendance}>
-                    <section className="import-panel">
-                        <div className="import-panel-heading">
-                            <div>
-                                <h2>Import Attendance</h2>
-                            </div>
-                        </div>
-
-                        <label className="import-textarea-label">
-                            <p className="import-textarea-label-title">
-                                <div className="import-textarea-label-title-left">
-                                    Attendance Text
-                                </div>
-                                <div className="import-textarea-label-title-right">
-                                    <label>
-                                        <select
-                                            name="gathering_type"
-                                            value={form.gathering_type}
-                                            onChange={updateField}
-                                            className={gatheringTypeMismatch ? 'import-gathering-mismatch' : ''}
-                                            aria-invalid={gatheringTypeMismatch || undefined}
-                                        >
-                                            <option value="pm">Prayer Meeting</option>
-                                            <option value="ws">Worship Service</option>
-                                            <option value="tg">Thanksgiving</option>
-                                        </select>
-                                    </label>
-                                </div>
-                            </p>
-                            <textarea name="raw_text" value={form.raw_text} onChange={updateField} placeholder="Select gathering type and paste your attendance text here..." rows="12" />
-                        </label>
-
-                        {fieldWarning && <p className="import-field-warning">{fieldWarning}</p>}
-
-                        <div className="import-actions">
-                            <div className="import-actions-left">
-                                <button className="import-secondary-button" type="button" onClick={openGenerateModal} disabled={isGenerating || isProcessing}>
-                                    {isGenerating ? 'Generating Format...' : 'Generate Format'}
-                                </button>
-                            </div>
-                            <div className="import-actions-right">
-                                <button className="import-clear-button" type="button" onClick={clearForm}>
-                                    Clear
-                                </button>
-                            </div>
-                        </div>
-                        <div className="process-action">
-                            <button className="import-primary-button" type="button" onClick={processAttendance} disabled={isGenerating || isProcessing}>
-                                {isProcessing ? 'Processing...' : 'Process Attendance'}
-                            </button>
-                        </div>
-                    </section>
-                </form>
+                <div className="import-content">
+                    <ImportAttendancePanel
+                    form={form}
+                    updateField={updateField}
+                    gatheringTypeMismatch={gatheringTypeMismatch}
+                    fieldWarning={fieldWarning}
+                    isGenerating={isGenerating}
+                    isProcessing={isProcessing}
+                    onOpenGenerateModal={openGenerateModal}
+                    onClear={clearForm}
+                    onProcess={processAttendance}
+                    isPreviewing={isPreviewing}
+                    onGeneratePreview={handleGeneratePreview}
+                    onBackToEdit={handleBackToEdit}
+                    preview={
+                        isPreviewing
+                            ? (isWeekMode
+                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
+                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
+                            )
+                            : null
+                    }
+                />
+                </div>
             </main>
 
             {modal === 'generate' && (
@@ -293,13 +282,13 @@ function Import({ onGoToAttendance = () => {} }) {
                         </div>
 
                         <div className="import-modal-buttons">
-                            <button className="import-clear-button" type="button" onClick={() => setModal(null)}>
+                            <button className="import-clear-button" type="button" onClick={() => { setModal(null); setIsPreviewing(false) }}>
                                 Close
                             </button>
                             <button
                                 className="import-primary-button"
                                 type="button"
-                                onClick={() => { setModal(null); onGoToAttendance(); navigate('/attendance');}}
+                                onClick={() => { setModal(null); setIsPreviewing(false); onGoToAttendance(); navigate('/attendance'); }}
                             >
                                 Go to Attendance
                             </button>

@@ -1,0 +1,99 @@
+.import-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.import-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #172B4D;
+}
+
+.import-column-label {
+    margin: 0;
+}
+
+.import-column textarea {
+    border: 1px solid #dbe1ec;
+    border-radius: 10px;
+    padding: 1rem;
+    font-size: 0.85rem;
+    color: #0d0d0d;
+    resize: vertical;
+    min-height: 220px;
+}
+
+.import-column textarea::placeholder {
+    color: #c3cad6;
+}
+
+/* Shown until the parent passes a real `preview` component in */
+.import-preview-placeholder {
+    border: 1px solid #dbe1ec;
+    border-radius: 10px;
+    min-height: 220px;
+    background: #ffffff;
+}
+
+.import-fields input,
+.import-panel-heading select,
+.import-fields select,
+.import-textarea-label-title .import-textarea-label-title-right select {
+    border: 1px solid #dbe1ec;
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.85rem;
+    color: #2c3648;
+    background-color: #ffffff;
+}
+
+.import-panel-heading select.import-gathering-mismatch {
+    border-color: #d9534f !important;
+    background-color: #fff1f0 !important;
+    color: #b42318 !important;
+}
+
+.import-column-actions-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.import-column-actions-row .import-clear-button,
+.import-column-actions-row .import-secondary-button {
+    flex: 1;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.import-parse-preview-btn {
+    width: 100%;
+    border: none;
+    background: #172B4D;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.6rem 1.75rem;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 0.25rem;
+}
+
+.import-parse-preview-btn:hover:not(:disabled) {
+    background: #0f2247;
+}
+
+.import-parse-preview-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.import-process-btn {
+    width: 100%;
+    margin-top: 0.25rem;
+    border-radius: 10px;
+}

@@ -38,6 +38,7 @@ function GenerateTemplate({
                         <option value="pm">Prayer Meeting</option>
                         <option value="ws">Worship Service</option>
                         <option value="tg">Thanksgiving</option>
+                        <option value="week">Whole Week Attendance</option>
                     </select>
                 </label>
 
