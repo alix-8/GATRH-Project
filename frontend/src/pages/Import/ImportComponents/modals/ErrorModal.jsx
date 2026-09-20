@@ -13,17 +13,31 @@ const errorLabels = {
     missing_students: ['Missing Students', 'Students were not included in the attendance text'],
     incomplete_records: ['Incomplete Records', 'Required attendance information is missing'],
     format_errors: ['Format Errors', 'Attendance lines contain invalid formatting'],
+    blank_entries: ['Blank Entries', 'All fields are blank for these students'],
     all_no_response_warning: ['No Response Warning', 'Every student has blank attendance fields'],
 }
 
 const getErrorItems = (errorDetails = {}) => {
     return [
         ['unmatched_lines', errorDetails.unmatched_lines || []],
-        ['missing_students', errorDetails.missing_students || []],
+        ['missing_students', flattenMissingStudents(errorDetails.missing_students)],
         ['incomplete_records', errorDetails.incomplete_records || []],
         ['format_errors', errorDetails.format_errors || []],
+        ['blank_entries', errorDetails.blank_entries || []],
         ['all_no_response_warning', errorDetails.all_no_response_warning || ''],
     ].filter(([, items]) => items.length > 0)
+}
+
+// Normalizes missing_students into a flat array whether it's
+// parseText()'s flat shape or parseBatchText()'s {pm:[],ws:[],tg:[]} shape.
+const flattenMissingStudents = (value) => {
+    if (Array.isArray(value)) return value
+    if (value && typeof value === 'object') {
+        return Object.entries(value).flatMap(([type, list]) =>
+            (list || []).map((s) => ({ ...s, gathering_type: type }))
+        )
+    }
+    return []
 }
 
 //icon for each error type, used in the error modal
