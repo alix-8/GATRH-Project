@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PlusIcon from '../../../assets/plus-icon.png'
-import TrashIcon from '../../../assets/trash-icon.png'
 import GatheringIcon from '../../../assets/gathering-icon.png'
 import CalendarIcon from '../../../assets/calendar-icon.png'
 import SortbyIcon from '../../../assets/sort-by-icon.png'
@@ -15,9 +14,9 @@ import AttendancePagination from './AttendancePagination'
 
 const STATUS_META = {
     validating: { label: 'Validating', dot: '#8c96a4' },
-    pending:    { label: 'Pending',    dot: '#F2994A' },
-    rejected:   { label: 'Rejected',   dot: '#E52328' },
-    approved:   { label: 'Approved',   dot: '#27AE60' },
+    pending: { label: 'Pending', dot: '#F2994A' },
+    rejected: { label: 'Rejected', dot: '#E52328' },
+    approved: { label: 'Approved', dot: '#27AE60' },
 }
 
 const GATHERING_OPTIONS = [
@@ -400,13 +399,13 @@ function AttendanceTable() {
                 </table>
             </div>
 
-            <AttendancePagination/>
+            <AttendancePagination />
 
             {confirmOpen && (
                 <div className="delete-modal-overlay">
                     <div className="delete-modal">
                         <div className="delete-modal-icon">
-                            <TrashIcon/>
+                            <TrashIcon />
                         </div>
                         <h2>Confirm Deleting?</h2>
                         <div className="delete-modal-divider" />
@@ -427,9 +426,9 @@ function AttendanceTable() {
                 </div>
             )}
 
-            <ReviewDrawer 
-                isOpen={drawerOpen} 
-                onClose={() => setDrawerOpen(false)} 
+            <ReviewDrawer
+                isOpen={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
                 record={activeRecord}
                 onSubmitted={() => {
                     setDrawerOpen(false);

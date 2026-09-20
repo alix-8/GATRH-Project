@@ -254,7 +254,8 @@
     width: 100%;
     color: #172B4D;
     font-size: 12px;
-    text-align: left;
+    text-align: center;
+
 }
 
 .students-table th {
@@ -277,13 +278,18 @@
     padding: 2px 20px;
 }
 
+.student-name-cell {
+    display: inline-block;
+    text-align: left;
+    width: 170px;
+}
+
 .students-table td:last-child {
     border-right: 0;
 }
 
 .students-table-state {
     color: #6b778c;
-    text-align: center;
 }
 
 .response-badge {

@@ -14,6 +14,22 @@ const SORT_OPTIONS = ['Sort by', 'Ascending', 'Descending']
 const RESPONSE_OPTIONS = ['Response', 'Responded', 'No Response']
 const LEVEL_OPTIONS = ['Escalation', 'Level 1', 'Level 2', 'Level 3']
 
+function getStudentInitials(name = '') {
+    const [lastName, firstNames] = name.split(',').map(part => part.trim())
+
+    if (firstNames && lastName) {
+        return `${firstNames[0]}${lastName[0]}`.toUpperCase()
+    }
+
+    return name
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(part => part[0].toUpperCase())
+        .join('')
+}
+
 function Students() {
     const [students, setStudents] = useState([])
     const [attendanceSession, setAttendanceSession] = useState(null)
@@ -98,7 +114,10 @@ function Students() {
         setIsLevelOpen(false)
     }
 
-    const normalizedYear = (year) => String(year).replace(/^([1-4])$/, '$1 Year')
+    const normalizedYear = (year) => {
+        const yearLabels = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' }
+        return yearLabels[year] || year
+    }
     const filteredStudents = students
         .filter((student) => !selectedResponse || student.response === selectedResponse)
         .filter((student) => {
@@ -330,7 +349,7 @@ function Students() {
                                 {!loading && filteredStudents.length === 0 && <tr><td colSpan="6" className="students-table-state">No students found.</td></tr>}
                                 {!loading && filteredStudents.map((student) => (
                                     <tr key={student.id}>
-                                        <td>{student.name}</td>
+                                        <td><span className="student-name-cell">{student.name}</span></td>
                                         <td>{normalizedYear(student.year_level)}</td>
                                         <td>{student.program}</td>
                                         <td>
@@ -359,7 +378,7 @@ function Students() {
                         <p className="overview-month">{overview.month || 'Loading…'}</p>
 
                         <section className="overview-student-card">
-                            <span className="overview-avatar">{overview.student.name?.charAt(0)}</span>
+                            <span className="overview-avatar">{getStudentInitials(overview.student.name)}</span>
                             <div><strong>{overview.student.name}</strong><small>{overview.student.program} {normalizedYear(overview.student.year_level)}</small></div>
                         </section>
 
