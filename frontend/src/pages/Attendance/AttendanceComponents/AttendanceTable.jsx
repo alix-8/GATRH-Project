@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PlusIcon from '../../../assets/plus-icon.png'
+import TrashIcon from '../../../assets/trash-icon.png'
 import GatheringIcon from '../../../assets/gathering-icon.png'
 import CalendarIcon from '../../../assets/calendar-icon.png'
 import SortbyIcon from '../../../assets/sort-by-icon.png'
