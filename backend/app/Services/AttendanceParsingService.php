@@ -130,24 +130,25 @@ class AttendanceParsingService
             return ['count' => 0, 'template' => null];
         }
 
-        // $pmLabel = GatheringCycle::windowLabel('pm');
-        // $wsLabel = GatheringCycle::windowLabel('ws');
-        // $tgLabel = GatheringCycle::windowLabel('tg');
+        $pmLabel = GatheringCycle::windowLabel('pm');
+        $wsLabel = GatheringCycle::windowLabel('ws');
+        $tgLabel = GatheringCycle::windowLabel('tg');
 
         $template = "--- GATRH ATTENDANCE FORM ---\n";
         $template .= "Gathering: WEEKLY REPORTING\n";
-        $template .= "Prayer Meeting: \n";
-        $template .= "Worship Service: \n";
-        $template .= "Thanksgiving: \n";
+        $template .= "Prayer Meeting - {$pmLabel}\n";
+        $template .= "Worship Service - {$wsLabel}\n";
+        $template .= "Thanksgiving - {$tgLabel}\n";
         $template .= "\n";
         $template .= "[FILL OUT YOUR DETAILS BELOW]\n";
+        $template .= "Format: Day| Time | Venue\n\n";
 
         foreach ($students as $index => $student) {
             $number = $index + 1;
             $template .= "{$number}. {$student->name}\n";
-            $template .= "PM: Day| Time | Venue\n";
-            $template .= "WS: Day| Time | Venue\n";
-            $template .= "TG: Day| Time | Venue\n";
+            $template .= "PM: | | \n";
+            $template .= "WS: | | \n";
+            $template .= "TG: | | \n";
             $template .= "\n";
         }
 
@@ -416,8 +417,14 @@ class AttendanceParsingService
 
     private function parseSlotLine(string $line): array
     {
-        $parts = preg_split('/\s+/', trim($line), 3);
-        return ['day' => $parts[0] ?? null, 'time' => $parts[1] ?? null, 'venue' => $parts[2] ?? null];
+        $parts = array_map('trim', explode('|', $line));
+        $clean = fn ($v) => ($v !== '' && !preg_match('/^(day|time|venue)$/i', $v)) ? $v : null;
+
+        return [
+            'day'   => $clean($parts[0] ?? ''),
+            'time'  => $clean($parts[1] ?? ''),
+            'venue' => $clean(implode(' | ', array_slice($parts, 2))),
+        ];
     }
 
     private function resolveDateForWeekday(string $gatheringType, ?string $dayName): string

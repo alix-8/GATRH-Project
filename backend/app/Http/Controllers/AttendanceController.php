@@ -206,7 +206,7 @@ class AttendanceController extends Controller
             'student_name' => $r->student->name ?? 'Unknown',
             'status'       => $r->status,
             'venue'        => $r->venue ?: '---',
-            'batch'        => $r->batch ? \Carbon\Carbon::parse($r->batch)->format('g:ia') : '---',
+            'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',
             'day'          => $r->day ? $r->day->format('Y-m-d') : '---',
         ]);
 
@@ -531,57 +531,126 @@ class AttendanceController extends Controller
         ], 200);
     }
 
-    public function parseBatchText(Request $request)
+    public function parseBatchText(string $rawText, string $program, int $yearLevel): array
     {
-        $request->validate(['raw_text' => 'required|string']);
+        $lines = preg_split('/\r\n|\r|\n/', trim($rawText));
+        $students = [];
+        $current = null;
+        $slotType = null;
 
-        $user = $request->user();
-        if (!$user->program || !$user->year_level) {
-            return response()->json(['message' => 'Your account is not assigned to a program and year level.'], 422);
-        }
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = trim($lines[$i]);
+            if ($line === '') continue;
+            if (preg_match('/^(gathering|prayer meeting|worship service|thanksgiving)\s*[:\-]/i', $line)) continue;
+            if (str_contains($line, '---') || str_contains($line, '[')) continue;
 
-        $parsed = $this->parsingService->parseBatchText($request->raw_text, $user->program, $user->year_level);
-
-        $drafts = [];
-        $summary = [];
-
-        foreach (['pm', 'ws', 'tg'] as $type) {
-            if (empty($parsed['records'][$type])) continue;
-
-            if ($this->parsingService->hasSubmittedThisCycle($user->id, $type)) {
-                $summary[$type] = ['skipped' => true, 'reason' => 'already submitted this cycle'];
+            if (preg_match('/^\d+[.)]\s*(.+)$/', $line, $m)) {
+                if ($current) $students[] = $current;
+                $current = ['name' => trim($m[1]), 'raw_line' => $line, 'slots' => ['pm' => null, 'ws' => null, 'tg' => null]];
+                $slotType = null;
                 continue;
             }
 
-            $submissions = collect($parsed['records'][$type])->keyBy('student_id')->all();
-            $day = \App\Support\GatheringCycle::currentCycleStart($type)->toDateString();
+            if (!$current) continue;
 
-            $sectionData = $this->parsingService->buildFullSectionRecords(
-                strtoupper($user->program), $user->year_level, $submissions, $day, $type
-            );
+            if (preg_match('/^(PM|WS|TG)[:\s]\s*(.*)$/i', $line, $m)) {
+                $slotType = strtolower($m[1]);
+                $rest = trim($m[2]);
+                $current['slots'][$slotType] = $rest !== '' ? $this->parseSlotLine($rest) : null;
+                continue;
+            }
 
-            $draft = $this->parsingService->saveDraft([
-                'gathering_type' => $type,
-                'day'            => $day,
-                'raw_text'       => $request->raw_text,
-                'parsed_data'    => $sectionData['records'],
-                'total_detected' => $sectionData['total_students'],
-                'matched_count'  => count($submissions),
-            ], $user->id);
+            if ($slotType) {
+                $current['slots'][$slotType] = $this->parseSlotLine($line);
+                $slotType = null;
+            }
+        }
+        if ($current) $students[] = $current;
 
-            $drafts[$type] = $draft->id;
-            $summary[$type] = [
-                'total_students' => $sectionData['total_students'],
-                'present_count'  => count($submissions),
-            ];
+        $result = ['pm' => [], 'ws' => [], 'tg' => []];
+        $unmatchedLines = [];
+        $incompleteRecords = [];
+        $formatErrorLines = [];
+        $matchedStudentIds = [];
+
+        foreach ($students as $entry) {
+            $student = $this->findMatchingStudent($program, $yearLevel, $entry['name']);
+
+            if (!$student) {
+                $unmatchedLines[] = [
+                    'raw_line'       => $entry['raw_line'],
+                    'extracted_name' => $entry['name'],
+                ];
+                continue;
+            }
+
+            $matchedStudentIds[] = $student->id;
+
+            foreach (['pm', 'ws', 'tg'] as $type) {
+                $slot = $entry['slots'][$type];
+                if (!$slot) continue; // fully empty slot = intentional no_response, not an error
+
+                $hasDay = !empty($slot['day']) && strtolower($slot['day']) !== 'day';
+                $hasTime = !empty($slot['time']) && strtolower($slot['time']) !== 'time';
+                $hasVenue = !empty($slot['venue']) && strtolower($slot['venue']) !== 'venue';
+
+                if ($hasTime && !$this->isValidBatchFormat($slot['time'])) {
+                    $formatErrorLines[] = [
+                        'student_name' => $student->name,
+                        'gathering_type' => $type,
+                        'field'  => 'time',
+                        'value'  => $slot['time'],
+                        'reason' => 'Time must be in a valid format, e.g. "8:30 AM".',
+                    ];
+                }
+
+                $anyFilled = $hasDay || $hasTime || $hasVenue;
+                $allFilled = $hasDay && $hasTime && $hasVenue;
+
+                if ($anyFilled && !$allFilled) {
+                    $incompleteRecords[] = [
+                        'student_id'     => $student->id,
+                        'student_name'   => $student->name,
+                        'gathering_type' => $type,
+                        'missing'        => array_values(array_filter([
+                            !$hasDay ? 'day' : null,
+                            !$hasTime ? 'time' : null,
+                            !$hasVenue ? 'venue' : null,
+                        ])),
+                    ];
+                }
+
+                $result[$type][] = [
+                    'student_id'     => $student->id,
+                    'student_name'   => $student->name,
+                    'gathering_type' => $type,
+                    'batch'          => $hasTime ? $this->formatBatchTime($slot['time']) : null,
+                    'venue'          => $hasVenue ? $slot['venue'] : null,
+                    'day'            => $this->resolveDateForWeekday($type, $hasDay ? $slot['day'] : null),
+                    'status'         => $allFilled ? 'present' : 'no_response',
+                    'is_manual'      => false,
+                ];
+            }
         }
 
-        return response()->json([
-            'message'   => 'Batch attendance parsed successfully.',
-            'drafts'    => $drafts,
-            'summary'   => $summary,
-            'unmatched' => $parsed['unmatched'],
-        ], 200);
+        $missingStudents = [];
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            $missingStudents[$type] = Student::where('program', $program)
+                ->where('year_level', $yearLevel)
+                ->whereNotIn('id', $matchedStudentIds)
+                ->get(['id', 'name'])
+                ->map(fn($s) => ['student_id' => $s->id, 'student_name' => $s->name])
+                ->values()
+                ->toArray();
+        }
+
+        return [
+            'records'            => $result,
+            'unmatched_lines'    => $unmatchedLines,
+            'incomplete_records' => $incompleteRecords,
+            'format_errors'      => $formatErrorLines,
+            'missing_students'   => $missingStudents,
+        ];
     }
 
     public function store(Request $request)

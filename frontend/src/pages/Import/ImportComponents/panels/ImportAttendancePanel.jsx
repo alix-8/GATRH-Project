@@ -19,8 +19,9 @@ function ImportAttendancePanel({
     onClear,
     onProcess,
     preview = null,
-    batchMode = false,
-    onToggleBatchMode = () => {},
+    isPreviewing = false,
+    onGeneratePreview = () => {},
+    onBackToEdit = () => {},
 }) {
     return (
         <section className="import-panel">
@@ -33,6 +34,7 @@ function ImportAttendancePanel({
                         name="gathering_type"
                         value={form.gathering_type}
                         onChange={updateField}
+                        disabled={isPreviewing}
                         className={gatheringTypeMismatch ? 'import-gathering-mismatch' : ''}
                         aria-invalid={gatheringTypeMismatch || undefined}
                     >
@@ -51,9 +53,17 @@ function ImportAttendancePanel({
                         name="raw_text"
                         value={form.raw_text}
                         onChange={updateField}
+                        readOnly={isPreviewing}
                         placeholder="Paste your attendance here . . ."
                         rows="12"
                     />
+                    <button
+                        type="button"
+                        className="import-secondary-button import-parse-preview-btn"
+                        onClick={isPreviewing ? onBackToEdit : onGeneratePreview}
+                    >
+                        {isPreviewing ? 'Back to Edit' : 'Parse and See Preview'}
+                    </button>
                 </label>
 
                 <div className="import-column">
@@ -75,7 +85,7 @@ function ImportAttendancePanel({
                         className="import-secondary-button"
                         type="button"
                         onClick={onOpenGenerateModal}
-                        disabled={isGenerating || isProcessing}
+                        disabled={isGenerating || isProcessing || isPreviewing}
                     >
                         {isGenerating ? 'Generating Format...' : 'Generate Format'}
                     </button>

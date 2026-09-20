@@ -7,6 +7,7 @@ import GenerateTemplate from './ImportComponents/modals/GenerateTemplate'
 import ErrorModal from './ImportComponents/modals/ErrorModal'
 import ImportAttendancePanel from './ImportComponents/panels/ImportAttendancePanel'
 import PreviewImportPanel from './ImportComponents/panels/PreviewImportPanel'
+import PreviewIndividualPanel from './ImportComponents/panels/PreviewIndividualPanel'
 import './Import.css'
 
 const CheckIcon = () => (
@@ -172,10 +173,27 @@ function Import({ onGoToAttendance = () => {} }) {
     }
 
 
+    //Previewing functions
+    const [isPreviewing, setIsPreviewing] = useState(false)
+
+    const handleGeneratePreview = () => {
+        if (!form.raw_text.trim()) {
+            setFieldWarning('Paste some attendance text first.')
+            return
+        }
+        setFieldWarning(null)
+        setIsPreviewing(true)
+    }
+
+    const handleBackToEdit = () => {
+        setIsPreviewing(false)
+    }
+
     const clearForm = () => {
         setForm(current => ({ ...current, raw_text: '' }))
         setResult(null)
         setFieldWarning(null)
+        setIsPreviewing(false)
     }
 
     return (
@@ -195,20 +213,27 @@ function Import({ onGoToAttendance = () => {} }) {
 
                 <div className="import-content">
                     <ImportAttendancePanel
-                        form={form}
-                        updateField={updateField}
-
-                        gatheringTypeMismatch={gatheringTypeMismatch}
-                        fieldWarning={fieldWarning}
-                        isGenerating={isGenerating}
-                        isProcessing={isProcessing}
-
-                        onOpenGenerateModal={openGenerateModal}
-                        onClear={clearForm}
-                        onProcess={processAttendance}
-                        
-                        preview={isWeekMode ? <PreviewImportPanel rawText={form.raw_text} /> : null}
-                    />
+                    form={form}
+                    updateField={updateField}
+                    gatheringTypeMismatch={gatheringTypeMismatch}
+                    fieldWarning={fieldWarning}
+                    isGenerating={isGenerating}
+                    isProcessing={isProcessing}
+                    onOpenGenerateModal={openGenerateModal}
+                    onClear={clearForm}
+                    onProcess={processAttendance}
+                    isPreviewing={isPreviewing}
+                    onGeneratePreview={handleGeneratePreview}
+                    onBackToEdit={handleBackToEdit}
+                    preview={
+                        isPreviewing
+                            ? (isWeekMode
+                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
+                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
+                            )
+                            : null
+                    }
+                />
                 </div>
             </main>
 
@@ -252,13 +277,13 @@ function Import({ onGoToAttendance = () => {} }) {
                         </div>
 
                         <div className="import-modal-buttons">
-                            <button className="import-clear-button" type="button" onClick={() => setModal(null)}>
+                            <button className="import-clear-button" type="button" onClick={() => { setModal(null); setIsPreviewing(false) }}>
                                 Close
                             </button>
                             <button
                                 className="import-primary-button"
                                 type="button"
-                                onClick={() => { setModal(null); onGoToAttendance(); navigate('/attendance');}}
+                                onClick={() => { setModal(null); setIsPreviewing(false); onGoToAttendance(); navigate('/attendance'); }}
                             >
                                 Go to Attendance
                             </button>
