@@ -39,6 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/students', [StudentController::class, 'index']);
     Route::get('/students/attendance-snapshot', [StudentController::class, 'attendanceSnapshot']);
+    Route::get('/students/{id}/overview', [StudentController::class, 'overview']);
+    
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/me', [AuthController::class, 'me']);
@@ -59,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
         // Route::patch('/attendance/reparse', [AttendanceController::class, 'reparseLines']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
+        Route::get('/attendance/session', [AttendanceController::class, 'showGatheringRecords']);
 
         // Attendance Drafts Routes
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);

@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { request } from '../../../api/request'
 import './ReviewDrawer.css'
+import { headerTitle } from '../../../utils/header-title'
+import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../components/Icons/AttendanceIcons'
+import { FilterIcon, ChevronDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../components/Icons/Reusables'
+import AttendancePagination from './AttendancePagination'
 
 const PAGE_SIZE = 10
 
@@ -18,12 +22,18 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [page, setPage] = useState(1)
 
     useEffect(() => {
-        if (!isOpen || !record?.ref_id) return
+        if (!isOpen || !record) return
         let cancelled = false
         setLoading(true)
         setError(null)
 
-        request(`/attendance/drafts/${record.ref_id}`)
+        const url = record.source === 'draft'
+        ? `/attendance/drafts/${record.ref_id}`
+        : record.batch_id
+            ? `/attendance/session?batch_id=${record.batch_id}`
+            : `/attendance/session?gathering_type=${record.gathering_type}&day=${record.day_iso}`
+
+        request(url)
             .then((json) => { if (!cancelled) setDraft(json.data) })
             .catch((err) => { if (!cancelled) setError(err.message) })
             .finally(() => { if (!cancelled) setLoading(false) })
@@ -60,7 +70,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 venue: s.venue,
             }))
 
-            await request('/attendance', {
+            await request('/attendance/submit', {
                 method: 'POST',
                 body: JSON.stringify({ draft_id: draft.id, records }),
             })
@@ -98,7 +108,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             <div className="review-drawer-panel" onClick={(e) => e.stopPropagation()}>
                 <div className="drawer-scroll">
                     <div className="drawer-header">
-                        <h2>Review Submission</h2>
+                        <h2>{headerTitle(record?.status)}</h2>
                         <p className="drawer-subtitle">
                             {record?.gathering || '—'} • {record?.date || '—'}
                         </p>
@@ -124,17 +134,25 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
 
                             <div className="kpi-grid">
                                 <div className="kpi-card">
-                                    <div className="kpi-icon kpi-blue">👥</div>
+                                    <div className="kpi-icon">
+                                        <TotalStudentsIcon/>
+                                    </div>
                                     <div className="kpi-value">{draft.total_students}</div>
                                     <div className="kpi-title">Total Students</div>
                                 </div>
+
                                 <div className="kpi-card">
-                                    <div className="kpi-icon kpi-green">✔</div>
+                                    <div className="kpi-icon">
+                                        <RespondedIcon/>
+                                    </div>
                                     <div className="kpi-value">{draft.responded_count}</div>
                                     <div className="kpi-title">Responded</div>
                                 </div>
+
                                 <div className="kpi-card">
-                                    <div className="kpi-icon kpi-gray">➖</div>
+                                    <div className="kpi-icon">
+                                        <NoResponseIcon/>
+                                    </div>
                                     <div className="kpi-value">{draft.no_response_count}</div>
                                     <div className="kpi-title">No Response</div>
                                 </div>
@@ -143,19 +161,25 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                             <div className="list-controls-header">
                                 <h3>Attendance List</h3>
                                 <div className="controls-group">
-                                    <select
-                                        className="drawer-filter-select"
-                                        value={statusFilter}
-                                        onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-                                    >
-                                        <option value="all">Status</option>
-                                        <option value="present">Present</option>
-                                        <option value="absent">No response</option>
-                                    </select>
-                                    <div className="drawer-search-wrapper">
-                                        <span className="search-icon">🔍</span>
+                                    <div className="filter-pill">
+                                        <FilterIcon />
+                                        <select
+                                            className="filter-pill-select"
+                                            value={statusFilter}
+                                            onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
+                                        >
+                                            <option value="all">Status</option>
+                                            <option value="present">Present</option>
+                                            <option value="absent">No response</option>
+                                        </select>
+                                        <ChevronDownIcon />
+                                    </div>
+
+                                    <div className="search-pill">
+                                        <SearchIcon />
                                         <input
                                             type="text"
+                                            className="search-pill-input"
                                             placeholder="Search Student.."
                                             value={search}
                                             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
@@ -168,20 +192,20 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                 <table className="drawer-table">
                                     <thead>
                                         <tr>
-                                            <th>Student</th>
-                                            <th>Venue</th>
-                                            <th>Batch</th>
+                                            <th>Name</th>
+                                            <th>Time</th>
                                             <th>Date</th>
+                                            <th>Location</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="drawer-table">
                                         {pageStudents.map((s, i) => (
                                             <tr key={s.student_id ?? i}>
                                                 <td>{s.student_name}</td>
-                                                <td>{s.venue || '—'}</td>
                                                 <td>{s.batch || '—'}</td>
                                                 <td>{s.day || '—'}</td>
+                                                 <td>{s.venue || '—'}</td>
                                                 <td>
                                                     <span className={`status-indicator status-${s.status === 'present' ? 'present' : 'no-response'}`}>
                                                         <span className="dot" /> {s.status === 'present' ? 'Present' : 'No response'}
@@ -193,14 +217,9 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                 </table>
                             </div>
 
-                            <div className="drawer-pagination">
-                                <span>Showing {page} of {pageCount}</span>
-                                <div className="pagination-btns">
-                                    <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>‹</button>
-                                    <button className="active">{page}</button>
-                                    <button disabled={page === pageCount} onClick={() => setPage((p) => p + 1)}>›</button>
-                                </div>
-                            </div>
+                            
+                            <AttendancePagination/>
+
                         </>
                     )}
                 </div>

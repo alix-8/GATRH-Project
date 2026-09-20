@@ -23,7 +23,7 @@ class AttendanceController extends Controller
      * Paginated, filterable list of attendance records for the table view.
      * GET /api/attendance
      */
-   public function index(Request $request)
+  public function index(Request $request)
     {
         $validated = $request->validate([
             'gathering_type' => 'nullable|in:pm,ws,tg,special',
@@ -42,7 +42,7 @@ class AttendanceController extends Controller
         $sortBy  = $validated['sort_by']  ?? 'day';
         $sortDir = $validated['sort_dir'] ?? 'desc';
 
-        // --- Part 1: Drafts not yet submitted
+        // --- Part 1: Drafts not yet submitted ---
         $draftsQuery = AttendanceDraft::where('user_id', $user->id)
             ->where('status', 'draft');
 
@@ -55,9 +55,11 @@ class AttendanceController extends Controller
                 'source'         => 'draft',
                 'id'             => 'draft-' . $draft->id,
                 'ref_id'         => $draft->id,
+                'batch_id'       => null,
                 'course'         => $program,
                 'year'           => $yearLevel,
                 'date'           => optional($draft->updated_at)->format('F j, Y'),
+                'day_iso'        => optional($draft->updated_at)->toDateString(),
                 'raw_day'        => $draft->updated_at,
                 'gathering_type' => $draft->gathering_type,
                 'gathering'      => $this->gatheringLabel($draft->gathering_type ?? ''),
@@ -70,7 +72,7 @@ class AttendanceController extends Controller
             return true;
         })->values();
 
-        // --- Part 2: Submitted records, grouped by gathering session ---
+        // --- Part 2: Submitted records, grouped by batch_id ---
         $recordsQuery = AttendanceRecord::query()
             ->whereHas('student', function ($q) use ($program, $yearLevel) {
                 $q->where('program', $program)->where('year_level', $yearLevel);
@@ -84,18 +86,35 @@ class AttendanceController extends Controller
         }
 
         $records = $recordsQuery->get()
-            ->groupBy(fn ($r) => $r->gathering_type . '|' . $r->day->format('Y-m-d'))
+            ->groupBy(function ($r) {
+                // Group primarily by batch_id; fallback to gathering_type|day for legacy records
+                if (!empty($r->batch_id)) {
+                    return $r->batch_id;
+                }
+                
+                $dayFormatted = $r->day instanceof \Carbon\Carbon 
+                    ? $r->day->format('Y-m-d') 
+                    : \Carbon\Carbon::parse($r->day)->format('Y-m-d');
+
+                return $r->gathering_type . '|' . $dayFormatted;
+            })
             ->map(function ($group) use ($program, $yearLevel) {
                 $first = $group->first();
+                
+                $dayCarbon = $first->day instanceof \Carbon\Carbon 
+                    ? $first->day 
+                    : \Carbon\Carbon::parse($first->day);
 
                 return [
                     'source'         => 'record',
-                    'id'             => 'record-' . $first->gathering_type . '-' . $first->day->format('Y-m-d'),
+                    'id'             => 'record-' . ($first->batch_id ?? ($first->gathering_type . '-' . $dayCarbon->format('Y-m-d'))),
                     'ref_id'         => null,
+                    'batch_id'       => $first->batch_id ?? null,
                     'course'         => $program,
                     'year'           => $yearLevel,
-                    'date'           => $first->day->format('F j, Y'),
-                    'raw_day'        => $first->day,
+                    'date'           => $dayCarbon->format('F j, Y'),
+                    'day_iso'        => $dayCarbon->toDateString(),
+                    'raw_day'        => $dayCarbon,
                     'gathering_type' => $first->gathering_type,
                     'gathering'      => $this->gatheringLabel($first->gathering_type),
                     'time'           => optional($first->created_at)->format('g:i A'),
@@ -140,16 +159,93 @@ class AttendanceController extends Controller
         ], 200);
     }
 
-private function aggregateStatus($group): string
-{
-    if ($group->contains('validation_status', 'rejected')) {
-        return 'rejected';
+    private function ordinalYear(?int $year): string
+    {
+        if (!$year) return '';
+        $suffix = match (true) {
+            $year % 100 >= 11 && $year % 100 <= 13 => 'th',
+            $year % 10 === 1 => 'st',
+            $year % 10 === 2 => 'nd',
+            $year % 10 === 3 => 'rd',
+            default => 'th',
+        };
+        return "{$year}{$suffix} Year";
     }
-    if ($group->every(fn ($r) => $r->validation_status === 'validated')) {
-        return 'approved';
+
+    public function showGatheringRecords(Request $request)
+    {
+        $validated = $request->validate([
+            'batch_id'       => 'nullable|string',
+            'gathering_type' => 'required_without:batch_id|in:pm,ws,tg,special',
+            'day'            => 'required_without:batch_id|date',
+        ]);
+
+        $user = $request->user();
+        $program = strtoupper((string) $user->program);
+        $yearLevel = (int) $user->year_level;
+
+        $query = AttendanceRecord::whereHas('student', function ($q) use ($program, $yearLevel) {
+            $q->where('program', $program)->where('year_level', $yearLevel);
+        });
+
+        if (!empty($validated['batch_id'])) {
+            $query->where('batch_id', $validated['batch_id']);
+        } else {
+            $query->where('gathering_type', $validated['gathering_type'])
+                ->whereDate('day', $validated['day']);
+        }
+
+        $records = $query->with('student')->get();
+
+        if ($records->isEmpty()) {
+            return response()->json(['status' => 'error', 'message' => 'No records found.'], 404);
+        }
+
+        $students = $records->map(fn ($r) => [
+            'student_id'   => $r->student_id,
+            'student_name' => $r->student->name ?? 'Unknown',
+            'status'       => $r->status,
+            'venue'        => $r->venue ?: '---',
+            'batch'        => $r->batch ? \Carbon\Carbon::parse($r->batch)->format('g:ia') : '---',
+            'day'          => $r->day ? $r->day->format('Y-m-d') : '---',
+        ]);
+
+        $responded = $students->where('status', 'present')->count();
+        $submitter = $records->first()->submitter;
+
+        $submitterProgram = $submitter?->program ? strtoupper($submitter->program) : '';
+        $submitterYear = $this->ordinalYear($submitter?->year_level);
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => [
+                'gathering_type'    => $records->first()->gathering_type,
+                'day'               => $records->first()->day->format('F j, Y'),
+                'submitted_by'      => [
+                    'name' => $submitter?->name ?? 'Unknown',
+                    'role' => trim(implode(' · ', array_filter([
+                        trim("{$submitterProgram} {$submitterYear}"),
+                        'Spiritual Secretary',
+                    ]))),
+                ],
+                'total_students'    => $students->count(),
+                'responded_count'   => $responded,
+                'no_response_count' => $students->count() - $responded,
+                'students'          => $students,
+            ],
+        ], 200);
     }
-    return 'pending';
-}
+
+    private function aggregateStatus($group): string
+    {
+        if ($group->contains('validation_status', 'rejected')) {
+            return 'rejected';
+        }
+        if ($group->every(fn ($r) => $r->validation_status === 'validated')) {
+            return 'approved';
+        }
+        return 'pending';
+    }
 
     private function gatheringLabel(string $type): string
     {
@@ -430,6 +526,16 @@ private function aggregateStatus($group): string
             'records.*.venue'          => 'nullable|string',
         ]);
 
+        $gatheringTypes = collect($validated['records'])->pluck('gathering_type')->unique();
+        foreach ($gatheringTypes as $type) {
+            if ($this->parsingService->hasSubmittedThisCycle($request->user()->id, $type)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "You have already submitted attendance for {$type} this cycle.",
+                ], 422);
+            }
+        }
+
         $studentIds = collect($validated['records'])->pluck('student_id')->unique();
         $accessibleStudentCount = Student::whereKey($studentIds)
             ->accessibleTo($request->user())
@@ -480,22 +586,25 @@ private function aggregateStatus($group): string
 
         // --- Step 3: Atomic Bulk Insert within DB Transaction ---
         $savedRecords = DB::transaction(function () use ($recordsToInsert, $submittedBy, $validated, $request) {
-            $records = [];
+    $records = [];
+    
+    // Generate a unique batch_id for this entire submission payload
+    $batchId = (string) \Illuminate\Support\Str::uuid();
+        foreach ($recordsToInsert as $recordData) {
+            $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
 
-            foreach ($recordsToInsert as $recordData) {
-                $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
-
-                $records[] = AttendanceRecord::create([
-                    'student_id'        => $recordData['student_id'],
-                    'gathering_type'    => $recordData['gathering_type'],
-                    'day'               => $recordData['day'],
-                    'batch'             => $formattedBatch,
-                    'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
-                    'status'            => $recordData['status'],
-                    'validation_status' => 'unvalidated',
-                    'submitted_by'      => $submittedBy,
-                ]);
-            }
+            $records[] = AttendanceRecord::create([
+                'batch_id'          => $batchId, // <--- INSERTED HERE
+                'student_id'        => $recordData['student_id'],
+                'gathering_type'    => $recordData['gathering_type'],
+                'day'               => $recordData['day'],
+                'batch'             => $formattedBatch,
+                'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
+                'status'            => $recordData['status'],
+                'validation_status' => 'unvalidated',
+                'submitted_by'      => $submittedBy,
+            ]);
+        }
 
             $draftQuery = AttendanceDraft::where('user_id', $request->user()->id)
                 ->where('status', 'draft');
