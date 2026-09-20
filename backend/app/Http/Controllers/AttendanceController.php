@@ -272,9 +272,10 @@ class AttendanceController extends Controller
      * Generate a pre-filled GATRH text template with student names sorted alphabetically.
      */
     public function generateTemplate(Request $request)
-    {
+    {   
+        //Weekly attendance
         $request->validate([
-            'gathering_type' => 'nullable|string|in:pm,ws,tg,special',
+            'gathering_type' => 'nullable|string|in:pm,ws,tg,special,week',
         ]);
 
         $user = $request->user();
@@ -286,7 +287,28 @@ class AttendanceController extends Controller
                 'message' => 'Your account is not assigned to a program and year level.',
             ], 422);
         }
+
         $gatheringType = strtoupper($request->gathering_type ?? 'pm');
+
+
+        if (($request->gathering_type ?? 'pm') === 'week') {
+            $result = $this->parsingService->generateWeeklyTemplate($program, $yearLevel);
+
+            if ($result['count'] === 0) {
+                return response()->json([
+                    'message' => "No active students found for {$program} Year {$yearLevel}.",
+                    'template' => null,
+                ], 404);
+            }
+
+            return response()->json([
+                'message'  => 'Weekly attendance template generated successfully.',
+                'program'  => $program,
+                'year'     => $yearLevel,
+                'count'    => $result['count'],
+                'template' => $result['template'],
+            ], 200);
+        }
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
         $students = Student::where('program', $program)
@@ -509,9 +531,58 @@ class AttendanceController extends Controller
         ], 200);
     }
 
-    // public function reparseLines(Request $request){
-    //     //
-    // }
+    public function parseBatchText(Request $request)
+    {
+        $request->validate(['raw_text' => 'required|string']);
+
+        $user = $request->user();
+        if (!$user->program || !$user->year_level) {
+            return response()->json(['message' => 'Your account is not assigned to a program and year level.'], 422);
+        }
+
+        $parsed = $this->parsingService->parseBatchText($request->raw_text, $user->program, $user->year_level);
+
+        $drafts = [];
+        $summary = [];
+
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            if (empty($parsed['records'][$type])) continue;
+
+            if ($this->parsingService->hasSubmittedThisCycle($user->id, $type)) {
+                $summary[$type] = ['skipped' => true, 'reason' => 'already submitted this cycle'];
+                continue;
+            }
+
+            $submissions = collect($parsed['records'][$type])->keyBy('student_id')->all();
+            $day = \App\Support\GatheringCycle::currentCycleStart($type)->toDateString();
+
+            $sectionData = $this->parsingService->buildFullSectionRecords(
+                strtoupper($user->program), $user->year_level, $submissions, $day, $type
+            );
+
+            $draft = $this->parsingService->saveDraft([
+                'gathering_type' => $type,
+                'day'            => $day,
+                'raw_text'       => $request->raw_text,
+                'parsed_data'    => $sectionData['records'],
+                'total_detected' => $sectionData['total_students'],
+                'matched_count'  => count($submissions),
+            ], $user->id);
+
+            $drafts[$type] = $draft->id;
+            $summary[$type] = [
+                'total_students' => $sectionData['total_students'],
+                'present_count'  => count($submissions),
+            ];
+        }
+
+        return response()->json([
+            'message'   => 'Batch attendance parsed successfully.',
+            'drafts'    => $drafts,
+            'summary'   => $summary,
+            'unmatched' => $parsed['unmatched'],
+        ], 200);
+    }
 
     public function store(Request $request)
     {

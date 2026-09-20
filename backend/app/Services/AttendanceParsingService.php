@@ -119,6 +119,42 @@ class AttendanceParsingService
         ];
     }
 
+    public function generateWeeklyTemplate(string $program, int $yearLevel): array
+    {
+        $students = Student::where('program', $program)
+            ->where('year_level', $yearLevel)
+            ->orderBy('name', 'asc')
+            ->get();
+
+        if ($students->isEmpty()) {
+            return ['count' => 0, 'template' => null];
+        }
+
+        // $pmLabel = GatheringCycle::windowLabel('pm');
+        // $wsLabel = GatheringCycle::windowLabel('ws');
+        // $tgLabel = GatheringCycle::windowLabel('tg');
+
+        $template = "--- GATRH ATTENDANCE FORM ---\n";
+        $template .= "Gathering: WEEKLY REPORTING\n";
+        $template .= "Prayer Meeting: \n";
+        $template .= "Worship Service: \n";
+        $template .= "Thanksgiving: \n";
+        $template .= "\n";
+        $template .= "[FILL OUT YOUR DETAILS BELOW]\n";
+
+        foreach ($students as $index => $student) {
+            $number = $index + 1;
+            $template .= "{$number}. {$student->name}\n";
+            $template .= "PM: Day| Time | Venue\n";
+            $template .= "WS: Day| Time | Venue\n";
+            $template .= "TG: Day| Time | Venue\n";
+            $template .= "\n";
+        }
+
+        return ['count' => $students->count(), 'template' => rtrim($template) . "\n"];
+    }
+
+
     /**
      * Reads the gathering value from the text header and normalizes it to its code.
      */
@@ -302,64 +338,104 @@ class AttendanceParsingService
         ];
     }
 
-    // /**
-    //  * Shared line-by-line parser: splits raw text into candidate student lines,
-    //  * skips headers/labels/blank lines, and matches each against a student record.
-    //  */
-    // private function parseLines(string $rawText, string $program, int $yearLevel, string $defaultDate, string $gatheringType): array
-    // {
-    //     $lines = explode("\n", trim($rawText));
-    //     $matchedRecords = [];
-    //     $unmatchedLines = [];
+    private const WEEKDAY_MAP = [
+        'sun' => 0, 'sunday' => 0, 'mon' => 1, 'monday' => 1,
+        'tue' => 2, 'tues' => 2, 'tuesday' => 2, 'wed' => 3, 'wednesday' => 3,
+        'thu' => 4, 'thurs' => 4, 'thursday' => 4, 'fri' => 5, 'friday' => 5,
+        'sat' => 6, 'saturday' => 6,
+    ];
 
-    //     foreach ($lines as $line) {
-    //         $line = trim($line);
+    public function parseBatchText(string $rawText, string $program, int $yearLevel): array
+    {
+        $lines = preg_split('/\r\n|\r|\n/', trim($rawText));
+        $students = [];
+        $current = null;
+        $slotType = null;
 
-    //         if (empty($line) || str_contains($line, '---') || str_contains($line, '[')) {
-    //             continue;
-    //         }
+        $startIndex = 0;
+        if (preg_match('/^\s*(.+?)\s*[-–:]\s*year\s*\d+/i', trim($lines[0] ?? ''))) {
+            $startIndex = 1; // skip header line like "BSIS - Year 3"
+        }
 
-    //         if (!preg_match('/^\d+[\.\)\-]?\s*(.+)$/i', $line)) {
-    //             continue;
-    //         }
+        for ($i = $startIndex; $i < count($lines); $i++) {
+            $line = trim($lines[$i]);
+            if ($line === '') continue;
 
-    //         $result = $this->buildRecordFromLine($line, $program, $yearLevel, $defaultDate, $gatheringType);
+            if (preg_match('/^\d+[.)]\s*(.+)$/', $line, $m)) {
+                if ($current) $students[] = $current;
+                $current = ['name' => trim($m[1]), 'slots' => ['pm' => null, 'ws' => null, 'tg' => null]];
+                $slotType = null;
+                continue;
+            }
 
-    //         if ($result['matched']) {
-    //             $matchedRecords[$result['record']['student_id']] = $result['record'];
-    //         } elseif ($result['unmatched_data']) {
-    //             $unmatchedLines[] = $result['unmatched_data'];
-    //         }
-    //     }
+            if (!$current) continue;
 
-    //     return [
-    //         'matched_records' => $matchedRecords,
-    //         'unmatched'       => $unmatchedLines,
-    //     ];
-    // }
+            if (preg_match('/^(PM|WS|TG)[:\s]\s*(.*)$/i', $line, $m)) {
+                $slotType = strtolower($m[1]);
+                $rest = trim($m[2]);
+                $current['slots'][$slotType] = $rest !== '' ? $this->parseSlotLine($rest) : null;
+                continue;
+            }
 
-    // /**
-    //  * Reparses delta text lines and patches over existing staged records
-    //  * (used when a user edits/adds a few lines instead of resubmitting the whole form).
-    //  */
-    // public function reparseLines(string $rawText, string $program, int $yearLevel, string $defaultDate, string $gatheringType, array $existingStaged = []): array
-    // {
-    //     $result = $this->parseLines($rawText, $program, $yearLevel, $defaultDate, $gatheringType);
+            if ($slotType) {
+                $current['slots'][$slotType] = $this->parseSlotLine($line);
+                $slotType = null;
+            }
+        }
+        if ($current) $students[] = $current;
 
-    //     foreach ($result['matched_records'] as $studentId => $record) {
-    //         $existingStaged[$studentId] = $record;
-    //     }
+        $result = ['pm' => [], 'ws' => [], 'tg' => []];
+        $unmatched = [];
 
-    //     return [
-    //         'matched_records' => $result['matched_records'],
-    //         'unmatched'       => $result['unmatched'],
-    //         'staged_records'  => $existingStaged,
-    //     ];
-    // }
+        foreach ($students as $entry) {
+            $student = $this->findMatchingStudent($program, $yearLevel, $entry['name']);
+            if (!$student) {
+                $unmatched[] = $entry['name'];
+                continue;
+            }
 
-    /**
-     * Rebuilds complete section masterlist combining parsed matches and missing students.
-     */
+            foreach (['pm', 'ws', 'tg'] as $type) {
+                $slot = $entry['slots'][$type];
+                if (!$slot) continue;
+
+                $result[$type][] = [
+                    'student_id'     => $student->id,
+                    'student_name'   => $student->name,
+                    'gathering_type' => $type,
+                    'batch'          => $this->formatBatchTime($slot['time'] ?? null),
+                    'venue'          => $slot['venue'] ?? null,
+                    'day'            => $this->resolveDateForWeekday($type, $slot['day'] ?? null),
+                    'status'         => 'present',
+                    'is_manual'      => false,
+                ];
+            }
+        }
+
+        return ['records' => $result, 'unmatched' => $unmatched];
+    }
+
+    private function parseSlotLine(string $line): array
+    {
+        $parts = preg_split('/\s+/', trim($line), 3);
+        return ['day' => $parts[0] ?? null, 'time' => $parts[1] ?? null, 'venue' => $parts[2] ?? null];
+    }
+
+    private function resolveDateForWeekday(string $gatheringType, ?string $dayName): string
+    {
+        $cycleStart = \App\Support\GatheringCycle::currentCycleStart($gatheringType);
+        $target = self::WEEKDAY_MAP[strtolower(trim((string) $dayName))] ?? null;
+
+        if ($target === null) return $cycleStart->toDateString();
+
+        for ($offset = 0; $offset < 7; $offset++) {
+            $candidate = $cycleStart->copy()->addDays($offset);
+            if ($candidate->dayOfWeek === $target) return $candidate->toDateString();
+        }
+
+        return $cycleStart->toDateString();
+    }
+
+
     public function buildFullSectionRecords(string $program, int $yearLevel, array $parsedSubmissions, string $defaultDate, string $gatheringType): array
     {
         $allSectionStudents = Student::where('program', $program)

@@ -6,6 +6,7 @@ import Notification from '../../components/Notification/Notification'
 import GenerateTemplate from './ImportComponents/modals/GenerateTemplate'
 import ErrorModal from './ImportComponents/modals/ErrorModal'
 import ImportAttendancePanel from './ImportComponents/panels/ImportAttendancePanel'
+import PreviewImportPanel from './ImportComponents/panels/PreviewImportPanel'
 import './Import.css'
 
 const CheckIcon = () => (
@@ -44,6 +45,8 @@ function Import({ onGoToAttendance = () => {} }) {
     const [isProcessing, setIsProcessing] = useState(false)
     const [result, setResult] = useState(null)
     const navigate = useNavigate()
+
+    const [batchMode, setBatchMode] = useState(false)
 
     // modal: null | 'generate' | 'success' | 'error'
     const [modal, setModal] = useState(null)
@@ -93,13 +96,15 @@ function Import({ onGoToAttendance = () => {} }) {
         setModal('generate')
     }
 
+    const isWeekMode = form.gathering_type === 'week'
+
     const generateTemplate = async () => {
         setIsGenerating(true)
         try {
             const query = new URLSearchParams({
                 program: form.program,
                 year_level: form.year_level,
-                gathering_type: form.gathering_type,
+                gathering_type: form.gathering_type, // 'week' now flows straight through
             })
             const data = await request(`/attendance/generate-template?${query}`)
             setPreviewText(data.template)
@@ -134,21 +139,17 @@ function Import({ onGoToAttendance = () => {} }) {
                 }
                 return errors
             }, {})
-
-            return {
-                ...nestedErrors,
-                ...directErrors,
-            }
+            return { ...nestedErrors, ...directErrors }
         }
 
         setFieldWarning(null)
         setIsProcessing(true)
         setResult(null)
         try {
-            const data = await request('/attendance/parse-text', {
-                method: 'POST',
-                body: JSON.stringify(form),
-            })
+            const endpoint = isWeekMode ? '/attendance/parse-batch-text' : '/attendance/parse-text'
+            const payload = isWeekMode ? { raw_text: form.raw_text } : form
+
+            const data = await request(endpoint, { method: 'POST', body: JSON.stringify(payload) })
 
             const responseErrors = getStructuredParseErrors(data)
             const hasValidationFailure = Object.keys(responseErrors).length > 0 || /contains errors|correct them before saving|invalid attendance/i.test(data.message || '')
@@ -169,6 +170,7 @@ function Import({ onGoToAttendance = () => {} }) {
             setIsProcessing(false)
         }
     }
+
 
     const clearForm = () => {
         setForm(current => ({ ...current, raw_text: '' }))
@@ -195,14 +197,17 @@ function Import({ onGoToAttendance = () => {} }) {
                     <ImportAttendancePanel
                         form={form}
                         updateField={updateField}
+
                         gatheringTypeMismatch={gatheringTypeMismatch}
                         fieldWarning={fieldWarning}
                         isGenerating={isGenerating}
                         isProcessing={isProcessing}
+
                         onOpenGenerateModal={openGenerateModal}
                         onClear={clearForm}
                         onProcess={processAttendance}
-                        // preview={<YourPreviewComponent .../>}  // wire this in once it's built
+                        
+                        preview={isWeekMode ? <PreviewImportPanel rawText={form.raw_text} /> : null}
                     />
                 </div>
             </main>

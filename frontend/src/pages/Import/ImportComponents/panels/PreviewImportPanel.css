@@ -1,0 +1,32 @@
+.batch-preview {
+    border: 1px solid #dbe1ec;
+    border-radius: 10px;
+    min-height: 220px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.batch-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+
+.batch-preview-table thead tr {
+    background: #f4f6f9;
+    color: #172B4D;
+    text-align: left;
+}
+
+.batch-preview-table th,
+.batch-preview-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eef0f2;
+    white-space: nowrap;
+}
+
+.batch-preview-empty {
+    text-align: center;
+    color: #9aa4b2;
+    padding: 24px;
+}
