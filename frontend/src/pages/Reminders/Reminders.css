@@ -1,17 +1,22 @@
 .reminders {
     display: flex;
-    background-color: #ffffff;
+    min-height: 100vh;
 }
 
 .reminders-main {
     flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: #DBDEE4;
 }
 
 .reminders-header {
+    position: relative;
     box-sizing: border-box;
     border-bottom: 1px solid #c7c6c6;
     line-height: 1.2;
     padding: 28px 24px 28px 24px;
+    background-color: white;
 }
 
 .reminders-header h3 {
@@ -25,4 +30,72 @@
     margin: 0;
     color: #172B4D;
     font-size: 14px;
+}
+
+.reminders-cards {
+    display: flex;
+    justify-content: center;
+    padding: 14px;
+    gap: 15px;
+}
+
+.reminders-card {
+    box-sizing: border-box;
+    height: 130px;
+    width: 320px;
+    padding: 20px 22px;
+    border: 1px solid #cacbcd;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #172B4D;
+}
+
+.reminders-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #cacbcd;
+    border-radius: 40%;
+}
+
+.upcoming-icon-wrap {
+    background-color: #172B4D;
+}
+
+.needs-action-icon-wrap {
+    background-color: #F2C94C;
+}
+
+.completed-icon-wrap {
+    background-color: #24A65A;
+}
+
+.reminders-card-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.reminders-card h4 {
+    margin: 0;
+    color: #5e6c84;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+}
+
+.reminders-card strong {
+    display: flex;
+    margin: 0;
+    color: #172B4D;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.reminders-card p {
+    display: flex;
+    color: #5e6c84;
+    font-size: 10px;
 }
