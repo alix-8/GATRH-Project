@@ -5,7 +5,6 @@
 
 .reminders-main {
     flex: 1;
-    background-color: #ffffff;
 }
 
 .reminders-header {
@@ -23,6 +22,7 @@
 
 .reminders-header p {
     display: flex;
+    margin: 0;
     color: #172B4D;
     font-size: 14px;
 }
