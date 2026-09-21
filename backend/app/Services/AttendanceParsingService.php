@@ -110,12 +110,13 @@ class AttendanceParsingService
         $detectedGathering = $this->detectGatheringType($rawText);
         $detectedProgram = $overrideProgram ? trim($overrideProgram) : null;
         $detectedYear = $overrideYearLevel;
+        $gatheringType = $detectedGathering ?: ($overrideGathering ?: 'pm');
 
         return [
-            'gathering_type' => $detectedGathering ?: ($overrideGathering ?: 'pm'),
+            'gathering_type' => $gatheringType,
             'program'        => $detectedProgram,
             'year_level'     => $detectedYear,
-            'default_date'   => now()->toDateString(),
+            'default_date'   => GatheringCycle::currentCycleStart($gatheringType)->toDateString(),
         ];
     }
 
@@ -417,6 +418,20 @@ class AttendanceParsingService
                     'student_name' => $student->name,
                     'reason'       => 'All PM/WS/TG fields are blank for this student.',
                 ];
+
+                foreach (['pm', 'ws', 'tg'] as $type) {
+                    $result[$type][] = [
+                        'student_id'     => $student->id,
+                        'student_name'   => $student->name,
+                        'gathering_type' => $type,
+                        'batch'          => null,
+                        'venue'          => null,
+                        'day'            => $this->resolveDateForWeekday($type, null),
+                        'status'         => 'no_response',
+                        'is_manual'      => false,
+                    ];
+                }
+
                 continue;
             }
 
@@ -511,7 +526,7 @@ class AttendanceParsingService
 
     private function resolveDateForWeekday(string $gatheringType, ?string $dayName): string
     {
-        $cycleStart = \App\Support\GatheringCycle::currentCycleStart($gatheringType);
+        $cycleStart = GatheringCycle::currentCycleStart($gatheringType);
         $target = self::WEEKDAY_MAP[strtolower(trim((string) $dayName))] ?? null;
 
         if ($target === null) return $cycleStart->toDateString();

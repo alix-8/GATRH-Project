@@ -18,7 +18,8 @@
     margin: 0;
 }
 
-.import-column textarea {
+.import-column textarea,
+.import-preview-placeholder {
     border: 1px solid #dbe1ec;
     border-radius: 10px;
     padding: 1rem;
@@ -32,11 +33,9 @@
     color: #c3cad6;
 }
 
-/* Shown until the parent passes a real `preview` component in */
 .import-preview-placeholder {
     border: 1px solid #dbe1ec;
-    border-radius: 10px;
-    min-height: 220px;
+    padding: 2.40rem;
     background: #ffffff;
 }
 
