@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
@@ -148,7 +149,9 @@ function Import({ onGoToAttendance = () => {} }) {
         setResult(null)
         try {
             const endpoint = isWeekMode ? '/attendance/parse-batch-text' : '/attendance/parse-text'
-            const payload = isWeekMode ? { raw_text: form.raw_text } : form
+            const payload = isWeekMode
+                ? { raw_text: form.raw_text, confirm_blank: confirmBlankPending }
+                : { ...form, confirm_blank: confirmBlankPending }
 
             const data = await request(endpoint, { method: 'POST', body: JSON.stringify(payload) })
 
@@ -164,10 +167,16 @@ function Import({ onGoToAttendance = () => {} }) {
             setResult(data)
             setModal('success')
         } catch (error) {
-            const specificMessage = error.details?.all_no_response_warning
-            setModalMessage(specificMessage || error.message)
-            setParseErrors(error.details || null)
-            setModal('error')
+            const details = error.details || {}
+            if (details.requires_confirmation) {
+                setModalMessage(details.all_no_response_warning || error.message)
+                setParseErrors(details)
+                setModal('confirm-blank')
+            } else {
+                setModalMessage(error.message)
+                setParseErrors(details)
+                setModal('error')
+            }
         } finally {
             setIsProcessing(false)
         }
@@ -194,11 +203,26 @@ function Import({ onGoToAttendance = () => {} }) {
         setIsPreviewing(false)
     }
 
+    const [confirmBlankPending, setConfirmBlankPending] = useState(false)
+
+    const handleConfirmBlankProceed = () => {
+        setConfirmBlankPending(true)
+        setModal(null)
+    }
+
+    // Auto re-submit once confirmBlankPending flips true
+    useEffect(() => {
+        if (confirmBlankPending) {
+            processAttendance()
+        }
+    }, [confirmBlankPending])
+
     const clearForm = () => {
         setForm(current => ({ ...current, raw_text: '' }))
         setResult(null)
         setFieldWarning(null)
         setIsPreviewing(false)
+        setConfirmBlankPending(false)
     }
 
     return (
@@ -241,7 +265,22 @@ function Import({ onGoToAttendance = () => {} }) {
                 />
                 </div>
             </main>
-
+            {modal === 'confirm-blank' && (
+                <div className="import-modal-overlay">
+                    <div className="import-modal import-modal-centered">
+                        <h2 className="import-modal-title">Some fields are blank</h2>
+                        <p className="import-modal-subtext">{modalMessage}</p>
+                        <div className="import-modal-buttons">
+                            <button className="import-clear-button" type="button" onClick={() => setModal(null)}>
+                                Go back and edit
+                            </button>
+                            <button className="import-primary-button" type="button" onClick={handleConfirmBlankProceed}>
+                                Mark as absent and continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {modal === 'generate' && (
                 <GenerateTemplate
                     form={form}

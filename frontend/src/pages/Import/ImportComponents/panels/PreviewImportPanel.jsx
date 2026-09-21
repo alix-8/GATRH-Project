@@ -54,7 +54,7 @@ function parseStudents(rawText) {
 
 function serializeStudents(students) {
     return students.map((s) => {
-        const slot = (v) => `${v.day || 'Day'}| ${v.time || 'Time'} | ${v.venue || 'Venue'}`
+        const slot = (v) => `${v.day || ''}| ${v.time || ''} | ${v.venue || ''}`
         return `${s.number}. ${s.name}\nPM: ${slot(s.pm)}\nWS: ${slot(s.ws)}\nTG: ${slot(s.tg)}`
     }).join('\n\n')
 }

@@ -348,10 +348,11 @@ class AttendanceController extends Controller
     public function parseText(Request $request)
     {
         $request->validate([
-            'raw_text'     => 'required|string',
-            'gathering_type'=> 'nullable|string|in:pm,ws,tg,special',
-            'gathering_id' => 'nullable|exists:gatherings,id',
-            'draft_id'     => 'nullable|exists:attendance_drafts,id',
+            'raw_text'       => 'required|string',
+            'gathering_type' => 'nullable|string|in:pm,ws,tg,special',
+            'gathering_id'   => 'nullable|exists:gatherings,id',
+            'draft_id'       => 'nullable|exists:attendance_drafts,id',
+            'confirm_blank'  => 'nullable|boolean',
         ]);
 
         $user = $request->user();
@@ -456,29 +457,34 @@ class AttendanceController extends Controller
             ? 'Are you sure the data is correct? You cannot pass a completely blank record.'
             : null;
 
-        if (!empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines) || !empty($missingStudents) || $allNoResponseWarning) {
-            $validationErrors = [
-                'unmatched_lines'    => $unmatchedLines,
-                'missing_students'   => $missingStudents,
-                'incomplete_records' => $incompleteRecords,
-                'format_errors'      => $formatErrorLines,
-            ];
+        $confirmBlank = (bool) $request->boolean('confirm_blank');
+    $hasHardErrors = !empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines) || !empty($missingStudents);
 
-            if ($allNoResponseWarning) {
-                $validationErrors['all_no_response_warning'] = $allNoResponseWarning;
-            }
+    if ($hasHardErrors) {
+        return response()->json([
+            'message'                 => 'Attendance text contains errors. Please correct them before saving the draft.',
+            'metadata'                => $metadata,
+            'unmatched_lines'         => $unmatchedLines,
+            'missing_students'        => $missingStudents,
+            'incomplete_records'      => $incompleteRecords,
+            'format_errors'           => $formatErrorLines,
+            'all_no_response_warning' => $allNoResponseWarning,
+            'requires_confirmation'   => false,
+        ], 422);
+    }
 
-            return response()->json([
-                'message'            => 'Attendance text contains errors. Please correct them before saving the draft.',
-                'metadata'           => $metadata,
-                'errors'             => $validationErrors,
-                'unmatched_lines'    => $unmatchedLines,
-                'missing_students'   => $missingStudents,
-                'incomplete_records' => $incompleteRecords,
-                'format_errors'      => $formatErrorLines,
-                'all_no_response_warning' => $allNoResponseWarning,
-            ], 422);
-        }
+    if ($allNoResponseWarning && !$confirmBlank) {
+        return response()->json([
+            'message'                 => 'All students have blank attendance fields. Confirm to mark them as no response and continue.',
+            'metadata'                => $metadata,
+            'unmatched_lines'         => [],
+            'missing_students'        => [],
+            'incomplete_records'      => [],
+            'format_errors'           => [],
+            'all_no_response_warning' => $allNoResponseWarning,
+            'requires_confirmation'   => true,
+        ], 422);
+    }
 
         $sectionData = $this->parsingService->buildFullSectionRecords(
             $metadata['program'],
@@ -533,7 +539,10 @@ class AttendanceController extends Controller
 
     public function parseBatchText(Request $request)
     {
-        $request->validate(['raw_text' => 'required|string']);
+        $request->validate([
+            'raw_text'      => 'required|string',
+            'confirm_blank' => 'nullable|boolean',
+        ]);
 
         $user = $request->user();
         if (!$user->program || !$user->year_level) {
@@ -541,18 +550,38 @@ class AttendanceController extends Controller
         }
 
         $parsed = $this->parsingService->parseBatchText($request->raw_text, $user->program, $user->year_level);
+        $confirmBlank = (bool) $request->boolean('confirm_blank');
 
-        if (!empty($parsed['unmatched_lines']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']) || !empty($parsed['blank_entries'])) {
+        $hasHardErrors = !empty($parsed['unmatched_lines']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']);
+        $hasSoftWarnings = !empty($parsed['blank_entries']) || !empty($parsed['all_no_response_warning']);
+
+        if ($hasHardErrors) {
             return response()->json([
-                'message'            => 'Weekly attendance text contains errors. Please correct them before saving the draft.',
-                'unmatched_lines'    => $parsed['unmatched_lines'],
-                'incomplete_records' => $parsed['incomplete_records'],
-                'format_errors'      => $parsed['format_errors'],
-                'blank_entries'      => $parsed['blank_entries'] ?? [],
-                'missing_students'   => $parsed['missing_students'],
+                'message'                 => 'Weekly attendance text contains errors. Please correct them before saving the draft.',
+                'unmatched_lines'         => $parsed['unmatched_lines'],
+                'incomplete_records'      => $parsed['incomplete_records'],
+                'format_errors'           => $parsed['format_errors'],
+                'blank_entries'           => $parsed['blank_entries'] ?? [],
+                'missing_students'        => $parsed['missing_students'],
+                'all_no_response_warning' => $parsed['all_no_response_warning'] ?? null,
+                'requires_confirmation'   => false,
             ], 422);
         }
 
+        if ($hasSoftWarnings && !$confirmBlank) {
+            return response()->json([
+                'message'                 => 'Some students have blank attendance fields. Confirm to mark them as no response and continue.',
+                'unmatched_lines'         => [],
+                'incomplete_records'      => [],
+                'format_errors'           => [],
+                'blank_entries'           => $parsed['blank_entries'] ?? [],
+                'missing_students'        => $parsed['missing_students'],
+                'all_no_response_warning' => $parsed['all_no_response_warning'] ?? null,
+                'requires_confirmation'   => true,
+            ], 422);
+        }
+
+        // Either no issues at all, or the user already confirmed — proceed to save drafts.
         $drafts = [];
         $summary = [];
 
@@ -585,24 +614,6 @@ class AttendanceController extends Controller
                 'total_students' => $sectionData['total_students'],
                 'present_count'  => count($submissions),
             ];
-        }
-
-        if (
-            !empty($parsed['unmatched_lines']) ||
-            !empty($parsed['format_errors']) ||
-            !empty($parsed['incomplete_records']) ||
-            !empty($parsed['blank_entries']) ||
-            !empty($parsed['all_no_response_warning'])
-        ) {
-            return response()->json([
-                'message'                 => 'Weekly attendance text contains errors. Please correct them before saving the draft.',
-                'unmatched_lines'         => $parsed['unmatched_lines'],
-                'incomplete_records'      => $parsed['incomplete_records'],
-                'format_errors'           => $parsed['format_errors'],
-                'blank_entries'           => $parsed['blank_entries'] ?? [],
-                'missing_students'        => $parsed['missing_students'],
-                'all_no_response_warning' => $parsed['all_no_response_warning'] ?? null,
-            ], 422);
         }
 
         return response()->json([
