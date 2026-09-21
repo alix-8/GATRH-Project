@@ -9,6 +9,7 @@ use App\Models\AttendanceRecord;
 use App\Models\AttendanceDraft;
 use App\Models\Student;
 use App\Services\AttendanceParsingService;
+use App\Support\GatheringCycle;
 
 class AttendanceController extends Controller
 {
@@ -594,7 +595,7 @@ class AttendanceController extends Controller
             }
 
             $submissions = collect($parsed['records'][$type])->keyBy('student_id')->all();
-            $day = \App\Support\GatheringCycle::currentCycleStart($type)->toDateString();
+            $day = GatheringCycle::currentCycleStart($type)->toDateString();
 
             $sectionData = $this->parsingService->buildFullSectionRecords(
                 strtoupper($user->program), $user->year_level, $submissions, $day, $type

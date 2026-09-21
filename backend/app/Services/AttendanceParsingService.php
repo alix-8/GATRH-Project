@@ -110,12 +110,13 @@ class AttendanceParsingService
         $detectedGathering = $this->detectGatheringType($rawText);
         $detectedProgram = $overrideProgram ? trim($overrideProgram) : null;
         $detectedYear = $overrideYearLevel;
+        $gatheringType = $detectedGathering ?: ($overrideGathering ?: 'pm');
 
         return [
-            'gathering_type' => $detectedGathering ?: ($overrideGathering ?: 'pm'),
+            'gathering_type' => $gatheringType,
             'program'        => $detectedProgram,
             'year_level'     => $detectedYear,
-            'default_date'   => now()->toDateString(),
+            'default_date'   => GatheringCycle::currentCycleStart($gatheringType)->toDateString(),
         ];
     }
 
@@ -511,7 +512,7 @@ class AttendanceParsingService
 
     private function resolveDateForWeekday(string $gatheringType, ?string $dayName): string
     {
-        $cycleStart = \App\Support\GatheringCycle::currentCycleStart($gatheringType);
+        $cycleStart = GatheringCycle::currentCycleStart($gatheringType);
         $target = self::WEEKDAY_MAP[strtolower(trim((string) $dayName))] ?? null;
 
         if ($target === null) return $cycleStart->toDateString();
