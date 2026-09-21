@@ -1,11 +1,19 @@
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+
+//Reusables
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
 import Notification from '../../components/Notification/Notification'
 import GenerateTemplate from './ImportComponents/modals/GenerateTemplate'
+
+// Modals
+import ConfirmBlankModal from './ImportComponents/modals/ConfirmBlankModal'
 import ErrorModal from './ImportComponents/modals/ErrorModal'
+import SuccessModal from './ImportComponents/modals/SuccessModal'
+
+//Panels
 import ImportAttendancePanel from './ImportComponents/panels/ImportAttendancePanel'
 import PreviewImportPanel from './ImportComponents/panels/PreviewImportPanel'
 import PreviewIndividualPanel from './ImportComponents/panels/PreviewIndividualPanel'
@@ -266,20 +274,11 @@ function Import({ onGoToAttendance = () => {} }) {
                 </div>
             </main>
             {modal === 'confirm-blank' && (
-                <div className="import-modal-overlay">
-                    <div className="import-modal import-modal-centered">
-                        <h2 className="import-modal-title">Some fields are blank</h2>
-                        <p className="import-modal-subtext">{modalMessage}</p>
-                        <div className="import-modal-buttons">
-                            <button className="import-clear-button" type="button" onClick={() => setModal(null)}>
-                                Go back and edit
-                            </button>
-                            <button className="import-primary-button" type="button" onClick={handleConfirmBlankProceed}>
-                                Mark as absent and continue
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <ConfirmBlankModal
+                    modalMessage={modalMessage}
+                    onClose={() => setModal(null)}
+                    onConfirm={handleConfirmBlankProceed}
+                />
             )}
             {modal === 'generate' && (
                 <GenerateTemplate
@@ -299,56 +298,11 @@ function Import({ onGoToAttendance = () => {} }) {
             )}
 
             {modal === 'success' && result && (
-                <div className="import-modal-overlay">
-                    <div className="import-modal import-modal-centered">
-                        <button className="import-modal-close" type="button" onClick={() => { setModal(null); setIsPreviewing(false) }}>&times;</button>
-                        <div className="import-status-icon import-status-icon-success">
-                            <CheckIcon />
-                        </div>
-                        <h2 className="import-modal-title">Attendance Processed</h2>
-                        <p className="import-modal-subtext">
-                            The attendance log was imported successfully and is ready for review.
-                        </p>
-
-                        <div className="import-modal-summary import-modal-summary-success">
-                            <p className="import-modal-summary-title">
-                                <CheckIcon /> Import completed
-                            </p>
-
-                            {result.drafts ? (
-                                Object.entries(result.summary || {}).map(([type, s]) => (
-                                    s.skipped ? (
-                                        <p key={type}>{type.toUpperCase()}: skipped — {s.reason}</p>
-                                    ) : (
-                                        <p key={type}>
-                                            {type.toUpperCase()}: Draft #{result.drafts[type]} &middot; {s.total_students} students, {s.present_count} present
-                                        </p>
-                                    )
-                                ))
-                            ) : (
-                                <>
-                                    <p>Draft #{result.draft_id} &middot; {result.summary.total_students} students detected</p>
-                                    <p>{result.summary.present_count} present, {result.summary.no_response_count} no response
-                                        {result.summary.unmatched_count > 0 && <>, {result.summary.unmatched_count} unmatched</>}
-                                    </p>
-                                </>
-                            )}
-                        </div>
-
-                        <div className="import-modal-buttons">
-                            <button className="import-clear-button" type="button" onClick={() => { setModal(null); setIsPreviewing(false) }}>
-                                Close
-                            </button>
-                            <button
-                                className="import-primary-button"
-                                type="button"
-                                onClick={() => { setModal(null); setIsPreviewing(false); onGoToAttendance(); navigate('/attendance'); }}
-                            >
-                                Go to Attendance
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <SuccessModal
+                    result={result}
+                    onClose={() => { setModal(null); setIsPreviewing(false) }}
+                    onGoToAttendance={() => { setModal(null); setIsPreviewing(false); onGoToAttendance(); navigate('/attendance') }}
+                />
             )}
 
             {modal === 'error' && (
