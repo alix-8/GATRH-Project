@@ -301,7 +301,7 @@ function Import({ onGoToAttendance = () => {} }) {
             {modal === 'success' && result && (
                 <div className="import-modal-overlay">
                     <div className="import-modal import-modal-centered">
-                        <button className="import-modal-close" type="button" onClick={() => setModal(null)}>&times;</button>
+                        <button className="import-modal-close" type="button" onClick={() => { setModal(null); setIsPreviewing(false) }}>&times;</button>
                         <div className="import-status-icon import-status-icon-success">
                             <CheckIcon />
                         </div>
@@ -314,10 +314,25 @@ function Import({ onGoToAttendance = () => {} }) {
                             <p className="import-modal-summary-title">
                                 <CheckIcon /> Import completed
                             </p>
-                            <p>Draft #{result.draft_id} &middot; {result.summary.total_students} students detected</p>
-                            <p>{result.summary.present_count} present, {result.summary.no_response_count} no response
-                                {result.summary.unmatched_count > 0 && <>, {result.summary.unmatched_count} unmatched</>}
-                            </p>
+
+                            {result.drafts ? (
+                                Object.entries(result.summary || {}).map(([type, s]) => (
+                                    s.skipped ? (
+                                        <p key={type}>{type.toUpperCase()}: skipped — {s.reason}</p>
+                                    ) : (
+                                        <p key={type}>
+                                            {type.toUpperCase()}: Draft #{result.drafts[type]} &middot; {s.total_students} students, {s.present_count} present
+                                        </p>
+                                    )
+                                ))
+                            ) : (
+                                <>
+                                    <p>Draft #{result.draft_id} &middot; {result.summary.total_students} students detected</p>
+                                    <p>{result.summary.present_count} present, {result.summary.no_response_count} no response
+                                        {result.summary.unmatched_count > 0 && <>, {result.summary.unmatched_count} unmatched</>}
+                                    </p>
+                                </>
+                            )}
                         </div>
 
                         <div className="import-modal-buttons">
