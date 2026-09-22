@@ -101,13 +101,9 @@ function Dashboard() {
                 <div className="dashboard-content">
                     <div className="dashboard-content-column-left">
                         <div className="dashboard-text-upper">
-                            <h2>Attendance at
-                                <br />
-                                a glance.
+                            <h2>Attendance at a glance.
                             </h2>
-                            <p>Monitor student attendance, absences, and records in one
-                                <br />
-                                place.
+                            <p>Monitor student attendance, absences, and records in one place.
                             </p>
                         </div>
 
@@ -141,7 +137,7 @@ function Dashboard() {
 
                 </div>
 
-                
+
                 <div className="dashboard-grid">
                     <div className="dashboard-left-column">
                         <section className="attendance-overview">
