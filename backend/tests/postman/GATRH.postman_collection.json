@@ -187,7 +187,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "19|WV9xcmb9XPraT0bjrNl7Qcd5xiOq7HO2RIWpFgEW02c33c68",
+                  "value": "2|nQnGYeEaSetW2e82Wz4PIsR4OyZKwvWPSBcHGLG9fa30f492",
                   "type": "string"
                 }
               ]
@@ -685,7 +685,7 @@
                       "bearer": [
                         {
                           "key": "token",
-                          "value": "18|Q0vIbubCTmnCHgT226E0bAPdYu5JDbJlOaDaEYnD6f80c999",
+                          "value": "2|nQnGYeEaSetW2e82Wz4PIsR4OyZKwvWPSBcHGLG9fa30f492",
                           "type": "string"
                         }
                       ]
@@ -699,7 +699,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\r\n  \"raw_text\": \"--- GATRH ATTENDANCE FORM ---\\nGathering: PM\\nProgram: BSSW\\nYear Level: 1\\n\\n[FILL OUT YOUR DETAILS BELOW]\\nName | Batch(Time) | Venue | Date(YYYY-MM-DD)\\n1. Quiambao, Angelica | 8:30 AM | Main Chapel | 2026-09-10\\n2. Rosales, Kevin | 8:30 AM | Main Chapel | 2026-09-10\\n3. Sarmiento, Faith | 10:00 AM | Extension Hall | 2026-09-10\\n4. Tolentino, Marc | 10:00 AM | Extension Hall | 2026-09-10\\n5. Uy, Camille | 8:30 AM | Main Chapel | 2026-09-10\\n\"\r\n}",
+                      "raw": "{\r\n  \"raw_text\": \"--- GATRH ATTENDANCE FORM ---\\nGathering: PM\\nProgram: BSIS\\nYear Level: 1\\n\\n[FILL OUT YOUR DETAILS BELOW]\\nName | Batch(Time) | Venue | Date(YYYY-MM-DD)\\n1. Abrigo, Marielle | | | \\n2. Concepcion, Jhon Carlo | | | \\n3. Dizon, Kaye | | | \\n4. Espino, Ranier | | | \\n5. Fontanilla, Trisha | | | \\n\"\r\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -872,6 +872,14 @@
                     }
                   },
                   "response": []
+                },
+                {
+                  "name": "New Request",
+                  "request": {
+                    "method": "GET",
+                    "header": []
+                  },
+                  "response": []
                 }
               ]
             },
@@ -916,6 +924,17 @@
                 }
               },
               "response": []
+            },
+            {
+              "name": "New Request",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": ""
+                }
+              },
+              "response": []
             }
           ],
           "description": "This folder holds the API requests from AttendanceController\n\n``` bash\n  POST       api/attendance/parse-text ................ AttendanceController@parseText\n  PATCH      api/attendance/reparse ........... AttendanceController@reparseSingleLine\n  POST       api/attendance/submit ........................ AttendanceController@store\n  PATCH      api/attendance/{id}/validate ........ AttendanceController@validateRecord\n\n ```"
@@ -934,15 +953,43 @@
         {
           "name": "Dashboard display",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_secret_08fq}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": ""
+              "raw": "http://127.0.0.1:8000/api/dashboard",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "dashboard"
+              ]
             }
           },
           "response": []
         }
       ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "auth_secret_08fq",
+      "secret": true
     }
   ]
 }

@@ -40,6 +40,220 @@ class DashboardService
         ];
     }
 
+    public function getChancellorDashboardPayload($user, array $filters): array
+    {
+        $selectedDate = Carbon::parse($filters['date'] ?? now());
+        $dateRange = $this->resolveDateRange($filters['week'] ?? 'this_week');
+
+        // List of programs comes from students.program.
+        $programs = Student::query()
+            ->select('program')
+            ->whereNotNull('program')
+            ->where('program', '!=', '')
+            ->distinct()
+            ->orderBy('program')
+            ->pluck('program');
+
+        // Records for the currently selected reporting period.
+        $records = AttendanceRecord::query()
+            ->with('student:id,program')
+            ->whereBetween('day', [
+                $dateRange['start'],
+                $dateRange['end'],
+            ])
+            ->get();
+
+        // Records for the four weeks shown in the dashboard table/chart.
+        $weekFourStart = $selectedDate->copy()
+            ->startOfWeek()
+            ->subWeeks(3);
+
+        $weekFourEnd = $selectedDate->copy()
+            ->endOfWeek();
+
+        $fourWeekRecords = AttendanceRecord::query()
+            ->with('student:id,program')
+            ->whereBetween('day', [
+                $weekFourStart,
+                $weekFourEnd,
+            ])
+            ->get();
+
+        // Reusable rule:
+        // 3 gathering types = complete
+        // 1–2 gathering types = incomplete
+        // 0 gathering types = no report
+        $getProgramStatus = function ($programCode, $programRecords): string {
+            $gatheringCount = $programRecords
+                ->filter(
+                    fn ($record) => $record->student?->program === $programCode
+                )
+                ->pluck('gathering_type')
+                ->filter()
+                ->unique()
+                ->count();
+
+            return match (true) {
+                $gatheringCount >= 3 => 'completed',
+                $gatheringCount > 0 => 'incomplete',
+                default => 'no_report',
+            };
+        };
+
+        $getCompletionPercentage = function ($programCode, $programRecords): int {
+            $gatheringCount = $programRecords
+                ->filter(
+                    fn ($record) => $record->student?->program === $programCode
+                )
+                ->pluck('gathering_type')
+                ->filter()
+                ->unique()
+                ->count();
+
+            return min(100, (int) round(($gatheringCount / 3) * 100));
+        };
+
+        // Data for the Programs Needing Attention table
+        // and Program Completion Overview.
+        $programReporting = $programs->map(
+            function ($programCode) use (
+                $records,
+                $fourWeekRecords,
+                $selectedDate,
+                $getProgramStatus,
+                $getCompletionPercentage
+            ) {
+                $weeklyStatuses = collect(range(3, 0))
+                    ->map(function ($weekOffset) use (
+                        $programCode,
+                        $fourWeekRecords,
+                        $selectedDate,
+                        $getProgramStatus
+                    ) {
+                        $weekStart = $selectedDate->copy()
+                            ->startOfWeek()
+                            ->subWeeks($weekOffset);
+
+                        $weekEnd = $weekStart->copy()->endOfWeek();
+
+                        $recordsForWeek = $fourWeekRecords->filter(
+                            fn ($record) => $record->day->betweenIncluded(
+                                $weekStart,
+                                $weekEnd
+                            )
+                        );
+
+                        return $getProgramStatus($programCode, $recordsForWeek);
+                    })
+                    ->values()
+                    ->toArray();
+
+                return [
+                    'code' => $programCode,
+                    'status' => $getProgramStatus($programCode, $records),
+                    'completion' => $getCompletionPercentage(
+                        $programCode,
+                        $records
+                    ),
+
+                    // For table columns: Week 1, Week 2, Week 3, Week 4
+                    'weekly_statuses' => $weeklyStatuses,
+                ];
+            }
+        )->values();
+
+        $completed = $programReporting
+            ->where('status', 'completed')
+            ->count();
+
+        $incomplete = $programReporting
+            ->where('status', 'incomplete')
+            ->count();
+
+        $noReport = $programReporting
+            ->where('status', 'no_report')
+            ->count();
+
+        $totalPrograms = $programReporting->count();
+
+        $completionRate = $totalPrograms > 0
+            ? (int) round(($completed / $totalPrograms) * 100)
+            : 0;
+
+        // Data for the Progress by Week stacked bar chart.
+        $weeklyProgress = collect(range(3, 0))
+            ->map(function ($weekOffset) use (
+                $selectedDate,
+                $fourWeekRecords,
+                $programs,
+                $getProgramStatus
+            ) {
+                $weekStart = $selectedDate->copy()
+                    ->startOfWeek()
+                    ->subWeeks($weekOffset);
+
+                $weekEnd = $weekStart->copy()->endOfWeek();
+
+                $recordsForWeek = $fourWeekRecords->filter(
+                    fn ($record) => $record->day->betweenIncluded(
+                        $weekStart,
+                        $weekEnd
+                    )
+                );
+
+                $statuses = $programs->map(
+                    fn ($programCode) => $getProgramStatus(
+                        $programCode,
+                        $recordsForWeek
+                    )
+                );
+
+                return [
+                    'label' => 'Week ' . (4 - $weekOffset),
+                    'week_start' => $weekStart->toDateString(),
+                    'week_end' => $weekEnd->toDateString(),
+                    'completed' => $statuses
+                        ->filter(fn ($status) => $status === 'completed')
+                        ->count(),
+                    'incomplete' => $statuses
+                        ->filter(fn ($status) => $status === 'incomplete')
+                        ->count(),
+                    'no_report' => $statuses
+                        ->filter(fn ($status) => $status === 'no_report')
+                        ->count(),
+                ];
+            })
+            ->values();
+
+        return [
+            'role' => 'chancellor',
+
+            // Four cards at the top
+            'summary' => [
+                'completed' => $completed,
+                'incomplete' => $incomplete,
+                'no_report' => $noReport,
+                'total_programs' => $totalPrograms,
+                'completion_rate' => $completionRate,
+            ],
+
+            // Overall Reporting Progress card
+            'overall_progress' => [
+                'percentage' => $completionRate,
+                'completed_programs' => $completed,
+                'total_programs' => $totalPrograms,
+                'tally' => "{$completed} of {$totalPrograms} programs completed",
+            ],
+
+            // Programs Needing Attention table
+            // plus the Program Completion Overview list
+            'program_reporting' => $programReporting,
+
+            // Progress by Week chart
+            'weekly_progress' => $weeklyProgress,
+        ];
+    }
+
     public function getProgramHeadSummary($user, array $dateRange): array
     {
         $baseQuery = AttendanceRecord::query()
