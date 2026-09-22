@@ -13,7 +13,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Display the dashboard payload for the authenticated user.
+     * Display the dashboard payload tailored to the user's role.
      */
     public function index(Request $request): JsonResponse
     {
@@ -25,17 +25,33 @@ class DashboardController extends Controller
             ], 401);
         }
 
-        $request->validate([
+        // Validate filter inputs supported by both UI views
+        $validated = $request->validate([
+            'date' => ['nullable', 'date'],
+            'program_id' => ['nullable', 'exists:programs,id'],
+            'week' => ['nullable', 'string'],
             'month' => ['nullable', 'integer', 'between:1,12'],
             'year' => ['nullable', 'integer', 'between:2000,2100'],
         ]);
 
-        $filter = $request->input('range', 'this_week');
-        $calendarMonth = $request->integer('month', now()->month);
-        $calendarYear = $request->integer('year', now()->year);
+        $filters = [
+            'date' => $validated['date'] ?? now()->toDateString(),
+            'program_id' => $validated['program_id'] ?? null,
+            'week' => $validated['week'] ?? 'all',
+            'month' => $validated['month'] ?? now()->month,
+            'year' => $validated['year'] ?? now()->year,
+        ];
 
-        return response()->json(
-            $this->dashboardService->getDashboardPayload($user, $filter, $calendarMonth, $calendarYear)
-        );
+        // Direct request handling based on user role
+        if ($user->hasRole('chancellor') || $user->hasRole('admin')) {
+            $data = $this->dashboardService->getChancellorDashboardPayload($user, $filters);
+        } elseif ($user->hasRole('program_head')) {
+            $data = $this->dashboardService->getProgramHeadDashboardPayload($user, $filters);
+        } else {
+            // Default payload for other roles (e.g., Secretary)
+            $data = $this->dashboardService->getGeneralDashboardPayload($user, $filters);
+        }
+
+        return response()->json($data);
     }
 }

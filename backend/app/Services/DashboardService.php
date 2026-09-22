@@ -10,28 +10,33 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
-    public function getDashboardPayload($user, string $filter, int $calendarMonth, int $calendarYear): array
-    {
-        $dateRange = $this->resolveDateRange($filter);
 
-        if ($user->isProgramHead()) {
-            return [
-                'summary' => $this->getProgramHeadSummary($user, $dateRange),
-                'chart_data' => $this->getAttendanceChartData($user, $filter, $dateRange),
-                'pending_list' => $this->getProgramHeadPendingList($user, $dateRange),
-                'recent_records' => $this->getProgramHeadRecentActivity($user, $dateRange),
-                'calendar_marks' => $this->getCalendarMarks($user, $calendarMonth, $calendarYear),
-                'role' => 'program_head',
-            ];
-        }
+    //For Secretaries
+    public function getGeneralDashboardPayload($user, array $filters): array
+    {
+        $dateRange = $this->resolveDateRange($filters['week'] ?? 'all');
 
         return [
-            'summary' => $this->getAttendanceSummary($user, $dateRange),
-            'chart_data' => $this->getAttendanceChartData($user, $filter, $dateRange),
-            'pending_list' => $this->getPendingAttendance($user),
+            'summary'        => $this->getAttendanceSummary($user, $dateRange),
+            'chart_data'     => $this->getAttendanceChartData($user, $filters['week'] ?? 'this_week', $dateRange),
+            'pending_list'   => $this->getPendingAttendance($user),
             'recent_records' => $this->getRecentRecords($user, $dateRange),
-            'calendar_marks' => $this->getCalendarMarks($user, $calendarMonth, $calendarYear),
-            'role' => 'secretary',
+            'calendar_marks' => $this->getCalendarMarks($user, $filters['month'], $filters['year']),
+            'role'           => 'secretary',
+        ];
+    }
+
+    //For Program Heads
+    public function getProgramHeadDashboardPayload($user, array $filters): array
+    {
+        $dateRange = $this->resolveDateRange($filters['week'] ?? 'all');
+
+        return [
+            'summary'        => $this->getProgramHeadSummary($user, $dateRange),
+            'pending_list'   => $this->getProgramHeadPendingList($user, $dateRange),
+            'recent_records' => $this->getProgramHeadRecentActivity($user, $dateRange),
+            'calendar_marks' => $this->getCalendarMarks($user, $filters['month'], $filters['year']),
+            'role'           => 'program_head',
         ];
     }
 
@@ -57,10 +62,6 @@ class DashboardService
             'approved' => $approved,
             'rejected' => $rejected,
             'total_submissions' => $total,
-            'pendingReview' => $pendingReview,
-            'approvedCount' => $approved,
-            'rejectedCount' => $rejected,
-            'totalSubmissions' => $total,
         ];
     }
 
@@ -135,7 +136,7 @@ class DashboardService
 
     public function getProgramHeadPendingList($user, array $dateRange): array
     {
-        return AttendanceRecord::query()
+        $records = AttendanceRecord::query()
             ->with(['student', 'submitter'])
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
@@ -144,22 +145,28 @@ class DashboardService
                     ->orWhere('validation_status', 'unvalidated');
             })
             ->orderBy('day', 'desc')
-            ->limit(10)
-            ->get()
-            ->map(function ($record) {
+            ->get();
+
+        return $records
+            ->groupBy(fn ($r) => $r->batch_id ?? ($r->gathering_type . '|' . $r->day . '|' . $r->submitted_by))
+            ->map(function ($group) {
+                $first = $group->first();
                 return [
-                    'id' => $record->id,
-                    'secretary' => $record->submitter?->name ?? 'Unknown Secretary',
-                    'gathering' => $this->formatGatheringName($record->gathering_type),
-                    'program' => $record->student?->program ?? 'N/A',
-                    'year_level' => $record->student?->year_level ?? 'N/A',
-                    'date' => Carbon::parse($record->day)->format('M d, Y'),
-                    'status' => 'Pending',
+                    'id'           => $first->batch_id ?? $first->id,
+                    'secretary'    => $first->submitter?->name ?? 'Unknown Secretary',
+                    'gathering'    => $this->formatGatheringName($first->gathering_type),
+                    'program'      => $first->student?->program ?? 'N/A',
+                    'year_level'   => $first->student?->year_level ?? 'N/A',
+                    'date'         => Carbon::parse($first->day)->format('M d, Y'),
+                    'student_count'=> $group->count(),
+                    'status'       => 'Pending',
                     'status_label' => 'Pending',
-                    'action' => 'Review',
-                    'review' => true,
+                    'action'       => 'Review',
+                    'review'       => true,
                 ];
             })
+            ->take(10)
+            ->values()
             ->toArray();
     }
 
@@ -189,29 +196,49 @@ class DashboardService
 
     public function getProgramHeadRecentActivity($user, array $dateRange): array
     {
-        return AttendanceRecord::query()
+        $records = AttendanceRecord::query()
             ->with(['student', 'submitter'])
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
             ->orderBy('updated_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($record) {
-                $status = $record->validation_status ?? 'unvalidated';
-                $label = match ($status) {
-                    'approved' => 'Approved',
-                    'rejected' => 'Rejected',
-                    default => 'Pending review',
+            ->get();
+
+        return $records
+            ->groupBy(fn ($r) => $r->batch_id ?? ($r->gathering_type . '|' . $r->day . '|' . $r->submitted_by))
+            ->sortByDesc(fn ($group) => $group->first()->updated_at)
+            ->map(function ($group) {
+                $first = $group->first();
+                $status = $first->validation_status ?? 'unvalidated';
+                $gathering = $this->formatGatheringName($first->gathering_type);
+                $secretary = $first->submitter?->name ?? 'Unknown';
+
+                [$title, $description, $iconType] = match ($status) {
+                    'validated' => [
+                        "{$gathering} attendance submitted",
+                        "you approved the record",
+                        'approved',
+                    ],
+                    'rejected' => [
+                        "{$gathering} Attendance rejected",
+                        $secretary,
+                        'rejected',
+                    ],
+                    default => $first->created_at->ne($first->updated_at)
+                        ? ["{$gathering} attendance resubmitted", $secretary, 'resubmitted']
+                        : ["{$gathering} Attendance submitted", $secretary, 'submitted'],
                 };
 
                 return [
-                    'id' => $record->id,
-                    'title' => $this->formatGatheringName($record->gathering_type) . ' attendance ' . strtolower($label),
-                    'description' => ($record->submitter?->name ?? 'Unknown') . ' - ' . ($record->student?->program ?? 'Unknown'),
-                    'time_ago' => $record->updated_at?->diffForHumans() ?? 'Recently',
-                    'status' => $status,
+                    'id'          => $first->batch_id ?? $first->id,
+                    'icon_type'   => $iconType,
+                    'title'       => $title,
+                    'description' => $description,
+                    'time_ago'    => $first->updated_at?->diffForHumans() ?? 'Recently',
+                    'status'      => $status,
                 ];
             })
+            ->take(4) // 2x2 grid = 4 items
+            ->values()
             ->toArray();
     }
 
@@ -262,10 +289,12 @@ class DashboardService
     public function resolveDateRange(string $filter): array
     {
         return match ($filter) {
-            'today' => ['start' => now()->startOfDay(), 'end' => now()->endOfDay()],
+            'today'      => ['start' => now()->startOfDay(), 'end' => now()->endOfDay()],
+            'this_week'  => ['start' => now()->startOfWeek(), 'end' => now()->endOfWeek()],
             'this_month' => ['start' => now()->startOfMonth(), 'end' => now()->endOfMonth()],
-            'last_week' => ['start' => now()->subWeek()->startOfWeek(), 'end' => now()->subWeek()->endOfWeek()],
-            default => ['start' => now()->startOfWeek(), 'end' => now()->endOfWeek()],
+            'last_week'  => ['start' => now()->subWeek()->startOfWeek(), 'end' => now()->subWeek()->endOfWeek()],
+            'all'        => ['start' => Carbon::createFromDate(2000, 1, 1), 'end' => now()->addYears(10)],
+            default      => ['start' => now()->startOfWeek(), 'end' => now()->endOfWeek()],
         };
     }
 

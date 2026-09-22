@@ -93,18 +93,18 @@ class AttendanceController extends Controller
                     return $r->batch_id;
                 }
                 
-                $dayFormatted = $r->day instanceof \Carbon\Carbon 
+                $dayFormatted = $r->day instanceof Carbon 
                     ? $r->day->format('Y-m-d') 
-                    : \Carbon\Carbon::parse($r->day)->format('Y-m-d');
+                    : Carbon::parse($r->day)->format('Y-m-d');
 
                 return $r->gathering_type . '|' . $dayFormatted;
             })
             ->map(function ($group) use ($program, $yearLevel) {
                 $first = $group->first();
                 
-                $dayCarbon = $first->day instanceof \Carbon\Carbon 
+                $dayCarbon = $first->day instanceof Carbon 
                     ? $first->day 
-                    : \Carbon\Carbon::parse($first->day);
+                    :Carbon::parse($first->day);
 
                 return [
                     'source'         => 'record',
@@ -741,36 +741,90 @@ class AttendanceController extends Controller
         ], 201);
     }
 
-    /**
-     * Program Head or CM Coordinator validates/approves individual attendance submission.
-     */
+    public function reviewSubmission(Request $request, string $batchKey)
+    {
+        $user = $request->user();
+
+        $query = AttendanceRecord::query()
+            ->with('student')
+            ->whereHas('student', fn ($q) => $q->accessibleTo($user));
+
+        // batchKey is either a real batch_id (UUID) or our legacy fallback "type|day|submittedBy"
+        if (str_contains($batchKey, '|')) {
+            [$gatheringType, $day, $submittedBy] = explode('|', $batchKey, 3);
+            $query->where('gathering_type', $gatheringType)
+                ->whereDate('day', $day)
+                ->where('submitted_by', $submittedBy);
+        } else {
+            $query->where('batch_id', $batchKey);
+        }
+
+        $records = $query->get();
+
+        if ($records->isEmpty()) {
+            return response()->json(['status' => 'error', 'message' => 'Submission not found.'], 404);
+        }
+
+        $first = $records->first();
+        $submitter = $first->submitter;
+
+        $students = $records->map(fn ($r) => [
+            'record_id'    => $r->id,
+            'student_id'   => $r->student_id,
+            'student_name' => $r->student->name ?? 'Unknown',
+            'status'       => $r->status,
+            'venue'        => $r->venue ?: '---',
+            'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => [
+                'batch_key'         => $batchKey,
+                'gathering_type'    => $first->gathering_type,
+                'gathering'         => $this->gatheringLabel($first->gathering_type),
+                'day'               => $first->day->format('F j, Y'),
+                'validation_status' => $first->validation_status,
+                'submitted_by'      => [
+                    'name' => $submitter?->name ?? 'Unknown',
+                    'role' => trim(strtoupper($submitter?->program ?? '') . ' ' . $this->ordinalYear($submitter?->year_level)),
+                ],
+                'total_students'    => $students->count(),
+                'responded_count'   => $students->where('status', 'present')->count(),
+                'students'          => $students,
+            ],
+        ], 200);
+    }
+
     /**
      * Validate all records belonging to a specific gathering session.
      */
-    public function validateRecord(Request $request)
+    public function validateSubmission(Request $request, string $batchKey)
     {
         $request->validate([
-            'program'        => 'required|string',
-            'year_level'     => 'required|integer',
-            'gathering_type' => 'required|in:pm,ws,tg,special',
-            'day'            => 'required|date',
-            'status'         => 'required|in:validated,rejected',
+            'status' => 'required|in:validated,rejected',
         ]);
 
-        $updatedCount = AttendanceRecord::whereHas('student', function ($query) use ($request) {
-                $query->where('program', $request->program)
-                    ->where('year_level', $request->year_level);
-            })
-            ->where('gathering_type', $request->gathering_type)
-            ->where('day', $request->day)
-            ->update([
-                'validation_status' => $request->status,
-                'validated_by'      => $request->user()->id,
-                'updated_at'        => now(),
-            ]);
+        $query = AttendanceRecord::query();
+
+        if (str_contains($batchKey, '|')) {
+            [$gatheringType, $day, $submittedBy] = explode('|', $batchKey, 3);
+            $query->where('gathering_type', $gatheringType)
+                ->whereDate('day', $day)
+                ->where('submitted_by', $submittedBy);
+        } else {
+            $query->where('batch_id', $batchKey);
+        }
+
+        $updatedCount = $query->update([
+            'validation_status' => $request->status,
+            'validated_by'      => $request->user()->id,
+            'updated_at'        => now(),
+        ]);
 
         return response()->json([
-            'message'       => "Session attendance updated to {$request->status} across {$updatedCount} records.",
+            'status'        => 'success',
+            'message'       => "Submission updated to {$request->status} across {$updatedCount} records.",
             'updated_count' => $updatedCount,
         ], 200);
     }

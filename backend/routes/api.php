@@ -52,7 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/attendance/drafts', [AttendanceDraftController::class, 'destroyMany']);
     Route::get('/attendance', [AttendanceController::class, 'index']);
 
-    // Secretary (Submission, Parsing, and Reminders)
+    /*  -----------------------------------------------------------------
+    |Secretary (Submission, Parsing, and Reminders)
+    ----------------------------------------------------------------------*/
     Route::middleware('role:secretary')->group(function () {
 
         // Template Generator
@@ -76,13 +78,19 @@ Route::middleware('auth:sanctum')->group(function () {
     });
         
     // Program Head & CM Coordinator Scopes (Validation & Escalations)
-    Route::middleware('role:program_head,cm_coordinator')->group(function () {
+    Route::middleware('role:program_head')->group(function () {
         // Route::get('/students', [StudentController::class, 'index']);
         
         Route::patch('/attendance/validate', [AttendanceController::class, 'validateRecord']);
         Route::get('/escalations', [EscalationController::class, 'index']);
         Route::get('/escalations/{id}', [EscalationController::class, 'show']);
         Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
+
+        Route::get('/attendance/review/{batchKey}', [AttendanceController::class, 'reviewSubmission'])
+        ->where('batchKey', '.*'); // allow the "|" fallback key to pass through as one param
+
+        Route::patch('/attendance/review/{batchKey}', [AttendanceController::class, 'validateSubmission'])
+        ->where('batchKey', '.*');
     });
 
     // CM Coordinator & Chancellor Scopes (Report Summaries)
