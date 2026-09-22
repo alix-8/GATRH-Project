@@ -103,6 +103,9 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         }
     })()
 
+    const rejectionNote =
+    draft?.rejection_reason || record?.rejection_reason
+
     return (
         <div className="review-drawer-backdrop" onClick={onClose}>
             <div className="review-drawer-panel" onClick={(e) => e.stopPropagation()}>
@@ -219,6 +222,16 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
 
                             
                             <AttendancePagination/>
+
+                            {record.status === 'rejected' && (
+                                <section className="program-head-note" aria-labelledby="program-head-note-title">
+                                    <h3 id="program-head-note-title">Program Head Note</h3>
+
+                                    <div className="program-head-note-content">
+                                        {rejectionNote || 'No reason was provided for this rejected submission.'}
+                                    </div>
+                                </section>
+                            )}
 
                         </>
                     )}
