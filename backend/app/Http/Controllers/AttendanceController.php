@@ -88,38 +88,38 @@ class AttendanceController extends Controller
 
         $records = $recordsQuery->get()
             ->groupBy(function ($r) {
-                // Group primarily by batch_id; fallback to gathering_type|day for legacy records
                 if (!empty($r->batch_id)) {
                     return $r->batch_id;
                 }
-                
-                $dayFormatted = $r->day instanceof Carbon 
-                    ? $r->day->format('Y-m-d') 
+
+                $dayFormatted = $r->day instanceof Carbon
+                    ? $r->day->format('Y-m-d')
                     : Carbon::parse($r->day)->format('Y-m-d');
 
                 return $r->gathering_type . '|' . $dayFormatted;
             })
             ->map(function ($group) use ($program, $yearLevel) {
                 $first = $group->first();
-                
-                $dayCarbon = $first->day instanceof Carbon 
-                    ? $first->day 
-                    :Carbon::parse($first->day);
+
+                $dayCarbon = $first->day instanceof Carbon
+                    ? $first->day
+                    : Carbon::parse($first->day);
 
                 return [
-                    'source'         => 'record',
-                    'id'             => 'record-' . ($first->batch_id ?? ($first->gathering_type . '-' . $dayCarbon->format('Y-m-d'))),
-                    'ref_id'         => null,
-                    'batch_id'       => $first->batch_id ?? null,
-                    'course'         => $program,
-                    'year'           => $yearLevel,
-                    'date'           => $dayCarbon->format('F j, Y'),
-                    'day_iso'        => $dayCarbon->toDateString(),
-                    'raw_day'        => $dayCarbon,
-                    'gathering_type' => $first->gathering_type,
-                    'gathering'      => $this->gatheringLabel($first->gathering_type),
-                    'time'           => optional($first->created_at)->format('g:i A'),
-                    'status'         => $this->aggregateStatus($group),
+                    'source'           => 'record',
+                    'id'               => 'record-' . ($first->batch_id ?? ($first->gathering_type . '-' . $dayCarbon->format('Y-m-d'))),
+                    'ref_id'           => null,
+                    'batch_id'         => $first->batch_id ?? null,
+                    'course'           => $program,
+                    'year'             => $yearLevel,
+                    'date'             => $dayCarbon->format('F j, Y'),
+                    'day_iso'          => $dayCarbon->toDateString(),
+                    'raw_day'          => $dayCarbon,
+                    'gathering_type'   => $first->gathering_type,
+                    'gathering'        => $this->gatheringLabel($first->gathering_type),
+                    'time'             => optional($first->created_at)->format('g:i A'),
+                    'status'           => $this->aggregateStatus($group),
+                    'rejection_reason' => $first->rejection_reason,
                 ];
             })
             ->values();
@@ -229,6 +229,8 @@ class AttendanceController extends Controller
                         'Spiritual Secretary',
                     ]))),
                 ],
+                'validation_status' => $records->first()->validation_status,
+                'rejection_reason'  => $records->first()->rejection_reason,
                 'total_students'    => $students->count(),
                 'responded_count'   => $responded,
                 'no_response_count' => $students->count() - $responded,
@@ -799,10 +801,44 @@ class AttendanceController extends Controller
     /**
      * Validate all records belonging to a specific gathering session.
      */
-    public function validateSubmission(Request $request, string $batchKey)
+    public function approveSubmission(Request $request, string $batchKey)
     {
-        $request->validate([
-            'status' => 'required|in:validated,rejected',
+        $query = AttendanceRecord::query();
+
+        if (str_contains($batchKey, '|')) {
+            [$gatheringType, $day, $submittedBy] = explode('|', $batchKey, 3);
+            $query->where('gathering_type', $gatheringType)
+                ->whereDate('day', $day)
+                ->where('submitted_by', $submittedBy);
+        } else {
+            $query->where('batch_id', $batchKey);
+        }
+
+        $updatedCount = $query->update([
+            'validation_status' => 'validated',
+            'rejection_reason'  => null, // clear any stale reason if this was previously rejected
+            'validated_by'      => $request->user()->id,
+            'updated_at'        => now(),
+        ]);
+
+        if ($updatedCount === 0) {
+            return response()->json(['status' => 'error', 'message' => 'Submission not found.'], 404);
+        }
+
+        return response()->json([
+            'status'        => 'success',
+            'message'       => "Submission approved across {$updatedCount} records.",
+            'updated_count' => $updatedCount,
+        ], 200);
+    }
+
+    /**
+     * Rejecting a submission
+     */
+    public function rejectSubmission(Request $request, string $batchKey)
+    {
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
         ]);
 
         $query = AttendanceRecord::query();
@@ -817,14 +853,19 @@ class AttendanceController extends Controller
         }
 
         $updatedCount = $query->update([
-            'validation_status' => $request->status,
+            'validation_status' => 'rejected',
+            'rejection_reason'  => $validated['reason'],
             'validated_by'      => $request->user()->id,
             'updated_at'        => now(),
         ]);
 
+        if ($updatedCount === 0) {
+            return response()->json(['status' => 'error', 'message' => 'Submission not found.'], 404);
+        }
+
         return response()->json([
             'status'        => 'success',
-            'message'       => "Submission updated to {$request->status} across {$updatedCount} records.",
+            'message'       => "Submission rejected across {$updatedCount} records.",
             'updated_count' => $updatedCount,
         ], 200);
     }

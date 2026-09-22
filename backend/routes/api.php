@@ -77,7 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('reminders/{id}/complete', [ReminderController::class, 'markCompleted']);
     });
         
-    // Program Head & CM Coordinator Scopes (Validation & Escalations)
+    // Program Head & CM Coordinator Scopes (Approval & Escalations)
     Route::middleware('role:program_head')->group(function () {
         // Route::get('/students', [StudentController::class, 'index']);
         
@@ -86,10 +86,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/escalations/{id}', [EscalationController::class, 'show']);
         Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
 
+        // Program head actionable functions
         Route::get('/attendance/review/{batchKey}', [AttendanceController::class, 'reviewSubmission'])
         ->where('batchKey', '.*'); // allow the "|" fallback key to pass through as one param
 
-        Route::patch('/attendance/review/{batchKey}', [AttendanceController::class, 'validateSubmission'])
+        Route::patch('/attendance/review/{batchKey}/approve', [AttendanceController::class, 'approveSubmission'])
+        ->where('batchKey', '.*');
+
+        Route::patch('/attendance/review/{batchKey}/reject', [AttendanceController::class, 'rejectSubmission'])
         ->where('batchKey', '.*');
     });
 
