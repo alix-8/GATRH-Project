@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import PageDate from '../../components/PageDate/PageDate'
@@ -60,6 +60,26 @@ function formatReminderDate(date) {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+function formatSavedReminderDateTime(value) {
+    if (!value) return ''
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) return value
+
+    const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    })
+    const formattedTime = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    })
+
+    return `${formattedDate} · ${formattedTime}`
+}
+
 function toDateValue(date) {
     if (!date) return ''
     const year = date.getFullYear()
@@ -72,9 +92,9 @@ function toTimeLabel(value) {
     if (!value) return ''
     const [hourValue, minute] = value.split(':')
     const hour = Number(hourValue)
-    const period = hour >= 12 ? 'PM' : 'AM'
-    const displayHour = hour % 12 || 12
-    return `${displayHour}:${minute}${period}`
+    const period = hour >= 12 ? 'pm' : 'am'
+    const displayHour = String(hour % 12 || 12).padStart(2, '0')
+    return `${displayHour}:${minute} ${period}`
 }
 
 function Reminders() {
@@ -92,13 +112,14 @@ function Reminders() {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        type: 'submission',
-        gathering: 'pm',
-        date: new Date(),
-        time: '16:30',
+        type: '',
+        gathering: '',
+        date: null,
+        time: '',
     })
     const [openMenu, setOpenMenu] = useState('')
     const [saving, setSaving] = useState(false)
+    const timeInputRef = useRef(null)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -200,7 +221,7 @@ function Reminders() {
         id: `reminder-${reminder.id}`,
         type: 'custom',
         title: reminder.title,
-        description: [reminder.due_date, reminder.description].filter(Boolean).join(' · '),
+        description: [formatSavedReminderDateTime(reminder.due_date), reminder.description].filter(Boolean).join(' · '),
         status: reminder.status,
         statusLabel: reminder.status === 'completed' ? 'Completed' : 'Upcoming',
         tone: reminder.status === 'completed' ? 'completed' : 'upcoming',
@@ -216,10 +237,28 @@ function Reminders() {
         return true
     })
 
+    const selectedTypeLabel = REMINDER_TYPES.find(option => option.value === formData.type)?.label ?? 'Attendance Task'
+    const selectedGatheringLabel = GATHERING_OPTIONS.find(option => option.value === formData.gathering)?.label ?? 'Gathering'
+
+    const openTimePicker = () => {
+        if (timeInputRef.current?.showPicker) {
+            timeInputRef.current.showPicker()
+            return
+        }
+
+        timeInputRef.current?.focus()
+    }
+
     const handleAddReminder = async (event) => {
         event.preventDefault()
         setSaving(true)
         setError('')
+
+        if (!formData.date || !formData.time) {
+            setError('Please choose a date and time for the reminder.')
+            setSaving(false)
+            return
+        }
 
         try {
             const payload = {
@@ -241,10 +280,10 @@ function Reminders() {
             setFormData({
                 title: '',
                 description: '',
-                type: 'submission',
-                gathering: 'pm',
-                date: new Date(),
-                time: '16:30',
+                type: '',
+                gathering: '',
+                date: null,
+                time: '',
             })
             setIsAddOpen(false)
         } catch (err) {
@@ -323,7 +362,7 @@ function Reminders() {
                                 <span className={`task-icon-wrap ${item.type === 'custom' ? 'calendar' : 'notification'}`} aria-hidden="true">
                                     <img
                                         className="task-icon"
-                                        src={item.type === 'custom' ? RemindersIcon : NotificationIcon}
+                                        src={item.type === 'custom' ? CalendarIcon : NotificationIcon}
                                         alt=""
                                     />
                                 </span>
@@ -354,7 +393,7 @@ function Reminders() {
                         <div className="reminder-modal-header">
                             <div>
                                 <h2>Add Reminder</h2>
-                                <p>Create a Reminder for upcoming task.</p>
+                                <p>Create a reminder for upcoming task.</p>
                             </div>
                             <button type="button" className="reminder-modal-close" onClick={() => setIsAddOpen(false)} aria-label="Close">
                                 ×
@@ -376,7 +415,7 @@ function Reminders() {
                             <span>Type<b>*</b></span>
                             <button type="button" className="reminder-select" onClick={() => setOpenMenu(openMenu === 'type' ? '' : 'type')}>
                                 <img src={CalendarIcon} alt="" aria-hidden="true" />
-                                {REMINDER_TYPES.find(option => option.value === formData.type)?.label}
+                                {selectedTypeLabel}
                                 <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
                             </button>
                             {openMenu === 'type' && (
@@ -402,7 +441,7 @@ function Reminders() {
                             <span>Related Gathering<b>*</b></span>
                             <button type="button" className="reminder-select" onClick={() => setOpenMenu(openMenu === 'gathering' ? '' : 'gathering')}>
                                 <img src={GatheringIcon} alt="" aria-hidden="true" />
-                                {GATHERING_OPTIONS.find(option => option.value === formData.gathering)?.label}
+                                {selectedGatheringLabel}
                                 <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
                             </button>
                             {openMenu === 'gathering' && (
@@ -429,7 +468,7 @@ function Reminders() {
                                 <span>Date<b>*</b></span>
                                 <button type="button" className="reminder-select" onClick={() => setOpenMenu(openMenu === 'date' ? '' : 'date')}>
                                     <img src={CalendarIcon} alt="" aria-hidden="true" />
-                                    {formatReminderDate(formData.date)}
+                                    {formData.date ? formatReminderDate(formData.date) : 'Select Date'}
                                     <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
                                 </button>
                                 {openMenu === 'date' && (
@@ -440,7 +479,7 @@ function Reminders() {
                                                 setFormData(prev => ({ ...prev, date }))
                                                 setOpenMenu('')
                                             }}
-                                            initialMonth={formData.date}
+                                            initialMonth={formData.date ?? new Date()}
                                         />
                                     </div>
                                 )}
@@ -448,15 +487,19 @@ function Reminders() {
 
                             <label className="reminder-field reminder-time-field">
                                 <span>Time<b>*</b></span>
-                                <div className="reminder-time-control">
-                                    <img src={CompletedIcon} alt="" aria-hidden="true" />
+                                <div className="reminder-time-control" onClick={openTimePicker}>
+                                    <svg className="reminder-time-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                                        <circle cx="10" cy="10" r="7.25" />
+                                        <path d="M10 5.8V10l3 1.85" />
+                                    </svg>
                                     <input
+                                        ref={timeInputRef}
                                         type="time"
                                         value={formData.time}
                                         onChange={event => setFormData(prev => ({ ...prev, time: event.target.value }))}
                                         required
                                     />
-                                    <em>{toTimeLabel(formData.time)}</em>
+                                    <em className={formData.time ? '' : 'placeholder'}>{formData.time ? toTimeLabel(formData.time) : 'Select Time'}</em>
                                 </div>
                             </label>
                         </div>

@@ -23,14 +23,18 @@
 
 .import-header p {
     display: flex;
+    margin: 0;
     color: #172B4D;
     font-size: 14px;
 }
 
-.import-header-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+.import-date {
+    position: absolute;
+    top: 40px;
+    right: 96px;
+    margin-left: 0;
+    color: #172B4D;
+    font-size: 16px;
 }
 
 .import-content {
@@ -562,5 +566,10 @@ textarea {
     .import-header {
         flex-direction: column;
         gap: 0.75rem;
+    }
+
+    .import-date {
+        position: static;
+        margin-top: 8px;
     }
 }

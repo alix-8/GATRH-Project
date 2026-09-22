@@ -211,6 +211,10 @@
     object-fit: contain;
 }
 
+.task-icon-wrap.calendar .task-icon {
+    filter: brightness(0) saturate(100%) invert(13%) sepia(33%) saturate(1714%) hue-rotate(180deg) brightness(91%) contrast(95%);
+}
+
 .task-copy h3 {
     display: flex;
     margin: 0;
@@ -318,6 +322,7 @@
 }
 
 .reminder-modal h2 {
+    display: flex;
     margin: 0;
     color: #172B4D;
     font-size: 16px;
@@ -472,19 +477,23 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 12px;
     height: 40px;
     border: 1px solid #c7d0dc;
     border-radius: 6px;
     background: #ffffff;
     padding: 0 10px;
+    cursor: pointer;
 }
 
-.reminder-time-control>img {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-    filter: brightness(0) saturate(100%) invert(13%) sepia(33%) saturate(1714%) hue-rotate(180deg) brightness(91%) contrast(95%);
+.reminder-time-icon {
+    width: 22px;
+    height: 22px;
+    color: #172B4D;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .reminder-time-control input {
@@ -498,7 +507,13 @@
     color: #172B4D;
     font-size: 11px;
     font-style: normal;
-    font-weight: 600;
+    pointer-events: none;
+    font-weight: bold;
+}
+
+.reminder-time-control em.placeholder {
+    color: #172B4D;
+    font-weight: bold;
 }
 
 .reminder-modal-actions {
