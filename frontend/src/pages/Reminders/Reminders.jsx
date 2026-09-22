@@ -10,6 +10,9 @@ import DropDownIcon from '../../assets/drop-down-icon.png'
 import NotificationIcon from '../../assets/notification-icon.png'
 import CalendarIcon from '../../assets/calendar-icon.png'
 import GatheringIcon from '../../assets/gathering-icon.png'
+import MyReminderIcon from '../../assets/my-reminder-icon.png'
+import EditIcon from '../../assets/edit-icon.png'
+import DeleteIcon from '../../assets/delete-icon.png'
 import { request } from '../../api/request'
 import Calendar from '../../components/Calendar/Calendar'
 import './Reminders.css'
@@ -60,6 +63,13 @@ function formatReminderDate(date) {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+const GATHERING_LABELS = {
+    pm: 'Prayer Meeting',
+    ws: 'Worship Service',
+    tg: 'Thanksgiving',
+    special: 'Special Gathering',
+}
+
 function formatSavedReminderDateTime(value) {
     if (!value) return ''
     const date = new Date(value)
@@ -78,6 +88,15 @@ function formatSavedReminderDateTime(value) {
     })
 
     return `${formattedDate} · ${formattedTime}`
+}
+
+function formatGatheringReminderDateTime(reminder) {
+    const date = reminder.gathering_date || reminder.due_date
+    const formattedDate = formatSavedReminderDateTime(date).split(' · ')[0]
+    const time = reminder.due_date ? formatSavedReminderDateTime(reminder.due_date).split(' · ')[1] : '4:30 AM'
+    const program = [reminder.program, reminder.year_level].filter(Boolean).join('-')
+
+    return [formattedDate, time, program].filter(Boolean).join(' · ')
 }
 
 function toDateValue(date) {
@@ -217,18 +236,33 @@ function Reminders() {
         },
     ]
 
-    const customReminderItems = reminders.map(reminder => ({
-        id: `reminder-${reminder.id}`,
-        type: 'custom',
-        title: reminder.title,
-        description: [formatSavedReminderDateTime(reminder.due_date), reminder.description].filter(Boolean).join(' · '),
-        status: reminder.status,
-        statusLabel: reminder.status === 'completed' ? 'Completed' : 'Upcoming',
-        tone: reminder.status === 'completed' ? 'completed' : 'upcoming',
-        action: null,
-    }))
+    const reminderItems = reminders
+        .filter(reminder => reminder.reminder_type !== 'submission_countdown')
+        .map(reminder => {
+            const isGathering = reminder.reminder_type === 'gathering'
+            const title = isGathering
+                ? GATHERING_LABELS[reminder.gathering_type] || reminder.title
+                : `My Reminder : ${reminder.title}`
 
-    const allItems = [...customReminderItems, ...attendanceTasks]
+            return {
+                id: `reminder-${reminder.id}`,
+                reminderId: reminder.id,
+                type: isGathering ? 'gathering' : 'custom',
+                icon: isGathering ? CalendarIcon : MyReminderIcon,
+                title,
+                description: isGathering
+                    ? formatGatheringReminderDateTime(reminder)
+                    : [reminder.description ? `Note : ${reminder.description}` : '', formatSavedReminderDateTime(reminder.due_date)].filter(Boolean).join(' · '),
+                status: reminder.status,
+                statusLabel: isGathering
+                    ? 'Upcoming'
+                    : 'Attendance Task',
+                tone: reminder.status === 'completed' ? 'completed' : 'upcoming',
+                action: null,
+            }
+        })
+
+    const allItems = [...reminderItems, ...attendanceTasks]
     const visibleItems = allItems.filter(item => {
         if (activeFilter === 'all') return true
         if (activeFilter === 'mine') return item.type === 'custom'
@@ -290,6 +324,19 @@ function Reminders() {
             setError(err.message || 'Unable to add reminder.')
         } finally {
             setSaving(false)
+        }
+    }
+
+    const handleDeleteReminder = async (reminderId) => {
+        try {
+            await request(`/reminders/${reminderId}`, { method: 'DELETE' })
+            setReminders(prev => prev.filter(r => r.id !== reminderId))
+            setSummary(prev => ({
+                ...prev,
+                upcoming: Math.max(0, prev.upcoming - 1),
+            }))
+        } catch (err) {
+            setError(err.message || 'Unable to delete reminder.')
         }
     }
 
@@ -359,21 +406,33 @@ function Reminders() {
                         )}
                         {!loading && !error && visibleItems.map(item => (
                             <article className={`reminders-task-item ${item.tone}`} key={item.id}>
-                                <span className={`task-icon-wrap ${item.type === 'custom' ? 'calendar' : 'notification'}`} aria-hidden="true">
-                                    <img
-                                        className="task-icon"
-                                        src={item.type === 'custom' ? CalendarIcon : NotificationIcon}
-                                        alt=""
-                                    />
-                                </span>
+                                <div className="task-main">
+                                    <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance'}`} aria-hidden="true">
+                                        <img
+                                            className="task-icon"
+                                            src={item.icon ?? NotificationIcon}
+                                            alt=""
+                                        />
+                                    </span>
 
-                                <div className="task-copy">
-                                    <h3>{item.title}</h3>
-                                    <p>{item.description || 'No details added'}</p>
+                                    <div className="task-copy">
+                                        <h3>{item.title}</h3>
+                                        <p>{item.description || 'No details added'}</p>
+                                    </div>
                                 </div>
 
                                 <div className="task-status">
                                     <strong>{item.statusLabel}</strong>
+                                    {item.type === 'custom' && (
+                                        <div className="task-actions">
+                                            <button type="button" className="task-action-btn" title="Edit reminder">
+                                                <img src={EditIcon} alt="Edit" />
+                                            </button>
+                                            <button type="button" className="task-action-btn" title="Delete reminder" onClick={() => handleDeleteReminder(item.reminderId)}>
+                                                <img src={DeleteIcon} alt="Delete" />
+                                            </button>
+                                        </div>
+                                    )}
                                     {item.action && (
                                         <button type="button" onClick={() => navigate('/attendance')}>
                                             {item.action}
