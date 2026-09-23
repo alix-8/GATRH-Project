@@ -336,3 +336,28 @@
     align-items: center;
     justify-content: center;
 }
+
+.program-head-note {
+    margin: 20px 0 24px;
+    text-align: left;
+}
+
+.program-head-note h3 {
+    margin: 0 0 10px;
+    color: #172B4D;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.program-head-note-content {
+    min-height: 86px;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #dfe4ec;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #5f6d82;
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
