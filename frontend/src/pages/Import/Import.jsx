@@ -242,10 +242,8 @@ function Import({ onGoToAttendance = () => {} }) {
                         <h3>Import</h3>
                         <p>Paste raw attendance logs to get a formatted spreadsheet.</p>
                     </div>
-                    <div className="import-header-meta">
-                        <PageDate />
-                        <Notification />
-                    </div>
+                    <PageDate className="import-date" />
+                    <Notification />
                 </header>
 
                 <div className="import-content">

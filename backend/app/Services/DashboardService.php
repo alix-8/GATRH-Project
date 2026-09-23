@@ -21,6 +21,7 @@ class DashboardService
             'chart_data'     => $this->getAttendanceChartData($user, $filters['week'] ?? 'this_week', $dateRange),
             'pending_list'   => $this->getPendingAttendance($user),
             'recent_records' => $this->getRecentRecords($user, $dateRange),
+            'monthly_gathering' => $this->getMonthlyGatheringData($user, $filters['month'], $filters['year']),
             'calendar_marks' => $this->getCalendarMarks($user, $filters['month'], $filters['year']),
             'role'           => 'secretary',
         ];
@@ -389,23 +390,65 @@ class DashboardService
         $totalManagedStudents = Student::query()->accessibleTo($user)->count();
 
         $attendances = AttendanceRecord::query()
-            ->select('gathering_type', 'day', DB::raw('COUNT(DISTINCT student_id) as present_count'))
+            ->select(
+                'gathering_type',
+                'day',
+                'validation_status',
+                DB::raw("COUNT(DISTINCT CASE WHEN status = 'present' THEN student_id END) as present_count")
+            )
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
-            ->where('status', 'present')
-            ->groupBy('gathering_type', 'day')
+            ->groupBy('gathering_type', 'day', 'validation_status')
             ->orderBy('day', 'desc')
             ->limit(5)
             ->get();
 
         return $attendances->map(function ($row) use ($totalManagedStudents) {
+            $status = $row->validation_status ?? 'pending';
+
             return [
                 'gathering' => $this->formatGatheringName($row->gathering_type),
-                'date' => Carbon::parse($row->day)->format('M d'),
-                'time' => 'N/A',
-                'response' => "{$row->present_count}/{$totalManagedStudents}",
+                'date' => Carbon::parse($row->day)->format('F j, Y'),
+                'students' => "{$row->present_count}/{$totalManagedStudents}",
+                'status' => $status,
+                'status_label' => match ($status) {
+                    'approved', 'validated' => 'Approved',
+                    'rejected' => 'Rejected',
+                    default => 'Pending',
+                },
             ];
         })->toArray();
+    }
+
+    public function getMonthlyGatheringData($user, int $monthNumber, int $year): array
+    {
+        $month = Carbon::create($year, $monthNumber, 1)->startOfDay();
+        $monthStart = $month->toDateString();
+        $monthEnd = $month->copy()->endOfMonth()->toDateString();
+        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
+
+        $records = AttendanceRecord::query()
+            ->select('gathering_type', DB::raw("COUNT(DISTINCT CASE WHEN status = 'present' THEN student_id END) as present_count"))
+            ->whereHas('student', fn ($query) => $query->accessibleTo($user))
+            ->whereBetween('day', [$monthStart, $monthEnd])
+            ->groupBy('gathering_type')
+            ->get()
+            ->keyBy('gathering_type');
+
+        return collect(['pm', 'ws', 'tg'])
+            ->map(function ($type) use ($records, $totalManagedStudents) {
+                $presentCount = (int) ($records->get($type)?->present_count ?? 0);
+                $percentage = $totalManagedStudents > 0
+                    ? min(100, (int) round(($presentCount / $totalManagedStudents) * 100))
+                    : 0;
+
+                return [
+                    'gathering' => $this->formatGatheringName($type),
+                    'percentage' => $percentage,
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 
     public function getProgramHeadRecentActivity($user, array $dateRange): array
