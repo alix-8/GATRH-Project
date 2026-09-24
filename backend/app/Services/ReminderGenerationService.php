@@ -17,8 +17,20 @@ class ReminderGenerationService
      * Existing reminders for the same user, type, and date are left untouched.
      */
     public function generateWeeklyGatheringReminders(): int
-    {
+    {   
+        $today = Carbon::today();
+        $currentWeekEnd = Carbon::today()->endOfWeek();
+
+        Reminder::where('reminder_type', 'gathering')
+            ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
+            ->where(function ($query) use ($today, $currentWeekEnd) {
+                $query->whereDate('gathering_date', '<', $today)
+                    ->orWhereDate('gathering_date', '>', $currentWeekEnd);
+            })
+            ->delete();
+        
         $created = 0;
+
 
         User::where('role', 'secretary')
             ->whereNotNull('program')
@@ -27,15 +39,16 @@ class ReminderGenerationService
                 foreach (['pm', 'ws', 'tg'] as $type) {
                     $gatheringDate = $this->gatheringService->nextDate($type);
 
-                    $alreadyExists = Reminder::where('user_id', $secretary->id)
-                        ->where('reminder_type', 'gathering')
-                        ->where('gathering_type', $type)
-                        ->whereDate('gathering_date', $gatheringDate)
-                        ->exists();
+                    $currentWeekStart = Carbon::today()->startOfWeek();
+                    $currentWeekEnd = Carbon::today()->endOfWeek();
 
-                    if ($alreadyExists) {
-                        continue;
-                    }
+                    Reminder::where('reminder_type', 'gathering')
+                        ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
+                        ->whereNotBetween('gathering_date', [
+                            $currentWeekStart->toDateString(),
+                            $currentWeekEnd->toDateString(),
+                        ])
+                        ->delete();
 
                     Reminder::create([
                         'user_id'        => $secretary->id,
@@ -110,14 +123,14 @@ class ReminderGenerationService
     /**
      * Remove reminders that have remained expired beyond their retention window.
      */
-    public function deleteExpiredReminders(int $submissionRetentionDays = 7): int
-    {
-        // Monday of the current week.
-        // Anything before this belongs to last week or earlier.
-        $currentWeekStart = Carbon::today()->startOfWeek();
+    public function deleteExpiredReminders(
+    int $submissionRetentionDays = 7
+    ): int {
+        $today = Carbon::today();
+        $currentWeekEnd = $today->copy()->endOfWeek();
 
         // Keep submission tasks for seven days after their deadline.
-        $submissionCutoff = Carbon::today()
+        $submissionCutoff = $today->copy()
             ->subDays($submissionRetentionDays);
 
         $deletedSubmissionReminders = Reminder::where(
@@ -127,12 +140,17 @@ class ReminderGenerationService
             ->whereDate('due_date', '<=', $submissionCutoff)
             ->delete();
 
-        // Remove PM, WS, and TG reminders from previous weeks.
+        // Delete gathering reminders that are already past
+        // or belong to next week.
         $deletedGatheringReminders = Reminder::where(
             'reminder_type',
             'gathering'
         )
-            ->whereDate('gathering_date', '<', $currentWeekStart)
+            ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
+            ->where(function ($query) use ($today, $currentWeekEnd) {
+                $query->whereDate('gathering_date', '<', $today)
+                    ->orWhereDate('gathering_date', '>', $currentWeekEnd);
+            })
             ->delete();
 
         return $deletedSubmissionReminders + $deletedGatheringReminders;
