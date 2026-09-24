@@ -68,11 +68,12 @@ class ReminderController extends Controller
         ]);
 
         $reminder = Reminder::create([
-            'user_id'     => $request->user()->id,
-            'title'       => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'due_date'    => $validated['due_date'],
-            'status'      => $validated['status'] ?? 'upcoming',
+             'user_id'       => $request->user()->id,
+            'reminder_type' => 'custom',
+            'title'         => $validated['title'],
+            'description'   => $validated['description'] ?? null,
+            'due_date'      => $validated['due_date'],
+            'status'        => $validated['status'] ?? 'upcoming',
         ]);
 
         return response()->json([
@@ -193,5 +194,31 @@ class ReminderController extends Controller
             'message' => 'Reminder marked as completed.',
             'data'    => $reminder,
         ]);
+    }
+
+    /**
+     * Remove the specified reminder from storage.
+     */
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        $reminder = Reminder::find($id);
+
+        if (!$reminder) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Reminder not found',
+            ], 404);
+        }
+
+        if ($reminder->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized action.'], 403);
+        }
+
+        $reminder->delete();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Reminder deleted successfully.',
+        ], 200);
     }
 }
