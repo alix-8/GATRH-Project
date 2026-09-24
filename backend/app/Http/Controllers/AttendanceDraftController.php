@@ -29,16 +29,24 @@ class AttendanceDraftController extends Controller
             ], 404);
         }
 
-        $students = collect($draft->parsed_data)->map(function ($record) {
-            return [
-                'student_id'   => $record['student_id'] ?? null,
-                'student_name' => $record['student_name'] ?? 'Unknown',
-                'status'       => $record['status'] ?? 'no_response',
-                'batch' => !empty($record['batch']) ? \Carbon\Carbon::parse($record['batch'])->format('g:ia') : '---',
-                'venue' => $record['venue'] ?? '---',
-                'day'   => $record['day'] ?? '---',
-            ];
-        });
+        $submissionDay = optional($draft->day)->toDateString();
+
+        $students = collect($draft->parsed_data)->map(
+            function ($record) use ($submissionDay) {
+                return [
+                    'student_id'   => $record['student_id'] ?? null,
+                    'student_name' => $record['student_name'] ?? 'Unknown',
+                    'status'       => $record['status'] ?? 'no_response',
+                    'batch'        => !empty($record['batch'])
+                        ? \Carbon\Carbon::parse($record['batch'])->format('g:ia')
+                        : '---',
+                    'venue'        => $record['venue'] ?? '---',
+
+                    // For absent/no-response students, use the gathering submission date.
+                    'day'          => $record['day'] ?? $submissionDay ?? '---',
+                ];
+            }
+        );
 
         $responded = $students->where('status', 'present')->count();
         $total = $students->count();
