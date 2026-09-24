@@ -15,6 +15,7 @@ import EditIcon from '../../assets/edit-icon.png'
 import DeleteIcon from '../../assets/delete-icon.png'
 import { request } from '../../api/request'
 import Calendar from '../../components/Calendar/Calendar'
+import { TrashIcon } from '../../components/Icons/Reusables'
 import './Reminders.css'
 
 const FILTERS = [
@@ -35,6 +36,15 @@ const GATHERING_OPTIONS = [
     { value: 'ws', label: 'Worship Service' },
     { value: 'tg', label: 'Thanksgiving' },
 ]
+
+const EMPTY_FORM = {
+    title: '',
+    description: '',
+    type: '',
+    gathering: '',
+    date: null,
+    time: '',
+}
 
 const ATTENDANCE_TASK_STATUS = {
     validating: {
@@ -99,6 +109,19 @@ function formatGatheringReminderDateTime(reminder) {
     return [formattedDate, time, program].filter(Boolean).join(' · ')
 }
 
+function splitDueDate(value) {
+    if (!value) return { date: null, time: '' }
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) return { date: null, time: '' }
+
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+
+    return { date, time: `${hours}:${minutes}` }
+}
+
 function toDateValue(date) {
     if (!date) return ''
     const year = date.getFullYear()
@@ -128,16 +151,12 @@ function Reminders() {
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
     const [error, setError] = useState('')
     const [isAddOpen, setIsAddOpen] = useState(false)
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        type: '',
-        gathering: '',
-        date: null,
-        time: '',
-    })
+    const [editingReminder, setEditingReminder] = useState(null)
+    const [formData, setFormData] = useState(EMPTY_FORM)
     const [openMenu, setOpenMenu] = useState('')
     const [saving, setSaving] = useState(false)
+    const [deletingReminder, setDeletingReminder] = useState(null)
+    const [deleting, setDeleting] = useState(false)
     const timeInputRef = useRef(null)
     const navigate = useNavigate()
 
@@ -247,6 +266,7 @@ function Reminders() {
             return {
                 id: `reminder-${reminder.id}`,
                 reminderId: reminder.id,
+                sourceReminder: reminder,
                 type: isGathering ? 'gathering' : 'custom',
                 icon: isGathering ? CalendarIcon : MyReminderIcon,
                 title,
@@ -283,7 +303,36 @@ function Reminders() {
         timeInputRef.current?.focus()
     }
 
-    const handleAddReminder = async (event) => {
+    const openAddModal = () => {
+        setEditingReminder(null)
+        setFormData(EMPTY_FORM)
+        setError('')
+        setIsAddOpen(true)
+    }
+
+    const handleCloseModal = () => {
+        setEditingReminder(null)
+        setFormData(EMPTY_FORM)
+        setError('')
+        setIsAddOpen(false)
+    }
+
+    const handleEditReminder = (reminder) => {
+        const { date, time } = splitDueDate(reminder.due_date)
+
+        setEditingReminder(reminder)
+        setFormData({
+            ...EMPTY_FORM,
+            title: reminder.title ?? '',
+            description: reminder.description ?? '',
+            date,
+            time,
+        })
+        setError('')
+        setIsAddOpen(true)
+    }
+
+    const handleSubmitReminder = async (event) => {
         event.preventDefault()
         setSaving(true)
         setError('')
@@ -294,49 +343,66 @@ function Reminders() {
             return
         }
 
+        const payload = {
+            title: formData.title,
+            description: formData.description || null,
+            due_date: `${toDateValue(formData.date)}T${formData.time}`,
+        }
+
         try {
-            const payload = {
-                title: formData.title,
-                description: formData.description || null,
-                due_date: `${toDateValue(formData.date)}T${formData.time}`,
-                status: 'upcoming',
+            if (editingReminder) {
+                const data = await request(`/reminders/${editingReminder.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload),
+                })
+                const updated = data.data
+
+                setReminders(prev => prev.map(reminder => (reminder.id === editingReminder.id ? { ...reminder, ...updated } : reminder)))
+            } else {
+                const data = await request('/reminders', {
+                    method: 'POST',
+                    body: JSON.stringify({ ...payload, status: 'upcoming' }),
+                })
+                setReminders(prev => [data.data, ...prev])
+                setSummary(prev => ({
+                    ...prev,
+                    upcoming: prev.upcoming + 1,
+                }))
             }
-            const data = await request('/reminders', {
-                method: 'POST',
-                body: JSON.stringify(payload),
-            })
-            const nextReminders = [data.data, ...reminders]
-            setReminders(nextReminders)
-            setSummary(prev => ({
-                ...prev,
-                upcoming: prev.upcoming + 1,
-            }))
-            setFormData({
-                title: '',
-                description: '',
-                type: '',
-                gathering: '',
-                date: null,
-                time: '',
-            })
-            setIsAddOpen(false)
+            handleCloseModal()
         } catch (err) {
-            setError(err.message || 'Unable to add reminder.')
+            setError(err.message || 'Unable to save reminder.')
         } finally {
             setSaving(false)
         }
     }
 
-    const handleDeleteReminder = async (reminderId) => {
+    const handleDeleteClick = (reminder) => {
+        setDeletingReminder(reminder)
+    }
+
+    const handleCloseDeleteModal = () => {
+        if (deleting) return
+        setDeletingReminder(null)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!deletingReminder || deleting) return
+
+        setDeleting(true)
+
         try {
-            await request(`/reminders/${reminderId}`, { method: 'DELETE' })
-            setReminders(prev => prev.filter(r => r.id !== reminderId))
+            await request(`/reminders/${deletingReminder.id}`, { method: 'DELETE' })
+            setReminders(prev => prev.filter(r => r.id !== deletingReminder.id))
             setSummary(prev => ({
                 ...prev,
                 upcoming: Math.max(0, prev.upcoming - 1),
             }))
+            setDeletingReminder(null)
         } catch (err) {
             setError(err.message || 'Unable to delete reminder.')
+        } finally {
+            setDeleting(false)
         }
     }
 
@@ -377,7 +443,7 @@ function Reminders() {
                             <p>{visibleItems.length} items requiring attention or scheduled today</p>
                         </div>
 
-                        <button type="button" className="add-reminder-button" onClick={() => setIsAddOpen(true)}>
+                        <button type="button" className="add-reminder-button" onClick={openAddModal}>
                             <span aria-hidden="true">+</span>
                             Add Reminder
                         </button>
@@ -407,7 +473,7 @@ function Reminders() {
                         {!loading && !error && visibleItems.map(item => (
                             <article className={`reminders-task-item ${item.tone}`} key={item.id}>
                                 <div className="task-main">
-                                    <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance'}`} aria-hidden="true">
+                                    <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance-task'}`} aria-hidden="true">
                                         <img
                                             className="task-icon"
                                             src={item.icon ?? NotificationIcon}
@@ -425,10 +491,10 @@ function Reminders() {
                                     <strong>{item.statusLabel}</strong>
                                     {item.type === 'custom' && (
                                         <div className="task-actions">
-                                            <button type="button" className="task-action-btn" title="Edit reminder">
+                                            <button type="button" className="task-action-btn" title="Edit reminder" onClick={() => handleEditReminder(item.sourceReminder)}>
                                                 <img src={EditIcon} alt="Edit" />
                                             </button>
-                                            <button type="button" className="task-action-btn" title="Delete reminder" onClick={() => handleDeleteReminder(item.reminderId)}>
+                                            <button type="button" className="task-action-btn" title="Delete reminder" onClick={() => handleDeleteClick(item.sourceReminder)}>
                                                 <img src={DeleteIcon} alt="Delete" />
                                             </button>
                                         </div>
@@ -448,13 +514,13 @@ function Reminders() {
 
             {isAddOpen && (
                 <div className="reminder-modal-backdrop">
-                    <form className="reminder-modal" onSubmit={handleAddReminder}>
+                    <form className="reminder-modal" onSubmit={handleSubmitReminder}>
                         <div className="reminder-modal-header">
                             <div>
-                                <h2>Add Reminder</h2>
-                                <p>Create a reminder for upcoming task.</p>
+                                <h2>{editingReminder ? 'Edit Reminder' : 'Add Reminder'}</h2>
+                                <p>{editingReminder ? 'Update your reminder details.' : 'Create a reminder for upcoming task.'}</p>
                             </div>
-                            <button type="button" className="reminder-modal-close" onClick={() => setIsAddOpen(false)} aria-label="Close">
+                            <button type="button" className="reminder-modal-close" onClick={handleCloseModal} aria-label="Close">
                                 ×
                             </button>
                         </div>
@@ -573,14 +639,43 @@ function Reminders() {
                             />
                         </label>
                         <div className="reminder-modal-actions">
-                            <button type="button" className="modal-cancel" onClick={() => setIsAddOpen(false)} disabled={saving}>
+                            <button type="button" className="modal-cancel" onClick={handleCloseModal} disabled={saving}>
                                 Cancel
                             </button>
                             <button type="submit" className="modal-save" disabled={saving}>
-                                {saving ? 'Saving...' : 'Save Reminder'}
+                                {saving ? 'Saving...' : editingReminder ? 'Save Changes' : 'Save Reminder'}
                             </button>
                         </div>
                     </form>
+                </div>
+            )}
+
+            {deletingReminder && (
+                <div className="reminder-delete-overlay" onClick={handleCloseDeleteModal} role="presentation">
+                    <div
+                        className="reminder-delete-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="reminder-delete-title"
+                        onClick={event => event.stopPropagation()}
+                    >
+                        <div className="reminder-delete-icon">
+                            <TrashIcon />
+                        </div>
+                        <h2 id="reminder-delete-title">Delete Reminder?</h2>
+                        <div className="reminder-delete-divider" />
+                        <p>
+                            Are you sure you want to delete this reminder? You won't be able to recover it once it's deleted.
+                        </p>
+                        <div className="reminder-delete-actions">
+                            <button type="button" className="reminder-delete-cancel" onClick={handleCloseDeleteModal} disabled={deleting}>
+                                Cancel
+                            </button>
+                            <button type="button" className="reminder-delete-confirm" onClick={handleConfirmDelete} disabled={deleting}>
+                                {deleting ? 'Deleting…' : 'Confirm Delete'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

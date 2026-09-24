@@ -257,7 +257,7 @@
     color: #21b854;
 }
 
-.task-status button {
+.task-status > button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -272,7 +272,7 @@
     cursor: pointer;
 }
 
-.task-status button img {
+.task-status > button img {
     width: 12px;
     height: 8px;
     filter: brightness(0) invert(1);
@@ -286,29 +286,18 @@
 }
 
 .task-action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border: 1px solid #d4dbe6;
-    border-radius: 6px;
-    background: #ffffff;
+    border: 0;
+    background: transparent;
     cursor: pointer;
-    transition: background 0.15s;
-}
-
-.task-action-btn:hover {
-    background: #f0f2f5;
 }
 
 .task-action-btn img {
     width: 16px;
     height: 16px;
-    object-fit: contain;
+    background: transparent;
 }
 
-.completed .task-status button {
+.completed .task-status > button {
     background: #aebbd0;
 }
 
@@ -577,4 +566,85 @@
     border: 0;
     background: #1da1f2;
     color: #ffffff;
+}
+
+.reminder-delete-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    place-items: center;
+    background: rgba(12, 16, 22, 0.58);
+}
+
+.reminder-delete-modal {
+    width: 25%;
+    box-sizing: border-box;
+    padding: 10px 40px 20px;
+    border-radius: 20px;
+    background: #ffffff;
+}
+
+.reminder-delete-icon {
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+}
+
+.reminder-delete-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.reminder-delete-modal h2 {
+    color: #172B4D;
+    font-size: 25px;
+    text-align: center;
+}
+
+.reminder-delete-divider {
+    height: 1px;
+    margin: 10px;
+    background: #d6d9de;
+}
+
+.reminder-delete-modal p {
+    color: #6b7482;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.reminder-delete-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.reminder-delete-actions button {
+    min-height: 34px;
+    flex: 1;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.reminder-delete-cancel {
+    border: 1px solid #8c96a4;
+    background: #ffffff;
+    color: #6b7482;
+}
+
+.reminder-delete-confirm {
+    border: 1px solid #e52328;
+    background: #e52328;
+    color: #ffffff;
+}
+
+.reminder-delete-confirm:disabled,
+.reminder-delete-cancel:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
