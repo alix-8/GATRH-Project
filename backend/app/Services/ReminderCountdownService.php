@@ -47,7 +47,8 @@ class ReminderCountdownService
     public function statusSetter(int $userId): void
     {
         $reminders = Reminder::where('user_id', $userId)
-            ->where('status', '!=', 'completed') // <-- the fix
+            ->where('status', '!=', 'completed')
+            ->where('reminder_type', '!=', 'gathering')
             ->get();
 
         foreach ($reminders as $reminder) {

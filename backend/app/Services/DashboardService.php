@@ -5,29 +5,161 @@ namespace App\Services;
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
 use App\Models\Student;
+use App\Models\Reminder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
 
-    //For Secretaries
+    /** ============================================================
+     * For Secretaries
+    */
     public function getGeneralDashboardPayload($user, array $filters): array
     {
-        $dateRange = $this->resolveDateRange($filters['week'] ?? 'all');
+        // Secretary dashboard is always centered on the current reporting week.
+        $weekRange = $this->resolveDateRange('this_week');
+
+        $month = Carbon::create(
+            $filters['year'] ?? now()->year,
+            $filters['month'] ?? now()->month,
+            1
+        );
 
         return [
-            'summary'        => $this->getAttendanceSummary($user, $dateRange),
-            'chart_data'     => $this->getAttendanceChartData($user, $filters['week'] ?? 'this_week', $dateRange),
-            'pending_list'   => $this->getPendingAttendance($user),
-            'recent_records' => $this->getRecentRecords($user, $dateRange),
-            'monthly_gathering' => $this->getMonthlyGatheringData($user, $filters['month'], $filters['year']),
-            'calendar_marks' => $this->getCalendarMarks($user, $filters['month'], $filters['year']),
-            'role'           => 'secretary',
+            'role' => 'secretary',
+
+            // Blue hero card: “This month's Attendance / No response”
+            'monthly_summary' => $this->getSecretaryMonthlySummary(
+                $user,
+                $month
+            ),
+
+            // Four cards under the hero card
+            'kpis' => $this->getSecretaryKpis(
+                $user,
+                $weekRange
+            ),
+
+            // Attendance Overview bar chart
+            'attendance_overview' => $this->getAttendanceChartData(
+                $user,
+                'this_week',
+                $weekRange
+            )['series'],
+
+            // Recent Attendance Record table
+            'recent_records' => $this->getRecentRecords(
+                $user,
+                $weekRange
+            ),
+
+            // Task and Reminders card
+            'tasks_and_reminders' => $this->getSecretaryTasksAndReminders(
+                $user
+            ),
+
+            // Monthly Attendance by Gathering card
+            'monthly_gathering' => $this->getMonthlyGatheringData(
+                $user,
+                $month->month,
+                $month->year
+            ),
         ];
     }
 
-    //For Program Heads
+        private function getSecretaryMonthlySummary($user, Carbon $month): array
+    {
+        $records = AttendanceRecord::query()
+            ->whereHas(
+                'student',
+                fn ($query) => $query->accessibleTo($user)
+            )
+            ->whereBetween('day', [
+                $month->copy()->startOfMonth(),
+                $month->copy()->endOfMonth(),
+            ]);
+
+        return [
+            'attendance' => (clone $records)
+                ->where('status', 'present')
+                ->count(),
+
+            'no_response' => (clone $records)
+                ->where('status', 'no_response')
+                ->count(),
+
+            'month_label' => $month->format('F Y'),
+        ];
+    }
+
+    private function getSecretaryKpis($user, array $weekRange): array
+    {
+        $weekRecords = AttendanceRecord::query()
+            ->whereHas(
+                'student',
+                fn ($query) => $query->accessibleTo($user)
+            )
+            ->whereBetween('day', [
+                $weekRange['start'],
+                $weekRange['end'],
+            ]);
+
+        return [
+            'total_students' => Student::query()
+                ->accessibleTo($user)
+                ->count(),
+
+            'week_respondents' => (clone $weekRecords)
+                ->where('status', 'present')
+                ->count(),
+
+            'week_no_response' => (clone $weekRecords)
+                ->where('status', 'no_response')
+                ->count(),
+
+            'pending_submission' => AttendanceDraft::query()
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['draft', 'pending'])
+                ->count(),
+        ];
+    }
+
+    private function getSecretaryTasksAndReminders($user): array
+    {
+        return Reminder::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['upcoming', 'needs_action'])
+            ->orderBy('due_date')
+            ->limit(4)
+            ->get()
+            ->map(function ($reminder) {
+                return [
+                    'id' => $reminder->id,
+
+                    'type' => $reminder->reminder_type ?? 'custom',
+
+                    'title' => $reminder->title,
+
+                    'description' => $reminder->description,
+
+                    'date' => optional($reminder->due_date)
+                        ->format('F j, Y'),
+
+                    'status' => $reminder->status,
+
+                    'status_label' => match ($reminder->status) {
+                        'needs_action' => 'Needs Action',
+                        default => 'Upcoming',
+                    },
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
+    /** ============================================================
+     * For Prog Heads
+    */
     public function getProgramHeadDashboardPayload($user, array $filters): array
     {
         $dateRange = $this->resolveDateRange($filters['week'] ?? 'all');
@@ -560,7 +692,7 @@ class DashboardService
         return match (strtolower((string) $type)) {
             'pm' => 'Prayer Meeting',
             'ws' => 'Worship Service',
-            'tg' => 'Thanks Giving',
+            'tg' => 'Thanksgiving',
             default => $type ?? 'Unknown',
         };
     }
