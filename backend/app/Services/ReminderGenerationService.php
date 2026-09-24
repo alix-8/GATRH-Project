@@ -110,20 +110,32 @@ class ReminderGenerationService
     /**
      * Remove reminders that have remained expired beyond their retention window.
      */
-    public function deleteExpiredReminders(int $gatheringRetentionDays = 30, int $submissionRetentionDays = 7): int
+    public function deleteExpiredReminders(int $submissionRetentionDays = 7): int
     {
-        $submissionCutoff = Carbon::today()->subDays($submissionRetentionDays);
-        $gatheringCutoff = Carbon::today()->subDays($gatheringRetentionDays);
+        // Monday of the current week.
+        // Anything before this belongs to last week or earlier.
+        $currentWeekStart = Carbon::today()->startOfWeek();
 
-        $deleted = Reminder::where('reminder_type', 'submission_countdown')
+        // Keep submission tasks for seven days after their deadline.
+        $submissionCutoff = Carbon::today()
+            ->subDays($submissionRetentionDays);
+
+        $deletedSubmissionReminders = Reminder::where(
+            'reminder_type',
+            'submission_countdown'
+        )
             ->whereDate('due_date', '<=', $submissionCutoff)
             ->delete();
 
-        $deleted += Reminder::where('reminder_type', 'gathering')
-            ->whereDate('gathering_date', '<=', $gatheringCutoff)
+        // Remove PM, WS, and TG reminders from previous weeks.
+        $deletedGatheringReminders = Reminder::where(
+            'reminder_type',
+            'gathering'
+        )
+            ->whereDate('gathering_date', '<', $currentWeekStart)
             ->delete();
 
-        return $deleted;
+        return $deletedSubmissionReminders + $deletedGatheringReminders;
     }
 
     private function buildSubmissionDescription(Reminder $reminder, ?int $responded = null, ?int $total = null): string
