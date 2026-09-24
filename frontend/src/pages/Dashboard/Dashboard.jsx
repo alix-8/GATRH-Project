@@ -11,6 +11,7 @@ import './Dashboard.css'
 
 function Dashboard() {
     const [overview, setOverview] = useState([])
+    const [recentRecords, setRecentRecords] = useState([])
     const [pendingAttendance, setPendingAttendance] = useState([])
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1)
     const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
@@ -21,7 +22,6 @@ function Dashboard() {
         highlight_days: [],
         today: null,
     })
-    const attendanceRecords = []
     const navigate = useNavigate()
 
     const defaultCalendar = {
@@ -55,12 +55,14 @@ function Dashboard() {
         })
             .then(response => response.ok ? response.json() : null)
             .then(data => {
-                setOverview(data?.chart_data?.series ?? [])
+                setOverview(data?.attendance_overview ?? data?.chart_data?.series ?? [])
+                setRecentRecords(data?.recent_records ?? [])
                 setPendingAttendance(data?.pending_list ?? [])
                 setCalendarMarks(data?.calendar_marks ?? defaultCalendar)
             })
             .catch(() => {
                 setOverview([])
+                setRecentRecords([])
                 setPendingAttendance([])
                 setCalendarMarks(defaultCalendar)
             })
@@ -176,8 +178,8 @@ function Dashboard() {
 
                         <section className="attendance-records">
                             <div className="records-heading">
-                                <h2>This Week's Attendance Records</h2>
-                                <button type="button" onClick={() => navigate('/records')}>View All Records</button>
+                                <h2>Recent Attendance Records</h2>
+                                <button type="button" onClick={() => navigate('/attendance')}>View All Records</button>
                             </div>
 
                             <div className="records-table-wrapper">
@@ -186,21 +188,27 @@ function Dashboard() {
                                         <tr>
                                             <th>Gathering</th>
                                             <th>Date</th>
-                                            <th>Time</th>
-                                            <th>Response</th>
+                                            <th>Students</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {attendanceRecords.length === 0 ? (
+                                        {recentRecords.length === 0 ? (
                                             <tr>
-                                                <td className="records-empty" colSpan="4">No attendance records yet</td>
+                                                <td className="records-empty" colSpan="5">No attendance records yet</td>
                                             </tr>
-                                        ) : attendanceRecords.map(record => (
+                                        ) : recentRecords.map(record => (
                                             <tr key={record.id}>
-                                                <td>{record.gathering_type}</td>
-                                                <td>{record.day}</td>
-                                                <td>{record.batch || '-'}</td>
-                                                <td>{record.status}</td>
+                                                <td>{record.gathering}</td>
+                                                <td>{record.date}</td>
+                                                <td>{record.students}</td>
+                                                <td>{record.status_label || record.status}</td>
+                                                <td>
+                                                    <button type="button" className="action-btn" onClick={() => navigate('/attendance')}>
+                                                        {record.action || 'View'} &gt;
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

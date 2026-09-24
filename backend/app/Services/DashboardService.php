@@ -517,39 +517,102 @@ class DashboardService
             ->toArray();
     }
 
-    public function getRecentRecords($user, array $dateRange): array
+    public function getRecentRecords($user, ?array $dateRange = null): array
     {
         $totalManagedStudents = Student::query()->accessibleTo($user)->count();
 
-        $attendances = AttendanceRecord::query()
-            ->select(
-                'gathering_type',
-                'day',
-                'validation_status',
-                DB::raw("COUNT(DISTINCT CASE WHEN status = 'present' THEN student_id END) as present_count")
-            )
-            ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
-            ->groupBy('gathering_type', 'day', 'validation_status')
-            ->orderBy('day', 'desc')
-            ->limit(5)
-            ->get();
+        // 1. Unsubmitted Drafts
+        $drafts = AttendanceDraft::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(function ($draft) use ($totalManagedStudents) {
+                $parsed = is_array($draft->parsed_data) ? $draft->parsed_data : (array) $draft->parsed_data;
+                $presentCount = $draft->matched_count ?? collect($parsed)->where('status', 'present')->count();
+                $dayCarbon = $draft->day ? Carbon::parse($draft->day) : Carbon::parse($draft->updated_at);
 
-        return $attendances->map(function ($row) use ($totalManagedStudents) {
-            $status = $row->validation_status ?? 'pending';
+                return [
+                    'id'             => 'draft-' . $draft->id,
+                    'ref_id'         => $draft->id,
+                    'batch_id'       => null,
+                    'source'         => 'draft',
+                    'gathering_type' => $draft->gathering_type,
+                    'gathering'      => $this->formatGatheringName($draft->gathering_type),
+                    'date'           => $dayCarbon->format('F j, Y'),
+                    'raw_day'        => $dayCarbon,
+                    'students'       => "{$presentCount}/{$totalManagedStudents} students",
+                    'status'         => 'validating',
+                    'status_label'   => 'Validating',
+                    'action'         => 'Review',
+                ];
+            });
 
-            return [
-                'gathering' => $this->formatGatheringName($row->gathering_type),
-                'date' => Carbon::parse($row->day)->format('F j, Y'),
-                'students' => "{$row->present_count}/{$totalManagedStudents}",
-                'status' => $status,
-                'status_label' => match ($status) {
-                    'approved', 'validated' => 'Approved',
-                    'rejected' => 'Rejected',
-                    default => 'Pending',
-                },
-            ];
-        })->toArray();
+        // 2. Submitted Attendance Records grouped by batch_id or gathering_type|day
+        $recordsQuery = AttendanceRecord::query()
+            ->whereHas('student', fn ($query) => $query->accessibleTo($user));
+
+        $records = $recordsQuery->get()
+            ->groupBy(function ($r) {
+                if (!empty($r->batch_id)) {
+                    return $r->batch_id;
+                }
+                $dayFormatted = $r->day instanceof Carbon
+                    ? $r->day->format('Y-m-d')
+                    : Carbon::parse($r->day)->format('Y-m-d');
+                return $r->gathering_type . '|' . $dayFormatted;
+            })
+            ->map(function ($group) use ($totalManagedStudents) {
+                $first = $group->first();
+                $dayCarbon = $first->day instanceof Carbon
+                    ? $first->day
+                    : Carbon::parse($first->day);
+
+                $presentCount = $group->where('status', 'present')->count();
+                $status = $this->aggregateRecordStatus($group);
+
+                return [
+                    'id'             => 'record-' . ($first->batch_id ?? ($first->gathering_type . '-' . $dayCarbon->format('Y-m-d'))),
+                    'ref_id'         => null,
+                    'batch_id'       => $first->batch_id ?? null,
+                    'source'         => 'record',
+                    'gathering_type' => $first->gathering_type,
+                    'gathering'      => $this->formatGatheringName($first->gathering_type),
+                    'date'           => $dayCarbon->format('F j, Y'),
+                    'raw_day'        => $dayCarbon,
+                    'students'       => "{$presentCount}/{$totalManagedStudents} students",
+                    'status'         => $status,
+                    'status_label'   => match ($status) {
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        default    => 'Pending',
+                    },
+                    'action'         => 'View',
+                ];
+            })
+            ->values();
+
+        // 3. Merge drafts and submitted records, sort by raw_day desc, take top 5
+        return $drafts->concat($records)
+            ->sortByDesc(fn ($row) => $row['raw_day'])
+            ->take(5)
+            ->map(function ($row) {
+                unset($row['raw_day']);
+                return $row;
+            })
+            ->values()
+            ->toArray();
+    }
+
+    private function aggregateRecordStatus($group): string
+    {
+        if ($group->contains('validation_status', 'rejected')) {
+            return 'rejected';
+        }
+        if ($group->every(fn ($r) => in_array($r->validation_status, ['validated', 'approved']))) {
+            return 'approved';
+        }
+        return 'pending';
     }
 
     public function getMonthlyGatheringData($user, int $monthNumber, int $year): array
