@@ -166,20 +166,76 @@
   background: #fff;
 }
 
+/* status dropdown */
+.drawer-status-dropdown {
+  position: relative;
+}
 
-
-/* remove native select styling so it behaves like plain text next to the icon */
-.filter-pill-select {
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 12px;
+.drawer-status-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 132px;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid #d6d9de;
+  border-radius: 8px;
+  background: #ffffff;
   color: #172B4D;
-  font-weight: 600;
-  appearance: none;
-  -webkit-appearance: none;
-  padding: 0;
   cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.drawer-status-trigger span {
+  flex: 1;
+  text-align: left;
+}
+
+.drawer-status-trigger:hover,
+.drawer-status-trigger[aria-expanded="true"] {
+  border-color: #5c7499;
+  background: #eef2f8;
+}
+
+.drawer-status-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 80;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #dcdfe4;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(23, 43, 77, 0.12);
+}
+
+.drawer-status-option {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  background: #ffffff;
+  color: #172B4D;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+
+.drawer-status-option:hover {
+  background: #5c7499;
+  color: #ffffff;
+}
+
+.drawer-status-option.selected {
+  background: #eef2f8;
+  font-weight: 700;
+}
+
+.drawer-status-option.selected:hover {
+  background: #5c7499;
+  color: #ffffff;
 }
 
 .search-pill-input {
@@ -297,11 +353,17 @@
 }
 
 .drawer-submit-btn {
-    background: #1890ff;
+    background: #1d9bf0;
     color: #ffffff;
     border: none;
     cursor: pointer;
     transition: background-color 0.2s ease;
+}
+
+/* blue button hover */
+.drawer-submit-btn:hover:not(:disabled),
+.action-btn-review:hover {
+  background: #0b83d2;
 }
 
 .drawer-submit-btn,
@@ -317,10 +379,6 @@
     align-items: center;
     justify-content: center;
     line-height: 1.2;
-}
-
-.drawer-submit-btn:hover:not(:disabled) {
-    background: #096dd9;
 }
 
 .drawer-submit-btn:disabled {

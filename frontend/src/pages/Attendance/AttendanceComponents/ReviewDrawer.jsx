@@ -18,7 +18,9 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [error, setError] = useState(null)
     const [submitting, setSubmitting] = useState(false)
     const [search, setSearch] = useState('')
+    //for status filter
     const [statusFilter, setStatusFilter] = useState('all')
+    const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
     const [page, setPage] = useState(1)
 
     useEffect(() => {
@@ -164,18 +166,49 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                             <div className="list-controls-header">
                                 <h3>Attendance List</h3>
                                 <div className="controls-group">
-                                    <div className="filter-pill">
-                                        <FilterIcon />
-                                        <select
-                                            className="filter-pill-select"
-                                            value={statusFilter}
-                                            onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
+                                    <div className="drawer-status-dropdown">
+                                        <button
+                                            type="button"
+                                            className="drawer-status-trigger"
+                                            onClick={() => setIsStatusMenuOpen(prev => !prev)}
+                                            aria-haspopup="listbox"
+                                            aria-expanded={isStatusMenuOpen}
                                         >
-                                            <option value="all">Status</option>
-                                            <option value="present">Present</option>
-                                            <option value="absent">No response</option>
-                                        </select>
-                                        <ChevronDownIcon />
+                                            <FilterIcon />
+                                            <span>
+                                                {statusFilter === 'all'
+                                                    ? 'Status'
+                                                    : statusFilter === 'present'
+                                                        ? 'Present'
+                                                        : 'No response'}
+                                            </span>
+                                            <ChevronDownIcon />
+                                        </button>
+
+                                        {isStatusMenuOpen && (
+                                            <div className="drawer-status-menu" role="listbox">
+                                                {[
+                                                    { value: 'all', label: 'Status' },
+                                                    { value: 'present', label: 'Present' },
+                                                    { value: 'absent', label: 'No response' },
+                                                ].map(option => (
+                                                    <button
+                                                        type="button"
+                                                        key={option.value}
+                                                        className={`drawer-status-option ${
+                                                            statusFilter === option.value ? 'selected' : ''
+                                                        }`}
+                                                        onClick={() => {
+                                                            setStatusFilter(option.value)
+                                                            setPage(1)
+                                                            setIsStatusMenuOpen(false)
+                                                        }}
+                                                    >
+                                                        {option.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="search-pill">
@@ -207,7 +240,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                             <tr key={s.student_id ?? i}>
                                                 <td>{s.student_name}</td>
                                                 <td>{s.batch || '—'}</td>
-                                                <td>{s.day || '—'}</td>
+                                                <td>{s.day || draft.day_iso || '—'}</td>
                                                  <td>{s.venue || '—'}</td>
                                                 <td>
                                                     <span className={`status-indicator status-${s.status === 'present' ? 'present' : 'no-response'}`}>

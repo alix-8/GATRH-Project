@@ -154,8 +154,12 @@
     font-size: 12px;
 }
 
+.action-btn:hover {
+    background: #0b83d2;
+}
+
 .action-btn-review {
-    background: #2f80ed;
+    background: #1d9bf0;
 }
 
 .table-state {
