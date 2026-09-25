@@ -210,15 +210,17 @@
     gap: 14px;
 }
 
+.task-icon-wrap {
+    margin-right: 6px;
+    vertical-align: -7px;
+}
+
 .task-icon {
-    width: 24px;
-    height: 24px;
-    margin-top: 1px;
-    mix-blend-mode: multiply;
+    width: 25px;
+    height: 25px;
 }
 
 .task-copy h3 {
-    display: block;
     margin: 0;
     color: #111827;
     font-size: 13px;
@@ -227,7 +229,6 @@
 }
 
 .task-copy p {
-    display: block;
     margin: 16px 0 0;
     color: #111827;
     font-size: 12px;

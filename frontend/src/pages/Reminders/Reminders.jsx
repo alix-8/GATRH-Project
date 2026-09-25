@@ -439,7 +439,7 @@ function Reminders() {
                 <section className="reminders-task-panel">
                     <div className="reminders-task-heading">
                         <div>
-                            <h2>Reminders &amp; Tasks</h2>
+                            <h2>Reminders & Tasks</h2>
                             <p>{visibleItems.length} items requiring attention or scheduled today</p>
                         </div>
 
@@ -473,16 +473,17 @@ function Reminders() {
                         {!loading && !error && visibleItems.map(item => (
                             <article className={`reminders-task-item ${item.tone}`} key={item.id}>
                                 <div className="task-main">
-                                    <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance-task'}`} aria-hidden="true">
-                                        <img
-                                            className="task-icon"
-                                            src={item.icon ?? NotificationIcon}
-                                            alt=""
-                                        />
-                                    </span>
-
                                     <div className="task-copy">
-                                        <h3>{item.title}</h3>
+                                        <h3>
+                                            <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance-task'}`} aria-hidden="true">
+                                                <img
+                                                    className="task-icon"
+                                                    src={item.icon ?? NotificationIcon}
+                                                    alt=""
+                                                />
+                                            </span>
+                                            {item.title}
+                                        </h3>
                                         <p>{item.description || 'No details added'}</p>
                                     </div>
                                 </div>
