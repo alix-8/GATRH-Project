@@ -207,11 +207,10 @@
 .task-main {
     display: flex;
     align-items: flex-start;
-    gap: 14px;
+    gap: 4px;
 }
 
 .task-icon-wrap {
-    margin-right: 6px;
     vertical-align: -7px;
 }
 
@@ -258,7 +257,7 @@
     color: #21b854;
 }
 
-.task-status > button {
+.task-status>button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -273,7 +272,7 @@
     cursor: pointer;
 }
 
-.task-status > button img {
+.task-status>button img {
     width: 12px;
     height: 8px;
     filter: brightness(0) invert(1);
@@ -298,7 +297,7 @@
     background: transparent;
 }
 
-.completed .task-status > button {
+.completed .task-status>button {
     background: #aebbd0;
 }
 

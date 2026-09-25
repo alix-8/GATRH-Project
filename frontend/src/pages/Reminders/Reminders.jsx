@@ -139,6 +139,10 @@ function toTimeLabel(value) {
     return `${displayHour}:${minute} ${period}`
 }
 
+function notifyRemindersChanged() {
+    window.dispatchEvent(new Event('reminders:changed'))
+}
+
 function Reminders() {
     const [summary, setSummary] = useState({
         upcoming: 0,
@@ -369,6 +373,7 @@ function Reminders() {
                     upcoming: prev.upcoming + 1,
                 }))
             }
+            notifyRemindersChanged()
             handleCloseModal()
         } catch (err) {
             setError(err.message || 'Unable to save reminder.')
@@ -398,6 +403,7 @@ function Reminders() {
                 ...prev,
                 upcoming: Math.max(0, prev.upcoming - 1),
             }))
+            notifyRemindersChanged()
             setDeletingReminder(null)
         } catch (err) {
             setError(err.message || 'Unable to delete reminder.')
@@ -473,17 +479,16 @@ function Reminders() {
                         {!loading && !error && visibleItems.map(item => (
                             <article className={`reminders-task-item ${item.tone}`} key={item.id}>
                                 <div className="task-main">
+                                    <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance-task'}`} aria-hidden="true">
+                                        <img
+                                            className="task-icon"
+                                            src={item.icon ?? NotificationIcon}
+                                            alt=""
+                                        />
+                                    </span>
+
                                     <div className="task-copy">
-                                        <h3>
-                                            <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance-task'}`} aria-hidden="true">
-                                                <img
-                                                    className="task-icon"
-                                                    src={item.icon ?? NotificationIcon}
-                                                    alt=""
-                                                />
-                                            </span>
-                                            {item.title}
-                                        </h3>
+                                        <h3>{item.title}</h3>
                                         <p>{item.description || 'No details added'}</p>
                                     </div>
                                 </div>
