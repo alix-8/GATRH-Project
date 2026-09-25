@@ -18,13 +18,27 @@ class DashboardService
     public function getGeneralDashboardPayload($user, array $filters): array
     {
         // Secretary dashboard is always centered on the current reporting week.
-        $weekRange = $this->resolveDateRange('this_week');
+        // Secretary reporting weeks run Monday through Sunday.
+        $weekStart = now()->startOfWeek(Carbon::MONDAY);
+        $weekRange = [
+            'start' => $weekStart,
+            'end' => $weekStart->copy()->addDays(6)->endOfDay(),
+        ];
 
         $month = Carbon::create(
             $filters['year'] ?? now()->year,
             $filters['month'] ?? now()->month,
             1
         );
+
+        $chartPeriod = $filters['attendance_period'] ?? 'week';
+
+        $chartRange = $chartPeriod === 'month'
+            ? [
+                'start' => $month->copy()->startOfMonth(),
+                'end' => $month->copy()->endOfMonth()->endOfDay(),
+            ]
+            : $weekRange;
 
         return [
             'role' => 'secretary',
@@ -41,11 +55,13 @@ class DashboardService
                 $weekRange
             ),
 
+            
+
             // Attendance Overview bar chart
             'attendance_overview' => $this->getAttendanceChartData(
                 $user,
-                'this_week',
-                $weekRange
+                $chartPeriod,
+                $chartRange
             )['series'],
 
             // Recent Attendance Record table
@@ -138,6 +154,14 @@ class DashboardService
                     'id' => $reminder->id,
 
                     'type' => $reminder->reminder_type ?? 'custom',
+
+                    'category' => $reminder->status === 'needs_action'
+                        ? 'Needs Action'
+                        : match ($reminder->reminder_type) {
+                            'submission_countdown' => 'System Reminder',
+                            'gathering' => 'Submission',
+                            default => 'My Reminder',
+                        },
 
                     'title' => $reminder->title,
 
@@ -441,8 +465,23 @@ class DashboardService
         $chartData = [];
 
         foreach ($categories as $cat) {
-            $presentCount = (int) ($records->where('gathering_type', $cat)->where('status', 'present')->first()->total ?? 0);
-            $absentCount = (int) ($records->where('gathering_type', $cat)->where('status', 'no_response')->first()->total ?? 0);
+            $presentCount = (int) ($records->first(fn ($row) => $row->gathering_type === $cat && $row->status === 'present')->total ?? 0);
+            $absentCount = (int) ($records->first(fn ($row) => $row->gathering_type === $cat && $row->status === 'no_response')->total ?? 0);
+
+            // Unsubmitted drafts are part of the secretary's attendance overview too.
+            // parsed_data stores the same per-student status values as saved records.
+            $drafts = AttendanceDraft::query()
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['draft', 'pending'])
+                ->where('gathering_type', $cat)
+                ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
+                ->get();
+
+            foreach ($drafts as $draft) {
+                $entries = collect($draft->parsed_data ?? []);
+                $presentCount += $entries->where('status', 'present')->count();
+                $absentCount += $entries->where('status', 'no_response')->count();
+            }
 
             $chartData[] = [
                 'category' => strtoupper($cat),
