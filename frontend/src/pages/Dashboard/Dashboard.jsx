@@ -13,6 +13,7 @@ function Dashboard() {
     const [overview, setOverview] = useState([])
     const [overviewError, setOverviewError] = useState('')
     const [recentRecords, setRecentRecords] = useState([])
+    const [monthlyGathering, setMonthlyGathering] = useState([])
     const [tasksAndReminders, setTasksAndReminders] = useState([])
     const [attendancePeriod, setAttendancePeriod] = useState('week')
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1)
@@ -66,6 +67,7 @@ function Dashboard() {
                 setOverviewError('')
                 setRecentRecords(data?.recent_records ?? [])
                 setTasksAndReminders(data?.tasks_and_reminders ?? [])
+                setMonthlyGathering(data?.monthly_gathering ?? [])
                 setCalendarMarks(data?.calendar_marks ?? defaultCalendar)
             })
             .catch(error => {
@@ -252,7 +254,7 @@ function Dashboard() {
                                 </div>
                             )}
                         </section>
-                        <section className="attendance-calendar">
+                        {/* <section className="attendance-calendar">
                             <div className="calendar-header">
                                 <h3>Attendance Calendar</h3>
                                 <button type="button" className="calendar-view-button">View calendar</button>
@@ -293,6 +295,27 @@ function Dashboard() {
                                         )
                                     })}
                                 </div>
+                            </div>
+                        </section> */}
+                        <section className="monthly-gathering-card">
+                            <h3>Monthly Attendance by Gathering</h3>
+                            <p>Overall student response across the month of {selectedMonthLabel.split(' ')[0]}.</p>
+
+                            <div className="monthly-gathering-list">
+                                {monthlyGathering.map(item => (
+                                    <div className="monthly-gathering-item" key={item.gathering}>
+                                        <div className="monthly-gathering-label">
+                                            <span>{item.gathering}</span>
+                                            <span>{item.percentage}%</span>
+                                        </div>
+                                        <div className="monthly-gathering-track">
+                                            <div
+                                                className="monthly-gathering-fill"
+                                                style={{ width: `${item.percentage}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </section>
                     </div>

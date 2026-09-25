@@ -1,3 +1,5 @@
+/* PAGE LAYOUT */
+
 .dashboard {
     display: flex;
     height: 100vh;
@@ -12,23 +14,29 @@
     background-color: #ffffff;
 }
 
+
+/* DASHBOARD HEADER */
+
 .dashboard-header {
     position: relative;
     box-sizing: border-box;
+    padding: 28px 24px;
     border-bottom: 1px solid #c7c6c6;
     line-height: 1.2;
-    padding: 28px 24px 28px 24px;
 }
 
-.dashboard-header h3 {
-    display: flex;
-    margin: 0;
-    color: #172B4D;
-}
-
+.dashboard-header h3,
 .dashboard-header p {
     display: flex;
     color: #172B4D;
+}
+
+.dashboard-header h3 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.dashboard-header p {
     font-size: 14px;
 }
 
@@ -39,6 +47,9 @@
     color: #172B4D;
     font-size: 16px;
 }
+
+
+/* HERO BANNER (ATTENDANCE SUMMARY) */
 
 .dashboard-content {
     position: relative;
@@ -66,20 +77,22 @@
     text-align: left;
 }
 
+.dashboard-content h2,
+.dashboard-text-upper p {
+    color: #fff;
+    text-align: left;
+}
+
 .dashboard-content h2 {
     margin: 0 0 12px;
-    color: #fff;
     font-size: clamp(22px, 2.5vw, 30px);
     line-height: 1.15;
-    text-align: left;
 }
 
 .dashboard-text-upper p {
     margin: 0;
-    color: #fff;
     font-size: clamp(11px, 1.1vw, 14px);
     line-height: 1.35;
-    text-align: left;
 }
 
 .dashboard-text-lower {
@@ -128,15 +141,8 @@
     text-align: left;
 }
 
-.attendance-overview {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 18px;
-    border: 1px solid #d8d8d8;
-    border-radius: 10px;
-    background: #f0f0f0;
-    margin: 0;
-}
+
+/* MAIN GRID LAYOUT */
 
 .dashboard-grid {
     display: flex;
@@ -151,6 +157,399 @@
     gap: 14px;
     flex: 0 0 59%;
 }
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 40%;
+}
+
+
+/*  ATTENDANCE OVERVIEW (CHART) */
+
+.attendance-overview {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: 18px;
+    border: 1px solid #d8d8d8;
+    border-radius: 10px;
+    background: #f0f0f0;
+}
+
+.overview-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.overview-heading h2 {
+    margin: 0;
+    padding: 0;
+    color: #172B4D;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.overview-heading button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 120px;
+    height: 40px;
+    border: 1px solid #d7dce3;
+    border-radius: 16px;
+    background: #fff;
+    color: #172B4D;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.attendance-arrow-icon {
+    width: 10px;
+    height: 7px;
+}
+
+.overview-legend {
+    display: flex;
+    gap: 32px;
+    margin-top: 4px;
+    color: #555;
+    font-size: 10px;
+}
+
+.overview-legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.overview-legend i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+}
+
+.overview-present,
+.overview-present-bar {
+    background: #172B4D;
+}
+
+.overview-absent,
+.overview-absent-bar {
+    background: #F2C94C;
+}
+
+.overview-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: 190px;
+    margin-top: 14px;
+    padding: 12px 20px 0;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.overview-empty {
+    align-self: center;
+    color: #999;
+    font-size: 12px;
+}
+
+.overview-group {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    max-width: 110px;
+}
+
+.overview-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    min-height: 125px;
+    border-bottom: 1px solid #999;
+}
+
+.overview-bar {
+    width: 34px;
+    max-height: 125px;
+    margin: 0 3px;
+    border-radius: 3px 3px 0 0;
+}
+
+.overview-group small {
+    margin-top: 4px;
+    color: #666;
+    font-size: 10px;
+}
+
+
+/* RECENT ATTENDANCE RECORDS (TABLE)*/
+
+.attendance-records {
+    box-sizing: border-box;
+    padding: 18px;
+    border: 1px solid #d8d8d8;
+    border-radius: 10px;
+    background: #f0f0f0;
+}
+
+.records-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.records-heading h2 {
+    margin: 0;
+    padding: 0;
+    color: #172B4D;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.records-heading button {
+    height: 40px;
+    padding: 0 18px;
+    border: 1px solid #d7dce3;
+    border-radius: 16px;
+    background: #fff;
+    color: #172B4D;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.records-table-wrapper {
+    overflow-x: auto;
+    background: #fff;
+}
+
+.records-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #172B4D;
+    font-size: 12px;
+    table-layout: fixed;
+}
+
+.records-table th,
+.records-table td {
+    height: 42px;
+}
+
+.records-table th {
+    background: #172B4D;
+    color: #fff;
+    font-weight: normal;
+    border-right: 1px solid #d7dce3;
+}
+
+.records-table td {
+    border-bottom: 1px solid #dedede;
+}
+
+.records-table th:last-child {
+    border-right: 0;
+}
+
+.records-empty {
+    color: #999;
+    height: 180px !important;
+}
+
+
+/* TASK AND REMINDERS */
+
+.dashboard-reminders {
+    box-sizing: border-box;
+    padding: 16px;
+    border: 1px solid #d8d8d8;
+    border-radius: 10px;
+    background: #f0f0f0;
+}
+
+.dashboard-reminders-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #dedede;
+}
+
+.dashboard-reminders-heading h3,
+.dashboard-reminder-group h4 {
+    margin: 0;
+    color: #172B4D;
+}
+
+.dashboard-reminders-heading h3 {
+    font-size: 15px;
+}
+
+.dashboard-reminders-heading p {
+    margin: 5px 0 0;
+    color: #687386;
+    font-size: 12px;
+}
+
+.dashboard-reminders-heading button {
+    border: 0;
+    background: transparent;
+    color: #0785d1;
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.dashboard-reminders-heading button span {
+    margin-left: 8px;
+}
+
+.dashboard-reminders-empty {
+    margin: 18px 0 4px;
+    color: #777;
+    font-size: 12px;
+    text-align: center;
+}
+
+.dashboard-reminder-groups,
+.dashboard-reminder-list {
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.dashboard-reminder-list {
+    background: #fff;
+}
+
+.dashboard-reminder-item {
+    display: grid;
+    grid-template-columns: 1.15fr 1.65fr 1.1fr auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 6px 12px;
+    border-bottom: 1px solid #dedede;
+    color: #172B4D;
+    font-size: 10px;
+}
+
+.dashboard-reminder-category,
+.dashboard-reminder-description {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-reminder-category {
+    text-align: center;
+}
+
+.dashboard-reminder-description {
+    text-align: left;
+}
+
+.dashboard-reminder-item time {
+    color: #687386;
+    white-space: nowrap;
+}
+
+.dashboard-reminder-item button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 68px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: #078fe0;
+    color: #fff;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.dashboard-reminder-item button span {
+    font-size: 15px;
+    line-height: 10px;
+}
+
+
+/* MONTHLY GATHERING CARD */
+
+.monthly-gathering-card {
+    box-sizing: border-box;
+    padding: 24px 22px;
+    border: 1px solid #cbd3df;
+    border-radius: 18px;
+    background: #f7f8fa;
+}
+
+.monthly-gathering-card h3 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.monthly-gathering-card > p {
+    margin: 5px 0 24px;
+    color: #697386;
+    font-size: 14px;
+}
+
+.monthly-gathering-list {
+    display: grid;
+    gap: 28px;
+    padding: 26px 24px;
+    border: 1px solid #d9dee7;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.monthly-gathering-item {
+    display: grid;
+    gap: 12px;
+}
+
+.monthly-gathering-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #172b4d;
+    font-size: 15px;
+}
+
+.monthly-gathering-label span:last-child {
+    color: #111827;
+}
+
+.monthly-gathering-track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #d9effb;
+}
+
+.monthly-gathering-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: #159fe8;
+    transition: width 250ms ease;
+}
+
+
+/* PENDING ATTENDANCE (LEGACY / PRESERVED) */
 
 .pending-attendance {
     box-sizing: border-box;
@@ -176,14 +575,14 @@
 }
 
 .pending-heading button {
+    height: 40px;
+    padding: 0 18px;
     border: 1px solid #d7dce3;
     border-radius: 16px;
     background: #fff;
     color: #172B4D;
     font-size: 11px;
     font-weight: bold;
-    height: 40px;
-    padding: 0 18px;
     cursor: pointer;
 }
 
@@ -242,21 +641,18 @@
     font-size: 11px;
 }
 
-.right-column {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 40%;
-}
 
+/*  ATTENDANCE CALENDAR */
+
+/*
 .attendance-calendar {
     box-sizing: border-box;
+    height: 435px;
+    margin-top: 5px;
     padding: 12px 12px 35px;
     border: 1px solid #d8d8d8;
     border-radius: 8px;
     background: #f0f0f0;
-    height: 435px;
-    margin-top: 5px;
 }
 
 .calendar-header {
@@ -278,21 +674,21 @@
     background: transparent;
     color: #172B4D;
     font-size: 11px;
-    cursor: pointer;
     font-weight: 600;
+    cursor: pointer;
 }
 
 .calendar-body {
-    background: #fff;
-    border-radius: 10px;
-    padding: 12px 14px 40px;
     min-height: 310px;
+    padding: 12px 14px 40px;
+    border-radius: 10px;
+    background: #fff;
 }
 
 .calendar-toolbar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 12px;
     color: #172B4D;
     font-size: 11px;
@@ -300,13 +696,13 @@
 }
 
 .calendar-nav {
+    padding: 0 6px;
     border: 0;
     background: transparent;
     color: #172B4D;
     font-size: 20px;
-    cursor: pointer;
     line-height: 1;
-    padding: 0 6px;
+    cursor: pointer;
 }
 
 .calendar-month-label {
@@ -323,10 +719,10 @@
 }
 
 .calendar-weekdays {
+    margin-bottom: 8px;
     color: #6c7585;
     font-size: 10px;
     text-align: center;
-    margin-bottom: 8px;
 }
 
 .calendar-grid {
@@ -337,11 +733,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
-    color: #172B4D;
+    min-height: 28px;
     border-radius: 6px;
     background: transparent;
-    min-height: 28px;
+    color: #172B4D;
+    font-size: 11px;
 }
 
 .calendar-day.empty {
@@ -364,264 +760,25 @@
     outline: 1px solid #172B4D;
     outline-offset: -1px;
 }
-
-.overview-heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-}
-
-.overview-heading h2 {
-    color: #172B4D;
-    margin: 0;
-    padding: 0;
-    font-size: 15px;
-    font-weight: bold;
-}
-
-.overview-legend {
-    display: flex;
-    gap: 32px;
-    margin-top: 4px;
-    color: #555;
-    font-size: 10px;
-}
-
-.overview-legend span {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.overview-legend i {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-}
-
-.overview-present {
-    background: #172B4D;
-}
-
-.overview-absent {
-    background: #F2C94C;
-}
-
-.overview-heading button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border: 1px solid #d7dce3;
-    border-radius: 16px;
-    background: #fff;
-    color: #172B4D;
-    font-size: 11px;
-    font-weight: bold;
-    height: 40px;
-    width: 120px;
-    cursor: pointer;
-}
-
-.attendance-arrow-icon {
-    width: 10px;
-    height: 7px;
-}
-
-.overview-chart {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    min-height: 190px;
-    margin-top: 14px;
-    padding: 12px 20px 0;
-    border-radius: 14px;
-    background: #fff;
-}
-
-.overview-empty {
-    align-self: center;
-    color: #999;
-    font-size: 12px;
-}
-
-.overview-group {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    flex-direction: column;
-    max-width: 110px;
-}
-
-.overview-bars {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    width: 100%;
-    min-height: 125px;
-    border-bottom: 1px solid #999;
-}
-
-.overview-bar {
-    width: 34px;
-    max-height: 125px;
-    margin: 0 3px;
-    border-radius: 3px 3px 0 0;
-}
-
-.overview-present-bar {
-    background: #172B4D;
-}
-
-.overview-absent-bar {
-    background: #F2C94C;
-}
-
-.overview-group small {
-    margin-top: 4px;
-    color: #666;
-    font-size: 10px;
-}
-
-.attendance-records {
-    box-sizing: border-box;
-    padding: 18px;
-    border: 1px solid #d8d8d8;
-    border-radius: 10px;
-    background: #f0f0f0;
-}
-
-.records-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-}
-
-.records-heading h2 {
-    color: #172B4D;
-    margin: 0;
-    padding: 0;
-    font-size: 15px;
-    font-weight: bold;
-}
-
-.records-heading button {
-    border: 1px solid #d7dce3;
-    border-radius: 16px;
-    background: #fff;
-    color: #172B4D;
-    font-size: 11px;
-    font-weight: bold;
-    height: 40px;
-    padding: 0 18px;
-    cursor: pointer;
-}
-
-.records-table-wrapper {
-    overflow-x: auto;
-    background: #fff;
-}
-
-.records-table {
-    width: 100%;
-    border-collapse: collapse;
-    color: #172B4D;
-    font-size: 12px;
-    table-layout: fixed;
-}
-
-.records-table th{
-    height: 42px;
-    background: #172B4D;
-    color: #fff;
-    font-weight: normal;
-    border-right: 1px solid #d7dce3;
-}
-
-.records-table td {
-    height: 42px;
-    border-bottom: 1px solid #dedede;
-}
-
-.records-table th:last-child {
-    border-right: 0;
-}
-
-.records-empty {
-    color: #999;
-    height: 180px !important;
-}
-
-.dashboard-reminders {
-    box-sizing: border-box;
-    padding: 16px;
-    border: 1px solid #d8d8d8;
-    border-radius: 10px;
-    background: #f0f0f0;
-}
-
-.dashboard-reminders-heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #dedede;
-}
-
-.dashboard-reminders-heading h3,
-.dashboard-reminder-group h4 {
-    margin: 0;
-    color: #172B4D;
-}
-
-.dashboard-reminders-heading h3 {
-    font-size: 15px;
-}
-.dashboard-reminders-heading p {
-    margin: 5px 0 0;
-    color: #687386; font-size: 12px;
-}
-.dashboard-reminders-heading button {
-    border: 0;
-    background: transparent;
-    color: #0785d1;
-    cursor: pointer;
-    white-space: nowrap;
-    font-size: 11px;
-}
-
-.dashboard-reminders-heading button span {
-    margin-left: 8px;
-}
-.dashboard-reminders-empty {
-    margin: 18px 0 4px;
-    color: #777;
-    font-size: 12px;
-    text-align: center;
-}
-.dashboard-reminder-groups {
-    max-height: 340px;
-    overflow-y: auto;
-}
-.dashboard-reminder-list {
-    max-height: 340px;
-    overflow-y: auto;
-    background: #fff;
-}
-
-.dashboard-reminder-item { display: grid; grid-template-columns: 1.15fr 1.65fr 1.1fr auto; align-items: center; gap: 10px; min-height: 48px; padding: 6px 12px; border-bottom: 1px solid #dedede; color: #172B4D; font-size: 10px; }
-.dashboard-reminder-category, .dashboard-reminder-description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dashboard-reminder-category { text-align: center; }
-.dashboard-reminder-description { text-align: left; }
-.dashboard-reminder-item time { color: #687386; white-space: nowrap; }
-.dashboard-reminder-item button { display: inline-flex; align-items: center; gap: 10px; min-width: 68px; justify-content: center; border: 0; border-radius: 6px; padding: 6px 10px; background: #078fe0; color: #fff; cursor: pointer; font-size: 10px; }
-.dashboard-reminder-item button span { font-size: 15px; line-height: 10px; }
+*/
 
 @media (max-width: 720px) {
-    .dashboard-reminder-item { grid-template-columns: 1fr auto; }
-    .dashboard-reminder-description { grid-column: 1; grid-row: 2; }
-    .dashboard-reminder-item time { grid-column: 1; grid-row: 3; }
-    .dashboard-reminder-item button { grid-column: 2; grid-row: 1 / span 3; }
+    .dashboard-reminder-item {
+        grid-template-columns: 1fr auto;
+    }
+
+    .dashboard-reminder-description {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .dashboard-reminder-item time {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    .dashboard-reminder-item button {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+    }
 }
