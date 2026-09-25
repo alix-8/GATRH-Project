@@ -32,6 +32,7 @@ class DashboardController extends Controller
             'week' => ['nullable', 'string'],
             'month' => ['nullable', 'integer', 'between:1,12'],
             'year' => ['nullable', 'integer', 'between:2000,2100'],
+            'attendance_period' => ['nullable', 'in:week,month'],
         ]);
 
         $filters = [
@@ -40,6 +41,7 @@ class DashboardController extends Controller
             'week' => $validated['week'] ?? 'all',
             'month' => $validated['month'] ?? now()->month,
             'year' => $validated['year'] ?? now()->year,
+            'attendance_period' => $validated['attendance_period'] ?? 'week',
         ];
 
         // Direct request handling based on user role

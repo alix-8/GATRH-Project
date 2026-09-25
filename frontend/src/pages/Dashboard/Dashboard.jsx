@@ -11,8 +11,11 @@ import './Dashboard.css'
 
 function Dashboard() {
     const [overview, setOverview] = useState([])
+    const [overviewError, setOverviewError] = useState('')
     const [recentRecords, setRecentRecords] = useState([])
-    const [pendingAttendance, setPendingAttendance] = useState([])
+    const [monthlyGathering, setMonthlyGathering] = useState([])
+    const [tasksAndReminders, setTasksAndReminders] = useState([])
+    const [attendancePeriod, setAttendancePeriod] = useState('week')
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1)
     const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
     const [calendarMarks, setCalendarMarks] = useState({
@@ -39,12 +42,14 @@ function Dashboard() {
         const token = localStorage.getItem('auth_token')
 
         if (!token) {
+            setOverviewError('Please sign in to load attendance data.')
             return
         }
 
         const params = new URLSearchParams({
             month: String(calendarMonth),
             year: String(calendarYear),
+            attendance_period: attendancePeriod,
         })
 
         fetch(`http://127.0.0.1:8000/api/dashboard?${params.toString()}`, {
@@ -53,25 +58,38 @@ function Dashboard() {
                 Authorization: `Bearer ${token}`,
             },
         })
-            .then(response => response.ok ? response.json() : null)
+            .then(response => {
+                if (!response.ok) throw new Error(`Dashboard request failed (${response.status}).`)
+                return response.json()
+            })
             .then(data => {
                 setOverview(data?.attendance_overview ?? data?.chart_data?.series ?? [])
+                setOverviewError('')
                 setRecentRecords(data?.recent_records ?? [])
-                setPendingAttendance(data?.pending_list ?? [])
+                setTasksAndReminders(data?.tasks_and_reminders ?? [])
+                setMonthlyGathering(data?.monthly_gathering ?? [])
                 setCalendarMarks(data?.calendar_marks ?? defaultCalendar)
             })
-            .catch(() => {
+            .catch(error => {
                 setOverview([])
+                setOverviewError(error.message || 'Unable to load attendance data.')
                 setRecentRecords([])
-                setPendingAttendance([])
+                setTasksAndReminders([])
                 setCalendarMarks(defaultCalendar)
             })
-    }, [calendarMonth, calendarYear])
+    }, [calendarMonth, calendarYear, attendancePeriod])
 
     const monthlyDays = Array.from({ length: calendarMarks.days_in_month }, (_, index) => index + 1)
     const monthStart = new Date(calendarYear, calendarMonth - 1, 1)
     const monthStartOffset = (monthStart.getDay() + 6) % 7
+    const selectedMonthLabel = monthStart.toLocaleString('en-US', { month: 'long', year: 'numeric' })
     const dayTypeMap = new Map((calendarMarks.highlight_days ?? []).map(day => [day.day, day.type]))
+    const reminderCategories = ['My Reminder', 'System Reminder', 'Needs Action', 'Submission']
+    const categorizedReminders = reminderCategories.flatMap(category =>
+        tasksAndReminders
+            .filter(item => item.category === category)
+            .map(item => ({ ...item, category }))
+    )
 
     const changeMonth = amount => {
         const nextDate = new Date(calendarYear, calendarMonth - 1 + amount, 1)
@@ -152,18 +170,18 @@ function Dashboard() {
                                     </div>
                                 </div>
 
-                                <button type="button">
-                                    This Week
-                                    <img
-                                        className="attendance-arrow-icon"
-                                        src={ArrowIcon}
-                                        alt="Arrow Icon"
-                                    />
-                                </button>
+                                <select
+                                    value={attendancePeriod}
+                                    onChange={event => setAttendancePeriod(event.target.value)}
+                                    aria-label="Attendance graph date range"
+                                >
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                </select>
                             </div>
                             <div className="overview-chart">
-                                {overview.length === 0 || overview.every(g => g.present === 0 && g.absent === 0) ? (
-                                    <span className="overview-empty">No attendance data yet</span>
+                                {overviewError ? <span className="overview-empty">{overviewError} Check that the API is running and you are signed in.</span> : overview.length === 0 ? (
+                                    <span className="overview-empty">No attendance data returned for this month.</span>
                                 ) : overview.map(group => (
                                     <div className="overview-group" key={group.category}>
                                         <div className="overview-bars">
@@ -218,26 +236,25 @@ function Dashboard() {
                     </div>
 
                     <div className="right-column">
-                        <section className="pending-attendance">
-                            <div className="pending-heading">
-                                <h2>Pending Attendance</h2>
-                                <button type="button" onClick={() => navigate('/attendance')}>View All Attendance</button>
+                        <section className="dashboard-reminders">
+                            <div className="dashboard-reminders-heading">
+                                <div><h3>Task and Reminders</h3><p>Items that need your attention.</p></div>
+                                <button type="button" onClick={() => navigate('/reminders')}>View All Reminders <span>→</span></button>
                             </div>
-                            <div className="pending-list">
-                                {pendingAttendance.length === 0 ? (
-                                    <p className="pending-empty">No pending attendance</p>
-                                ) : pendingAttendance.map(item => (
-                                    <div className="pending-item" key={item.id}>
-                                        <span className="pending-status" aria-hidden="true" />
-                                        <strong>{item.program_label || item.program || 'Attendance'}</strong>
-                                        <span>{item.year_level ? `${item.year_level} YEAR` : item.submitted_ago || 'Pending'}</span>
-                                        <em>{item.gathering || 'Attendance'}</em>
-                                    </div>
-                                ))}
-                            </div>
+                            {categorizedReminders.length === 0 ? <p className="dashboard-reminders-empty">No upcoming tasks or reminders.</p> : (
+                                <div className="dashboard-reminder-list">
+                                    {categorizedReminders.map(item => (
+                                        <div className="dashboard-reminder-item" key={`${item.category}-${item.id}`}>
+                                            <span className="dashboard-reminder-category">{item.category}</span>
+                                            <span className="dashboard-reminder-description">{item.description || item.title}</span>
+                                            <time>{item.date || ''}</time>
+                                            <button type="button" onClick={() => navigate('/reminders')}>View <span>›</span></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </section>
-
-                        <section className="attendance-calendar">
+                        {/* <section className="attendance-calendar">
                             <div className="calendar-header">
                                 <h3>Attendance Calendar</h3>
                                 <button type="button" className="calendar-view-button">View calendar</button>
@@ -278,6 +295,27 @@ function Dashboard() {
                                         )
                                     })}
                                 </div>
+                            </div>
+                        </section> */}
+                        <section className="monthly-gathering-card">
+                            <h3>Monthly Attendance by Gathering</h3>
+                            <p>Overall student response across the month of {selectedMonthLabel.split(' ')[0]}.</p>
+
+                            <div className="monthly-gathering-list">
+                                {monthlyGathering.map(item => (
+                                    <div className="monthly-gathering-item" key={item.gathering}>
+                                        <div className="monthly-gathering-label">
+                                            <span>{item.gathering}</span>
+                                            <span>{item.percentage}%</span>
+                                        </div>
+                                        <div className="monthly-gathering-track">
+                                            <div
+                                                className="monthly-gathering-fill"
+                                                style={{ width: `${item.percentage}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </section>
                     </div>
