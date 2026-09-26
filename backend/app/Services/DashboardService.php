@@ -121,6 +121,18 @@ class DashboardService
                 $weekRange['end'],
             ]);
 
+        // Match the attendance overview: responses saved in an unsubmitted
+        // draft should count toward this week's secretary KPIs as well.
+        $weekDraftResponses = AttendanceDraft::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['draft', 'pending'])
+            ->whereBetween('day', [
+                $weekRange['start'],
+                $weekRange['end'],
+            ])
+            ->get()
+            ->flatMap(fn ($draft) => collect($draft->parsed_data ?? []));
+
         return [
             'total_students' => Student::query()
                 ->accessibleTo($user)
@@ -128,11 +140,11 @@ class DashboardService
 
             'week_respondents' => (clone $weekRecords)
                 ->where('status', 'present')
-                ->count(),
+                ->count() + $weekDraftResponses->where('status', 'present')->count(),
 
             'week_no_response' => (clone $weekRecords)
                 ->where('status', 'no_response')
-                ->count(),
+                ->count() + $weekDraftResponses->where('status', 'no_response')->count(),
 
             'pending_submission' => AttendanceDraft::query()
                 ->where('user_id', $user->id)

@@ -40,9 +40,9 @@
 }
 
 .import-fields input,
-.import-panel-heading select,
-.import-fields select,
-.import-textarea-label-title .import-textarea-label-title-right select {
+.import-panel-heading select:not(.app-native-select),
+.import-fields select:not(.app-native-select),
+.import-textarea-label-title .import-textarea-label-title-right select:not(.app-native-select) {
     border: 1px solid #dbe1ec;
     border-radius: 10px;
     padding: 0.55rem 0.7rem;

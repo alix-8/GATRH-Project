@@ -166,10 +166,10 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                             <div className="list-controls-header">
                                 <h3>Attendance List</h3>
                                 <div className="controls-group">
-                                    <div className="drawer-status-dropdown">
+                                    <div className="drawer-status-dropdown app-dropdown">
                                         <button
                                             type="button"
-                                            className="drawer-status-trigger"
+                                            className="drawer-status-trigger app-dropdown-trigger"
                                             onClick={() => setIsStatusMenuOpen(prev => !prev)}
                                             aria-haspopup="listbox"
                                             aria-expanded={isStatusMenuOpen}
@@ -186,7 +186,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                         </button>
 
                                         {isStatusMenuOpen && (
-                                            <div className="drawer-status-menu" role="listbox">
+                                            <div className="drawer-status-menu app-dropdown-menu" role="listbox">
                                                 {[
                                                     { value: 'all', label: 'Status' },
                                                     { value: 'present', label: 'Present' },
@@ -195,7 +195,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                                     <button
                                                         type="button"
                                                         key={option.value}
-                                                        className={`drawer-status-option ${
+                                                        className={`drawer-status-option app-dropdown-option ${
                                                             statusFilter === option.value ? 'selected' : ''
                                                         }`}
                                                         onClick={() => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../../components/Sidebar/Sidebar'
 import Header from '../../../components/Header/Header'
@@ -10,9 +10,11 @@ import TotalStudentsKpiIcon from '../../../assets/total-students-kpi-icon.png'
 import ResponseKpiIcon from '../../../assets/response-kpi-icon.png'
 import NoResponseKpiIcon from '../../../assets/no-response-kpi-icon.png'
 import PendingSubmissionKpiIcon from '../../../assets/pending-submission-kpi-icon.png'
+import DashboardSkeleton from '../../../skeletons/Dashboard/DashboardSkeleton'
 import './SecDashboard.css'
 
 function Dashboard() {
+    const [isLoading, setIsLoading] = useState(true)
     const [overview, setOverview] = useState([])
     const [overviewError, setOverviewError] = useState('')
     const [kpis, setKpis] = useState(null)
@@ -20,6 +22,8 @@ function Dashboard() {
     const [monthlyGathering, setMonthlyGathering] = useState([])
     const [tasksAndReminders, setTasksAndReminders] = useState([])
     const [attendancePeriod, setAttendancePeriod] = useState('week')
+    const [isAttendancePeriodOpen, setIsAttendancePeriodOpen] = useState(false)
+    const attendancePeriodDropdownRef = useRef(null)
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1)
     const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
     const [calendarMarks, setCalendarMarks] = useState({
@@ -47,6 +51,7 @@ function Dashboard() {
 
         if (!token) {
             setOverviewError('Please sign in to load attendance data.')
+            setIsLoading(false)
             return
         }
 
@@ -83,12 +88,34 @@ function Dashboard() {
                 setTasksAndReminders([])
                 setCalendarMarks(defaultCalendar)
             })
+            .finally(() => setIsLoading(false))
     }, [calendarMonth, calendarYear, attendancePeriod])
+
+    useEffect(() => {
+        if (!isAttendancePeriodOpen) return undefined
+
+        const closeWhenOutside = event => {
+            if (!attendancePeriodDropdownRef.current?.contains(event.target)) {
+                setIsAttendancePeriodOpen(false)
+            }
+        }
+        const closeOnEscape = event => {
+            if (event.key === 'Escape') setIsAttendancePeriodOpen(false)
+        }
+
+        document.addEventListener('mousedown', closeWhenOutside)
+        document.addEventListener('keydown', closeOnEscape)
+        return () => {
+            document.removeEventListener('mousedown', closeWhenOutside)
+            document.removeEventListener('keydown', closeOnEscape)
+        }
+    }, [isAttendancePeriodOpen])
 
     const monthlyDays = Array.from({ length: calendarMarks.days_in_month }, (_, index) => index + 1)
     const monthStart = new Date(calendarYear, calendarMonth - 1, 1)
     const monthStartOffset = (monthStart.getDay() + 6) % 7
     const selectedMonthLabel = monthStart.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+    const chartTicks = [30, 25, 20, 15, 10, 5, 0]
     const dayTypeMap = new Map((calendarMarks.highlight_days ?? []).map(day => [day.day, day.type]))
     const reminderCategories = ['My Reminder', 'System Reminder', 'Needs Action', 'Submission']
     const categorizedReminders = reminderCategories.flatMap(category =>
@@ -139,6 +166,8 @@ function Dashboard() {
         })
     }
 
+    if (isLoading) return <DashboardSkeleton />
+
     return (
         <div className="dashboard">
             <Sidebar />
@@ -167,7 +196,7 @@ function Dashboard() {
                                     alt="Pencil Icon"
                                 />
                             </div>
-                            <p className="week-attendance">This Week's Attendance</p>
+                            <p className="week-attendance">This Week's Attendance <br/> {kpis?.week_respondents}</p>
 
                             <div className="dashboard-eraser-container">
                                 <img
@@ -176,7 +205,7 @@ function Dashboard() {
                                     alt="Eraser Icon"
                                 />
                             </div>
-                            <p className="week-absences">This Week's Absences</p>
+                            <p className="week-absences">This Week's Absences <br/> {kpis?.week_no_response}</p>
                         </div>
                     </div>
                     <div className="dashboard-content-column-right">
@@ -217,27 +246,76 @@ function Dashboard() {
                                     </div>
                                 </div>
 
-                                <select
-                                    value={attendancePeriod}
-                                    onChange={event => setAttendancePeriod(event.target.value)}
-                                    aria-label="Attendance graph date range"
-                                >
-                                    <option value="week">This Week</option>
-                                    <option value="month">This Month</option>
-                                </select>
+                                <div className="dashboard-period-dropdown app-dropdown" ref={attendancePeriodDropdownRef}>
+                                    <button
+                                        type="button"
+                                        className="app-dropdown-trigger dashboard-period-trigger"
+                                        aria-label="Attendance graph date range"
+                                        aria-haspopup="listbox"
+                                        aria-expanded={isAttendancePeriodOpen}
+                                        onClick={() => setIsAttendancePeriodOpen(open => !open)}
+                                    >
+                                        {attendancePeriod === 'week' ? 'This Week' : 'This Month'}
+                                        <span className="dashboard-period-chevron" aria-hidden="true" />
+                                    </button>
+                                    {isAttendancePeriodOpen && (
+                                        <ul className="app-dropdown-menu dashboard-period-menu" role="listbox" aria-label="Attendance date range">
+                                            {[
+                                                { value: 'week', label: 'This Week' },
+                                                { value: 'month', label: 'This Month' },
+                                            ].map(option => (
+                                                <button
+                                                    type="button"
+                                                    role="option"
+                                                    aria-selected={attendancePeriod === option.value}
+                                                    key={option.value}
+                                                    className={`app-dropdown-option${attendancePeriod === option.value ? ' selected' : ''}`}
+                                                    onClick={() => {
+                                                        setAttendancePeriod(option.value)
+                                                        setIsAttendancePeriodOpen(false)
+                                                    }}
+                                                >
+                                                    {option.label}
+                                                </button>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
                             </div>
                             <div className="overview-chart">
-                                {overviewError ? <span className="overview-empty">{overviewError} Check that the API is running and you are signed in.</span> : overview.length === 0 ? (
-                                    <span className="overview-empty">No attendance data returned for this month.</span>
-                                ) : overview.map(group => (
-                                    <div className="overview-group" key={group.category}>
-                                        <div className="overview-bars">
-                                            <span className="overview-bar overview-present-bar" style={{ height: `${group.present * 12}px` }} />
-                                            <span className="overview-bar overview-absent-bar" style={{ height: `${group.absent * 12}px` }} />
+                                {overviewError || overview.length === 0 ? (
+                                    <span className="overview-empty">{overviewError ? `${overviewError} Check that the API is running and you are signed in.` : 'No attendance data returned for this period.'}</span>
+                                ) : (
+                                    <>
+                                        <div className="overview-y-axis" aria-hidden="true">
+                                            {chartTicks.map(tick => <span key={tick}>{tick}</span>)}
                                         </div>
-                                        <small>{group.category}</small>
-                                    </div>
-                                ))}
+                                        <div className="overview-plot">
+                                            <div className="overview-gridlines" aria-hidden="true">
+                                                {chartTicks.map(tick => <span key={tick} />)}
+                                            </div>
+                                            <div className="overview-bars-row">
+                                                {overview.map(group => (
+                                                    <div className="overview-group" key={group.category}>
+                                                        <div className="overview-bars">
+                                                            <span
+                                                                className="overview-bar overview-present-bar"
+                                                                style={{ height: `${Math.min(100, Math.max(0, (Number(group.present) || 0) / 30 * 100))}%` }}
+                                                                title={`Responses: ${group.present}`}
+                                                            />
+                                                            <span
+                                                                className="overview-bar overview-absent-bar"
+                                                                style={{ height: `${Math.min(100, Math.max(0, (Number(group.absent) || 0) / 30 * 100))}%` }}
+                                                                title={`No Response: ${group.absent}`}
+                                                            />
+                                                        </div>
+                                                        <small>{group.category}</small>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </section>
 
@@ -293,7 +371,7 @@ function Dashboard() {
                                     {categorizedReminders.map(item => (
                                         <div className="dashboard-reminder-item" key={`${item.category}-${item.id}`}>
                                             <span className="dashboard-reminder-category">{item.category}</span>
-                                            <span className="dashboard-reminder-description">{item.description || item.title}</span>
+                                            <span className="dashboard-reminder-description">{item.gathering || item.title}</span>
                                             <time>{item.date || ''}</time>
                                             <button type="button" onClick={() => navigate('/reminders')}>View <span>›</span></button>
                                         </div>

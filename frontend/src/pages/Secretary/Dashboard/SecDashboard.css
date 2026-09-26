@@ -238,6 +238,60 @@
     cursor: pointer;
 }
 
+.overview-heading .dashboard-period-dropdown {
+    flex: 0 0 auto;
+}
+
+.overview-heading .dashboard-period-trigger {
+    justify-content: space-between;
+    width: 120px;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.overview-heading .dashboard-period-trigger:hover,
+.overview-heading .dashboard-period-trigger[aria-expanded="true"] {
+    border-color: #b7c4d5;
+    background: #f5f8fc;
+    box-shadow: 0 2px 7px rgba(23, 43, 77, 0.08);
+}
+
+.dashboard-period-chevron {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    margin: -4px 2px 0 0;
+    transform: rotate(45deg);
+    border-right: 1.5px solid #172b4d;
+    border-bottom: 1.5px solid #172b4d;
+    transition: transform 140ms ease;
+}
+
+.dashboard-period-trigger[aria-expanded="true"] .dashboard-period-chevron {
+    margin-top: 4px;
+    transform: rotate(225deg);
+}
+
+.overview-heading .dashboard-period-menu {
+    right: 0;
+    left: auto;
+    min-width: 150px;
+    overflow: visible;
+}
+
+.dashboard-period-menu li {
+    list-style: none;
+}
+
+.dashboard-period-menu .app-dropdown-option {
+    border-radius: 0;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
 .attendance-arrow-icon {
     width: 10px;
     height: 7px;
@@ -274,50 +328,128 @@
 }
 
 .overview-chart {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    min-height: 190px;
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: stretch;
+    height: 260px;
     margin-top: 14px;
-    padding: 12px 20px 0;
+    padding: 20px 24px 16px;
     border-radius: 14px;
     background: #fff;
+    box-sizing: border-box;
 }
 
 .overview-empty {
+    grid-column: 1 / -1;
     align-self: center;
+    justify-self: center;
     color: #999;
     font-size: 12px;
 }
 
-.overview-group {
+.overview-y-axis {
     display: flex;
-    flex: 1;
     flex-direction: column;
-    align-items: center;
-    max-width: 110px;
+    justify-content: space-between;
+    height: calc(100% - 30px);
+    padding: 0 10px 0 0;
+    color: #66758d;
+    font-size: 12px;
+    text-align: right;
+}
+
+.overview-plot {
+    position: relative;
+    min-width: 0;
+    height: 100%;
+    padding-bottom: 30px;
+    box-sizing: border-box;
+}
+
+.overview-plot::before {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    bottom: 30px;
+    left: 0;
+    width: 2px;
+    background: #c7cdd6;
+    content: '';
+}
+
+.overview-gridlines {
+    position: absolute;
+    inset: 0 0 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.overview-gridlines span {
+    height: 1px;
+    background: #e5e9ef;
+}
+
+.overview-bars-row {
+    position: absolute;
+    inset: 0 0 30px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.overview-group {
+    position: relative;
+    min-width: 0;
+    height: 100%;
 }
 
 .overview-bars {
     display: flex;
     align-items: flex-end;
     justify-content: center;
+    position: absolute;
+    inset: 0;
     width: 100%;
-    min-height: 125px;
-    border-bottom: 1px solid #999;
 }
 
 .overview-bar {
-    width: 34px;
-    max-height: 125px;
-    margin: 0 3px;
-    border-radius: 3px 3px 0 0;
+    width: clamp(20px, 4vw, 48px);
+    margin: 0 4px;
+    border-radius: 7px 7px 0 0;
 }
 
 .overview-group small {
-    margin-top: 4px;
-    color: #666;
-    font-size: 10px;
+    position: absolute;
+    bottom: -23px;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    color: #66758d;
+    font-size: 12px;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+    .overview-chart {
+        grid-template-columns: 30px minmax(0, 1fr);
+        height: 220px;
+        padding: 16px 12px 14px;
+    }
+
+    .overview-y-axis {
+        font-size: 10px;
+    }
+
+    .overview-bar {
+        width: clamp(14px, 5vw, 28px);
+        margin: 0 2px;
+    }
+
+    .overview-group small {
+        font-size: 9px;
+    }
 }
 
 
@@ -517,7 +649,7 @@
     border: 1px solid #c8d0dc;
     border-radius: 14px;
     background: #fff;
-    min-height: 18rem;
+    min-height: 21rem;
 }
 
 .monthly-gathering-header {
@@ -525,6 +657,7 @@
     width: 100%;
     padding: 0;
     border: 0;
+    margin: 1rem 0 2rem;
     text-align: left;
 }
 

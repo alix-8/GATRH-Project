@@ -27,7 +27,7 @@ function ImportAttendancePanel({
                         value={form.gathering_type}
                         onChange={updateField}
                         disabled={isPreviewing}
-                        className={gatheringTypeMismatch ? 'import-gathering-mismatch' : ''}
+                        className={`app-native-select ${gatheringTypeMismatch ? 'import-gathering-mismatch' : ''}`}
                         aria-invalid={gatheringTypeMismatch || undefined}
                     >
                         <option value="pm">Prayer Meeting</option>
