@@ -12,12 +12,54 @@ import LogoutIcon from '../../assets/logout-icon.png'
 import ProfileIcon from '../../assets/profile-icon.png'
 import './Sidebar.css'
 
+const navigationByRole = {
+    secretary: [
+        { label: 'Dashboard', to: '/dashboard', icon: DashboardIcon },
+        { label: 'Students', to: '/students', icon: StudentsIcon },
+        { label: 'Import', to: '/import', icon: ImportIcon },
+        { label: 'Attendance', to: '/attendance', icon: AttendanceIcon },
+        { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
+    ],
+    program_head: [
+        { label: 'Dashboard', to: '/program-head/dashboard', icon: DashboardIcon },
+        { label: 'Submission', to: '/program-head/submission', icon: ImportIcon },
+        { label: 'Records', to: '/program-head/records', icon: AttendanceIcon },
+    ],
+    chancellor: [
+        { label: 'Dashboard', to: '/chancellor/dashboard', icon: DashboardIcon },
+        { label: 'Monitoring', to: '/chancellor/monitoring', icon: AttendanceIcon },
+    ],
+    admin: [
+        { label: 'Dashboard', to: '/admin/dashboard', icon: DashboardIcon },
+        { label: 'User Roles', to: '/admin/user-roles', icon: StudentsIcon },
+        { label: 'Students', to: '/admin/students', icon: StudentsIcon },
+        { label: 'Programs', to: '/admin/programs', icon: ImportIcon },
+    ],
+}
+
 function Sidebar() {
     const navigate = useNavigate()
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
+    let role = ''
+    try { role = JSON.parse(localStorage.getItem('user') || 'null')?.role || '' } catch { /* invalid session */ }
+    const navigationItems = navigationByRole[role] || []
 
-    const handleSignOut = () => {
-        navigate('/')
+    const handleSignOut = async () => {
+        const token = localStorage.getItem('auth_token')
+        try {
+            if (token) {
+                await fetch('http://127.0.0.1:8000/api/logout', {
+                    method: 'POST',
+                    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+                })
+            }
+        } catch {
+            // Clear the local session even if the API cannot be reached.
+        } finally {
+            localStorage.removeItem('auth_token')
+            localStorage.removeItem('user')
+            navigate('/')
+        }
     }
 
     useEffect(() => {
@@ -36,7 +78,7 @@ function Sidebar() {
     }, [isLogoutModalOpen])
 
     return (
-        <aside className="sidebar">
+        <aside className={`sidebar ${role === 'program_head' ? 'sidebar-program-head' : ''}`}>
 
             <div className="sidebar-logo">
                 <img
@@ -47,66 +89,17 @@ function Sidebar() {
             </div>
 
             <nav className="sidebar-nav">
-                <NavLink
-                    to="/dashboard"
-                    end
-                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                >
-                    <img
-                        className="sidebar-icon"
-                        src={DashboardIcon}
-                        alt="Dashboard"
-                    />
-                    <span>Dashboard</span>
-                </NavLink>
-
-                <NavLink
-                    to="/students"
-                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                >
-                    <img
-                        className="sidebar-icon"
-                        src={StudentsIcon}
-                        alt="Students"
-                    />
-                    <span>Students</span>
-                </NavLink>
-
-                <NavLink
-                    to="/import"
-                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                >
-                    <img
-                        className="sidebar-icon"
-                        src={ImportIcon}
-                        alt="Import"
-                    />
-                    <span>Import</span>
-                </NavLink>
-
-                <NavLink
-                    to="/attendance"
-                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                >
-                    <img
-                        className="sidebar-icon"
-                        src={AttendanceIcon}
-                        alt="Attendance"
-                    />
-                    <span>Attendance</span>
-                </NavLink>
-
-                <NavLink
-                    to="/reminders"
-                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                >
-                    <img
-                        className="sidebar-icon"
-                        src={RemindersIcon}
-                        alt="Reminders"
-                    />
-                    <span>Reminders</span>
-                </NavLink>
+                {navigationItems.map((item) => (
+                    <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end
+                        className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                    >
+                        <img className="sidebar-icon" src={item.icon} alt="" />
+                        <span>{item.label}</span>
+                    </NavLink>
+                ))}
 
             </nav>
 
@@ -118,16 +111,13 @@ function Sidebar() {
                         alt="Sign Out"
                     />
                 </button>
-
                 <NavLink
                     to="/profile"
                     className={({ isActive }) => `sidebar-profile ${isActive ? 'active' : ''}`}
+                    aria-label="Profile"
+                    title="Profile"
                 >
-                    <img
-                        className="profile-icon"
-                        src={ProfileIcon}
-                        alt="Profile"
-                    />
+                    <img className="profile-icon" src={ProfileIcon} alt="" />
                 </NavLink>
             </div>
 

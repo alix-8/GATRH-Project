@@ -15,7 +15,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',        // 'secretary', 'program_head', 'cm_coordinator', 'chancellor'
+        'role',        // 'secretary', 'program_head', 'cm_coordinator', 'chancellor', 'admin'
         'program',
         'year_level',
         'contact_number',
@@ -76,7 +76,18 @@ class User extends Authenticatable
 
     public function assignedProgramCodes(): array
     {
-        return $this->programs()->pluck('code')->all();
+        $codes = $this->programs()->pluck('code')->all();
+
+        // Keep legacy Program Head accounts scoped to their primary program
+        // when their program_user pivot has not been populated yet.
+        if ($codes === [] && filled($this->program)) {
+            $codes[] = $this->program;
+        }
+
+        return array_values(array_unique(array_filter(array_map(
+            static fn ($code) => strtoupper(trim((string) $code)),
+            $codes
+        ))));
     }
 
     /**

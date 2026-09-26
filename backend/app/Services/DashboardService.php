@@ -436,7 +436,8 @@ class DashboardService
             })
             ->count();
 
-        $approved = (clone $baseQuery)->where('validation_status', 'approved')->count();
+        // Attendance records store the approved state as `validated`.
+        $approved = (clone $baseQuery)->where('validation_status', 'validated')->count();
         $rejected = (clone $baseQuery)->where('validation_status', 'rejected')->count();
         $total = (clone $baseQuery)->count();
 
