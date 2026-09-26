@@ -832,6 +832,11 @@ class AttendanceController extends Controller
             $query->where('batch_id', $batchKey);
         }
 
+        $query->whereHas('student', fn ($studentQuery) => $studentQuery->accessibleTo($request->user()))
+            ->where(function ($statusQuery) {
+                $statusQuery->whereNull('validation_status')->orWhere('validation_status', 'unvalidated');
+            });
+
         $updatedCount = $query->update([
             'validation_status' => 'validated',
             'rejection_reason'  => null, // clear any stale reason if this was previously rejected
@@ -869,6 +874,11 @@ class AttendanceController extends Controller
         } else {
             $query->where('batch_id', $batchKey);
         }
+
+        $query->whereHas('student', fn ($studentQuery) => $studentQuery->accessibleTo($request->user()))
+            ->where(function ($statusQuery) {
+                $statusQuery->whereNull('validation_status')->orWhere('validation_status', 'unvalidated');
+            });
 
         $updatedCount = $query->update([
             'validation_status' => 'rejected',

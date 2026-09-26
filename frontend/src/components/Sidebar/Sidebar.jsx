@@ -44,21 +44,20 @@ function Sidebar() {
     try { role = JSON.parse(localStorage.getItem('user') || 'null')?.role || '' } catch { /* invalid session */ }
     const navigationItems = navigationByRole[role] || []
 
-    const handleSignOut = async () => {
+    const handleSignOut = () => {
         const token = localStorage.getItem('auth_token')
-        try {
-            if (token) {
-                await fetch('http://127.0.0.1:8000/api/logout', {
-                    method: 'POST',
-                    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-                })
-            }
-        } catch {
-            // Clear the local session even if the API cannot be reached.
-        } finally {
-            localStorage.removeItem('auth_token')
-            localStorage.removeItem('user')
-            navigate('/')
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user')
+        setIsLogoutModalOpen(false)
+        navigate('/', { replace: true })
+
+        if (token) {
+            fetch('http://127.0.0.1:8000/api/logout', {
+                method: 'POST',
+                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            }).catch(() => {
+                // The local session is already cleared; ignore a network failure.
+            })
         }
     }
 

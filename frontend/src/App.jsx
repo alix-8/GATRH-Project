@@ -8,6 +8,7 @@ import Reminders from './pages/_Reminders/Reminders'
 import ProgramHeadDashboard from './pages/Program Head/Dashboard/ProgramHeadDashboard'
 import Sidebar from './components/Sidebar/Sidebar'
 import Profile from './pages/_Profile/Profile'
+import ProgramHeadSubmissions from './pages/Program Head/Submission/ProgramHeadSubmissions'
 
 const landingByRole = {
   secretary: '/dashboard',
@@ -53,7 +54,7 @@ function AppRoutes() {
       <Route path="/profile" element={<RoleRoute roles={['secretary', 'program_head', 'chancellor', 'admin']}><Profile /></RoleRoute>} />
 
       <Route path="/program-head/dashboard" element={<RoleRoute roles={['program_head']}><ProgramHeadDashboard /></RoleRoute>} />
-      <Route path="/program-head/submission" element={<RoleRoute roles={['program_head']}><RolePlaceholder title="Submission" /></RoleRoute>} />
+      <Route path="/program-head/submission" element={<RoleRoute roles={['program_head']}><ProgramHeadSubmissions /></RoleRoute>} />
       <Route path="/program-head/records" element={<RoleRoute roles={['program_head']}><RolePlaceholder title="Records" /></RoleRoute>} />
 
       <Route path="/chancellor/dashboard" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Dashboard" /></RoleRoute>} />
