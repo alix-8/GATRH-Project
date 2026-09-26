@@ -139,6 +139,10 @@ function toTimeLabel(value) {
     return `${displayHour}:${minute} ${period}`
 }
 
+function notifyRemindersChanged() {
+    window.dispatchEvent(new Event('reminders:changed'))
+}
+
 function Reminders() {
     const [summary, setSummary] = useState({
         upcoming: 0,
@@ -369,6 +373,7 @@ function Reminders() {
                     upcoming: prev.upcoming + 1,
                 }))
             }
+            notifyRemindersChanged()
             handleCloseModal()
         } catch (err) {
             setError(err.message || 'Unable to save reminder.')
@@ -398,6 +403,7 @@ function Reminders() {
                 ...prev,
                 upcoming: Math.max(0, prev.upcoming - 1),
             }))
+            notifyRemindersChanged()
             setDeletingReminder(null)
         } catch (err) {
             setError(err.message || 'Unable to delete reminder.')
@@ -439,7 +445,7 @@ function Reminders() {
                 <section className="reminders-task-panel">
                     <div className="reminders-task-heading">
                         <div>
-                            <h2>Reminders &amp; Tasks</h2>
+                            <h2>Reminders & Tasks</h2>
                             <p>{visibleItems.length} items requiring attention or scheduled today</p>
                         </div>
 

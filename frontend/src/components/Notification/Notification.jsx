@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CalendarIcon from '../../assets/calendar-icon.png'
 import NotificationIcon from '../../assets/notification-icon.png'
@@ -80,15 +80,19 @@ function Notification() {
         return () => document.removeEventListener('mousedown', handleOutsideClick)
     }, [])
 
-    useEffect(() => {
+    const fetchControllerRef = useRef(null)
+
+    const fetchNotifications = useCallback(async () => {
         const token = localStorage.getItem('auth_token')
 
         if (!token) return
 
-        const controller = new AbortController()
+        fetchControllerRef.current?.abort()
 
-        async function fetchNotifications() {
-            try {
+        const controller = new AbortController()
+        fetchControllerRef.current = controller
+
+        try {
                 const [remindersData, attendanceData] = await Promise.all([
                     request('/reminders', { signal: controller.signal }),
                     request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal }),
@@ -130,17 +134,31 @@ function Notification() {
                     })
 
                 setItems([...reminderItems, ...attendanceItems].slice(0, 8))
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    setItems([])
-                }
-            }
+        } catch {
+            // Aborted or failed refresh: keep whatever items are already shown.
         }
+    }, [])
 
+    useEffect(() => {
         fetchNotifications()
 
-        return () => controller.abort()
-    }, [])
+        return () => fetchControllerRef.current?.abort()
+    }, [fetchNotifications])
+
+    // Refetch whenever the panel opens so reminders deleted, added, or edited
+    // on the Reminders page show up without a full page refresh.
+    useEffect(() => {
+        if (isOpen) {
+            fetchNotifications()
+        }
+    }, [isOpen, fetchNotifications])
+
+    // Refetch immediately when reminders change elsewhere on the page
+    // (covers the case where the panel is already open).
+    useEffect(() => {
+        window.addEventListener('reminders:changed', fetchNotifications)
+        return () => window.removeEventListener('reminders:changed', fetchNotifications)
+    }, [fetchNotifications])
 
     const iconMap = {
         calendar: CalendarIcon,

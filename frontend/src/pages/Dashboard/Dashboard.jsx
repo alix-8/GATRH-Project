@@ -6,12 +6,16 @@ import Notification from '../../components/Notification/Notification'
 import PencilIcon from '../../assets/pencil-icon.png'
 import EraserIcon from '../../assets/eraser-icon.png'
 import DashboardIllustration from '../../assets/dashboard-illustration.png'
-import ArrowIcon from '../../assets/arrow-icon.png'
+import TotalStudentsKpiIcon from '../../assets/total-students-kpi-icon.png'
+import ResponseKpiIcon from '../../assets/response-kpi-icon.png'
+import NoResponseKpiIcon from '../../assets/no-response-kpi-icon.png'
+import PendingSubmissionKpiIcon from '../../assets/pending-submission-kpi-icon.png'
 import './Dashboard.css'
 
 function Dashboard() {
     const [overview, setOverview] = useState([])
     const [overviewError, setOverviewError] = useState('')
+    const [kpis, setKpis] = useState(null)
     const [recentRecords, setRecentRecords] = useState([])
     const [monthlyGathering, setMonthlyGathering] = useState([])
     const [tasksAndReminders, setTasksAndReminders] = useState([])
@@ -65,6 +69,7 @@ function Dashboard() {
             .then(data => {
                 setOverview(data?.attendance_overview ?? data?.chart_data?.series ?? [])
                 setOverviewError('')
+                setKpis(data?.kpis ?? null)
                 setRecentRecords(data?.recent_records ?? [])
                 setTasksAndReminders(data?.tasks_and_reminders ?? [])
                 setMonthlyGathering(data?.monthly_gathering ?? [])
@@ -73,6 +78,7 @@ function Dashboard() {
             .catch(error => {
                 setOverview([])
                 setOverviewError(error.message || 'Unable to load attendance data.')
+                setKpis(null)
                 setRecentRecords([])
                 setTasksAndReminders([])
                 setCalendarMarks(defaultCalendar)
@@ -90,6 +96,33 @@ function Dashboard() {
             .filter(item => item.category === category)
             .map(item => ({ ...item, category }))
     )
+
+    const kpiCards = [
+        {
+            key: 'total_students',
+            title: 'Total Students',
+            icon: TotalStudentsKpiIcon,
+            value: kpis?.total_students,
+        },
+        {
+            key: 'week_respondents',
+            title: "This Week's Respondents",
+            icon: ResponseKpiIcon,
+            value: kpis?.week_respondents,
+        },
+        {
+            key: 'week_no_response',
+            title: "This Week's No Response",
+            icon: NoResponseKpiIcon,
+            value: kpis?.week_no_response,
+        },
+        {
+            key: 'pending_submission',
+            title: 'Pending Submission',
+            icon: PendingSubmissionKpiIcon,
+            value: kpis?.pending_submission,
+        },
+    ]
 
     const changeMonth = amount => {
         const nextDate = new Date(calendarYear, calendarMonth - 1 + amount, 1)
@@ -157,6 +190,21 @@ function Dashboard() {
 
                 </div>
 
+
+                <section className="dashboard-kpis" aria-label="Attendance key metrics">
+                    {kpiCards.map(card => (
+                        <article className="kpi-card" key={card.key}>
+                            <span className="kpi-icon">
+                                <img src={card.icon} alt="" aria-hidden="true" />
+                            </span>
+                            <div className="kpi-copy">
+                                <h4>{card.title}</h4>
+                                <strong>{card.value ?? '—'}</strong>
+                                <p>Awaiting your review</p>
+                            </div>
+                        </article>
+                    ))}
+                </section>
 
                 <div className="dashboard-grid">
                     <div className="dashboard-left-column">
@@ -254,49 +302,6 @@ function Dashboard() {
                                 </div>
                             )}
                         </section>
-                        {/* <section className="attendance-calendar">
-                            <div className="calendar-header">
-                                <h3>Attendance Calendar</h3>
-                                <button type="button" className="calendar-view-button">View calendar</button>
-                            </div>
-
-                            <div className="calendar-body">
-                                <div className="calendar-toolbar">
-                                    <button type="button" className="calendar-nav" onClick={() => changeMonth(-1)} aria-label="Previous month">‹</button>
-                                    <span className="calendar-month-label">{calendarMarks.month || defaultCalendar.month}</span>
-                                    <button type="button" className="calendar-nav" onClick={() => changeMonth(1)} aria-label="Next month">›</button>
-                                </div>
-
-                                <div className="calendar-weekdays">
-                                    {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(day => (
-                                        <span key={day}>{day}</span>
-                                    ))}
-                                </div>
-
-                                <div className="calendar-grid">
-                                    {Array.from({ length: monthStartOffset }, (_, index) => (
-                                        <span key={`blank-${index}`} className="calendar-day empty" aria-hidden="true" />
-                                    ))}
-
-                                    {monthlyDays.map(day => {
-                                        const entryType = dayTypeMap.get(day)
-                                        return (
-                                            <span
-                                                key={day}
-                                                className={[
-                                                    'calendar-day',
-                                                    entryType === 'pending' ? 'calendar-day-pending' : '',
-                                                    entryType === 'has_records' ? 'calendar-day-record' : '',
-                                                    day === calendarMarks.today ? 'calendar-day-today' : '',
-                                                ].filter(Boolean).join(' ')}
-                                            >
-                                                {day}
-                                            </span>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        </section> */}
                         <section className="monthly-gathering-card">
                             <h3>Monthly Attendance by Gathering</h3>
                             <p>Overall student response across the month of {selectedMonthLabel.split(' ')[0]}.</p>
