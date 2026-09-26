@@ -7,25 +7,7 @@
     flex: 1;
 }
 
-.profile-header {
-    border-bottom: 1px solid #c7c6c6;
-    line-height: 1.2;
-    padding: 28px 24px 28px 24px;
-    background-color: white;
-}
-
-.profile-header h3 {
-    display: flex;
-    margin: 0;
-    color: #172B4D;
-}
-
-.profile-header p {
-    display: flex;
-    color: #172B4D;
-    font-size: 14px;
-    margin: 2px 0 0;
-}
+/* .profile-header handled by reusable Header component */
 
 .profile-content {
     margin: 18px auto 28px;

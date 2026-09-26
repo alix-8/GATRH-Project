@@ -1,6 +1,7 @@
 .reminders {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .reminders-main {
@@ -10,27 +11,7 @@
     background-color: #DBDEE4;
 }
 
-.reminders-header {
-    position: relative;
-    box-sizing: border-box;
-    border-bottom: 1px solid #c7c6c6;
-    line-height: 1.2;
-    padding: 28px 24px 28px 24px;
-    background-color: white;
-}
-
-.reminders-header h3 {
-    display: flex;
-    margin: 0;
-    color: #172B4D;
-}
-
-.reminders-header p {
-    display: flex;
-    margin: 0;
-    color: #172B4D;
-    font-size: 14px;
-}
+/* .reminders-header handled by reusable Header component */
 
 .reminders-cards {
     display: flex;
@@ -316,7 +297,7 @@
 .reminder-modal-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 100;
+    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;

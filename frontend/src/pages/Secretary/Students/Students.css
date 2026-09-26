@@ -8,24 +8,7 @@
     background-color: #ffffff;
 }
 
-.students-header {
-    box-sizing: border-box;
-    border-bottom: 1px solid #c7c6c6;
-    line-height: 1.2;
-    padding: 28px 24px 28px 24px;
-}
-
-.students-header h3 {
-    display: flex;
-    margin: 0;
-    color: #172B4D;
-}
-
-.students-header p {
-    display: flex;
-    color: #172B4D;
-    font-size: 14px;
-}
+/* .students-header handled by reusable Header component */
 
 .filter-section {
     display: flex;
@@ -367,7 +350,7 @@
     inset: 0;
     justify-content: flex-end;
     position: fixed;
-    z-index: 100;
+    z-index: 1000;
 }
 
 .student-overview-drawer {

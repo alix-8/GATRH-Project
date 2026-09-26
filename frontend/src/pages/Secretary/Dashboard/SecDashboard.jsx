@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../../components/Sidebar/Sidebar'
-import PageDate from '../../../components/PageDate/PageDate'
-import Notification from '../../../components/Notification/Notification'
+import Header from '../../../components/Header/Header'
+
 import PencilIcon from '../../../assets/pencil-icon.png'
 import EraserIcon from '../../../assets/eraser-icon.png'
 import DashboardIllustration from '../../../assets/dashboard-illustration.png'
@@ -144,12 +144,11 @@ function Dashboard() {
             <Sidebar />
 
             <main className="dashboard-main">
-                <header className="dashboard-header page-header">
-                    <h3>Dashboard</h3>
-                    <p>Monitor student attendance.</p>
-                    <PageDate className="dashboard-date" />
-                    <Notification />
-                </header>
+                <Header
+                    title="Dashboard"
+                    subtitle="Monitor student attendance."
+                    className="dashboard-header"
+                />
 
                 <div className="dashboard-content">
                     <div className="dashboard-content-column-left">
@@ -245,7 +244,7 @@ function Dashboard() {
                         <section className="attendance-records">
                             <div className="records-heading">
                                 <h2>Recent Attendance Records</h2>
-                                <button type="button" onClick={() => navigate('/attendance')}>View All Records</button>
+                                <button type="button" onClick={() => navigate('/attendance')}>View All Records <span>→</span></button>
                             </div>
 
                             <div className="records-table-wrapper">
@@ -303,8 +302,10 @@ function Dashboard() {
                             )}
                         </section>
                         <section className="monthly-gathering-card">
-                            <h3>Monthly Attendance by Gathering</h3>
-                            <p>Overall student response across the month of {selectedMonthLabel.split(' ')[0]}.</p>
+                            <div className="monthly-gathering-header">
+                                <h3>Monthly Attendance by Gathering</h3>
+                                <p>Overall student response across the month of {selectedMonthLabel.split(' ')[0]}.</p>
+                            </div>
 
                             <div className="monthly-gathering-list">
                                 {monthlyGathering.map(item => (

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
-import PageDate from '../../components/PageDate/PageDate'
-import Notification from '../../components/Notification/Notification'
+import Header from '../../components/Header/Header'
 import RemindersIcon from '../../assets/reminders-icon.png'
 import NeedsActionIcon from '../../assets/needs-action-icon.png'
 import CompletedIcon from '../../assets/completed-icon.png'
@@ -417,12 +416,11 @@ function Reminders() {
             <Sidebar />
 
             <main className="reminders-main">
-                <header className="reminders-header page-header">
-                    <h3>Reminders</h3>
-                    <p>Track upcoming gatherings and tasks that need attention.</p>
-                    <PageDate />
-                    <Notification />
-                </header>
+                <Header
+                    title="Reminders"
+                    subtitle="Track upcoming gatherings and tasks that need attention."
+                    className="reminders-header"
+                />
 
                 <section className="reminders-cards" aria-label="Reminder summary">
                     {reminderCards.map(card => (

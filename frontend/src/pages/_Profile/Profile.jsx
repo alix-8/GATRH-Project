@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
-import PageDate from '../../components/PageDate/PageDate'
-import Notification from '../../components/Notification/Notification'
+import Header from '../../components/Header/Header'
 import ShowPasswordIcon from '../../assets/show-password-icon.png'
 import './Profile.css'
 
@@ -162,12 +161,11 @@ function Profile() {
             <Sidebar />
 
             <main className="profile-main">
-                <header className="profile-header page-header">
-                    <h3>Profile</h3>
-                    <p>Manage your account information and preferences.</p>
-                    <PageDate />
-                    <Notification />
-                </header>
+                <Header
+                    title="Profile"
+                    subtitle="Manage your account information and preferences."
+                    className="profile-header"
+                />
 
                 <section className="profile-content">
                     <div className="profile-banner">

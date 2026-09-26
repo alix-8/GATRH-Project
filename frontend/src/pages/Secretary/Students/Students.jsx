@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import Sidebar from '../../../components/Sidebar/Sidebar'
-import PageDate from '../../../components/PageDate/PageDate'
-import Notification from '../../../components/Notification/Notification'
+import Header from '../../../components/Header/Header'
 import SortbyIcon from '../../../assets/sort-by-icon.png'
 import DropdownIcon from '../../../assets/drop-down-icon.png'
 import ResponseIcon from '../../../assets/response-icon.png'
@@ -172,12 +171,11 @@ function Students() {
             <Sidebar />
 
             <main className="students-main">
-                <header className="students-header page-header">
-                    <h3>Students</h3>
-                    <p>Manage student information and attendance history.</p>
-                    <PageDate />
-                    <Notification />
-                </header>
+                <Header
+                    title="Students"
+                    subtitle="Manage student information and attendance history."
+                    className="students-header"
+                />
 
                 <section className="filter-section">
                     <div className="sort-dropdown-container" ref={sortDropdownRef}>

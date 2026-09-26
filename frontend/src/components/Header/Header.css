@@ -1,0 +1,80 @@
+.app-header.page-header {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 24px 24px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #c7c6c6;
+    line-height: 1.2;
+}
+
+.app-header .header-title {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.app-header .header-title h3 {
+    margin: 0;
+    color: #172B4D;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+    display: flex;
+}
+
+.app-header .header-title p {
+    margin: 2px 0 0;
+    color: #172B4D;
+    font-size: 14px;
+    line-height: 1.2;
+    display: flex;
+}
+
+.app-header .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.app-header .header-meta .page-date,
+.app-header .header-date {
+    position: static;
+    top: auto;
+    left: auto;
+    right: auto;
+    margin: 0;
+    color: #172B4D;
+    font-size: 16px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.app-header .header-meta .notification {
+    position: relative;
+    top: auto;
+    right: auto;
+    z-index: 90;
+}
+
+@media (max-width: 768px) {
+    .app-header.page-header {
+        padding: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .app-header .header-meta {
+        gap: 16px;
+    }
+
+    .app-header .header-meta .page-date,
+    .app-header .header-date {
+        font-size: 14px;
+    }
+}

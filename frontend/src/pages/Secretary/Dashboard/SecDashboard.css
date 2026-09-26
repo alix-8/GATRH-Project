@@ -15,38 +15,7 @@
 }
 
 
-/* DASHBOARD HEADER */
-
-.dashboard-header {
-    position: relative;
-    box-sizing: border-box;
-    padding: 28px 24px;
-    border-bottom: 1px solid #c7c6c6;
-    line-height: 1.2;
-}
-
-.dashboard-header h3,
-.dashboard-header p {
-    display: flex;
-    color: #172B4D;
-}
-
-.dashboard-header h3 {
-    margin: 0;
-    font-size: 15px;
-}
-
-.dashboard-header p {
-    font-size: 14px;
-}
-
-.dashboard-date {
-    position: absolute;
-    top: 40px;
-    left: 50%;
-    color: #172B4D;
-    font-size: 16px;
-}
+/* DASHBOARD HEADER - Handled by reusable Header component */
 
 
 /* HERO BANNER (ATTENDANCE SUMMARY) */
@@ -360,6 +329,7 @@
     border: 1px solid #d8d8d8;
     border-radius: 10px;
     background: #f0f0f0;
+    min-height: 17rem;
 }
 
 .records-heading {
@@ -378,14 +348,6 @@
 }
 
 .records-heading button {
-    height: 40px;
-    padding: 0 18px;
-    border: 1px solid #d7dce3;
-    border-radius: 16px;
-    background: #fff;
-    color: #172B4D;
-    font-size: 11px;
-    font-weight: bold;
     cursor: pointer;
 }
 
@@ -463,7 +425,8 @@
     font-size: 12px;
 }
 
-.dashboard-reminders-heading button {
+.dashboard-reminders-heading button,
+.records-heading button {
     border: 0;
     background: transparent;
     color: #0785d1;
@@ -550,29 +513,41 @@
 
 .monthly-gathering-card {
     box-sizing: border-box;
-    padding: 24px 22px;
-    border: 1px solid #cbd3df;
-    border-radius: 18px;
-    background: #f7f8fa;
+    padding: 12px;
+    border: 1px solid #c8d0dc;
+    border-radius: 14px;
+    background: #fff;
+    min-height: 18rem;
+}
+
+.monthly-gathering-header {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    text-align: left;
 }
 
 .monthly-gathering-card h3 {
     margin: 0;
     color: #172b4d;
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.25;
+    font-weight: 700;
 }
 
-.monthly-gathering-card > p {
-    margin: 5px 0 24px;
+.monthly-gathering-header p {
+    margin: 4px 0 12px;
     color: #697386;
-    font-size: 14px;
+    font-size: 11px;
+    line-height: 1.3;
+    text-align: left;
 }
 
 .monthly-gathering-list {
     display: grid;
-    gap: 28px;
-    padding: 26px 24px;
+    gap: 24px;
+    padding: 18px 16px;
     border: 1px solid #d9dee7;
     border-radius: 12px;
     background: #fff;
@@ -580,7 +555,7 @@
 
 .monthly-gathering-item {
     display: grid;
-    gap: 12px;
+    gap: 8px;
 }
 
 .monthly-gathering-label {
@@ -588,7 +563,7 @@
     justify-content: space-between;
     gap: 12px;
     color: #172b4d;
-    font-size: 15px;
+    font-size: 12px;
 }
 
 .monthly-gathering-label span:last-child {
@@ -596,7 +571,7 @@
 }
 
 .monthly-gathering-track {
-    height: 8px;
+    height: 9px;
     overflow: hidden;
     border-radius: 999px;
     background: #d9effb;
@@ -607,6 +582,21 @@
     border-radius: inherit;
     background: #159fe8;
     transition: width 250ms ease;
+}
+
+@media (max-width: 720px) {
+    .monthly-gathering-card h3 {
+        font-size: 16px;
+    }
+
+    .monthly-gathering-header p {
+        font-size: 12px;
+    }
+
+    .monthly-gathering-list {
+        gap: 20px;
+        padding: 16px 12px;
+    }
 }
 
 
