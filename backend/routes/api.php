@@ -8,6 +8,7 @@ use App\Http\Controllers\AttendanceDraftController;
 use App\Http\Controllers\EscalationController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProgramHeadSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -79,6 +80,8 @@ Route::middleware('auth:sanctum')->group(function () {
         
     // Program Head & CM Coordinator Scopes (Approval & Escalations)
     Route::middleware('role:program_head')->group(function () {
+        Route::get('/program-head/submissions', [ProgramHeadSubmissionController::class, 'index']);
+
         // Route::get('/students', [StudentController::class, 'index']);
         
         Route::patch('/attendance/validate', [AttendanceController::class, 'validateRecord']);

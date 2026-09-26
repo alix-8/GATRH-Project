@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceDraft;
+use App\Models\Reminder;
 use App\Models\Student;
 use App\Services\AttendanceParsingService;
 use App\Support\GatheringCycle;
@@ -59,9 +60,9 @@ class AttendanceController extends Controller
                 'batch_id'       => null,
                 'course'         => $program,
                 'year'           => $yearLevel,
-                'date'           => optional($draft->updated_at)->format('F j, Y'),
-                'day_iso'        => optional($draft->updated_at)->toDateString(),
-                'raw_day'        => $draft->updated_at,
+                'date'    => optional($draft->day)->format('F j, Y'),
+                'day_iso' => optional($draft->day)->toDateString(),
+                'raw_day' => $draft->day,
                 'gathering_type' => $draft->gathering_type,
                 'gathering'      => $this->gatheringLabel($draft->gathering_type ?? ''),
                 'time'           => optional($draft->updated_at)->format('g:i A'),
@@ -732,6 +733,23 @@ class AttendanceController extends Controller
             $draft = $draftQuery->first();
             $draft?->delete();
 
+            // Once a real attendance submission exists for a gathering, remove
+            // that secretary's gathering reminder. Drafts do not reach this path.
+            collect($recordsToInsert)
+                ->map(fn (array $record) => [
+                    'gathering_type' => $record['gathering_type'],
+                    'day' => Carbon::parse($record['day'])->toDateString(),
+                ])
+                ->unique(fn (array $record) => $record['gathering_type'] . '|' . $record['day'])
+                ->each(function (array $record) use ($submittedBy): void {
+                    Reminder::query()
+                        ->where('user_id', $submittedBy)
+                        ->where('reminder_type', 'gathering')
+                        ->where('gathering_type', $record['gathering_type'])
+                        ->whereDate('gathering_date', $record['day'])
+                        ->delete();
+                });
+
             return $records;
         });
 
@@ -814,6 +832,11 @@ class AttendanceController extends Controller
             $query->where('batch_id', $batchKey);
         }
 
+        $query->whereHas('student', fn ($studentQuery) => $studentQuery->accessibleTo($request->user()))
+            ->where(function ($statusQuery) {
+                $statusQuery->whereNull('validation_status')->orWhere('validation_status', 'unvalidated');
+            });
+
         $updatedCount = $query->update([
             'validation_status' => 'validated',
             'rejection_reason'  => null, // clear any stale reason if this was previously rejected
@@ -851,6 +874,11 @@ class AttendanceController extends Controller
         } else {
             $query->where('batch_id', $batchKey);
         }
+
+        $query->whereHas('student', fn ($studentQuery) => $studentQuery->accessibleTo($request->user()))
+            ->where(function ($statusQuery) {
+                $statusQuery->whereNull('validation_status')->orWhere('validation_status', 'unvalidated');
+            });
 
         $updatedCount = $query->update([
             'validation_status' => 'rejected',

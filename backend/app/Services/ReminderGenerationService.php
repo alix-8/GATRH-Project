@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Reminder;
+use App\Models\AttendanceRecord;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -38,6 +39,18 @@ class ReminderGenerationService
             ->each(function (User $secretary) use (&$created): void {
                 foreach (['pm', 'ws', 'tg'] as $type) {
                     $gatheringDate = $this->gatheringService->nextDate($type);
+
+                    // Do not recreate a gathering reminder after this secretary
+                    // has already submitted attendance for that gathering date.
+                    $alreadyRecorded = AttendanceRecord::query()
+                        ->where('submitted_by', $secretary->id)
+                        ->where('gathering_type', $type)
+                        ->whereDate('day', $gatheringDate)
+                        ->exists();
+
+                    if ($alreadyRecorded) {
+                        continue;
+                    }
 
                     $currentWeekStart = Carbon::today()->startOfWeek();
                     $currentWeekEnd = Carbon::today()->endOfWeek();

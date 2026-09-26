@@ -35,8 +35,8 @@ class AttendanceRecordObserver
 
         // Automatically assign escalation level based on thresholds
         $level = match (true) {
-            $noResponseCount >= 5 => 'Level 3',
-            $noResponseCount >= 3 => 'Level 2',
+            $noResponseCount >= 3 => 'Level 3',
+            $noResponseCount >= 2 => 'Level 2',
             $noResponseCount >= 1 => 'Level 1',
             default               => 'None',
         };

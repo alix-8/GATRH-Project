@@ -394,6 +394,13 @@
     min-height: 74px;
 }
 
+.reminder-modal-error {
+    margin: 0;
+    color: #d64545;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
 .reminder-select {
     display: flex;
     align-items: center;
