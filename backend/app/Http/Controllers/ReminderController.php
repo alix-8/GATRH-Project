@@ -27,6 +27,20 @@ class ReminderController extends Controller
     {
         $userId = $request->user()->id;
 
+        // Clean up gathering reminders left behind by attendance submissions
+        // that were recorded before the submission endpoint began deleting them.
+        Reminder::query()
+            ->where('user_id', $userId)
+            ->where('reminder_type', 'gathering')
+            ->whereExists(function ($query) use ($userId) {
+                $query->selectRaw('1')
+                    ->from('attendance_records')
+                    ->where('attendance_records.submitted_by', $userId)
+                    ->whereColumn('attendance_records.gathering_type', 'reminders.gathering_type')
+                    ->whereColumn('attendance_records.day', 'reminders.gathering_date');
+            })
+            ->delete();
+
         // Refresh statuses before listing, so upcoming/needs_action is always accurate
         $this->countdownService->statusSetter($userId);
 
@@ -61,9 +75,9 @@ class ReminderController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date'    => 'required|date',
+            'title'       => 'required|string|max:20',
+            'description' => 'nullable|string|max:50',
+            'due_date'    => 'required|date|after_or_equal:today',
             'status'      => 'nullable|in:upcoming,needs_action,completed',
         ]);
 
@@ -121,9 +135,9 @@ class ReminderController extends Controller
         }
 
         $validated = $request->validate([
-            'title'       => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date'    => 'sometimes|required|date',
+            'title'       => 'sometimes|required|string|max:20',
+            'description' => 'nullable|string|max:50',
+            'due_date'    => 'sometimes|required|date|after_or_equal:today',
             'status'      => 'sometimes|required|in:upcoming,needs_action,completed',
         ]);
 

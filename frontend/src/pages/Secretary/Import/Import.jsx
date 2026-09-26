@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 //Reusables
 import Sidebar from '../../../components/Sidebar/Sidebar'
@@ -42,11 +43,12 @@ const getGatheringTypeFromText = text => {
 }
 
 function Import({ onGoToAttendance = () => {} }) {
+    const location = useLocation()
     const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
     const [form, setForm] = useState({
         program: loggedInUser.program || '',
         year_level: loggedInUser.year_level || '',
-        gathering_type: 'pm',
+        gathering_type: location.state?.gathering_type || 'pm',
         raw_text: '',
     })
     const [fieldWarning, setFieldWarning] = useState(null)
