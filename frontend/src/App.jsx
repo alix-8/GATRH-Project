@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Login from './pages/Login/Login'
-import Dashboard from './pages/Dashboard/Dashboard'
-import Students from './pages/Students/Students'
-import Import from './pages/Import/Import'
-import Attendance from './pages/Attendance/Attendance'
+import Dashboard from './pages/Secretary/Dashboard/SecDashboard'
+import Students from './pages/Secretary/Students/Students'
+import Import from './pages/Secretary/Import/Import'
+import Attendance from './pages/Secretary/Attendance/Attendance'
 import Reminders from './pages/Reminders/Reminders'
 import Profile from './pages/Profile/Profile'
 

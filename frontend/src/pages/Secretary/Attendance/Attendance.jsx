@@ -1,6 +1,6 @@
-import Sidebar from '../../components/Sidebar/Sidebar'
-import PageDate from '../../components/PageDate/PageDate'
-import Notification from '../../components/Notification/Notification'
+import Sidebar from '../../../components/Sidebar/Sidebar'
+import PageDate from '../../../components/PageDate/PageDate'
+import Notification from '../../../components/Notification/Notification'
 import AttendanceTable from './AttendanceComponents/AttendanceTable'
 import './Attendance.css'
 
