@@ -348,7 +348,11 @@ function Dashboard() {
                                                 <td>{record.students}</td>
                                                 <td>{record.status_label || record.status}</td>
                                                 <td>
-                                                    <button type="button" className="action-btn" onClick={() => navigate('/attendance')}>
+                                                    <button
+                                                        type="button"
+                                                        className="action-btn"
+                                                        onClick={() => navigate('/attendance', { state: { openAttendanceRecord: record } })}
+                                                    >
                                                         {record.action || 'View'} &gt;
                                                     </button>
                                                 </td>
@@ -373,7 +377,12 @@ function Dashboard() {
                                             <span className="dashboard-reminder-category">{item.category}</span>
                                             <span className="dashboard-reminder-description">{item.gathering || item.title}</span>
                                             <time>{item.date || ''}</time>
-                                            <button type="button" onClick={() => navigate('/reminders')}>View <span>›</span></button>
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate('/reminders', { state: { openReminderId: item.id } })}
+                                            >
+                                                View <span>›</span>
+                                            </button>
                                         </div>
                                     ))}
                                 </div>

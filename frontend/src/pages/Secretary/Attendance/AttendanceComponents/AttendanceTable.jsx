@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import PlusIcon from '../../../../assets/plus-icon.png'
 import GatheringIcon from '../../../../assets/gathering-icon.png'
 import CalendarIcon from '../../../../assets/calendar-icon.png'
@@ -75,6 +75,16 @@ function AttendanceTable() {
     const [confirmOpen, setConfirmOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const navigate = useNavigate()
+    const location = useLocation()
+
+    useEffect(() => {
+        const targetRecord = location.state?.openAttendanceRecord
+        if (!targetRecord) return
+
+        setActiveRecord(targetRecord)
+        setDrawerOpen(true)
+        navigate(location.pathname, { replace: true, state: null })
+    }, [location.pathname, location.state, navigate])
 
     useEffect(() => {
         function handleClickOutside(event) {
