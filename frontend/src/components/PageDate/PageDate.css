@@ -1,11 +1,5 @@
-.page-header {
-    position: relative;
-}
-
 .page-date {
-    position: absolute;
-    top: 40px;
-    margin-left: 22%;
     color: #172B4D;
     font-size: 16px;
+    font-weight: 500;
 }

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
-import PageDate from '../../components/PageDate/PageDate'
-import Notification from '../../components/Notification/Notification'
+import Header from '../../components/Header/Header'
 import RemindersIcon from '../../assets/reminders-icon.png'
 import NeedsActionIcon from '../../assets/needs-action-icon.png'
 import CompletedIcon from '../../assets/completed-icon.png'
@@ -151,6 +150,7 @@ function Reminders() {
     })
     const [reminders, setReminders] = useState([])
     const [attendanceTasks, setAttendanceTasks] = useState([])
+    const [activeReminder, setActiveReminder] = useState(null)
     const [activeFilter, setActiveFilter] = useState('all')
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
     const [error, setError] = useState('')
@@ -163,6 +163,7 @@ function Reminders() {
     const [deleting, setDeleting] = useState(false)
     const timeInputRef = useRef(null)
     const navigate = useNavigate()
+    const location = useLocation()
 
     useEffect(() => {
         const token = localStorage.getItem('auth_token')
@@ -234,6 +235,19 @@ function Reminders() {
 
         return () => controller.abort()
     }, [])
+
+    useEffect(() => {
+        const targetReminderId = location.state?.openReminderId
+        if (targetReminderId == null || loading) return
+
+        const targetReminder = reminders.find(reminder => String(reminder.id) === String(targetReminderId))
+        if (targetReminder) {
+            setActiveReminder(targetReminder)
+            setActiveFilter('all')
+        }
+
+        navigate(location.pathname, { replace: true, state: null })
+    }, [location.pathname, location.state, loading, reminders, navigate])
 
     const reminderCards = [
         {
@@ -417,12 +431,11 @@ function Reminders() {
             <Sidebar />
 
             <main className="reminders-main">
-                <header className="reminders-header page-header">
-                    <h3>Reminders</h3>
-                    <p>Track upcoming gatherings and tasks that need attention.</p>
-                    <PageDate />
-                    <Notification />
-                </header>
+                <Header
+                    title="Reminders"
+                    subtitle="Track upcoming gatherings and tasks that need attention."
+                    className="reminders-header"
+                />
 
                 <section className="reminders-cards" aria-label="Reminder summary">
                     {reminderCards.map(card => (
@@ -506,7 +519,10 @@ function Reminders() {
                                         </div>
                                     )}
                                     {item.action && (
-                                        <button type="button" onClick={() => navigate('/attendance')}>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate('/attendance', { state: { openAttendanceRecord: item.sourceRecord } })}
+                                        >
                                             {item.action}
                                             <img src={DropDownIcon} alt="" aria-hidden="true" />
                                         </button>
@@ -517,6 +533,52 @@ function Reminders() {
                     </div>
                 </section>
             </main>
+
+            {activeReminder && (
+                <div className="reminder-detail-backdrop" onClick={() => setActiveReminder(null)}>
+                    <aside
+                        className="reminder-detail-drawer"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="reminder-detail-title"
+                        onClick={event => event.stopPropagation()}
+                    >
+                        <header className="reminder-detail-header">
+                            <div>
+                                <span className="reminder-detail-eyebrow">Reminder #{activeReminder.id}</span>
+                                <h2 id="reminder-detail-title">{activeReminder.title}</h2>
+                            </div>
+                            <button type="button" className="reminder-detail-close" onClick={() => setActiveReminder(null)} aria-label="Close reminder details">
+                                ×
+                            </button>
+                        </header>
+                        <div className="reminder-detail-body">
+                            <div className="reminder-detail-field">
+                                <span>Type</span>
+                                <strong>{activeReminder.reminder_type === 'submission_countdown' ? 'System Reminder' : activeReminder.reminder_type === 'gathering' ? 'Submission' : 'My Reminder'}</strong>
+                            </div>
+                            {activeReminder.gathering_type && (
+                                <div className="reminder-detail-field">
+                                    <span>Gathering</span>
+                                    <strong>{GATHERING_LABELS[activeReminder.gathering_type] || activeReminder.gathering_type}</strong>
+                                </div>
+                            )}
+                            <div className="reminder-detail-field">
+                                <span>Date</span>
+                                <strong>{formatSavedReminderDateTime(activeReminder.due_date || activeReminder.gathering_date) || 'No date set'}</strong>
+                            </div>
+                            <div className="reminder-detail-field">
+                                <span>Status</span>
+                                <strong>{activeReminder.status?.replaceAll('_', ' ') || '—'}</strong>
+                            </div>
+                            <div className="reminder-detail-field reminder-detail-notes">
+                                <span>Details</span>
+                                <p>{activeReminder.description || 'No additional details.'}</p>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            )}
 
             {isAddOpen && (
                 <div className="reminder-modal-backdrop">
@@ -542,20 +604,20 @@ function Reminders() {
                             />
                         </label>
 
-                        <div className="reminder-field reminder-select-field">
+                        <div className="reminder-field reminder-select-field app-dropdown">
                             <span>Type<b>*</b></span>
-                            <button type="button" className="reminder-select" onClick={() => setOpenMenu(openMenu === 'type' ? '' : 'type')}>
+                            <button type="button" className="reminder-select app-dropdown-trigger" aria-expanded={openMenu === 'type'} onClick={() => setOpenMenu(openMenu === 'type' ? '' : 'type')}>
                                 <img src={CalendarIcon} alt="" aria-hidden="true" />
                                 {selectedTypeLabel}
                                 <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
                             </button>
                             {openMenu === 'type' && (
-                                <div className="reminder-menu">
+                                <div className="reminder-menu app-dropdown-menu">
                                     {REMINDER_TYPES.map(option => (
                                         <button
                                             type="button"
                                             key={option.value}
-                                            className={formData.type === option.value ? 'selected' : ''}
+                                            className={`app-dropdown-option ${formData.type === option.value ? 'selected' : ''}`}
                                             onClick={() => {
                                                 setFormData(prev => ({ ...prev, type: option.value }))
                                                 setOpenMenu('')
@@ -568,20 +630,20 @@ function Reminders() {
                             )}
                         </div>
 
-                        <div className="reminder-field reminder-select-field">
+                        <div className="reminder-field reminder-select-field app-dropdown">
                             <span>Related Gathering<b>*</b></span>
-                            <button type="button" className="reminder-select" onClick={() => setOpenMenu(openMenu === 'gathering' ? '' : 'gathering')}>
+                            <button type="button" className="reminder-select app-dropdown-trigger" aria-expanded={openMenu === 'gathering'} onClick={() => setOpenMenu(openMenu === 'gathering' ? '' : 'gathering')}>
                                 <img src={GatheringIcon} alt="" aria-hidden="true" />
                                 {selectedGatheringLabel}
                                 <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
                             </button>
                             {openMenu === 'gathering' && (
-                                <div className="reminder-menu">
+                                <div className="reminder-menu app-dropdown-menu">
                                     {GATHERING_OPTIONS.map(option => (
                                         <button
                                             type="button"
                                             key={option.value}
-                                            className={formData.gathering === option.value ? 'selected' : ''}
+                                            className={`app-dropdown-option ${formData.gathering === option.value ? 'selected' : ''}`}
                                             onClick={() => {
                                                 setFormData(prev => ({ ...prev, gathering: option.value }))
                                                 setOpenMenu('')
@@ -595,9 +657,9 @@ function Reminders() {
                         </div>
 
                         <div className="reminder-date-row">
-                            <div className="reminder-field reminder-select-field">
+                            <div className="reminder-field reminder-select-field app-dropdown">
                                 <span>Date<b>*</b></span>
-                                <button type="button" className="reminder-select" onClick={() => setOpenMenu(openMenu === 'date' ? '' : 'date')}>
+                                <button type="button" className="reminder-select app-dropdown-trigger" aria-expanded={openMenu === 'date'} onClick={() => setOpenMenu(openMenu === 'date' ? '' : 'date')}>
                                     <img src={CalendarIcon} alt="" aria-hidden="true" />
                                     {formData.date ? formatReminderDate(formData.date) : 'Select Date'}
                                     <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />

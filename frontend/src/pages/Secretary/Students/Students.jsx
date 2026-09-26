@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import Sidebar from '../../../components/Sidebar/Sidebar'
-import PageDate from '../../../components/PageDate/PageDate'
-import Notification from '../../../components/Notification/Notification'
+import Header from '../../../components/Header/Header'
 import SortbyIcon from '../../../assets/sort-by-icon.png'
 import DropdownIcon from '../../../assets/drop-down-icon.png'
 import ResponseIcon from '../../../assets/response-icon.png'
@@ -168,21 +167,21 @@ function Students() {
         .filter((record) => !overviewStatus || record.status === overviewStatus)
 
     return (
+        
         <div className="students">
             <Sidebar />
 
             <main className="students-main">
-                <header className="students-header page-header">
-                    <h3>Students</h3>
-                    <p>Manage student information and attendance history.</p>
-                    <PageDate />
-                    <Notification />
-                </header>
+                <Header
+                    title="Students"
+                    subtitle="Manage student information and attendance history."
+                    className="students-header"
+                />
 
                 <section className="filter-section">
-                    <div className="sort-dropdown-container" ref={sortDropdownRef}>
+                    <div className="sort-dropdown-container app-dropdown" ref={sortDropdownRef}>
                         <div
-                            className={`filter-section-row ${isSortOpen ? 'active' : ''}`}
+                            className={`filter-section-row app-dropdown-trigger ${isSortOpen ? 'active' : ''}`}
                             onClick={() => {
                                 setIsSortOpen((prev) => !prev)
                                 setIsResponseOpen(false)
@@ -203,11 +202,11 @@ function Students() {
                         </div>
 
                         {isSortOpen && (
-                            <ul className="sort-dropdown-menu">
+                            <ul className="sort-dropdown-menu app-dropdown-menu">
                                 {SORT_OPTIONS.map((option) => (
                                     <li
                                         key={option}
-                                        className={`sort-dropdown-item ${selectedSort === option ? 'selected' : ''}`}
+                                        className={`sort-dropdown-item app-dropdown-option ${selectedSort === option ? 'selected' : ''}`}
                                         onClick={() => handleSelectSort(option)}
                                     >
                                         {option}
@@ -217,9 +216,9 @@ function Students() {
                         )}
                     </div>
 
-                    <div className="response-dropdown-container" ref={responseDropdownRef}>
+                    <div className="response-dropdown-container app-dropdown" ref={responseDropdownRef}>
                         <div
-                            className={`filter-section-row ${isResponseOpen ? 'active' : ''}`}
+                            className={`filter-section-row app-dropdown-trigger ${isResponseOpen ? 'active' : ''}`}
                             onClick={() => {
                                 setIsResponseOpen((prev) => !prev)
                                 setIsSortOpen(false)
@@ -240,11 +239,11 @@ function Students() {
                         </div>
 
                         {isResponseOpen && (
-                            <ul className="response-dropdown-menu">
+                            <ul className="response-dropdown-menu app-dropdown-menu">
                                 {RESPONSE_OPTIONS.map((option) => (
                                     <li
                                         key={option}
-                                        className={`response-dropdown-item ${selectedResponse === option ? 'selected' : ''}`}
+                                        className={`response-dropdown-item app-dropdown-option ${selectedResponse === option ? 'selected' : ''}`}
                                         onClick={() => handleSelectResponse(option)}
                                     >
                                         {option}
@@ -254,9 +253,9 @@ function Students() {
                         )}
                     </div>
 
-                    <div className="level-dropdown-container" ref={levelDropdownRef}>
+                    <div className="level-dropdown-container app-dropdown" ref={levelDropdownRef}>
                         <div
-                            className={`filter-section-row ${isLevelOpen ? 'active' : ''}`}
+                            className={`filter-section-row app-dropdown-trigger ${isLevelOpen ? 'active' : ''}`}
                             onClick={() => {
                                 setIsLevelOpen((prev) => !prev)
                                 setIsSortOpen(false)
@@ -277,11 +276,11 @@ function Students() {
                         </div>
 
                         {isLevelOpen && (
-                            <ul className="level-dropdown-menu">
+                            <ul className="level-dropdown-menu app-dropdown-menu">
                                 {LEVEL_OPTIONS.map((option) => (
                                     <li
                                         key={option}
-                                        className={`level-dropdown-item ${selectedLevel === option ? 'selected' : ''}`}
+                                        className={`level-dropdown-item app-dropdown-option ${selectedLevel === option ? 'selected' : ''}`}
                                         onClick={() => handleSelectLevel(option)}
                                     >
                                         {option}
@@ -383,9 +382,40 @@ function Students() {
                         </section>
 
                         <div className="overview-filters" ref={overviewFiltersRef}>
-                            <div className="overview-filter-container"><button type="button" className="overview-filter-control" onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'gathering' ? null : 'gathering')}><img src={ResponseIcon} alt="" /><span>{overviewGathering ? { pm: 'Prayer Meeting', ws: 'Worship Service', tg: 'Thanksgiving', special: 'Special Gathering' }[overviewGathering] : 'Gathering'}</span><img className="overview-dropdown-icon" src={DropdownIcon} alt="" /></button>{overviewOpenFilter === 'gathering' && <ul className="overview-filter-menu"><li onClick={(event) => { event.stopPropagation(); setOverviewGathering(''); setOverviewOpenFilter(null) }}>Gathering</li>{[['pm', 'Prayer Meeting'], ['ws', 'Worship Service'], ['tg', 'Thanksgiving'], ['special', 'Special Gathering']].map(([value, label]) => <li key={value} onClick={(event) => { event.stopPropagation(); setOverviewGathering(value); setOverviewOpenFilter(null) }}>{label}</li>)}</ul>}</div>
-                            <div className="overview-filter-container"><button type="button" className="overview-filter-control" onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'date' ? null : 'date')}><img src={CalendarIcon} alt="" /><span>{overviewDate ? formatOverviewDate(overviewDate) : 'Date'}</span><img className="overview-dropdown-icon" src={DropdownIcon} alt="" /></button>{overviewOpenFilter === 'date' && <ul className="overview-filter-menu"><li onClick={(event) => { event.stopPropagation(); setOverviewDate(''); setOverviewOpenFilter(null) }}>Date</li>{[...new Set((overview?.history || []).map((record) => record.date).filter(Boolean))].map((date) => <li key={date} onClick={(event) => { event.stopPropagation(); setOverviewDate(date); setOverviewOpenFilter(null) }}>{formatOverviewDate(date)}</li>)}</ul>}</div>
-                            <div className="overview-filter-container"><button type="button" className="overview-filter-control" onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'status' ? null : 'status')}><img src={LevelIcon} alt="" /><span>{overviewStatus === 'present' ? 'Present' : overviewStatus === 'no_response' ? 'No Response' : 'Status'}</span><img className="overview-dropdown-icon" src={DropdownIcon} alt="" /></button>{overviewOpenFilter === 'status' && <ul className="overview-filter-menu"><li onClick={(event) => { event.stopPropagation(); setOverviewStatus(''); setOverviewOpenFilter(null) }}>Status</li><li onClick={(event) => { event.stopPropagation(); setOverviewStatus('present'); setOverviewOpenFilter(null) }}>Present</li><li onClick={(event) => { event.stopPropagation(); setOverviewStatus('no_response'); setOverviewOpenFilter(null) }}>No Response</li></ul>}</div>
+                            <div className="overview-filter-container app-dropdown">
+                                <button type="button" className="overview-filter-control app-dropdown-trigger" aria-expanded={overviewOpenFilter === 'gathering'} onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'gathering' ? null : 'gathering')}>
+                                    <img src={ResponseIcon} alt="" />
+                                    <span>{overviewGathering ? { pm: 'Prayer Meeting', ws: 'Worship Service', tg: 'Thanksgiving', special: 'Special Gathering' }[overviewGathering] : 'Gathering'}</span>
+                                    <img className="overview-dropdown-icon" src={DropdownIcon} alt="" />
+                                </button>
+                                {overviewOpenFilter === 'gathering' && <ul className="overview-filter-menu app-dropdown-menu" role="listbox">
+                                    <li role="option" className={`app-dropdown-option ${!overviewGathering ? 'selected' : ''}`} aria-selected={!overviewGathering} onClick={(event) => { event.stopPropagation(); setOverviewGathering(''); setOverviewOpenFilter(null) }}>Gathering</li>
+                                    {[['pm', 'Prayer Meeting'], ['ws', 'Worship Service'], ['tg', 'Thanksgiving'], ['special', 'Special Gathering']].map(([value, label]) => <li role="option" className={`app-dropdown-option ${overviewGathering === value ? 'selected' : ''}`} aria-selected={overviewGathering === value} key={value} onClick={(event) => { event.stopPropagation(); setOverviewGathering(value); setOverviewOpenFilter(null) }}>{label}</li>)}
+                                </ul>}
+                            </div>
+                            <div className="overview-filter-container app-dropdown">
+                                <button type="button" className="overview-filter-control app-dropdown-trigger" aria-expanded={overviewOpenFilter === 'date'} onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'date' ? null : 'date')}>
+                                    <img src={CalendarIcon} alt="" />
+                                    <span>{overviewDate ? formatOverviewDate(overviewDate) : 'Date'}</span>
+                                    <img className="overview-dropdown-icon" src={DropdownIcon} alt="" />
+                                </button>
+                                {overviewOpenFilter === 'date' && <ul className="overview-filter-menu app-dropdown-menu" role="listbox">
+                                    <li role="option" className={`app-dropdown-option ${!overviewDate ? 'selected' : ''}`} aria-selected={!overviewDate} onClick={(event) => { event.stopPropagation(); setOverviewDate(''); setOverviewOpenFilter(null) }}>Date</li>
+                                    {[...new Set((overview?.history || []).map((record) => record.date).filter(Boolean))].map((date) => <li role="option" className={`app-dropdown-option ${overviewDate === date ? 'selected' : ''}`} aria-selected={overviewDate === date} key={date} onClick={(event) => { event.stopPropagation(); setOverviewDate(date); setOverviewOpenFilter(null) }}>{formatOverviewDate(date)}</li>)}
+                                </ul>}
+                            </div>
+                            <div className="overview-filter-container app-dropdown">
+                                <button type="button" className="overview-filter-control app-dropdown-trigger" aria-expanded={overviewOpenFilter === 'status'} onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'status' ? null : 'status')}>
+                                    <img src={LevelIcon} alt="" />
+                                    <span>{overviewStatus === 'present' ? 'Present' : overviewStatus === 'no_response' ? 'No Response' : 'Status'}</span>
+                                    <img className="overview-dropdown-icon" src={DropdownIcon} alt="" />
+                                </button>
+                                {overviewOpenFilter === 'status' && <ul className="overview-filter-menu app-dropdown-menu" role="listbox">
+                                    <li role="option" className={`app-dropdown-option ${!overviewStatus ? 'selected' : ''}`} aria-selected={!overviewStatus} onClick={(event) => { event.stopPropagation(); setOverviewStatus(''); setOverviewOpenFilter(null) }}>Status</li>
+                                    <li role="option" className={`app-dropdown-option ${overviewStatus === 'present' ? 'selected' : ''}`} aria-selected={overviewStatus === 'present'} onClick={(event) => { event.stopPropagation(); setOverviewStatus('present'); setOverviewOpenFilter(null) }}>Present</li>
+                                    <li role="option" className={`app-dropdown-option ${overviewStatus === 'no_response' ? 'selected' : ''}`} aria-selected={overviewStatus === 'no_response'} onClick={(event) => { event.stopPropagation(); setOverviewStatus('no_response'); setOverviewOpenFilter(null) }}>No Response</li>
+                                </ul>}
+                            </div>
                         </div>
 
                         <div className="overview-history-header">

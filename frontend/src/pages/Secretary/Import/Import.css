@@ -8,34 +8,7 @@
     background-color: #ffffff;
 }
 
-.import-header {
-    box-sizing: border-box;
-    border-bottom: 1px solid #c7c6c6;
-    line-height: 1.2;
-    padding: 28px 24px 28px 24px;
-}
-
-.import-header h3 {
-    display: flex;
-    margin: 0;
-    color: #172B4D;
-}
-
-.import-header p {
-    display: flex;
-    margin: 0;
-    color: #172B4D;
-    font-size: 14px;
-}
-
-.import-date {
-    position: absolute;
-    top: 40px;
-    right: 96px;
-    margin-left: 0;
-    color: #172B4D;
-    font-size: 16px;
-}
+/* .import-header handled by reusable Header component */
 
 .import-content {
     max-width: 1040px;
@@ -242,7 +215,7 @@ textarea {
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    z-index: 50;
+    z-index: 1000;
 }
 
 .import-modal {
@@ -304,7 +277,7 @@ textarea {
     text-align: left;
 }
 
-.import-modal-label select {
+.import-modal-label select:not(.app-native-select) {
     border: 1px solid #dbe1ec;
     border-radius: 10px;
     padding: 0.55rem 0.7rem;
@@ -313,7 +286,7 @@ textarea {
     background-color: #ffffff;
 }
 
-.import-modal-label select:hover {
+.import-modal-label select:not(.app-native-select):hover {
     border: 1px solid #59595a;
 }
 
@@ -563,13 +536,5 @@ textarea {
         grid-template-columns: 1fr;
     }
 
-    .import-header {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .import-date {
-        position: static;
-        margin-top: 8px;
-    }
+    /* header responsiveness handled by Header component */
 }

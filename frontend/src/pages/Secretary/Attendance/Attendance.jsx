@@ -1,6 +1,5 @@
 import Sidebar from '../../../components/Sidebar/Sidebar'
-import PageDate from '../../../components/PageDate/PageDate'
-import Notification from '../../../components/Notification/Notification'
+import Header from '../../../components/Header/Header'
 import AttendanceTable from './AttendanceComponents/AttendanceTable'
 import './Attendance.css'
 
@@ -9,16 +8,11 @@ function Attendance() {
         <div className="attendance">
             <Sidebar />
             <main className="attendance-main">
-                <header className="attendance-header page-header">
-                    <div className="header-title">
-                        <h3>Attendance</h3>
-                        <p>Take and submit student attendance.</p>
-                    </div>
-                    <div className="header-meta">
-                        <PageDate />
-                        <Notification />
-                    </div>
-                </header>
+                <Header
+                    title="Attendance"
+                    subtitle="Take and submit student attendance."
+                    className="attendance-header"
+                />
                 <AttendanceTable/>
             </main>
         </div>

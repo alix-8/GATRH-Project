@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 //Reusables
 import Sidebar from '../../../components/Sidebar/Sidebar'
-import PageDate from '../../../components/PageDate/PageDate'
-import Notification from '../../../components/Notification/Notification'
+import Header from '../../../components/Header/Header'
 import GenerateTemplate from './ImportComponents/modals/GenerateTemplate'
 
 // Modals
@@ -237,14 +236,11 @@ function Import({ onGoToAttendance = () => {} }) {
         <div className="import">
             <Sidebar />
             <main className="import-main">
-                <header className="import-header page-header">
-                    <div>
-                        <h3>Import</h3>
-                        <p>Paste raw attendance logs to get a formatted spreadsheet.</p>
-                    </div>
-                    <PageDate className="import-date" />
-                    <Notification />
-                </header>
+                <Header
+                    title="Import"
+                    subtitle="Paste raw attendance logs to get a formatted spreadsheet."
+                    className="import-header"
+                />
 
                 <div className="import-content">
                     <ImportAttendancePanel
