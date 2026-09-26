@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Login from './pages/Login/Login'
+import Login from './pages/_Login/Login'
 import Dashboard from './pages/Secretary/Dashboard/SecDashboard'
 import Students from './pages/Secretary/Students/Students'
 import Import from './pages/Secretary/Import/Import'
 import Attendance from './pages/Secretary/Attendance/Attendance'
-import Reminders from './pages/Reminders/Reminders'
-import Profile from './pages/Profile/Profile'
+import Reminders from './pages/_Reminders/Reminders'
+import Profile from './pages/_Profile/Profile'
 
 function App() {
   return (
