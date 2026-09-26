@@ -3,9 +3,9 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 //Reusables
-import Sidebar from '../../components/Sidebar/Sidebar'
-import PageDate from '../../components/PageDate/PageDate'
-import Notification from '../../components/Notification/Notification'
+import Sidebar from '../../../components/Sidebar/Sidebar'
+import PageDate from '../../../components/PageDate/PageDate'
+import Notification from '../../../components/Notification/Notification'
 import GenerateTemplate from './ImportComponents/modals/GenerateTemplate'
 
 // Modals
