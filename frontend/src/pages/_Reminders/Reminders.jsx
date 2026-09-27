@@ -161,6 +161,11 @@ function notifyRemindersChanged() {
 }
 
 function Reminders() {
+    const currentUser = (() => {
+        try { return JSON.parse(localStorage.getItem('user') || 'null') } catch { return null }
+    })()
+    const role = currentUser?.role
+    const [roleSummary, setRoleSummary] = useState({ attendance_count: 0, escalation_count: 0 })
     const [summary, setSummary] = useState({
         upcoming: 0,
         needs_action: 0,
@@ -197,13 +202,19 @@ function Reminders() {
             setError('')
 
             try {
-                const [remindersData, attendanceData] = await Promise.all([
+                const [remindersData, attendanceData, roleSummaryData] = await Promise.all([
                     request('/reminders', { signal: controller.signal }),
-                    request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal }),
+                    role === 'secretary'
+                        ? request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal })
+                        : Promise.resolve(null),
+                    ['program_head', 'chancellor'].includes(role)
+                        ? request('/reminders/role-summary', { signal: controller.signal })
+                        : Promise.resolve(null),
                 ])
 
                 const nextReminders = remindersData.data ?? []
-                const nextAttendanceTasks = (attendanceData.data ?? [])
+                const attendanceRows = attendanceData?.data ?? []
+                const nextAttendanceTasks = attendanceRows
                     .filter(record => ['validating', 'pending', 'approved'].includes(record.status))
                     .map(record => {
                         const meta = ATTENDANCE_TASK_STATUS[record.status]
@@ -226,12 +237,17 @@ function Reminders() {
                     })
 
                 setReminders(nextReminders)
-                setAttendanceEntries(attendanceData.data ?? [])
+                setAttendanceEntries(attendanceRows)
                 setAttendanceTasks(nextAttendanceTasks)
+                if (roleSummaryData) setRoleSummary(roleSummaryData)
                 setSummary({
                     upcoming: remindersData.summary?.upcoming ?? nextReminders.filter(item => item.status === 'upcoming').length,
-                    needs_action: nextAttendanceTasks.filter(item => item.status === 'needs_action').length,
-                    completed: nextAttendanceTasks.filter(item => item.status === 'completed').length,
+                    needs_action: role === 'program_head'
+                        ? (roleSummaryData?.attendance_count ?? 0)
+                        : nextAttendanceTasks.filter(item => item.status === 'needs_action').length,
+                    completed: remindersData.summary?.completed
+                        ?? nextReminders.filter(item => item.status === 'completed').length
+                        + nextAttendanceTasks.filter(item => item.status === 'completed').length,
                 })
             } catch (err) {
                 if (err.name !== 'AbortError') {
@@ -255,7 +271,7 @@ function Reminders() {
         fetchReminderData()
 
         return () => controller.abort()
-    }, [])
+    }, [role])
 
     useEffect(() => {
         const targetReminderId = location.state?.openReminderId
@@ -270,29 +286,15 @@ function Reminders() {
         navigate(location.pathname, { replace: true, state: null })
     }, [location.pathname, location.state, loading, reminders, navigate])
 
-    const reminderCards = [
-        {
-            title: 'Upcoming',
-            value: summary.upcoming,
-            description: 'Scheduled activities',
-            icon: RemindersIcon,
-            className: 'upcoming',
-        },
-        {
-            title: 'Needs Action',
-            value: summary.needs_action,
-            description: 'Tasks requiring attention',
-            icon: NeedsActionIcon,
-            className: 'needs-action',
-        },
-        {
-            title: 'Completed',
-            value: summary.completed,
-            description: 'Completed reminders',
-            icon: CompletedIcon,
-            className: 'completed',
-        },
-    ]
+    const upcomingCard = { title: 'Upcoming', value: summary.upcoming, description: 'Scheduled activities', icon: RemindersIcon, className: 'upcoming' }
+    const escalationCard = { title: 'Escalations', value: roleSummary.escalation_count, description: 'Students requiring intervention', icon: NotificationIcon, className: 'needs-action' }
+    const needsActionCard = { title: 'Needs Action', value: summary.needs_action, description: 'Attendance awaiting your review', icon: NeedsActionIcon, className: 'needs-action' }
+    const completedCard = { title: 'Completed', value: summary.completed, description: 'Completed reminders', icon: CompletedIcon, className: 'completed' }
+    const reminderCards = role === 'chancellor'
+        ? [upcomingCard, escalationCard, completedCard]
+        : role === 'program_head'
+            ? [upcomingCard, escalationCard, needsActionCard, completedCard]
+            : [upcomingCard, needsActionCard, completedCard]
 
     const now = new Date()
     const todayKey = [
@@ -515,7 +517,7 @@ function Reminders() {
                     className="reminders-header"
                 />
 
-                <section className="reminders-cards" aria-label="Reminder summary">
+                <section className={`reminders-cards reminders-cards-${role || 'default'}`} aria-label="Reminder summary">
                     {reminderCards.map(card => (
                         <article className={`reminders-card ${card.className}-card`} key={card.title}>
                             <span className={`reminders-icon-wrap ${card.className}-icon-wrap`}>

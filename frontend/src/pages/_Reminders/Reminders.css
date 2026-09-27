@@ -14,16 +14,28 @@
 /* .reminders-header handled by reusable Header component */
 
 .reminders-cards {
-    display: flex;
-    justify-content: center;
-    padding: 14px 14px 12px;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    box-sizing: border-box;
+    width: calc(82% + 48px);
+    margin-inline: auto;
+    padding: 14px 0 12px;
+    gap: 12px;
+}
+
+.reminders-cards-program_head {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.reminders-cards-chancellor,
+.reminders-cards-secretary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .reminders-card {
     box-sizing: border-box;
     height: 130px;
-    width: 320px;
+    width: 100%;
     padding: 20px 22px;
     border: 1px solid #cacbcd;
     border-radius: 14px;
@@ -87,7 +99,8 @@
     border-radius: 16px;
     background: white;
     color: #172B4D;
-    width: 82%;
+    box-sizing: border-box;
+    width: calc(82% + 48px);
 }
 
 .reminders-task-heading {
@@ -392,6 +405,35 @@
 
 .reminder-modal textarea {
     min-height: 74px;
+}
+
+@media (max-width: 900px) {
+    .reminders-cards,
+    .reminders-cards-program_head {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+@media (max-width: 560px) {
+    .reminders-cards,
+    .reminders-cards-program_head {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 10px;
+    }
+
+    .reminders-cards-program_head,
+    .reminders-cards-chancellor,
+    .reminders-cards-secretary {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .reminders-cards,
+    .reminders-task-panel {
+        width: calc(100% - 20px);
+    }
+
+    .reminders-task-panel { padding: 14px; }
 }
 
 .reminder-modal-error {

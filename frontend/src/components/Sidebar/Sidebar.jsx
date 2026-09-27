@@ -24,10 +24,12 @@ const navigationByRole = {
         { label: 'Dashboard', to: '/program-head/dashboard', icon: DashboardIcon },
         { label: 'Submission', to: '/program-head/submission', icon: ImportIcon },
         { label: 'Records', to: '/program-head/records', icon: AttendanceIcon },
+        { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
     ],
     chancellor: [
         { label: 'Dashboard', to: '/chancellor/dashboard', icon: DashboardIcon },
         { label: 'Monitoring', to: '/chancellor/monitoring', icon: AttendanceIcon },
+        { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
     ],
     admin: [
         { label: 'Dashboard', to: '/admin/dashboard', icon: DashboardIcon },
