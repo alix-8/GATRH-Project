@@ -44,6 +44,12 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
+    Route::get('reminders', [ReminderController::class, 'index']);
+    Route::get('reminders/role-summary', [ReminderController::class, 'roleSummary'])
+        ->middleware('role:program_head,chancellor');
+    // Reminder routes for custom reminders
+    Route::apiResource('reminders', ReminderController::class);
+
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [ProfileController::class, 'changePassword']);
@@ -70,11 +76,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);
         Route::post('/attendance/drafts/{id}/submit', [AttendanceDraftController::class, 'submit']);
 
-        // Reminder routes for custom reminders
-        Route::apiResource('reminders', ReminderController::class);
         // Reminder routes for gathering reminders and submission countdowns
         Route::post('reminders/gathering', [ReminderController::class, 'storeGathering']);
-        Route::get('reminders', [ReminderController::class, 'index']);
         Route::patch('reminders/{id}/complete', [ReminderController::class, 'markCompleted']);
     });
         

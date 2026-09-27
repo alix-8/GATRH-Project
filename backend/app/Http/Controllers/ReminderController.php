@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reminder;
+use App\Models\AttendanceRecord;
+use App\Models\Escalation;
 use App\Services\ReminderCountdownService;
 use App\Services\GatheringService;
 use Carbon\Carbon;
@@ -69,6 +71,38 @@ class ReminderController extends Controller
         ]); 
     }
 
+    /** Role-specific counts displayed above the shared Reminders page. */
+    public function roleSummary(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role, ['program_head', 'chancellor'], true), 403, 'Unauthorized. You do not have permission to access this resource.');
+
+        $groups = AttendanceRecord::query()
+            ->with('student')
+            ->whereHas('student', fn ($query) => $query->accessibleTo($user))
+            ->get()
+            ->groupBy(fn (AttendanceRecord $record) => $record->batch_id
+                ?: implode('|', [$record->gathering_type, Carbon::parse($record->day)->toDateString(), $record->submitted_by]));
+
+        $level = $user->role === 'program_head' ? 'Level 2' : 'Level 3';
+        $escalationCount = Escalation::query()
+            ->where('escalation_level', $level)
+            ->where('no_response_count', '>', 0)
+            ->whereHas('student', fn ($query) => $query->accessibleTo($user))
+            ->count();
+
+        $attendanceCount = $user->role === 'program_head'
+            ? $groups->filter(fn ($group) => !$group->contains('validation_status', 'rejected')
+                && !$group->every(fn ($record) => $record->validation_status === 'validated'))->count()
+            : $groups->count();
+
+        return response()->json([
+            'role' => $user->role,
+            'attendance_count' => $attendanceCount,
+            'escalation_count' => $escalationCount,
+        ]);
+    }
+
     /**
      * Store a newly created reminder in storage.
      */
@@ -104,7 +138,6 @@ class ReminderController extends Controller
     {
         $reminder = Reminder::find($id);
 
-        // Check for null FIRST, before touching any property on $reminder
         if (!$reminder) {
             return response()->json([
                 'status'  => 'error',
@@ -112,7 +145,7 @@ class ReminderController extends Controller
             ], 404);
         }
 
-        // Now it's safe to access $reminder->user_id
+        // access $reminder->user_id
         if ($reminder->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized action.'], 403);
         }
