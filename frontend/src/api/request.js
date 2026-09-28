@@ -12,6 +12,11 @@ export async function request(url, options = {}) {
 
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
+        if (response.status === 401 && token) {
+            localStorage.removeItem('auth_token')
+            localStorage.removeItem('user')
+            window.dispatchEvent(new CustomEvent('auth:expired'))
+        }
         const error = new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'The request failed.')
         error.details = data
         throw error

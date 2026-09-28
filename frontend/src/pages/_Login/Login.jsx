@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import LVCCLogo from '../../assets/lvcc-logo.png'
 import Illustration from '../../assets/login-illustration.png'
 import ShowPasswordIcon from '../../assets/show-password-icon.png'
@@ -13,6 +13,7 @@ import './Login.css'
 
 function Login() {
     const navigate = useNavigate()
+    const location = useLocation()
 
     const [activeNav, setActiveNav] = useState('home')
     const [email, setEmail] = useState('')
@@ -22,6 +23,13 @@ function Login() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [errorType, setErrorType] = useState('error')
+
+    useEffect(() => {
+        if (location.state?.authMessage) {
+            window.alert(location.state.authMessage)
+            navigate(location.pathname, { replace: true, state: {} })
+        }
+    }, [location.pathname, location.state, navigate])
 
     const handleSubmit = async (event) => {
         event.preventDefault()

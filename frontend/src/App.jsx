@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import Login from './pages/_Login/Login'
 import Dashboard from './pages/Secretary/Dashboard/SecDashboard'
 import Students from './pages/Secretary/Students/Students'
@@ -39,8 +40,18 @@ function RolePlaceholder({ title }) {
 }
 
 function AppRoutes() {
+  const navigate = useNavigate()
   const session = getSession()
   const defaultLanding = session ? landingByRole[session.role] || '/unauthorized' : '/'
+
+  useEffect(() => {
+    const handleExpiredSession = () => navigate('/', {
+      replace: true,
+      state: { authMessage: 'Your session has expired. Please sign in again.' },
+    })
+    window.addEventListener('auth:expired', handleExpiredSession)
+    return () => window.removeEventListener('auth:expired', handleExpiredSession)
+  }, [navigate])
 
   return (
     <Routes>
