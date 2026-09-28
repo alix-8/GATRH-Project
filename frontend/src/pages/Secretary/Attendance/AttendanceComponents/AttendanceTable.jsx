@@ -11,6 +11,7 @@ import Calendar from '../../../../components/Calendar/Calendar'
 import './AttendanceTable.css'
 import ReviewDrawer from './ReviewDrawer'
 import AttendancePagination from './AttendancePagination'
+import LoadingCircle from '../../../../components/Loading/LoadingCircle'
 
 const STATUS_META = {
     validating: { label: 'Validating', dot: '#8c96a4' },
@@ -356,7 +357,7 @@ function AttendanceTable() {
                     </thead>
                     <tbody>
                         {loading && (
-                            <tr><td colSpan={deleteMode ? 8 : 7} className="table-state">Loading…</td></tr>
+                            <tr><td colSpan={deleteMode ? 8 : 7} className="table-state"><LoadingCircle label="Loading attendance records…" /></td></tr>
                         )}
                         {!loading && error && (
                             <tr><td colSpan={deleteMode ? 8 : 7} className="table-state table-state-error">{error}</td></tr>

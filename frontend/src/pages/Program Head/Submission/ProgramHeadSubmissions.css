@@ -19,8 +19,14 @@
     border-bottom: 1px solid #e2e6eb;
 }
 
-.ph-submissions-header .header-title h3 { font-size: 18px; }
-.ph-submissions-header .header-title p { color: #707b90; font-size: 13px; }
+.ph-submissions-header .header-title h3 {
+    font-size: 18px;
+}
+
+.ph-submissions-header .header-title p {
+    color: #707b90;
+    font-size: 13px;
+}
 
 .ph-submissions-content {
     display: grid;
@@ -69,8 +75,14 @@
     font-size: 11px;
 }
 
-.ph-filter-control select { appearance: auto; cursor: pointer; }
-.ph-filter-control input[type="date"] { cursor: pointer; }
+.ph-filter-control select {
+    appearance: auto;
+    cursor: pointer;
+}
+
+.ph-filter-control input[type="date"] {
+    cursor: pointer;
+}
 
 .ph-pending-banner {
     display: flex;
@@ -96,8 +108,18 @@
     font-weight: 600;
 }
 
-.ph-pending-banner h2 { margin: 0 0 2px; font-size: 16px; line-height: 1.2; }
-.ph-pending-banner p { margin: 0; color: #707b90; font-size: 11px; }
+.ph-pending-banner h2 {
+    margin: 0 0 2px;
+    color: #192e52;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.ph-pending-banner p {
+    margin: 0;
+    color: #707b90;
+    font-size: 11px;
+}
 
 .ph-submissions-table-panel {
     overflow: hidden;
@@ -106,7 +128,9 @@
     background: #fff;
 }
 
-.ph-submissions-table-scroll { overflow-x: auto; }
+.ph-submissions-table-scroll {
+    overflow-x: auto;
+}
 
 .ph-submissions-table {
     width: 100%;
@@ -116,12 +140,36 @@
     white-space: nowrap;
 }
 
-.ph-submissions-table thead { background: #192e52; color: #fff; }
-.ph-submissions-table th { height: 34px; padding: 0 12px; font-size: 11px; font-weight: 500; }
-.ph-submissions-table th:first-child { border-radius: 7px 0 0; }
-.ph-submissions-table th:last-child { border-radius: 0 7px 0 0; }
-.ph-submissions-table td { height: 44px; padding: 0 12px; border-bottom: 1px solid #edf0f3; font-size: 10px; }
-.ph-submissions-table tbody tr:last-child td { border-bottom: 0; }
+.ph-submissions-table thead {
+    background: #192e52;
+    color: #fff;
+}
+
+.ph-submissions-table th {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.ph-submissions-table th:first-child {
+    border-radius: 7px 0 0;
+}
+
+.ph-submissions-table th:last-child {
+    border-radius: 0 7px 0 0;
+}
+
+.ph-submissions-table td {
+    height: 44px;
+    padding: 0 12px;
+    border-bottom: 1px solid #edf0f3;
+    font-size: 10px;
+}
+
+.ph-submissions-table tbody tr:last-child td {
+    border-bottom: 0;
+}
 
 .ph-submitter-avatar {
     display: inline-grid;
@@ -136,10 +184,26 @@
     font-weight: 600;
 }
 
-.ph-submission-status { display: inline-flex; align-items: center; gap: 6px; }
-.ph-submission-status i { width: 11px; height: 11px; border-radius: 50%; background: #f5c844; }
-.ph-submission-status.approved i { background: #22a447; }
-.ph-submission-status.rejected i { background: #f91a1a; }
+.ph-submission-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ph-submission-status i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #f5c844;
+}
+
+.ph-submission-status.approved i {
+    background: #22a447;
+}
+
+.ph-submission-status.rejected i {
+    background: #f91a1a;
+}
 
 .ph-submission-review {
     display: inline-flex;
@@ -156,10 +220,25 @@
     cursor: pointer;
 }
 
-.ph-submission-review:hover { background: #0787dc; }
-.ph-submission-review span { font-size: 16px; line-height: 10px; }
-.ph-submissions-state { height: 100px !important; text-align: center; color: #65738a; font-size: 12px !important; }
-.ph-submissions-error { color: #b42318; }
+.ph-submission-review:hover {
+    background: #0787dc;
+}
+
+.ph-submission-review span {
+    font-size: 16px;
+    line-height: 10px;
+}
+
+.ph-submissions-state {
+    height: 100px !important;
+    text-align: center;
+    color: #65738a;
+    font-size: 12px !important;
+}
+
+.ph-submissions-error {
+    color: #b42318;
+}
 
 .ph-submissions-pagination {
     display: flex;
@@ -173,29 +252,43 @@
     font-size: 10px;
 }
 
-.ph-submissions-pagination > div { display: flex; align-items: center; gap: 5px; }
-.ph-submissions-pagination button,
-.ph-submissions-pagination strong { display: grid; width: 20px; height: 20px; place-items: center; border-radius: 4px; font: inherit; }
-.ph-submissions-pagination button { border: 1px solid #cbd3df; background: #fff; color: #718099; font-size: 16px; line-height: 1; cursor: pointer; }
-.ph-submissions-pagination button:disabled { opacity: .45; cursor: default; }
-.ph-submissions-pagination strong { background: #17a1fa; color: #fff; font-weight: 500; }
-
-
-@media (max-width: 820px) {
-    .ph-submission-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .ph-search-control { grid-column: 1 / -1; }
-    .ph-submissions-table { min-width: 760px; }
+.ph-submissions-pagination > div {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
-@media (max-width: 600px) {
-    .app-header.page-header.ph-submissions-header { padding: 12px; }
-    .ph-submissions-content { gap: 9px; padding: 10px; }
-    .ph-submission-filters { gap: 7px; }
-    .ph-filter-control,
-    .ph-search-control { height: 36px; padding: 0 8px; }
-    .ph-filter-control input,
-    .ph-filter-control select,
-    .ph-search-control input { font-size: 10px; }
-    .ph-pending-banner { min-height: 54px; }
-    .ph-submissions-pagination { padding: 0 9px; }
+.ph-submissions-pagination button,
+.ph-submissions-pagination strong {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border-radius: 4px;
+    font: inherit;
+}
+
+.ph-submissions-pagination button {
+    border: 1px solid #cbd3df;
+    background: #fff;
+    color: #718099;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.ph-submissions-pagination button:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.ph-submissions-pagination button.ph-submissions-current-page {
+    border-color: #17a1fa;
+    background: #17a1fa;
+    color: #fff;
+    font-weight: 500;
+}
+
+.ph-submissions-pagination-ellipsis {
+    padding: 0 2px;
 }

@@ -1,13 +1,14 @@
 import SubmissionPagination from './SubmissionPagination'
+import LoadingCircle from '../../../../components/Loading/LoadingCircle'
 
-export default function SubmissionsTable({ rows, loading, error, onOpen, firstItem, lastItem, total, page, lastPage, onPageChange }) {
+export default function SubmissionsTable({ rows, loading, error, onOpen, page, lastPage, onPageChange }) {
     return (
         <section className="ph-submissions-table-panel" aria-label="Submissions list">
             <div className="ph-submissions-table-scroll">
                 <table className="ph-submissions-table">
                     <thead><tr><th>Secretary</th><th>Gathering</th><th>Program</th><th>Year</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
                     <tbody>
-                        {loading ? <tr><td className="ph-submissions-state" colSpan="7">Loading submissions…</td></tr>
+                        {loading ? <tr><td className="ph-submissions-state" colSpan="7"><LoadingCircle label="Loading submissions…" /></td></tr>
                             : error ? <tr><td className="ph-submissions-state ph-submissions-error" colSpan="7">{error}</td></tr>
                                 : rows.length === 0 ? <tr><td className="ph-submissions-state" colSpan="7">No submissions match these filters.</td></tr>
                                     : rows.map((row) => (
@@ -21,7 +22,7 @@ export default function SubmissionsTable({ rows, loading, error, onOpen, firstIt
                     </tbody>
                 </table>
             </div>
-            <SubmissionPagination firstItem={firstItem} lastItem={lastItem} total={total} page={page} lastPage={lastPage} onPageChange={onPageChange} disabled={loading} />
+            <SubmissionPagination page={page} lastPage={lastPage} onPageChange={onPageChange} disabled={loading} />
         </section>
     )
 }

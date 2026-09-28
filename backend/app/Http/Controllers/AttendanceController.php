@@ -206,6 +206,8 @@ class AttendanceController extends Controller
         $students = $records->map(fn ($r) => [
             'student_id'   => $r->student_id,
             'student_name' => $r->student->name ?? 'Unknown',
+            'program'      => $r->student->program ?? 'N/A',
+            'year_level'   => $r->student->year_level,
             'status'       => $r->status,
             'venue'        => $r->venue ?: '---',
             'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',
@@ -792,6 +794,8 @@ class AttendanceController extends Controller
             'record_id'    => $r->id,
             'student_id'   => $r->student_id,
             'student_name' => $r->student->name ?? 'Unknown',
+            'program'      => $r->student->program ?? 'N/A',
+            'year_level'   => $r->student->year_level,
             'status'       => $r->status,
             'venue'        => $r->venue ?: '---',
             'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',

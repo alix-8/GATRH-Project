@@ -10,6 +10,7 @@ import ProgramHeadDashboard from './pages/Program Head/Dashboard/ProgramHeadDash
 import Sidebar from './components/Sidebar/Sidebar'
 import Profile from './pages/_Profile/Profile'
 import ProgramHeadSubmissions from './pages/Program Head/Submission/ProgramHeadSubmissions'
+import ProgramHeadRecords from './pages/Program Head/Records/ProgramHeadRecords'
 
 const landingByRole = {
   secretary: '/dashboard',
@@ -66,7 +67,7 @@ function AppRoutes() {
 
       <Route path="/program-head/dashboard" element={<RoleRoute roles={['program_head']}><ProgramHeadDashboard /></RoleRoute>} />
       <Route path="/program-head/submission" element={<RoleRoute roles={['program_head']}><ProgramHeadSubmissions /></RoleRoute>} />
-      <Route path="/program-head/records" element={<RoleRoute roles={['program_head']}><RolePlaceholder title="Records" /></RoleRoute>} />
+      <Route path="/program-head/records" element={<RoleRoute roles={['program_head']}><ProgramHeadRecords /></RoleRoute>} />
 
       <Route path="/chancellor/dashboard" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Dashboard" /></RoleRoute>} />
       <Route path="/chancellor/monitoring" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Monitoring" /></RoleRoute>} />
