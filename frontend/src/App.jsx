@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import Login from './pages/_Login/Login'
 import Dashboard from './pages/Secretary/Dashboard/SecDashboard'
 import Students from './pages/Secretary/Students/Students'
@@ -9,6 +10,7 @@ import ProgramHeadDashboard from './pages/Program Head/Dashboard/ProgramHeadDash
 import Sidebar from './components/Sidebar/Sidebar'
 import Profile from './pages/_Profile/Profile'
 import ProgramHeadSubmissions from './pages/Program Head/Submission/ProgramHeadSubmissions'
+import ProgramHeadRecords from './pages/Program Head/Records/ProgramHeadRecords'
 
 const landingByRole = {
   secretary: '/dashboard',
@@ -39,8 +41,18 @@ function RolePlaceholder({ title }) {
 }
 
 function AppRoutes() {
+  const navigate = useNavigate()
   const session = getSession()
   const defaultLanding = session ? landingByRole[session.role] || '/unauthorized' : '/'
+
+  useEffect(() => {
+    const handleExpiredSession = () => navigate('/', {
+      replace: true,
+      state: { authMessage: 'Your session has expired. Please sign in again.' },
+    })
+    window.addEventListener('auth:expired', handleExpiredSession)
+    return () => window.removeEventListener('auth:expired', handleExpiredSession)
+  }, [navigate])
 
   return (
     <Routes>
@@ -55,7 +67,7 @@ function AppRoutes() {
 
       <Route path="/program-head/dashboard" element={<RoleRoute roles={['program_head']}><ProgramHeadDashboard /></RoleRoute>} />
       <Route path="/program-head/submission" element={<RoleRoute roles={['program_head']}><ProgramHeadSubmissions /></RoleRoute>} />
-      <Route path="/program-head/records" element={<RoleRoute roles={['program_head']}><RolePlaceholder title="Records" /></RoleRoute>} />
+      <Route path="/program-head/records" element={<RoleRoute roles={['program_head']}><ProgramHeadRecords /></RoleRoute>} />
 
       <Route path="/chancellor/dashboard" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Dashboard" /></RoleRoute>} />
       <Route path="/chancellor/monitoring" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Monitoring" /></RoleRoute>} />
@@ -73,6 +85,25 @@ function AppRoutes() {
 }
 
 function App() {
+  const [isCompactScreen, setIsCompactScreen] = useState(() => window.innerWidth <= 900)
+
+  useEffect(() => {
+    const updateScreenSize = () => setIsCompactScreen(window.innerWidth <= 900)
+    window.addEventListener('resize', updateScreenSize)
+    return () => window.removeEventListener('resize', updateScreenSize)
+  }, [])
+
+  if (isCompactScreen) {
+    return (
+      <main className="screen-size-notice" role="status">
+        <div>
+          <h1>Please return to full screen</h1>
+          <p>Widen your browser window to use the app.</p>
+        </div>
+      </main>
+    )
+  }
+
   return <BrowserRouter><AppRoutes /></BrowserRouter>
 }
 

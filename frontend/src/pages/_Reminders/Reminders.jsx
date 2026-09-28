@@ -15,6 +15,7 @@ import DeleteIcon from '../../assets/delete-icon.png'
 import { request } from '../../api/request'
 import Calendar from '../../components/Calendar/Calendar'
 import { TrashIcon } from '../../components/Icons/Reusables'
+import LoadingCircle from '../../components/Loading/LoadingCircle'
 import './Reminders.css'
 
 const FILTERS = [
@@ -564,7 +565,7 @@ function Reminders() {
                     </div>
 
                     <div className="reminders-task-list">
-                        {loading && <p className="reminders-state">Loading reminders...</p>}
+                        {loading && <p className="reminders-state"><LoadingCircle label="Loading reminders…" /></p>}
                         {!isAddOpen && !loading && error && <p className="reminders-state reminders-state-error">{error}</p>}
                         {!isAddOpen && !loading && !error && visibleItems.length === 0 && (
                             <p className="reminders-state">No reminders found.</p>

@@ -5,6 +5,7 @@ import { headerTitle } from '../../../../utils/header-title'
 import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../../components/Icons/AttendanceIcons'
 import { FilterIcon, ChevronDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../../components/Icons/Reusables'
 import AttendancePagination from './AttendancePagination'
+import LoadingCircle from '../../../../components/Loading/LoadingCircle'
 
 const PAGE_SIZE = 10
 
@@ -119,7 +120,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                         </p>
                     </div>
 
-                    {loading && <p>Loading…</p>}
+                    {loading && <p><LoadingCircle label="Loading attendance details…" /></p>}
                     {error && <p style={{ color: '#e52328' }}>{error}</p>}
 
                     {!loading && draft && (

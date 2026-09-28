@@ -9,6 +9,7 @@ import RejectedIcon from '../../../components/Icons/RejectedIcon.svg'
 import TotalSubmissionsIcon from '../../../components/Icons/TotalSubmissionsIcon.svg'
 import SubmittedIcon from '../../../components/Icons/SubmittedIcon.svg'
 import ResubmittedIcon from '../../../components/Icons/ResubmittedIcon.svg'
+import LoadingCircle from '../../../components/Loading/LoadingCircle'
 import './ProgramHeadDashboard.css'
 
 const metrics = [
@@ -91,7 +92,7 @@ function ProgramHeadDashboard() {
                             <table className="ph-submission-table">
                                 <thead><tr><th>Secretary</th><th>Gathering</th><th>Program</th><th>Year</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
                                 <tbody>
-                                    {loading ? <tr><td colSpan="7" className="ph-empty">Loading submissions…</td></tr> : pending.length === 0 ? <tr><td colSpan="7" className="ph-empty">You’re all caught up. No pending submissions.</td></tr> : pending.map((submission) => (
+                                    {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.length === 0 ? <tr><td colSpan="7" className="ph-empty">You’re all caught up. No pending submissions.</td></tr> : pending.map((submission) => (
                                         <tr key={submission.id}>
                                             <td><span className="ph-secretary-avatar" aria-hidden="true">{(submission.secretary || '?').charAt(0).toUpperCase()}</span>{submission.secretary}</td>
                                             <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td>{submission.date}</td>
@@ -106,7 +107,7 @@ function ProgramHeadDashboard() {
 
                     <section className="ph-panel ph-activity-panel" aria-labelledby="ph-activity-title">
                         <div className="ph-panel-heading"><div><h2 id="ph-activity-title">Recent Activities</h2><p>Latest updates from attendance submissions and reviews.</p></div></div>
-                        {loading ? <p className="ph-empty">Loading recent activity…</p> : activities.length === 0 ? <p className="ph-empty">Recent submission activity will appear here.</p> : (
+                        {loading ? <p className="ph-empty"><LoadingCircle label="Loading recent activity…" /></p> : activities.length === 0 ? <p className="ph-empty">Recent submission activity will appear here.</p> : (
                             <ul className="ph-activity-list">
                                 {activities.map((activity, index) => <li key={activity.id ?? index}>
                                     <img className="ph-activity-icon" src={activityIcons[activity.icon_type] || SubmittedIcon} alt="" />

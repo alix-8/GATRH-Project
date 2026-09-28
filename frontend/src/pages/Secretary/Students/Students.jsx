@@ -7,6 +7,7 @@ import ResponseIcon from '../../../assets/response-icon.png'
 import LevelIcon from '../../../assets/level-icon.png'
 import SearchIcon from '../../../assets/search-icon.png'
 import CalendarIcon from '../../../assets/calendar-icon.png'
+import LoadingCircle from '../../../components/Loading/LoadingCircle'
 import './Students.css'
 
 const SORT_OPTIONS = ['Sort by', 'Ascending', 'Descending']
@@ -344,7 +345,7 @@ function Students() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {loading && <tr><td colSpan="6" className="students-table-state">Loading students…</td></tr>}
+                                {loading && <tr><td colSpan="6" className="students-table-state"><LoadingCircle label="Loading students…" /></td></tr>}
                                 {!loading && filteredStudents.length === 0 && <tr><td colSpan="6" className="students-table-state">No students found.</td></tr>}
                                 {!loading && filteredStudents.map((student) => (
                                     <tr key={student.id}>
@@ -423,7 +424,7 @@ function Students() {
                         </div>
                         <div className="overview-history">
 
-                            {overviewLoading && <p className="overview-state">Loading attendance history…</p>}
+                            {overviewLoading && <p className="overview-state"><LoadingCircle label="Loading attendance history…" /></p>}
                             {overviewError && <p className="overview-state overview-error">{overviewError}</p>}
                             {!overviewLoading && !overviewError && overviewHistory.length === 0 && <p className="overview-state">No attendance records yet.</p>}
                             {!overviewLoading && !overviewError && overviewHistory.length > 0 && (

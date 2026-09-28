@@ -54,6 +54,30 @@ body {
   margin: 0;
 }
 
+.screen-size-notice {
+  display: grid;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100svh;
+  place-items: center;
+  padding: 24px;
+  background: #fff;
+  color: #172b4d;
+  text-align: center;
+}
+
+.screen-size-notice h1 {
+  margin: 0 0 10px;
+  color: #172b4d;
+  font-size: clamp(24px, 5vw, 36px);
+  letter-spacing: 0;
+}
+
+.screen-size-notice p {
+  color: #5e6c84;
+  font-size: 16px;
+}
+
 #root {
   width: 100%;
   min-height: 100vh;

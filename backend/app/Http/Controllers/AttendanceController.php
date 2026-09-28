@@ -206,6 +206,8 @@ class AttendanceController extends Controller
         $students = $records->map(fn ($r) => [
             'student_id'   => $r->student_id,
             'student_name' => $r->student->name ?? 'Unknown',
+            'program'      => $r->student->program ?? 'N/A',
+            'year_level'   => $r->student->year_level,
             'status'       => $r->status,
             'venue'        => $r->venue ?: '---',
             'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',
@@ -792,11 +794,12 @@ class AttendanceController extends Controller
             'record_id'    => $r->id,
             'student_id'   => $r->student_id,
             'student_name' => $r->student->name ?? 'Unknown',
+            'program'      => $r->student->program ?? 'N/A',
+            'year_level'   => $r->student->year_level,
             'status'       => $r->status,
             'venue'        => $r->venue ?: '---',
             'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',
         ]);
-
         return response()->json([
             'status' => 'success',
             'data'   => [
@@ -804,6 +807,7 @@ class AttendanceController extends Controller
                 'gathering_type'    => $first->gathering_type,
                 'gathering'         => $this->gatheringLabel($first->gathering_type),
                 'day'               => $first->day->format('F j, Y'),
+                'time'              => $first->created_at?->format('g:i A') ?? '—',
                 'validation_status' => $first->validation_status,
                 'submitted_by'      => [
                     'name' => $submitter?->name ?? 'Unknown',
