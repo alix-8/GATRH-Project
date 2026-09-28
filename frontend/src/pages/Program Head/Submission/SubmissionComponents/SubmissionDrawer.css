@@ -31,6 +31,11 @@
     margin-bottom: 20px;
 }
 
+#ph-drawer-title{
+    color:#172b4d;
+    text-align: left;
+}
+
 .ph-drawer-header h2 {
     margin: 0 0 4px;
     font-size: 20px;
@@ -556,6 +561,12 @@
     display: flex;
     align-items: center;
     gap: 5px;
+    white-space: nowrap;
+}
+
+.ph-record-detail .ph-record-date-time span {
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 .ph-record-detail .ph-drawer-submitter small img {
@@ -566,6 +577,10 @@
 
 .ph-record-detail .ph-drawer-submitter small img.ph-record-clock-icon {
     margin-left: 9px;
+}
+
+.ph-record-detail .ph-drawer-submitter small img.ph-record-clock-icon + .ph-record-time-value {
+    min-width: 66px;
 }
 
 .ph-record-summary {

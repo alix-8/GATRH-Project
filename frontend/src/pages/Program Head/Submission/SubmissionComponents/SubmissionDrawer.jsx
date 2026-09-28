@@ -90,7 +90,12 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                 {submission.status === 'approved' && <strong>{detail.gathering || submission.gathering}</strong>}
                                 <span>passed by: {detail.submitted_by?.name || submission.secretary}</span>
                                 {submission.status === 'approved' ? <>
-                                    <small><img src={RecordCalendarIcon} alt="" />{detail.day || submission.date}<img className="ph-record-clock-icon" src={RecordClockIcon} alt="" />{detail.students?.[0]?.batch || '—'}</small>
+                                    <small className="ph-record-date-time">
+                                        <img src={RecordCalendarIcon} alt="" />
+                                        <span>{detail.day || submission.date}</span>
+                                        <img className="ph-record-clock-icon" src={RecordClockIcon} alt="" />
+                                        <span className="ph-record-time-value">{detail.time || detail.students?.find((student) => student.batch && student.batch !== '---')?.batch || '—'}</span>
+                                    </small>
                                     <small><img src={RecordProgramIcon} alt="" />{submission.program} · {submission.year_label}</small>
                                 </> : <small>{detail.submitted_by?.role || 'Secretary'}</small>}
                             </section></div>

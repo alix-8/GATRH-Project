@@ -800,7 +800,6 @@ class AttendanceController extends Controller
             'venue'        => $r->venue ?: '---',
             'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',
         ]);
-
         return response()->json([
             'status' => 'success',
             'data'   => [
@@ -808,6 +807,7 @@ class AttendanceController extends Controller
                 'gathering_type'    => $first->gathering_type,
                 'gathering'         => $this->gatheringLabel($first->gathering_type),
                 'day'               => $first->day->format('F j, Y'),
+                'time'              => $first->created_at?->format('g:i A') ?? '—',
                 'validation_status' => $first->validation_status,
                 'submitted_by'      => [
                     'name' => $submitter?->name ?? 'Unknown',
