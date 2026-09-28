@@ -144,7 +144,7 @@ function AttendanceTable() {
         } catch (err) {
             if (err.name !== 'AbortError') setError(err.message)
         } finally {
-            setLoading(false)
+            if (!signal?.aborted) setLoading(false)
         }
     }, [gathering, selectedDate, sortBy, page])
 

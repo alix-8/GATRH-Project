@@ -78,7 +78,6 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                     <header className="ph-drawer-header">
                         <div><h2 id="ph-drawer-title">{submission.status === 'pending' ? 'Review Submission' : submission.status === 'approved' ? 'Record Details' : 'Submission Details'}</h2>
                             <p>{submission.status === 'approved' ? 'View finalized attendance record details' : `${detail?.gathering || submission.gathering} · ${detail?.day || submission.date}`}</p></div>
-                        <button type="button" onClick={onClose} aria-label="Close drawer">×</button>
                     </header>
 
                     {loading && <p className="ph-drawer-state"><LoadingCircle label="Loading submission…" /></p>}
@@ -96,7 +95,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         <img className="ph-record-clock-icon" src={RecordClockIcon} alt="" />
                                         <span className="ph-record-time-value">{detail.time || detail.students?.find((student) => student.batch && student.batch !== '---')?.batch || '—'}</span>
                                     </small>
-                                    <small><img src={RecordProgramIcon} alt="" />{submission.program} · {submission.year_label}</small>
+                                    <small><img className="ph-record-program-icon" src={RecordProgramIcon} alt="" />{submission.program} · {submission.year_label}</small>
                                 </> : <small>{detail.submitted_by?.role || 'Secretary'}</small>}
                             </section></div>
                         </div>
