@@ -424,20 +424,6 @@
 }
 
 @media (max-width: 900px) {
-    .reminders {
-        flex-direction: column;
-        height: auto;
-        min-height: 100vh;
-        overflow: visible;
-    }
-
-    .reminders-main {
-        flex: 1 0 auto;
-        width: 100%;
-        min-width: 0;
-        overflow: visible;
-    }
-
     .reminders-cards,
     .reminders-cards-program_head {
         grid-template-columns: repeat(2, minmax(0, 1fr));

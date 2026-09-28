@@ -54,34 +54,28 @@ body {
   margin: 0;
 }
 
-@media (max-width: 900px) {
-  .dashboard,
-  .students,
-  .import,
-  .attendance,
-  .profile,
-  .ph-dashboard,
-  .ph-submissions-page,
-  .reminders {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
-  }
+.screen-size-notice {
+  display: grid;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100svh;
+  place-items: center;
+  padding: 24px;
+  background: #fff;
+  color: #172b4d;
+  text-align: center;
+}
 
-  .dashboard-main,
-  .students-main,
-  .import-main,
-  .attendance-main,
-  .profile-main,
-  .ph-dashboard-main,
-  .ph-submissions-main,
-  .reminders-main {
-    flex: 1 0 auto;
-    width: 100%;
-    min-width: 0;
-    overflow: visible;
-  }
+.screen-size-notice h1 {
+  margin: 0 0 10px;
+  color: #172b4d;
+  font-size: clamp(24px, 5vw, 36px);
+  letter-spacing: 0;
+}
+
+.screen-size-notice p {
+  color: #5e6c84;
+  font-size: 16px;
 }
 
 #root {

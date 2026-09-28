@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Login from './pages/_Login/Login'
 import Dashboard from './pages/Secretary/Dashboard/SecDashboard'
 import Students from './pages/Secretary/Students/Students'
@@ -84,6 +84,25 @@ function AppRoutes() {
 }
 
 function App() {
+  const [isCompactScreen, setIsCompactScreen] = useState(() => window.innerWidth <= 900)
+
+  useEffect(() => {
+    const updateScreenSize = () => setIsCompactScreen(window.innerWidth <= 900)
+    window.addEventListener('resize', updateScreenSize)
+    return () => window.removeEventListener('resize', updateScreenSize)
+  }, [])
+
+  if (isCompactScreen) {
+    return (
+      <main className="screen-size-notice" role="status">
+        <div>
+          <h1>Please return to full screen</h1>
+          <p>Widen your browser window to use the app.</p>
+        </div>
+      </main>
+    )
+  }
+
   return <BrowserRouter><AppRoutes /></BrowserRouter>
 }
 
