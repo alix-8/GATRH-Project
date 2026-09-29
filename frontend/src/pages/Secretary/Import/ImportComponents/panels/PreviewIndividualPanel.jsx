@@ -84,7 +84,10 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
 
                 return (
                     <div key={i} className={`preview-card preview-card-single ${isUnmatched ? 'preview-card-error' : ''}`}>
-                        <div className="preview-card-name">{s.number}. {s.name}</div>
+                        <div className="preview-card-name">
+                            <span className="preview-student-number">{s.number}.</span>
+                            <span className="preview-student-name">{s.name}</span>
+                        </div>
 
                         <input
                             type="text"

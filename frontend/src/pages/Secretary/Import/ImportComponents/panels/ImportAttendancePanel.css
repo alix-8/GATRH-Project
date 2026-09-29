@@ -1,6 +1,6 @@
 .import-columns {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
     gap: 1.25rem;
     margin-bottom: 1rem;
 }
@@ -8,6 +8,7 @@
 .import-column {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     gap: 0.5rem;
     font-size: 0.75rem;
     font-weight: 500;
