@@ -3,10 +3,11 @@ import { request } from '../../../../api/request'
 import './ReviewDrawer.css'
 import { headerTitle } from '../../../../utils/header-title'
 import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../../components/Icons/AttendanceIcons'
-import { FilterIcon, ChevronDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../../components/Icons/Reusables'
+import { FilterIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../../components/Icons/Reusables'
 import AttendancePagination from './AttendancePagination'
 import LoadingCircle from '../../../../components/Loading/LoadingCircle'
 import UserAvatar from '../../../../components/UserAvatar'
+import SearchPill from '../../../../components/SearchPill'
 
 const PAGE_SIZE = 10
 
@@ -207,16 +208,12 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                         )}
                                     </div>
 
-                                    <div className="search-pill">
-                                        <SearchIcon />
-                                        <input
-                                            type="text"
-                                            className="search-pill-input"
-                                            placeholder="Search Student.."
-                                            value={search}
-                                            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                                        />
-                                    </div>
+                                    <SearchPill
+                                        ariaLabel="Search students"
+                                        placeholder="Search Student.."
+                                        value={search}
+                                        onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                                    />
                                 </div>
                             </div>
 

@@ -161,6 +161,19 @@ function notifyRemindersChanged() {
     window.dispatchEvent(new Event('reminders:changed'))
 }
 
+async function fetchProgramHeadSubmissions(signal) {
+    const firstPage = await request('/program-head/submissions?page=1&per_page=50', { signal })
+    const submissions = [...(firstPage.data ?? [])]
+    const lastPage = Number(firstPage.meta?.last_page ?? 1)
+
+    for (let page = 2; page <= lastPage; page += 1) {
+        const result = await request(`/program-head/submissions?page=${page}&per_page=50`, { signal })
+        submissions.push(...(result.data ?? []))
+    }
+
+    return { submissions, pendingCount: firstPage.pending_count ?? submissions.length }
+}
+
 function Reminders() {
     const currentUser = (() => {
         try { return JSON.parse(localStorage.getItem('user') || 'null') } catch { return null }
@@ -204,39 +217,59 @@ function Reminders() {
             setError('')
 
             try {
-                const [remindersData, attendanceData, roleSummaryData] = await Promise.all([
+                const [remindersData, attendanceData, roleSummaryData, programHeadSubmissionData] = await Promise.all([
                     request('/reminders', { signal: controller.signal }),
                     role === 'secretary'
                         ? request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal })
                         : Promise.resolve(null),
                     ['program_head', 'chancellor'].includes(role)
-                        ? request('/reminders/role-summary', { signal: controller.signal })
+                        ? request('/reminders/role-summary', { signal: controller.signal }).catch(error => {
+                            if (error.name === 'AbortError') throw error
+                            return null
+                        })
+                        : Promise.resolve(null),
+                    role === 'program_head'
+                        ? fetchProgramHeadSubmissions(controller.signal)
                         : Promise.resolve(null),
                 ])
 
                 const nextReminders = remindersData.data ?? []
                 const attendanceRows = attendanceData?.data ?? []
-                const nextAttendanceTasks = attendanceRows
-                    .filter(record => ['validating', 'pending', 'approved'].includes(record.status))
-                    .map(record => {
-                        const meta = ATTENDANCE_TASK_STATUS[record.status]
+                const programHeadSubmissions = programHeadSubmissionData?.submissions ?? []
+                const nextAttendanceTasks = role === 'program_head'
+                    ? programHeadSubmissions.map(record => ({
+                        id: `submission-${record.id}`,
+                        type: 'attendance',
+                        sourceRecord: record,
+                        title: 'Attendance record awaiting review',
+                        description: [record.gathering, record.date, record.program, record.year_label].filter(Boolean).join(' · '),
+                        status: 'needs_action',
+                        statusLabel: 'Pending review',
+                        tone: 'needs-action',
+                        action: 'Review',
+                        createdAt: record.date_iso,
+                    }))
+                    : attendanceRows
+                        .filter(record => ['validating', 'pending', 'approved'].includes(record.status))
+                        .map(record => {
+                            const meta = ATTENDANCE_TASK_STATUS[record.status]
 
-                        return {
-                            id: `attendance-${record.id}`,
-                            type: 'attendance',
-                            sourceRecord: record,
-                            title: meta.label,
-                            description: buildDateTime({
-                                date: record.gathering,
-                                time: record.date,
-                            }),
-                            status: record.status === 'approved' ? 'completed' : 'needs_action',
-                            statusLabel: meta.label,
-                            tone: meta.tone,
-                            action: meta.action,
-                            createdAt: record.day_iso,
-                        }
-                    })
+                            return {
+                                id: `attendance-${record.id}`,
+                                type: 'attendance',
+                                sourceRecord: record,
+                                title: meta.label,
+                                description: buildDateTime({
+                                    date: record.gathering,
+                                    time: record.date,
+                                }),
+                                status: record.status === 'approved' ? 'completed' : 'needs_action',
+                                statusLabel: meta.label,
+                                tone: meta.tone,
+                                action: meta.action,
+                                createdAt: record.day_iso,
+                            }
+                        })
 
                 setReminders(nextReminders)
                 setAttendanceEntries(attendanceRows)
@@ -245,7 +278,7 @@ function Reminders() {
                 setSummary({
                     upcoming: remindersData.summary?.upcoming ?? nextReminders.filter(item => item.status === 'upcoming').length,
                     needs_action: role === 'program_head'
-                        ? (roleSummaryData?.attendance_count ?? 0)
+                        ? (programHeadSubmissionData?.pendingCount ?? nextAttendanceTasks.length)
                         : nextAttendanceTasks.filter(item => item.status === 'needs_action').length,
                     completed: remindersData.summary?.completed
                         ?? nextReminders.filter(item => item.status === 'completed').length
@@ -359,7 +392,7 @@ function Reminders() {
                 status: reminder.status,
                 statusLabel: isGathering
                     ? alreadyRecorded
-                        ? 'Already recorded'
+                        ? 'Ready for validation'
                         : isPast
                             ? (countdown || 'Attendance deadline passed')
                             : isToday
@@ -627,6 +660,10 @@ function Reminders() {
                                                             gathering_type: item.sourceReminder.gathering_type,
                                                             gathering_date: item.sourceReminder.gathering_date,
                                                         },
+                                                    })
+                                                } else if (role === 'program_head') {
+                                                    navigate('/program-head/submission', {
+                                                        state: { openSubmission: { ...item.sourceRecord, status: 'pending' } },
                                                     })
                                                 } else {
                                                     navigate('/attendance', {

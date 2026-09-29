@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { request } from '../../../../api/request'
 import { TotalStudentsIcon, RespondedIcon, NoResponseIcon } from '../../../../components/Icons/AttendanceIcons'
-import { SearchIcon } from '../../../../components/Icons/Reusables'
 import RecordApprovedIcon from '../../../../components/Icons/RecordApprovedIcon.svg'
 import RecordCalendarIcon from '../../../../components/Icons/RecordCalendarIcon.svg'
 import RecordClockIcon from '../../../../components/Icons/RecordClockIcon.svg'
 import RecordProgramIcon from '../../../../components/Icons/RecordProgramIcon.svg'
 import LoadingCircle from '../../../../components/Loading/LoadingCircle'
 import UserAvatar from '../../../../components/UserAvatar'
+import SearchPill from '../../../../components/SearchPill'
 import './SubmissionDrawer.css'
 
 const PAGE_SIZE = 10
@@ -119,7 +119,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                 <select aria-label="Filter students by attendance status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1) }}>
                                     <option value="all">All Status</option><option value="present">Present</option><option value="absent">No response</option>
                                 </select>
-                                <label><SearchIcon /><input placeholder="Search Student…" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} /></label>
+                                <SearchPill className="ph-drawer-search-pill" ariaLabel="Search students" placeholder="Search Student…" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} />
                             </div>
                         </div>
 

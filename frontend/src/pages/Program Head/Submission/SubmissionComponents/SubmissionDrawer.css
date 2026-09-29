@@ -227,6 +227,25 @@
     font-size: 12px;
 }
 
+.ph-submission-drawer .ph-drawer-controls label.search-pill {
+    height: auto;
+    border-radius: 20px;
+    padding: 6px 12px;
+    background: #fff;
+    font-size: 12px;
+}
+
+.ph-submission-drawer .ph-drawer-controls label.search-pill svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+.ph-submission-drawer .ph-drawer-controls .search-pill-input {
+    width: 110px;
+    font-size: 12px;
+}
+
 .ph-drawer-table-wrap {
     overflow-x: auto;
     border: 1px solid #e5e8ed;
