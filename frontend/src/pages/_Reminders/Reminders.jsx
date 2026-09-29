@@ -645,52 +645,6 @@ function Reminders() {
                 </section>
             </main>
 
-            {activeReminder && (
-                <div className="reminder-detail-backdrop" onClick={() => setActiveReminder(null)}>
-                    <aside
-                        className="reminder-detail-drawer"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="reminder-detail-title"
-                        onClick={event => event.stopPropagation()}
-                    >
-                        <header className="reminder-detail-header">
-                            <div>
-                                <span className="reminder-detail-eyebrow">Reminder #{activeReminder.id}</span>
-                                <h2 id="reminder-detail-title">{activeReminder.title}</h2>
-                            </div>
-                            <button type="button" className="reminder-detail-close" onClick={() => setActiveReminder(null)} aria-label="Close reminder details">
-                                ×
-                            </button>
-                        </header>
-                        <div className="reminder-detail-body">
-                            <div className="reminder-detail-field">
-                                <span>Type</span>
-                                <strong>{activeReminder.reminder_type === 'submission_countdown' ? 'System Reminder' : activeReminder.reminder_type === 'gathering' ? 'Submission' : 'My Reminder'}</strong>
-                            </div>
-                            {activeReminder.gathering_type && (
-                                <div className="reminder-detail-field">
-                                    <span>Gathering</span>
-                                    <strong>{GATHERING_LABELS[activeReminder.gathering_type] || activeReminder.gathering_type}</strong>
-                                </div>
-                            )}
-                            <div className="reminder-detail-field">
-                                <span>Date</span>
-                                <strong>{formatSavedReminderDateTime(activeReminder.due_date || activeReminder.gathering_date) || 'No date set'}</strong>
-                            </div>
-                            <div className="reminder-detail-field">
-                                <span>Status</span>
-                                <strong>{activeReminder.status?.replaceAll('_', ' ') || '—'}</strong>
-                            </div>
-                            <div className="reminder-detail-field reminder-detail-notes">
-                                <span>Details</span>
-                                <p>{activeReminder.description || 'No additional details.'}</p>
-                            </div>
-                        </div>
-                    </aside>
-                </div>
-            )}
-
             {isAddOpen && (
                 <div className="reminder-modal-backdrop">
                     <form className="reminder-modal" noValidate onSubmit={handleSubmitReminder}>

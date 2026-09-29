@@ -71,14 +71,15 @@
 .ph-drawer-submitted-card {
     margin-bottom: 18px;
     padding: 12px 16px;
+    border: 1px solid #d5ddea;
     border-radius: 10px;
-    background: #f4f6f9;
+    background: #f1f4f9;
 }
 
-.ph-drawer-submitted-card > span {
+.ph-drawer-submitted-label {
     display: block;
     margin-bottom: 7px;
-    color: #6b7482;
+    color: #172b4d;
     font-size: 11px;
 }
 
