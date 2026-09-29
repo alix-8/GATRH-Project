@@ -176,6 +176,7 @@ function Reminders() {
     const [attendanceTasks, setAttendanceTasks] = useState([])
     const [attendanceEntries, setAttendanceEntries] = useState([])
     const [activeReminder, setActiveReminder] = useState(null)
+    const [highlightedReminderId, setHighlightedReminderId] = useState(null)
     const [activeFilter, setActiveFilter] = useState('all')
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
     const [error, setError] = useState('')
@@ -275,17 +276,30 @@ function Reminders() {
     }, [role])
 
     useEffect(() => {
-        const targetReminderId = location.state?.openReminderId
+        const targetReminderId = location.state?.highlightReminderId
         if (targetReminderId == null || loading) return
 
         const targetReminder = reminders.find(reminder => String(reminder.id) === String(targetReminderId))
         if (targetReminder) {
-            setActiveReminder(targetReminder)
+            setActiveReminder(null)
+            setHighlightedReminderId(String(targetReminder.id))
             setActiveFilter('all')
         }
 
         navigate(location.pathname, { replace: true, state: null })
     }, [location.pathname, location.state, loading, reminders, navigate])
+
+    useEffect(() => {
+        if (!highlightedReminderId || loading) return
+
+        document.getElementById(`reminder-item-${highlightedReminderId}`)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+        })
+
+        const timeoutId = window.setTimeout(() => setHighlightedReminderId(null), 3500)
+        return () => window.clearTimeout(timeoutId)
+    }, [highlightedReminderId, loading, activeFilter])
 
     const upcomingCard = { title: 'Upcoming', value: summary.upcoming, description: 'Scheduled activities', icon: RemindersIcon, className: 'upcoming' }
     const escalationCard = { title: 'Escalations', value: roleSummary.escalation_count, description: 'Students requiring intervention', icon: NotificationIcon, className: 'needs-action' }
@@ -571,7 +585,11 @@ function Reminders() {
                             <p className="reminders-state">No reminders found.</p>
                         )}
                         {!isAddOpen && !loading && !error && visibleItems.map(item => (
-                            <article className={`reminders-task-item ${item.tone}`} key={item.id}>
+                            <article
+                                id={item.reminderId ? `reminder-item-${item.reminderId}` : undefined}
+                                className={`reminders-task-item ${item.tone} ${String(item.reminderId) === highlightedReminderId ? 'reminders-task-item-highlighted' : ''}`}
+                                key={item.id}
+                            >
                                 <div className="task-main">
                                     <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance-task'}`} aria-hidden="true">
                                         <img
