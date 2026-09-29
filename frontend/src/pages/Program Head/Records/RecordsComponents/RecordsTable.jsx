@@ -6,6 +6,7 @@ import YearIcon from '../../../../components/Icons/FilterYearIcon.svg'
 import FilterDropdown from '../../../../components/Filters/FilterDropdown'
 import CalendarFilter from '../../../../components/Filters/CalendarFilter'
 import LoadingCircle from '../../../../components/Loading/LoadingCircle'
+import UserAvatar from '../../../../components/UserAvatar'
 import SubmissionDrawer from '../../Submission/SubmissionComponents/SubmissionDrawer'
 import RecordsPagination from './RecordsPagination'
 import '../../Submission/ProgramHeadSubmissions.css'
@@ -109,7 +110,7 @@ export default function RecordsTable() {
                             : error ? <tr><td className="ph-submissions-state ph-submissions-error" colSpan="7">Could not load approved records.</td></tr>
                                 : rows.length === 0 ? <tr><td className="ph-submissions-state" colSpan="7">No approved records match these filters.</td></tr>
                                     : rows.map((row) => <tr key={row.id}>
-                                        <td><span className="ph-submitter-avatar">{row.secretary?.charAt(0).toUpperCase() || '?'}</span>{row.secretary}</td>
+                                        <td><UserAvatar className="ph-submitter-avatar" name={row.secretary} program={row.program} />{row.secretary}</td>
                                         <td>{row.gathering}</td><td>{row.program}</td><td>{row.year_label}</td><td>{row.date}</td>
                                         <td><span className="ph-submission-status approved"><i />Approved</span></td>
                                         <td><button type="button" className="ph-submission-review" onClick={() => setActiveRecord(row)}>View <span>›</span></button></td>

@@ -6,12 +6,9 @@ import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../../co
 import { FilterIcon, ChevronDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../../components/Icons/Reusables'
 import AttendancePagination from './AttendancePagination'
 import LoadingCircle from '../../../../components/Loading/LoadingCircle'
+import UserAvatar from '../../../../components/UserAvatar'
 
 const PAGE_SIZE = 10
-
-function getInitials(name = '') {
-    return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('')
-}
 
 export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [draft, setDraft] = useState(null)
@@ -128,9 +125,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                             <div className="submitted-card">
                                 <span className="submitted-label">Submitted by</span>
                                 <div className="submitter-info">
-                                    <div className="avatar avatar-initials">
-                                        {getInitials(draft.submitted_by?.name)}
-                                    </div>
+                                    <UserAvatar as="div" className="avatar avatar-initials" name={draft.submitted_by?.name} program={record.program} />
                                     <div>
                                         <h4 className="submitter-name">{draft.submitted_by?.name}</h4>
                                         <p className="submitter-role">{draft.submitted_by?.role}</p>

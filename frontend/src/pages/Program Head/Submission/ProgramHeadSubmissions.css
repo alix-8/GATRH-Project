@@ -95,6 +95,10 @@
     background: #f1faff;
 }
 
+.ph-pending-banner h2 {
+    text-align: left;    
+}
+
 .ph-pending-count {
     display: grid;
     width: 34px;

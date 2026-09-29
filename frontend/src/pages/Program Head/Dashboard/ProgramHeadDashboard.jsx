@@ -10,6 +10,7 @@ import TotalSubmissionsIcon from '../../../components/Icons/TotalSubmissionsIcon
 import SubmittedIcon from '../../../components/Icons/SubmittedIcon.svg'
 import ResubmittedIcon from '../../../components/Icons/ResubmittedIcon.svg'
 import LoadingCircle from '../../../components/Loading/LoadingCircle'
+import UserAvatar from '../../../components/UserAvatar'
 import './ProgramHeadDashboard.css'
 
 const metrics = [
@@ -94,10 +95,10 @@ function ProgramHeadDashboard() {
                                 <tbody>
                                     {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.length === 0 ? <tr><td colSpan="7" className="ph-empty">You’re all caught up. No pending submissions.</td></tr> : pending.map((submission) => (
                                         <tr key={submission.id}>
-                                            <td><span className="ph-secretary-avatar" aria-hidden="true">{(submission.secretary || '?').charAt(0).toUpperCase()}</span>{submission.secretary}</td>
+                                            <td><UserAvatar className="ph-secretary-avatar" name={submission.secretary} program={submission.program} />{submission.secretary}</td>
                                             <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td>{submission.date}</td>
                                             <td><span className="ph-status"><i />{submission.status_label || 'Pending'}</span></td>
-                                            <td><button className="ph-review-button" type="button" onClick={openReview}>Review</button></td>
+                                            <td><button className="ph-review-button" type="button" onClick={() => navigate('/program-head/submission', { state: { openSubmission: { ...submission, status: 'pending', year_label: submission.year_label || `${submission.year_level}${/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}` } } })}>View</button></td>
                                         </tr>
                                     ))}
                                 </tbody>

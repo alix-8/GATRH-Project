@@ -76,6 +76,18 @@
     background: #f1f4f9;
 }
 
+.ph-drawer-submitted-card strong,
+.ph-drawer-submitted-card span,
+.ph-drawer-submitted-card small {
+    text-align: left;
+    gap: 0;
+    line-height: 1;
+}
+
+.ph-drawer-submitted-card div {
+    
+}
+
 .ph-drawer-submitted-label {
     display: block;
     margin-bottom: 7px;
@@ -534,6 +546,7 @@
 }
 
 .ph-record-detail .ph-drawer-submitter {
+    align-items: flex-start;
     gap: 12px;
 }
 

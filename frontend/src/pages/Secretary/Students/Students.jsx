@@ -8,27 +8,12 @@ import LevelIcon from '../../../assets/level-icon.png'
 import SearchIcon from '../../../assets/search-icon.png'
 import CalendarIcon from '../../../assets/calendar-icon.png'
 import LoadingCircle from '../../../components/Loading/LoadingCircle'
+import UserAvatar from '../../../components/UserAvatar'
 import './Students.css'
 
 const SORT_OPTIONS = ['Sort by', 'Ascending', 'Descending']
 const RESPONSE_OPTIONS = ['Response', 'Responded', 'No Response']
 const LEVEL_OPTIONS = ['Escalation', 'Level 1', 'Level 2', 'Level 3']
-
-function getStudentInitials(name = '') {
-    const [lastName, firstNames] = name.split(',').map(part => part.trim())
-
-    if (firstNames && lastName) {
-        return `${firstNames[0]}${lastName[0]}`.toUpperCase()
-    }
-
-    return name
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map(part => part[0].toUpperCase())
-        .join('')
-}
 
 function Students() {
     const [students, setStudents] = useState([])
@@ -378,7 +363,7 @@ function Students() {
                         <p className="overview-month">{overview.month || 'Loading…'}</p>
 
                         <section className="overview-student-card">
-                            <span className="overview-avatar">{getStudentInitials(overview.student.name)}</span>
+                            <UserAvatar className="overview-avatar" name={overview.student.name} program={overview.student.program} />
                             <div><strong>{overview.student.name}</strong><small>{overview.student.program} {normalizedYear(overview.student.year_level)}</small></div>
                         </section>
 

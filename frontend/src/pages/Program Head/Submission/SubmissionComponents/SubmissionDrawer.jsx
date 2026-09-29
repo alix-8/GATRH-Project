@@ -7,11 +7,10 @@ import RecordCalendarIcon from '../../../../components/Icons/RecordCalendarIcon.
 import RecordClockIcon from '../../../../components/Icons/RecordClockIcon.svg'
 import RecordProgramIcon from '../../../../components/Icons/RecordProgramIcon.svg'
 import LoadingCircle from '../../../../components/Loading/LoadingCircle'
+import UserAvatar from '../../../../components/UserAvatar'
 import './SubmissionDrawer.css'
 
 const PAGE_SIZE = 10
-const initials = (name = '') => name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('')
-
 export default function SubmissionDrawer({ submission, onClose, onUpdated, onExport }) {
     const [detail, setDetail] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -88,10 +87,10 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                         <div className="ph-drawer-submitted-card">
                             {submission.status === 'approved' && <div className="ph-record-approved-banner"><img src={RecordApprovedIcon} alt="" /> Sent to Chancellor &amp; Coordinator</div>}
                             {submission.status !== 'approved' && <span className="ph-drawer-submitted-label">Submitted by</span>}
-                            <div className="ph-drawer-submitter"><div>{initials(detail.submitted_by?.name || submission.secretary)}</div><section>
+                            <div className="ph-drawer-submitter"><UserAvatar as="div" className="ph-drawer-user-avatar" name={detail.submitted_by?.name || submission.secretary} program={submission.program} /><section>
                                 {submission.status === 'approved' && <strong>{detail.gathering || submission.gathering}</strong>}
                                 {submission.status === 'approved'
-                                    ? <span>passed by: {detail.submitted_by?.name || submission.secretary}</span>
+                                    ? <span>Passed by: {detail.submitted_by?.name || submission.secretary}</span>
                                     : <strong>{detail.submitted_by?.name || submission.secretary}</strong>}
                                 {submission.status === 'approved' ? <>
                                     <small className="ph-record-date-time">
