@@ -60,7 +60,7 @@ class AttendanceController extends Controller
                 'batch_id'       => null,
                 'course'         => $program,
                 'year'           => $yearLevel,
-                'date'    => optional($draft->day)->format('F j, Y'),
+                'date'    => optional($draft->created_at)->format('F j, Y'),
                 'day_iso' => optional($draft->day)->toDateString(),
                 'raw_day' => $draft->day,
                 'gathering_type' => $draft->gathering_type,
@@ -101,6 +101,7 @@ class AttendanceController extends Controller
             })
             ->map(function ($group) use ($program, $yearLevel) {
                 $first = $group->first();
+                $createdAt = $group->min('created_at');
 
                 $dayCarbon = $first->day instanceof Carbon
                     ? $first->day
@@ -113,7 +114,7 @@ class AttendanceController extends Controller
                     'batch_id'         => $first->batch_id ?? null,
                     'course'           => $program,
                     'year'             => $yearLevel,
-                    'date'             => $dayCarbon->format('F j, Y'),
+                    'date'             => optional($createdAt)->format('F j, Y'),
                     'day_iso'          => $dayCarbon->toDateString(),
                     'raw_day'          => $dayCarbon,
                     'gathering_type'   => $first->gathering_type,

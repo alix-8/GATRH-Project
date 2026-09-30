@@ -71,14 +71,27 @@
 .ph-drawer-submitted-card {
     margin-bottom: 18px;
     padding: 12px 16px;
+    border: 1px solid #d5ddea;
     border-radius: 10px;
-    background: #f4f6f9;
+    background: #f1f4f9;
 }
 
-.ph-drawer-submitted-card > span {
+.ph-drawer-submitted-card strong,
+.ph-drawer-submitted-card span,
+.ph-drawer-submitted-card small {
+    text-align: left;
+    gap: 0;
+    line-height: 1;
+}
+
+.ph-drawer-submitted-card div {
+    
+}
+
+.ph-drawer-submitted-label {
     display: block;
     margin-bottom: 7px;
-    color: #6b7482;
+    color: #172b4d;
     font-size: 11px;
 }
 
@@ -211,6 +224,25 @@
     outline: 0;
     color: #172b4d;
     font: inherit;
+    font-size: 12px;
+}
+
+.ph-submission-drawer .ph-drawer-controls label.search-pill {
+    height: auto;
+    border-radius: 20px;
+    padding: 6px 12px;
+    background: #fff;
+    font-size: 12px;
+}
+
+.ph-submission-drawer .ph-drawer-controls label.search-pill svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+.ph-submission-drawer .ph-drawer-controls .search-pill-input {
+    width: 110px;
     font-size: 12px;
 }
 
@@ -533,6 +565,7 @@
 }
 
 .ph-record-detail .ph-drawer-submitter {
+    align-items: flex-start;
     gap: 12px;
 }
 

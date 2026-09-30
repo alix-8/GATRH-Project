@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { request } from '../../../../api/request'
 import SearchIcon from '../../../../assets/search-icon.png'
 import GatheringIcon from '../../../../components/Icons/GatheringFilterIcon.svg'
@@ -9,6 +10,7 @@ import SubmissionPagination from './SubmissionPagination'
 import FilterDropdown from '../../../../components/Filters/FilterDropdown'
 import CalendarFilter from '../../../../components/Filters/CalendarFilter'
 import LoadingCircle from '../../../../components/Loading/LoadingCircle'
+import UserAvatar from '../../../../components/UserAvatar'
 
 const GATHERINGS = [
     { value: '', label: 'Gathering' }, { value: 'pm', label: 'Prayer Meeting' },
@@ -22,6 +24,8 @@ const YEARS = [
 const STATUSES = [{ value: '', label: 'Status' }, { value: 'pending', label: 'Pending' }]
 
 export default function SubmissionTable() {
+    const location = useLocation()
+    const navigate = useNavigate()
     const [rows, setRows] = useState([])
     const [pendingCount, setPendingCount] = useState(0)
     const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 })
@@ -29,7 +33,7 @@ export default function SubmissionTable() {
     const [page, setPage] = useState(1)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
-    const [activeSubmission, setActiveSubmission] = useState(null)
+    const [activeSubmission, setActiveSubmission] = useState(() => location.state?.openSubmission ?? null)
     const [refresh, setRefresh] = useState(0)
 
     const params = useMemo(() => {
@@ -58,6 +62,11 @@ export default function SubmissionTable() {
         loadSubmissions(controller.signal)
         return () => controller.abort()
     }, [loadSubmissions, refresh])
+
+    useEffect(() => {
+        if (!location.state?.openSubmission) return
+        navigate(location.pathname, { replace: true, state: null })
+    }, [location.pathname, location.state, navigate])
 
     const updateFilter = (key, value) => {
         setFilters((current) => ({ ...current, [key]: value }))
@@ -106,7 +115,7 @@ export default function SubmissionTable() {
                                     <tr><td className="ph-submissions-state" colSpan="7">No submissions match these filters.</td></tr>
                                 ) : rows.map((row) => (
                                     <tr key={row.id}>
-                                        <td><span className="ph-submitter-avatar">{row.secretary?.charAt(0).toUpperCase() || '?'}</span>{row.secretary}</td>
+                                        <td><UserAvatar className="ph-submitter-avatar" name={row.secretary} program={row.program} />{row.secretary}</td>
                                         <td>{row.gathering}</td>
                                         <td>{row.program}</td>
                                         <td>{row.year_label}</td>

@@ -379,7 +379,7 @@ function Dashboard() {
                                             <time>{item.date || ''}</time>
                                             <button
                                                 type="button"
-                                                onClick={() => navigate('/reminders', { state: { openReminderId: item.id } })}
+                                                onClick={() => navigate('/reminders', { state: { highlightReminderId: item.id } })}
                                             >
                                                 View <span>›</span>
                                             </button>

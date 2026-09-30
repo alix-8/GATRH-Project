@@ -73,7 +73,43 @@
 /* for preview individual panel */
 .preview-header-row-single,
 .preview-card-single {
-    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr));
+}
+
+.preview-header-row-single {
+    align-items: center;
+    min-height: 64px;
+}
+
+.preview-card-single {
+    align-items: center;
+    min-height: 76px;
+}
+
+.preview-card-single .preview-card-name {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    padding-top: 0;
+    line-height: 1.45;
+}
+
+.preview-student-number {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.preview-student-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.preview-card-single .preview-input {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .import-parse-preview-btn {

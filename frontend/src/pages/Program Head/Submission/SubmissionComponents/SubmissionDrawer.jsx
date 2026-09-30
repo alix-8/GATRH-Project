@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { request } from '../../../../api/request'
 import { TotalStudentsIcon, RespondedIcon, NoResponseIcon } from '../../../../components/Icons/AttendanceIcons'
-import { SearchIcon } from '../../../../components/Icons/Reusables'
 import RecordApprovedIcon from '../../../../components/Icons/RecordApprovedIcon.svg'
 import RecordCalendarIcon from '../../../../components/Icons/RecordCalendarIcon.svg'
 import RecordClockIcon from '../../../../components/Icons/RecordClockIcon.svg'
 import RecordProgramIcon from '../../../../components/Icons/RecordProgramIcon.svg'
 import LoadingCircle from '../../../../components/Loading/LoadingCircle'
+import UserAvatar from '../../../../components/UserAvatar'
+import SearchPill from '../../../../components/SearchPill'
 import './SubmissionDrawer.css'
 
 const PAGE_SIZE = 10
-const initials = (name = '') => name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('')
-
 export default function SubmissionDrawer({ submission, onClose, onUpdated, onExport }) {
     const [detail, setDetail] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -77,7 +76,9 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                 <div className="ph-submission-drawer-scroll">
                     <header className="ph-drawer-header">
                         <div><h2 id="ph-drawer-title">{submission.status === 'pending' ? 'Review Submission' : submission.status === 'approved' ? 'Record Details' : 'Submission Details'}</h2>
-                            <p>{submission.status === 'approved' ? 'View finalized attendance record details' : `${detail?.gathering || submission.gathering} · ${detail?.day || submission.date}`}</p></div>
+                            <p>{submission.status === 'approved'
+                                ? 'View finalized attendance record details'
+                                : [detail?.gathering || submission.gathering, detail?.day || submission.date, detail?.time].filter(Boolean).join(' · ')}</p></div>
                     </header>
 
                     {loading && <p className="ph-drawer-state"><LoadingCircle label="Loading submission…" /></p>}
@@ -85,9 +86,12 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                     {!loading && detail && <>
                         <div className="ph-drawer-submitted-card">
                             {submission.status === 'approved' && <div className="ph-record-approved-banner"><img src={RecordApprovedIcon} alt="" /> Sent to Chancellor &amp; Coordinator</div>}
-                            <div className="ph-drawer-submitter"><div>{initials(detail.submitted_by?.name || submission.secretary)}</div><section>
+                            {submission.status !== 'approved' && <span className="ph-drawer-submitted-label">Submitted by</span>}
+                            <div className="ph-drawer-submitter"><UserAvatar as="div" className="ph-drawer-user-avatar" name={detail.submitted_by?.name || submission.secretary} program={submission.program} /><section>
                                 {submission.status === 'approved' && <strong>{detail.gathering || submission.gathering}</strong>}
-                                <span>passed by: {detail.submitted_by?.name || submission.secretary}</span>
+                                {submission.status === 'approved'
+                                    ? <span>Passed by: {detail.submitted_by?.name || submission.secretary}</span>
+                                    : <strong>{detail.submitted_by?.name || submission.secretary}</strong>}
                                 {submission.status === 'approved' ? <>
                                     <small className="ph-record-date-time">
                                         <img src={RecordCalendarIcon} alt="" />
@@ -96,7 +100,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         <span className="ph-record-time-value">{detail.time || detail.students?.find((student) => student.batch && student.batch !== '---')?.batch || '—'}</span>
                                     </small>
                                     <small><img className="ph-record-program-icon" src={RecordProgramIcon} alt="" />{submission.program} · {submission.year_label}</small>
-                                </> : <small>{detail.submitted_by?.role || 'Secretary'}</small>}
+                                </> : <small>{[detail.submitted_by?.role, 'Spiritual Secretary'].filter(Boolean).join(' · ')}</small>}
                             </section></div>
                         </div>
 
@@ -115,7 +119,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                 <select aria-label="Filter students by attendance status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1) }}>
                                     <option value="all">All Status</option><option value="present">Present</option><option value="absent">No response</option>
                                 </select>
-                                <label><SearchIcon /><input placeholder="Search Student…" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} /></label>
+                                <SearchPill className="ph-drawer-search-pill" ariaLabel="Search students" placeholder="Search Student…" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} />
                             </div>
                         </div>
 

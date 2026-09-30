@@ -2,20 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Header from '../../components/Header/Header'
+import UserAvatar from '../../components/UserAvatar'
 import ShowPasswordIcon from '../../assets/show-password-icon.png'
 import './Profile.css'
 
 const API_URL = 'http://127.0.0.1:8000/api'
-
-function getInitials(name = '') {
-    return name
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map(part => part[0].toUpperCase())
-        .join('')
-}
 
 function formatRole(role = '') {
     return role.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase())
@@ -169,7 +160,7 @@ function Profile() {
 
                 <section className="profile-content">
                     <div className="profile-banner">
-                        <div className="profile-avatar" aria-hidden="true">{getInitials(user.name)}</div>
+                        <UserAvatar as="div" className="profile-avatar" name={user.name} program={user.program} />
                         <div className="profile-identity">
                             <h1>{user.name || 'User'}</h1>
                             <p>{formatRole(user.role)}</p>

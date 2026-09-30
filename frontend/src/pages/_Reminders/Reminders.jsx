@@ -161,6 +161,19 @@ function notifyRemindersChanged() {
     window.dispatchEvent(new Event('reminders:changed'))
 }
 
+async function fetchProgramHeadSubmissions(signal) {
+    const firstPage = await request('/program-head/submissions?page=1&per_page=50', { signal })
+    const submissions = [...(firstPage.data ?? [])]
+    const lastPage = Number(firstPage.meta?.last_page ?? 1)
+
+    for (let page = 2; page <= lastPage; page += 1) {
+        const result = await request(`/program-head/submissions?page=${page}&per_page=50`, { signal })
+        submissions.push(...(result.data ?? []))
+    }
+
+    return { submissions, pendingCount: firstPage.pending_count ?? submissions.length }
+}
+
 function Reminders() {
     const currentUser = (() => {
         try { return JSON.parse(localStorage.getItem('user') || 'null') } catch { return null }
@@ -176,6 +189,7 @@ function Reminders() {
     const [attendanceTasks, setAttendanceTasks] = useState([])
     const [attendanceEntries, setAttendanceEntries] = useState([])
     const [activeReminder, setActiveReminder] = useState(null)
+    const [highlightedReminderId, setHighlightedReminderId] = useState(null)
     const [activeFilter, setActiveFilter] = useState('all')
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
     const [error, setError] = useState('')
@@ -203,39 +217,59 @@ function Reminders() {
             setError('')
 
             try {
-                const [remindersData, attendanceData, roleSummaryData] = await Promise.all([
+                const [remindersData, attendanceData, roleSummaryData, programHeadSubmissionData] = await Promise.all([
                     request('/reminders', { signal: controller.signal }),
                     role === 'secretary'
                         ? request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal })
                         : Promise.resolve(null),
                     ['program_head', 'chancellor'].includes(role)
-                        ? request('/reminders/role-summary', { signal: controller.signal })
+                        ? request('/reminders/role-summary', { signal: controller.signal }).catch(error => {
+                            if (error.name === 'AbortError') throw error
+                            return null
+                        })
+                        : Promise.resolve(null),
+                    role === 'program_head'
+                        ? fetchProgramHeadSubmissions(controller.signal)
                         : Promise.resolve(null),
                 ])
 
                 const nextReminders = remindersData.data ?? []
                 const attendanceRows = attendanceData?.data ?? []
-                const nextAttendanceTasks = attendanceRows
-                    .filter(record => ['validating', 'pending', 'approved'].includes(record.status))
-                    .map(record => {
-                        const meta = ATTENDANCE_TASK_STATUS[record.status]
+                const programHeadSubmissions = programHeadSubmissionData?.submissions ?? []
+                const nextAttendanceTasks = role === 'program_head'
+                    ? programHeadSubmissions.map(record => ({
+                        id: `submission-${record.id}`,
+                        type: 'attendance',
+                        sourceRecord: record,
+                        title: 'Attendance record awaiting review',
+                        description: [record.gathering, record.date, record.program, record.year_label].filter(Boolean).join(' · '),
+                        status: 'needs_action',
+                        statusLabel: 'Pending review',
+                        tone: 'needs-action',
+                        action: 'Review',
+                        createdAt: record.date_iso,
+                    }))
+                    : attendanceRows
+                        .filter(record => ['validating', 'pending', 'approved'].includes(record.status))
+                        .map(record => {
+                            const meta = ATTENDANCE_TASK_STATUS[record.status]
 
-                        return {
-                            id: `attendance-${record.id}`,
-                            type: 'attendance',
-                            sourceRecord: record,
-                            title: meta.label,
-                            description: buildDateTime({
-                                date: record.gathering,
-                                time: record.date,
-                            }),
-                            status: record.status === 'approved' ? 'completed' : 'needs_action',
-                            statusLabel: meta.label,
-                            tone: meta.tone,
-                            action: meta.action,
-                            createdAt: record.day_iso,
-                        }
-                    })
+                            return {
+                                id: `attendance-${record.id}`,
+                                type: 'attendance',
+                                sourceRecord: record,
+                                title: meta.label,
+                                description: buildDateTime({
+                                    date: record.gathering,
+                                    time: record.date,
+                                }),
+                                status: record.status === 'approved' ? 'completed' : 'needs_action',
+                                statusLabel: meta.label,
+                                tone: meta.tone,
+                                action: meta.action,
+                                createdAt: record.day_iso,
+                            }
+                        })
 
                 setReminders(nextReminders)
                 setAttendanceEntries(attendanceRows)
@@ -244,7 +278,7 @@ function Reminders() {
                 setSummary({
                     upcoming: remindersData.summary?.upcoming ?? nextReminders.filter(item => item.status === 'upcoming').length,
                     needs_action: role === 'program_head'
-                        ? (roleSummaryData?.attendance_count ?? 0)
+                        ? (programHeadSubmissionData?.pendingCount ?? nextAttendanceTasks.length)
                         : nextAttendanceTasks.filter(item => item.status === 'needs_action').length,
                     completed: remindersData.summary?.completed
                         ?? nextReminders.filter(item => item.status === 'completed').length
@@ -275,17 +309,30 @@ function Reminders() {
     }, [role])
 
     useEffect(() => {
-        const targetReminderId = location.state?.openReminderId
+        const targetReminderId = location.state?.highlightReminderId
         if (targetReminderId == null || loading) return
 
         const targetReminder = reminders.find(reminder => String(reminder.id) === String(targetReminderId))
         if (targetReminder) {
-            setActiveReminder(targetReminder)
+            setActiveReminder(null)
+            setHighlightedReminderId(String(targetReminder.id))
             setActiveFilter('all')
         }
 
         navigate(location.pathname, { replace: true, state: null })
     }, [location.pathname, location.state, loading, reminders, navigate])
+
+    useEffect(() => {
+        if (!highlightedReminderId || loading) return
+
+        document.getElementById(`reminder-item-${highlightedReminderId}`)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+        })
+
+        const timeoutId = window.setTimeout(() => setHighlightedReminderId(null), 3500)
+        return () => window.clearTimeout(timeoutId)
+    }, [highlightedReminderId, loading, activeFilter])
 
     const upcomingCard = { title: 'Upcoming', value: summary.upcoming, description: 'Scheduled activities', icon: RemindersIcon, className: 'upcoming' }
     const escalationCard = { title: 'Escalations', value: roleSummary.escalation_count, description: 'Students requiring intervention', icon: NotificationIcon, className: 'needs-action' }
@@ -345,7 +392,7 @@ function Reminders() {
                 status: reminder.status,
                 statusLabel: isGathering
                     ? alreadyRecorded
-                        ? 'Already recorded'
+                        ? 'Ready for validation'
                         : isPast
                             ? (countdown || 'Attendance deadline passed')
                             : isToday
@@ -571,7 +618,11 @@ function Reminders() {
                             <p className="reminders-state">No reminders found.</p>
                         )}
                         {!isAddOpen && !loading && !error && visibleItems.map(item => (
-                            <article className={`reminders-task-item ${item.tone}`} key={item.id}>
+                            <article
+                                id={item.reminderId ? `reminder-item-${item.reminderId}` : undefined}
+                                className={`reminders-task-item ${item.tone} ${String(item.reminderId) === highlightedReminderId ? 'reminders-task-item-highlighted' : ''}`}
+                                key={item.id}
+                            >
                                 <div className="task-main">
                                     <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance-task'}`} aria-hidden="true">
                                         <img
@@ -610,6 +661,10 @@ function Reminders() {
                                                             gathering_date: item.sourceReminder.gathering_date,
                                                         },
                                                     })
+                                                } else if (role === 'program_head') {
+                                                    navigate('/program-head/submission', {
+                                                        state: { openSubmission: { ...item.sourceRecord, status: 'pending' } },
+                                                    })
                                                 } else {
                                                     navigate('/attendance', {
                                                         state: { openAttendanceRecord: item.sourceRecord },
@@ -626,52 +681,6 @@ function Reminders() {
                     </div>
                 </section>
             </main>
-
-            {activeReminder && (
-                <div className="reminder-detail-backdrop" onClick={() => setActiveReminder(null)}>
-                    <aside
-                        className="reminder-detail-drawer"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="reminder-detail-title"
-                        onClick={event => event.stopPropagation()}
-                    >
-                        <header className="reminder-detail-header">
-                            <div>
-                                <span className="reminder-detail-eyebrow">Reminder #{activeReminder.id}</span>
-                                <h2 id="reminder-detail-title">{activeReminder.title}</h2>
-                            </div>
-                            <button type="button" className="reminder-detail-close" onClick={() => setActiveReminder(null)} aria-label="Close reminder details">
-                                ×
-                            </button>
-                        </header>
-                        <div className="reminder-detail-body">
-                            <div className="reminder-detail-field">
-                                <span>Type</span>
-                                <strong>{activeReminder.reminder_type === 'submission_countdown' ? 'System Reminder' : activeReminder.reminder_type === 'gathering' ? 'Submission' : 'My Reminder'}</strong>
-                            </div>
-                            {activeReminder.gathering_type && (
-                                <div className="reminder-detail-field">
-                                    <span>Gathering</span>
-                                    <strong>{GATHERING_LABELS[activeReminder.gathering_type] || activeReminder.gathering_type}</strong>
-                                </div>
-                            )}
-                            <div className="reminder-detail-field">
-                                <span>Date</span>
-                                <strong>{formatSavedReminderDateTime(activeReminder.due_date || activeReminder.gathering_date) || 'No date set'}</strong>
-                            </div>
-                            <div className="reminder-detail-field">
-                                <span>Status</span>
-                                <strong>{activeReminder.status?.replaceAll('_', ' ') || '—'}</strong>
-                            </div>
-                            <div className="reminder-detail-field reminder-detail-notes">
-                                <span>Details</span>
-                                <p>{activeReminder.description || 'No additional details.'}</p>
-                            </div>
-                        </div>
-                    </aside>
-                </div>
-            )}
 
             {isAddOpen && (
                 <div className="reminder-modal-backdrop">
