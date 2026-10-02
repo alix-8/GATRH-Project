@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceDraft;
+use App\Models\AttendanceRecord;
 use App\Models\Reminder;
 use App\Models\Student;
+use App\Services\AttendanceParsingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,7 @@ class AttendanceDraftController extends Controller
      * Resume an existing draft by ID.
      * GET /api/attendance/drafts/{id}
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, int $id, AttendanceParsingService $parsingService): JsonResponse
     {
         $draft = AttendanceDraft::where('id', $id)
             ->where('user_id', $request->user()->id)
@@ -51,6 +53,24 @@ class AttendanceDraftController extends Controller
         $responded = $students->where('status', 'present')->count();
         $total = $students->count();
 
+        $type = (string) $draft->gathering_type;
+        $range = $parsingService->getApplicableWeekRange($type, null, $draft->raw_text);
+        $studentIds = $students->pluck('student_id')->filter()->unique()->values();
+        $existingQuery = AttendanceRecord::where('gathering_type', $type)
+            ->whereBetween('day', [$range['start']->toDateString(), $range['end']->toDateString()]);
+
+        if ($studentIds->isNotEmpty()) {
+            $existingQuery->whereIn('student_id', $studentIds);
+        } else {
+            $existingQuery->whereHas('student', function ($query) use ($request) {
+                $query->where('program', $request->user()->program)
+                    ->where('year_level', $request->user()->year_level);
+            });
+        }
+
+        $duplicateCount = $existingQuery->count();
+        $weekLabel = $range['start']->format('F j') . ' - ' . $range['end']->format('F j, Y');
+
         return response()->json([
             'status' => 'success',
             'data'   => [
@@ -66,6 +86,17 @@ class AttendanceDraftController extends Controller
                 'responded_count'    => $responded,
                 'no_response_count'  => $total - $responded,
                 'students'           => $students,
+                'duplicate'          => $duplicateCount > 0 ? [
+                    'status'                => 'duplicate_detected',
+                    'requires_confirmation' => true,
+                    'gathering_type'        => $type,
+                    'duplicates_count'      => $duplicateCount,
+                    'week_range'            => [
+                        'start' => $range['start']->toDateString(),
+                        'end'   => $range['end']->toDateString(),
+                        'label' => $weekLabel,
+                    ],
+                ] : null,
             ],
         ], 200);
     }

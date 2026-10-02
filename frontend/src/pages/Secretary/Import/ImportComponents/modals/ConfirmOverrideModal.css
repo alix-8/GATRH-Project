@@ -1,0 +1,112 @@
+.confirm-override-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 34, 71, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 2000;
+}
+
+.confirm-override-modal {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.75rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 45px rgba(15, 34, 71, 0.18);
+    text-align: center;
+}
+
+.confirm-override-close {
+    position: absolute;
+    top: 0.9rem;
+    right: 1rem;
+    border: none;
+    background: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: #c3cad6;
+    cursor: pointer;
+}
+
+.confirm-override-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.75rem;
+    background: #FFF3CD;
+    color: #856404;
+}
+
+.confirm-override-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f2247;
+}
+
+.confirm-override-text {
+    margin: 0.5rem 0;
+    font-size: 0.88rem;
+    color: #4a5568;
+    line-height: 1.45;
+}
+
+.confirm-override-subtext {
+    margin: 0.5rem 0 1.25rem;
+    font-size: 0.8rem;
+    color: #718096;
+    line-height: 1.4;
+}
+
+.confirm-override-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.confirm-override-btn-cancel {
+    padding: 0.55rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid #c7d0dc;
+    background: #fff;
+    color: #4a5568;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.confirm-override-btn-cancel:hover:not(:disabled) {
+    background: #f7fafc;
+    border-color: #a0aec0;
+}
+
+.confirm-override-btn-override {
+    padding: 0.55rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid #D97706;
+    background: #D97706;
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.confirm-override-btn-override:hover:not(:disabled) {
+    background: #B45309;
+    border-color: #B45309;
+}
+
+.confirm-override-btn-cancel:disabled,
+.confirm-override-btn-override:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

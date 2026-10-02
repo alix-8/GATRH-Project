@@ -8,6 +8,7 @@ import AttendancePagination from './AttendancePagination'
 import LoadingCircle from '../../../../components/Loading/LoadingCircle'
 import UserAvatar from '../../../../components/UserAvatar'
 import SearchPill from '../../../../components/SearchPill'
+import ConfirmOverrideModal from '../../Import/ImportComponents/modals/ConfirmOverrideModal'
 
 const PAGE_SIZE = 10
 
@@ -16,6 +17,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [submitting, setSubmitting] = useState(false)
+    const [duplicateConfirm, setDuplicateConfirm] = useState(null)
     const [search, setSearch] = useState('')
     //for status filter
     const [statusFilter, setStatusFilter] = useState('all')
@@ -27,6 +29,8 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         let cancelled = false
         setLoading(true)
         setError(null)
+        setDraft(null)
+        setDuplicateConfirm(null)
 
         const url = record.source === 'draft'
         ? `/attendance/drafts/${record.ref_id}`
@@ -35,7 +39,13 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             : `/attendance/session?gathering_type=${record.gathering_type}&day=${record.day_iso}`
 
         request(url)
-            .then((json) => { if (!cancelled) setDraft(json.data) })
+            .then((json) => {
+                if (cancelled) return
+                setDraft(json.data)
+                if (json.data?.duplicate?.status === 'duplicate_detected') {
+                    setDuplicateConfirm(json.data.duplicate)
+                }
+            })
             .catch((err) => { if (!cancelled) setError(err.message) })
             .finally(() => { if (!cancelled) setLoading(false) })
 
@@ -57,7 +67,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const pageCount = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE))
     const pageStudents = filteredStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (opts = {}) => {
         if (!draft) return
         setSubmitting(true)
         setError(null)
@@ -71,14 +81,30 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 venue: s.venue,
             }))
 
+            const isOverride = Boolean(opts.override)
+
             await request('/attendance/submit', {
                 method: 'POST',
-                body: JSON.stringify({ draft_id: draft.id, records }),
+                body: JSON.stringify({
+                    draft_id: draft.id,
+                    records,
+                    override: isOverride,
+                }),
             })
 
+            setDuplicateConfirm(null)
             onSubmitted(record.id)
         } catch (err) {
-            setError(err.message)
+            const details = err.details || {}
+            if (details.requires_confirmation || details.status === 'duplicate_detected') {
+                setDuplicateConfirm({
+                    ...details,
+                    gathering_type: details.gathering_type || record.gathering_type,
+                    week_range: details.week_range || { label: record.date || draft.day },
+                })
+            } else {
+                setError(err.message)
+            }
         } finally {
             setSubmitting(false)
         }
@@ -121,7 +147,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                     {loading && <p><LoadingCircle label="Loading attendance details…" /></p>}
                     {error && <p style={{ color: '#e52328' }}>{error}</p>}
 
-                    {!loading && draft && (
+                    {!loading && draft && !duplicateConfirm && (
                         <>
                             <div className="submitted-card">
                                 <span className="submitted-label">Submitted by</span>
@@ -267,6 +293,18 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                     {footer}
                 </div>
             </div>
+
+            {duplicateConfirm && (
+                <ConfirmOverrideModal
+                    duplicateData={duplicateConfirm}
+                    isSubmitting={submitting}
+                    onCancel={() => {
+                        setDuplicateConfirm(null)
+                        onClose()
+                    }}
+                    onOverride={() => handleSubmit({ override: true })}
+                />
+            )}
         </div>
     )
 }
