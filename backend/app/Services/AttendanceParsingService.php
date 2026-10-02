@@ -105,18 +105,19 @@ class AttendanceParsingService
     /**
      * Extracts metadata used to parse the attendance form.
      */
-    public function extractHeaderMetadata(string $rawText, ?string $overrideProgram = null, ?int $overrideYearLevel = null, ?string $overrideGathering = null): array
+    public function extractHeaderMetadata(string $rawText, ?string $overrideProgram = null, ?int $overrideYearLevel = null, ?string $overrideGathering = null, $cycle = null): array
     {
         $detectedGathering = $this->detectGatheringType($rawText);
         $detectedProgram = $overrideProgram ? trim($overrideProgram) : null;
         $detectedYear = $overrideYearLevel;
         $gatheringType = $detectedGathering ?: ($overrideGathering ?: 'pm');
+        $range = $this->getApplicableWeekRange($gatheringType, $cycle, $rawText);
 
         return [
             'gathering_type' => $gatheringType,
             'program'        => $detectedProgram,
             'year_level'     => $detectedYear,
-            'default_date'   => GatheringCycle::currentCycleStart($gatheringType)->toDateString(),
+            'default_date'   => $range['start']->toDateString(),
         ];
     }
 
@@ -142,7 +143,7 @@ class AttendanceParsingService
         $template .= "Thanksgiving - {$tgLabel}\n";
         $template .= "\n";
         $template .= "[FILL OUT YOUR DETAILS BELOW]\n";
-        $template .= "Format: Day| Time | Venue\n\n";
+        $template .= "Format: Day (e.g., Monday, Mon) | Time | Venue\n\n";
 
         foreach ($students as $index => $student) {
             $number = $index + 1;
@@ -196,11 +197,8 @@ class AttendanceParsingService
 
         if (isset($parts[3]) && $parts[3] !== '') {
             $rawDate = trim($parts[3]);
-            if (preg_match('/\d{4}-\d{2}-\d{2}/', $rawDate)) {
-                $date = $rawDate;
-            }
-        } elseif (isset($parts[2]) && preg_match('/\d{4}-\d{2}-\d{2}/', $parts[2])) {
-            $date = trim($parts[2]);
+        } elseif (isset($parts[2]) && (preg_match('/^\d{4}-\d{2}-\d{2}$/', $parts[2]) || isset(self::WEEKDAY_MAP[strtolower(trim($parts[2]))]))) {
+            $rawDate = trim($parts[2]);
             $venue = null;
         }
 
@@ -274,7 +272,7 @@ class AttendanceParsingService
     /**
      * Parses a single text line and matches it against student records.
      */
-    public function buildRecordFromLine(string $line, string $program, int $yearLevel, string $defaultDate, string $gatheringType): array
+    public function buildRecordFromLine(string $line, string $program, int $yearLevel, string $defaultDate, string $gatheringType, $cycle = null): array
     {
         $parts = $this->extractLineParts($line, $defaultDate);
 
@@ -300,19 +298,25 @@ class AttendanceParsingService
             ];
         }
 
-        if (!$this->isValidDateFormat($parts['raw_date'])) {
+        $hasAnyDetails = !empty($parts['raw_batch']) || !empty($parts['venue']) || !empty($parts['raw_date']);
+
+        if (!empty($parts['raw_date'])) {
+            $range = $this->getApplicableWeekRange($gatheringType, $cycle);
+            $resolution = $this->resolveWeekdayToDate($parts['raw_date'], $range['start'], $range['end']);
+            if ($resolution['success']) {
+                $parts['date'] = $resolution['date'];
+            } else {
+                $formatErrors[] = [
+                    'field'  => 'day',
+                    'value'  => $parts['raw_date'],
+                    'reason' => $resolution['error'],
+                ];
+            }
+        } elseif ($hasAnyDetails) {
             $formatErrors[] = [
                 'field'  => 'day',
-                'value'  => $parts['raw_date'],
-                'reason' => 'Date must be in YYYY-MM-DD format, e.g. "2026-08-28".',
-            ];
-        } elseif (!$this->isDateWithinAllowedRange($parts['raw_date'])) {
-            // Only check the range if the format was already valid — no point
-            // flagging a range issue on a date that's malformed anyway
-            $formatErrors[] = [
-                'field'  => 'day',
-                'value'  => $parts['raw_date'],
-                'reason' => 'Date must not be in the future and must be within the last 7 days.',
+                'value'  => null,
+                'reason' => 'Weekday is missing. Please provide a weekday name (e.g., Monday or Mon).',
             ];
         }
 
@@ -340,14 +344,26 @@ class AttendanceParsingService
         ];
     }
 
-    private const WEEKDAY_MAP = [
-        'sun' => 0, 'sunday' => 0, 'mon' => 1, 'monday' => 1,
-        'tue' => 2, 'tues' => 2, 'tuesday' => 2, 'wed' => 3, 'wednesday' => 3,
-        'thu' => 4, 'thurs' => 4, 'thursday' => 4, 'fri' => 5, 'friday' => 5,
-        'sat' => 6, 'saturday' => 6,
+    public const WEEKDAY_MAP = [
+        'sun'       => \Carbon\Carbon::SUNDAY,
+        'sunday'    => \Carbon\Carbon::SUNDAY,
+        'mon'       => \Carbon\Carbon::MONDAY,
+        'monday'    => \Carbon\Carbon::MONDAY,
+        'tue'       => \Carbon\Carbon::TUESDAY,
+        'tues'      => \Carbon\Carbon::TUESDAY,
+        'tuesday'   => \Carbon\Carbon::TUESDAY,
+        'wed'       => \Carbon\Carbon::WEDNESDAY,
+        'wednesday' => \Carbon\Carbon::WEDNESDAY,
+        'thu'       => \Carbon\Carbon::THURSDAY,
+        'thurs'     => \Carbon\Carbon::THURSDAY,
+        'thursday'  => \Carbon\Carbon::THURSDAY,
+        'fri'       => \Carbon\Carbon::FRIDAY,
+        'friday'    => \Carbon\Carbon::FRIDAY,
+        'sat'       => \Carbon\Carbon::SATURDAY,
+        'saturday'  => \Carbon\Carbon::SATURDAY,
     ];
 
-    public function parseBatchText(string $rawText, string $program, int $yearLevel): array
+    public function parseBatchText(string $rawText, string $program, int $yearLevel, $cycle = null): array
     {
         $lines = preg_split('/\r\n|\r|\n/', trim($rawText));
         $students = [];
@@ -420,13 +436,14 @@ class AttendanceParsingService
                 ];
 
                 foreach (['pm', 'ws', 'tg'] as $type) {
+                    $range = $this->getApplicableWeekRange($type, $cycle, $rawText);
                     $result[$type][] = [
                         'student_id'     => $student->id,
                         'student_name'   => $student->name,
                         'gathering_type' => $type,
                         'batch'          => null,
                         'venue'          => null,
-                        'day'            => $this->resolveDateForWeekday($type, null),
+                        'day'            => $range['start']->toDateString(),
                         'status'         => 'no_response',
                         'is_manual'      => false,
                     ];
@@ -444,17 +461,64 @@ class AttendanceParsingService
                 $hasVenue = !empty($slot['venue']);
 
                 if ($hasTime && !$this->isValidBatchFormat($slot['time'])) {
+                    $timeErr = [
+                        'field'  => 'time',
+                        'value'  => $slot['time'],
+                        'reason' => 'Time must be in a valid format, e.g. "8:30 AM".',
+                    ];
                     $formatErrorLines[] = [
                         'student_name'   => $student->name,
                         'gathering_type' => $type,
                         'field'          => 'time',
                         'value'          => $slot['time'],
-                        'reason'         => 'Time must be in a valid format, e.g. "8:30 AM".',
+                        'reason'         => $timeErr['reason'],
+                        'raw_line'       => "{$student->name} (" . strtoupper($type) . "): {$slot['time']}",
+                        'errors'         => [$timeErr],
+                    ];
+                }
+
+                $range = $this->getApplicableWeekRange($type, $cycle, $rawText);
+                $resolvedDay = null;
+
+                if ($hasDay) {
+                    $resolution = $this->resolveWeekdayToDate($slot['day'], $range['start'], $range['end']);
+                    if ($resolution['success']) {
+                        $resolvedDay = $resolution['date'];
+                    } else {
+                        $dayErr = [
+                            'field'  => 'day',
+                            'value'  => $slot['day'],
+                            'reason' => $resolution['error'],
+                        ];
+                        $formatErrorLines[] = [
+                            'student_name'   => $student->name,
+                            'gathering_type' => $type,
+                            'field'          => 'day',
+                            'value'          => $slot['day'],
+                            'reason'         => $resolution['error'],
+                            'raw_line'       => "{$student->name} (" . strtoupper($type) . "): {$slot['day']}",
+                            'errors'         => [$dayErr],
+                        ];
+                    }
+                } elseif ($hasTime || $hasVenue) {
+                    $missingDayErr = [
+                        'field'  => 'day',
+                        'value'  => null,
+                        'reason' => 'Weekday is missing. Please provide a weekday name (e.g., Monday or Mon).',
+                    ];
+                    $formatErrorLines[] = [
+                        'student_name'   => $student->name,
+                        'gathering_type' => $type,
+                        'field'          => 'day',
+                        'value'          => null,
+                        'reason'         => $missingDayErr['reason'],
+                        'raw_line'       => "{$student->name} (" . strtoupper($type) . ")",
+                        'errors'         => [$missingDayErr],
                     ];
                 }
 
                 $anyFilled = $hasDay || $hasTime || $hasVenue;
-                $allFilled = $hasDay && $hasTime && $hasVenue;
+                $allFilled = $hasDay && $hasTime && $hasVenue && $resolvedDay !== null;
 
                 if ($anyFilled && !$allFilled) {
                     $incompleteRecords[] = [
@@ -475,7 +539,7 @@ class AttendanceParsingService
                     'gathering_type' => $type,
                     'batch'          => $hasTime ? $this->formatBatchTime($slot['time']) : null,
                     'venue'          => $hasVenue ? $slot['venue'] : null,
-                    'day'            => $this->resolveDateForWeekday($type, $hasDay ? $slot['day'] : null),
+                    'day'            => $resolvedDay,
                     'status'         => $allFilled ? 'present' : 'no_response',
                     'is_manual'      => false,
                 ];
@@ -524,19 +588,180 @@ class AttendanceParsingService
         ];
     }
 
-    private function resolveDateForWeekday(string $gatheringType, ?string $dayName): string
+    public function resolveDateForWeekday(string $gatheringType, ?string $dayName, $cycle = null): ?string
     {
-        $cycleStart = GatheringCycle::currentCycleStart($gatheringType);
-        $target = self::WEEKDAY_MAP[strtolower(trim((string) $dayName))] ?? null;
+        $range = $this->getApplicableWeekRange($gatheringType, $cycle);
+        $res = $this->resolveWeekdayToDate($dayName, $range['start'], $range['end']);
+        return $res['success'] ? $res['date'] : null;
+    }
 
-        if ($target === null) return $cycleStart->toDateString();
-
-        for ($offset = 0; $offset < 7; $offset++) {
-            $candidate = $cycleStart->copy()->addDays($offset);
-            if ($candidate->dayOfWeek === $target) return $candidate->toDateString();
+    public function resolveWeekdayToDate(?string $weekday, \Carbon\Carbon $rangeStart, \Carbon\Carbon $rangeEnd): array
+    {
+        if ($weekday === null || trim($weekday) === '') {
+            return [
+                'success' => false,
+                'date'    => null,
+                'error'   => 'Weekday is missing. Please provide a weekday name (e.g., Monday or Mon).',
+            ];
         }
 
-        return $cycleStart->toDateString();
+        $clean = trim($weekday);
+        $key = strtolower($clean);
+
+        if (isset(self::WEEKDAY_MAP[$key])) {
+            $targetDay = self::WEEKDAY_MAP[$key];
+            $matches = [];
+            $curr = $rangeStart->copy()->startOfDay();
+            $end = $rangeEnd->copy()->startOfDay();
+
+            if ($curr->greaterThan($end)) {
+                return [
+                    'success' => false,
+                    'date'    => null,
+                    'error'   => 'Configured week range start date is after end date.',
+                ];
+            }
+
+            while ($curr->lessThanOrEqualTo($end)) {
+                if ($curr->dayOfWeek === $targetDay) {
+                    $matches[] = $curr->toDateString();
+                }
+                $curr->addDay();
+            }
+
+            if (count($matches) === 1) {
+                return [
+                    'success' => true,
+                    'date'    => $matches[0],
+                    'error'   => null,
+                ];
+            }
+
+            if (count($matches) === 0) {
+                $startFormatted = $rangeStart->format('F j, Y');
+                $endFormatted = $rangeEnd->format('F j, Y');
+                return [
+                    'success' => false,
+                    'date'    => null,
+                    'error'   => "Weekday \"{$clean}\" does not fall within the applicable week range ({$startFormatted} to {$endFormatted}).",
+                ];
+            }
+
+            return [
+                'success' => false,
+                'date'    => null,
+                'error'   => "Weekday \"{$clean}\" is ambiguous and matches multiple dates in the configured week range.",
+            ];
+        }
+
+        // Also accept existing calendar date in YYYY-MM-DD format if valid and in range
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $clean)) {
+            [$y, $m, $d] = explode('-', $clean);
+            if (checkdate((int)$m, (int)$d, (int)$y)) {
+                $dateObj = \Carbon\Carbon::createFromFormat('Y-m-d', $clean)->startOfDay();
+                $start = $rangeStart->copy()->startOfDay();
+                $end = $rangeEnd->copy()->startOfDay();
+
+                if ($dateObj->greaterThanOrEqualTo($start) && $dateObj->lessThanOrEqualTo($end)) {
+                    return [
+                        'success' => true,
+                        'date'    => $clean,
+                        'error'   => null,
+                    ];
+                }
+
+                $startFormatted = $rangeStart->format('F j, Y');
+                $endFormatted = $rangeEnd->format('F j, Y');
+                return [
+                    'success' => false,
+                    'date'    => null,
+                    'error'   => "Date \"{$clean}\" does not fall within the applicable week range ({$startFormatted} to {$endFormatted}).",
+                ];
+            }
+        }
+
+        return [
+            'success' => false,
+            'date'    => null,
+            'error'   => "Weekday \"{$clean}\" is invalid. Accepted values: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday (or Mon, Tue, Wed, Thu, Fri, Sat, Sun).",
+        ];
+    }
+
+    public function getApplicableWeekRange(string $gatheringType, $customCycle = null, ?string $rawText = null): array
+    {
+        $type = strtolower($gatheringType);
+
+        if ($customCycle !== null) {
+            if (is_array($customCycle)) {
+                if (isset($customCycle[$type])) {
+                    $norm = GatheringCycle::normalizeRange($customCycle[$type]);
+                    if ($norm) return $norm;
+                }
+                $norm = GatheringCycle::normalizeRange($customCycle);
+                if ($norm) return $norm;
+            } elseif (is_string($customCycle)) {
+                $norm = GatheringCycle::normalizeRange($customCycle);
+                if ($norm) return $norm;
+            }
+        }
+
+        if ($rawText !== null) {
+            $extracted = $this->extractWeekRangeFromHeader($rawText, $type);
+            if ($extracted) {
+                return $extracted;
+            }
+        }
+
+        return GatheringCycle::getWeekRange($type);
+    }
+
+    public function extractWeekRangeFromHeader(string $rawText, string $gatheringType): ?array
+    {
+        $type = strtolower($gatheringType);
+        $typeLabels = [
+            'pm' => ['prayer meeting', 'pm'],
+            'ws' => ['worship service', 'ws'],
+            'tg' => ['thanksgiving', 'tg'],
+            'special' => ['special gathering', 'special'],
+        ];
+
+        $lines = preg_split('/\r\n|\r|\n/', trim($rawText));
+        $generalRange = null;
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || str_contains($line, '---') || str_contains($line, '[')) {
+                continue;
+            }
+            if (preg_match('/^\d+[.)\-]/', $line)) {
+                break;
+            }
+
+            if (isset($typeLabels[$type])) {
+                foreach ($typeLabels[$type] as $lbl) {
+                    if (preg_match('/^' . preg_quote($lbl, '/') . '\s*[-:]\s*(.+)$/i', $line, $m)) {
+                        $parsed = GatheringCycle::parseRangeString($m[1]);
+                        if ($parsed) return $parsed;
+                    }
+                }
+            }
+
+            if (preg_match('/^(?:cycle|week\s*range|week|reporting\s*week|date)\s*[:\-]\s*(.+)$/i', $line, $m)) {
+                $parsed = GatheringCycle::parseRangeString($m[1]);
+                if ($parsed) {
+                    $generalRange = $parsed;
+                }
+            }
+
+            if ($generalRange === null) {
+                $parsed = GatheringCycle::parseRangeString($line);
+                if ($parsed) {
+                    $generalRange = $parsed;
+                }
+            }
+        }
+
+        return $generalRange;
     }
 
 
