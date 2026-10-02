@@ -335,7 +335,7 @@ class AttendanceController extends Controller
         $template .= "Gathering: {$gatheringType}\n";
         $template .= "\n";
         $template .= "[FILL OUT YOUR DETAILS BELOW]\n";
-        $template .= "Name | Batch(Time) | Venue | Date(YYYY-MM-DD)\n";
+        $template .= "Name | Batch(Time) | Venue | Day (e.g., Monday, Mon)\n";
 
         // Append numbered list with student names pre-filled
         foreach ($students as $index => $student) {
@@ -360,6 +360,8 @@ class AttendanceController extends Controller
             'gathering_id'   => 'nullable|exists:gatherings,id',
             'draft_id'       => 'nullable|exists:attendance_drafts,id',
             'confirm_blank'  => 'nullable|boolean',
+            'cycle'          => 'nullable',
+            'week_range'     => 'nullable',
         ]);
 
         $user = $request->user();
@@ -372,11 +374,14 @@ class AttendanceController extends Controller
             ], 422);
         }
 
+        $cycle = $request->input('cycle') ?? $request->input('week_range');
+
         $metadata = $this->parsingService->extractHeaderMetadata(
             $request->raw_text,
             $program,
             $yearLevel,
-            $request->gathering_type ?? 'pm'
+            $request->gathering_type ?? 'pm',
+            $cycle
         );
 
         if ($metadata['gathering_type'] !== ($request->gathering_type ?? 'pm')) {
@@ -408,13 +413,19 @@ class AttendanceController extends Controller
                 $metadata['program'],
                 $metadata['year_level'],
                 $metadata['default_date'],
-                $metadata['gathering_type']
+                $metadata['gathering_type'],
+                $cycle
             );
 
             if (!empty($result['format_errors'])) {
+                $studentName = $result['record']['student_name']
+                    ?? ($result['unmatched_data']['extracted_name'] ?? null);
+
                 $formatErrorLines[] = [
-                    'raw_line' => $line,
-                    'errors'   => $result['format_errors'],
+                    'student_name' => $studentName,
+                    'field'        => $result['format_errors'][0]['field'] ?? null,
+                    'raw_line'     => $line,
+                    'errors'       => $result['format_errors'],
                 ];
             }
 
@@ -549,6 +560,8 @@ class AttendanceController extends Controller
         $request->validate([
             'raw_text'      => 'required|string',
             'confirm_blank' => 'nullable|boolean',
+            'cycle'         => 'nullable',
+            'week_range'    => 'nullable',
         ]);
 
         $user = $request->user();
@@ -556,7 +569,8 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Your account is not assigned to a program and year level.'], 422);
         }
 
-        $parsed = $this->parsingService->parseBatchText($request->raw_text, $user->program, $user->year_level);
+        $cycle = $request->input('cycle') ?? $request->input('week_range');
+        $parsed = $this->parsingService->parseBatchText($request->raw_text, $user->program, $user->year_level, $cycle);
         $confirmBlank = (bool) $request->boolean('confirm_blank');
 
         $hasHardErrors = !empty($parsed['unmatched_lines']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']);
@@ -601,7 +615,8 @@ class AttendanceController extends Controller
             }
 
             $submissions = collect($parsed['records'][$type])->keyBy('student_id')->all();
-            $day = GatheringCycle::currentCycleStart($type)->toDateString();
+            $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->raw_text);
+            $day = $range['start']->toDateString();
 
             $sectionData = $this->parsingService->buildFullSectionRecords(
                 strtoupper($user->program), $user->year_level, $submissions, $day, $type

@@ -61,8 +61,10 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
 
     const fieldHasFormatError = (studentName, field, value) => {
         if (field === 'batch' && value && !TIME_RE.test(value.trim())) return true
+        const targetField = field === 'batch' ? 'batch' : field
         return errors?.format_errors?.some(
-            (e) => e.student_name === studentName && e.field === (field === 'batch' ? 'batch' : field)
+            (e) => (e.student_name === studentName || e.raw_line?.includes(studentName)) &&
+                   (e.field === targetField || (e.errors || []).some((err) => err.field === targetField))
         )
     }
 
@@ -75,7 +77,7 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                 <div className="preview-header-name">Student Name</div>
                 <div className="preview-header-slot">Batch (Time)</div>
                 <div className="preview-header-slot">Venue</div>
-                <div className="preview-header-slot">Date</div>
+                <div className="preview-header-slot">Day</div>
             </div>
 
             {students.map((s, i) => {
@@ -106,7 +108,7 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                         <input
                             type="text"
                             className={`preview-input ${fieldHasFormatError(s.name, 'day', s.slot.day) ? 'preview-input-error' : ''} ${incomplete && !s.slot.day ? 'preview-input-warning' : ''}`}
-                            placeholder="YYYY-MM-DD"
+                            placeholder="Day"
                             value={s.slot.day}
                             onChange={(e) => updateField(i, 'day', e.target.value)}
                         />
