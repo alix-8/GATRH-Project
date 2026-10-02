@@ -89,6 +89,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                     draft_id: draft.id,
                     records,
                     override: isOverride,
+                    week_range: draft.week_range,
                 }),
             })
 

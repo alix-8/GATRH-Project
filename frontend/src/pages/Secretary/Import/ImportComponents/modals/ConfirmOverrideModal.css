@@ -100,11 +100,6 @@
     transition: background 0.15s, border-color 0.15s;
 }
 
-.confirm-override-btn-override:hover:not(:disabled) {
-    background: #B45309;
-    border-color: #B45309;
-}
-
 .confirm-override-btn-cancel:disabled,
 .confirm-override-btn-override:disabled {
     opacity: 0.6;

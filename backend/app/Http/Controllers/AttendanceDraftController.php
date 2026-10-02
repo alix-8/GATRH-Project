@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
 use App\Models\Reminder;
-use App\Models\Student;
 use App\Services\AttendanceParsingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -55,20 +54,24 @@ class AttendanceDraftController extends Controller
 
         $type = (string) $draft->gathering_type;
         $range = $parsingService->getApplicableWeekRange($type, null, $draft->raw_text);
-        $studentIds = $students->pluck('student_id')->filter()->unique()->values();
         $existingQuery = AttendanceRecord::where('gathering_type', $type)
-            ->whereBetween('day', [$range['start']->toDateString(), $range['end']->toDateString()]);
-
-        if ($studentIds->isNotEmpty()) {
-            $existingQuery->whereIn('student_id', $studentIds);
-        } else {
-            $existingQuery->whereHas('student', function ($query) use ($request) {
+            ->whereBetween('day', [$range['start']->toDateString(), $range['end']->toDateString()])
+            ->whereHas('student', function ($query) use ($request) {
                 $query->where('program', $request->user()->program)
                     ->where('year_level', $request->user()->year_level);
             });
-        }
 
-        $duplicateCount = $existingQuery->count();
+        $existingAttendanceCount = $existingQuery->count();
+        $existingDraftCount = AttendanceDraft::where('gathering_type', $type)
+            ->where('status', 'draft')
+            ->where('id', '!=', $draft->id)
+            ->whereBetween('day', [$range['start']->toDateString(), $range['end']->toDateString()])
+            ->whereHas('user', function ($query) use ($request) {
+                $query->where('program', $request->user()->program)
+                    ->where('year_level', $request->user()->year_level);
+            })
+            ->count();
+        $duplicateCount = $existingAttendanceCount + $existingDraftCount;
         $weekLabel = $range['start']->format('F j') . ' - ' . $range['end']->format('F j, Y');
 
         return response()->json([
@@ -78,6 +81,10 @@ class AttendanceDraftController extends Controller
                 'gathering_type'     => $draft->gathering_type,
                 'day'                => optional($draft->day)->format('F j, Y'),
                 'day_iso'            => optional($draft->day)->toDateString(),
+                'week_range'         => [
+                    'start' => $range['start']->toDateString(),
+                    'end'   => $range['end']->toDateString(),
+                ],
                 'submitted_by'       => [
                     'name' => $request->user()->name,
                     'role' => trim(strtoupper($request->user()->program) . ' ' . $request->user()->year_level . 'rd Year · Spiritual Secretary'),

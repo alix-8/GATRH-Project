@@ -22,6 +22,80 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Check for same-week attendance before the import page displays its student preview.
+     */
+    public function checkDuplicates(Request $request)
+    {
+        $validated = $request->validate([
+            'raw_text'      => 'required|string',
+            'gathering_type'=> 'required|in:pm,ws,tg,special,week',
+            'cycle'         => 'nullable',
+            'week_range'    => 'nullable',
+        ]);
+
+        $user = $request->user();
+        $cycle = $request->input('cycle') ?? $request->input('week_range');
+        $types = $validated['gathering_type'] === 'week'
+            ? ['pm', 'ws', 'tg']
+            : [$validated['gathering_type']];
+        $duplicates = [];
+
+        foreach ($types as $type) {
+            $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $validated['raw_text']);
+            $start = $range['start']->toDateString();
+            $end = $range['end']->toDateString();
+
+            $recordCount = AttendanceRecord::where('gathering_type', $type)
+                ->whereBetween('day', [$start, $end])
+                ->whereHas('student', function ($query) use ($user) {
+                    $query->where('program', $user->program)
+                        ->where('year_level', $user->year_level);
+                })
+                ->count();
+
+            $draftCount = AttendanceDraft::where('gathering_type', $type)
+                ->where('status', 'draft')
+                ->whereBetween('day', [$start, $end])
+                ->whereHas('user', function ($query) use ($user) {
+                    $query->where('program', $user->program)
+                        ->where('year_level', $user->year_level);
+                })
+                ->count();
+
+            $count = $recordCount + $draftCount;
+            if ($count > 0) {
+                $duplicates[] = [
+                    'gathering_type'   => $type,
+                    'duplicates_count' => $count,
+                    'week_range'       => [
+                        'start' => $start,
+                        'end'   => $end,
+                        'label' => $range['start']->format('F j') . ' - ' . $range['end']->format('F j, Y'),
+                    ],
+                ];
+            }
+        }
+
+        if (empty($duplicates)) {
+            return response()->json(['status' => 'clear'], 200);
+        }
+
+        $typesWithDuplicates = array_column($duplicates, 'gathering_type');
+        $totalDuplicates = array_sum(array_column($duplicates, 'duplicates_count'));
+        $weekRange = $duplicates[0]['week_range'];
+        $typeLabels = array_map(fn ($type) => $this->gatheringLabel($type), $typesWithDuplicates);
+
+        return response()->json([
+            'status'                => 'duplicate_detected',
+            'requires_confirmation' => true,
+            'message'               => 'An attendance entry already exists for ' . implode(', ', $typeLabels) . ' for the week of ' . $weekRange['label'] . '.',
+            'gathering_type'        => implode('/', $typesWithDuplicates),
+            'week_range'            => $weekRange,
+            'duplicates_count'      => $totalDuplicates,
+        ], 409);
+    }
+
+    /**
      * Paginated, filterable list of attendance records for the table view.
      * GET /api/attendance
      */
@@ -415,7 +489,8 @@ class AttendanceController extends Controller
                 $metadata['year_level'],
                 $metadata['default_date'],
                 $metadata['gathering_type'],
-                $cycle
+                $cycle,
+                $request->raw_text
             );
 
             if (!empty($result['format_errors'])) {
@@ -477,39 +552,20 @@ class AttendanceController extends Controller
             : null;
 
         $confirmBlank = (bool) $request->boolean('confirm_blank');
-    $hasHardErrors = !empty($formatErrorLines) || !empty($incompleteRecords) || !empty($unmatchedLines) || !empty($missingStudents);
-
-    if ($hasHardErrors) {
-        return response()->json([
-            'message'                 => 'Attendance text contains errors. Please correct them before saving the draft.',
-            'metadata'                => $metadata,
-            'unmatched_lines'         => $unmatchedLines,
-            'missing_students'        => $missingStudents,
-            'incomplete_records'      => $incompleteRecords,
-            'format_errors'           => $formatErrorLines,
-            'all_no_response_warning' => $allNoResponseWarning,
-            'requires_confirmation'   => false,
-        ], 422);
-    }
+        $hasHardErrors = !empty($formatErrorLines)
+            || !empty($incompleteRecords)
+            || !empty($unmatchedLines)
+            || !empty($missingStudents);
 
         $isOverride = (bool) $request->boolean('override');
         $range = $this->parsingService->getApplicableWeekRange($metadata['gathering_type'], $cycle, $request->raw_text);
         $startStr = $range['start']->toDateString();
         $endStr = $range['end']->toDateString();
 
-        $studentIds = array_keys($parsedSubmissions);
-
-        $existingCount = AttendanceRecord::where('gathering_type', $metadata['gathering_type'])
-            ->where(function ($q) use ($studentIds, $program, $yearLevel, $metadata) {
-                if (!empty($studentIds)) {
-                    $q->whereIn('student_id', $studentIds);
-                } else {
-                    $prog = $metadata['program'] ?? $program;
-                    $yr = $metadata['year_level'] ?? $yearLevel;
-                    $q->whereHas('student', function ($sq) use ($prog, $yr) {
-                        $sq->where('program', $prog)->where('year_level', $yr);
-                    });
-                }
+        $existingRecordsCount = AttendanceRecord::where('gathering_type', $metadata['gathering_type'])
+            ->whereHas('student', function ($query) use ($metadata, $program, $yearLevel) {
+                $query->where('program', $metadata['program'] ?? $program)
+                    ->where('year_level', $metadata['year_level'] ?? $yearLevel);
             })
             ->where(function ($q) use ($startStr, $endStr, $metadata) {
                 if (!empty($metadata['default_date'])) {
@@ -520,6 +576,16 @@ class AttendanceController extends Controller
                 }
             })
             ->count();
+        $existingDraftsCount = AttendanceDraft::where('gathering_type', $metadata['gathering_type'])
+            ->where('status', 'draft')
+            ->when($request->draft_id, fn ($query) => $query->where('id', '!=', $request->draft_id))
+            ->whereBetween('day', [$startStr, $endStr])
+            ->whereHas('user', function ($query) use ($metadata, $program, $yearLevel) {
+                $query->where('program', $metadata['program'] ?? $program)
+                    ->where('year_level', $metadata['year_level'] ?? $yearLevel);
+            })
+            ->count();
+        $existingCount = $existingRecordsCount + $existingDraftsCount;
 
         if ($existingCount > 0 && !$isOverride) {
             $typeLabel = $this->gatheringLabel($metadata['gathering_type']);
@@ -537,6 +603,19 @@ class AttendanceController extends Controller
                 ],
                 'duplicates_count'      => $existingCount,
             ], 409);
+        }
+
+        if ($hasHardErrors) {
+            return response()->json([
+                'message'                 => 'Attendance text contains errors. Please correct them before saving the draft.',
+                'metadata'                => $metadata,
+                'unmatched_lines'         => $unmatchedLines,
+                'missing_students'        => $missingStudents,
+                'incomplete_records'      => $incompleteRecords,
+                'format_errors'           => $formatErrorLines,
+                'all_no_response_warning' => $allNoResponseWarning,
+                'requires_confirmation'   => false,
+            ], 422);
         }
 
         if ($allNoResponseWarning && !$confirmBlank) {
@@ -626,32 +705,12 @@ class AttendanceController extends Controller
         $hasHardErrors = !empty($parsed['unmatched_lines']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']);
         $hasSoftWarnings = !empty($parsed['blank_entries']) || !empty($parsed['all_no_response_warning']);
 
-        if ($hasHardErrors) {
-            return response()->json([
-                'message'                 => 'Weekly attendance text contains errors. Please correct them before saving the draft.',
-                'unmatched_lines'         => $parsed['unmatched_lines'],
-                'incomplete_records'      => $parsed['incomplete_records'],
-                'format_errors'           => $parsed['format_errors'],
-                'blank_entries'           => $parsed['blank_entries'] ?? [],
-                'missing_students'        => $parsed['missing_students'],
-                'all_no_response_warning' => $parsed['all_no_response_warning'] ?? null,
-                'requires_confirmation'   => false,
-            ], 422);
-        }
-
         // Check for existing submissions in this week range FIRST
-        $sectionStudentIds = Student::where('program', $user->program)
-            ->where('year_level', $user->year_level)
-            ->pluck('id');
-
         $typesWithSubmissions = [];
         $firstRange = null;
 
         foreach (['pm', 'ws', 'tg'] as $type) {
             if (empty($parsed['records'][$type])) continue;
-
-            $recordStudentIds = collect($parsed['records'][$type])->pluck('student_id')->filter()->unique();
-            $checkStudentIds = $recordStudentIds->isNotEmpty() ? $recordStudentIds : $sectionStudentIds;
 
             $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->raw_text);
             $startStr = $range['start']->toDateString();
@@ -661,10 +720,22 @@ class AttendanceController extends Controller
                 $firstRange = $range;
             }
 
-            $hasExisting = AttendanceRecord::where('gathering_type', $type)
-                ->whereIn('student_id', $checkStudentIds)
+            $existingRecords = AttendanceRecord::where('gathering_type', $type)
+                ->whereHas('student', function ($query) use ($user) {
+                    $query->where('program', $user->program)
+                        ->where('year_level', $user->year_level);
+                })
                 ->whereBetween('day', [$startStr, $endStr])
-                ->exists() || $this->parsingService->hasSubmittedThisCycle($user->id, $type);
+                ->count();
+            $existingDrafts = AttendanceDraft::where('gathering_type', $type)
+                ->where('status', 'draft')
+                ->whereBetween('day', [$startStr, $endStr])
+                ->whereHas('user', function ($query) use ($user) {
+                    $query->where('program', $user->program)
+                        ->where('year_level', $user->year_level);
+                })
+                ->count();
+            $hasExisting = $existingRecords + $existingDrafts > 0;
 
             if ($hasExisting) {
                 $typesWithSubmissions[] = $type;
@@ -690,6 +761,19 @@ class AttendanceController extends Controller
             ], 409);
         }
 
+        if ($hasHardErrors) {
+            return response()->json([
+                'message'                 => 'Weekly attendance text contains errors. Please correct them before saving the draft.',
+                'unmatched_lines'         => $parsed['unmatched_lines'],
+                'incomplete_records'      => $parsed['incomplete_records'],
+                'format_errors'           => $parsed['format_errors'],
+                'blank_entries'           => $parsed['blank_entries'] ?? [],
+                'missing_students'        => $parsed['missing_students'],
+                'all_no_response_warning' => $parsed['all_no_response_warning'] ?? null,
+                'requires_confirmation'   => false,
+            ], 422);
+        }
+
         if ($hasSoftWarnings && !$confirmBlank) {
             return response()->json([
                 'message'                 => 'Some students have blank attendance fields. Confirm to mark them as no response and continue.',
@@ -710,17 +794,24 @@ class AttendanceController extends Controller
         foreach (['pm', 'ws', 'tg'] as $type) {
             if (empty($parsed['records'][$type])) continue;
 
-            $recordStudentIds = collect($parsed['records'][$type])->pluck('student_id')->filter()->unique();
-            $checkStudentIds = $recordStudentIds->isNotEmpty() ? $recordStudentIds : $sectionStudentIds;
-
             $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->raw_text);
             $startStr = $range['start']->toDateString();
             $endStr = $range['end']->toDateString();
 
             $hasExisting = AttendanceRecord::where('gathering_type', $type)
-                ->whereIn('student_id', $checkStudentIds)
+                ->whereHas('student', function ($query) use ($user) {
+                    $query->where('program', $user->program)
+                        ->where('year_level', $user->year_level);
+                })
                 ->whereBetween('day', [$startStr, $endStr])
-                ->exists() || $this->parsingService->hasSubmittedThisCycle($user->id, $type);
+                ->exists() || AttendanceDraft::where('gathering_type', $type)
+                    ->where('status', 'draft')
+                    ->whereBetween('day', [$startStr, $endStr])
+                    ->whereHas('user', function ($query) use ($user) {
+                        $query->where('program', $user->program)
+                            ->where('year_level', $user->year_level);
+                    })
+                    ->exists();
 
             if ($hasExisting && !$isOverride) {
                 $summary[$type] = ['skipped' => true, 'reason' => 'already submitted this week'];
@@ -773,6 +864,7 @@ class AttendanceController extends Controller
             'override'                 => 'nullable|boolean',
             'cycle'                    => 'nullable',
             'week_range'               => 'nullable',
+            'raw_text'                 => 'nullable|string',
         ]);
 
         $gatheringTypes = collect($validated['records'])->pluck('gathering_type')->unique();
@@ -797,7 +889,7 @@ class AttendanceController extends Controller
 
         foreach ($validated['records'] as $index => $recordData) {
             $type = $recordData['gathering_type'];
-            $range = $this->parsingService->getApplicableWeekRange($type, $cycle);
+            $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->input('raw_text'));
             $startStr = $range['start']->toDateString();
             $endStr = $range['end']->toDateString();
 
@@ -840,17 +932,29 @@ class AttendanceController extends Controller
 
         if (empty($duplicateRecords) && !$isOverride) {
             foreach ($gatheringTypes as $type) {
-                $range = $this->parsingService->getApplicableWeekRange($type, $cycle);
+                $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->input('raw_text'));
                 $startStr = $range['start']->toDateString();
                 $endStr = $range['end']->toDateString();
                 $weekLabel = $range['start']->format('F j') . ' - ' . $range['end']->format('F j, Y');
 
                 $sectionHasRecords = AttendanceRecord::where('gathering_type', $type)
-                    ->whereIn('student_id', $studentIds)
+                    ->whereHas('student', function ($query) use ($request) {
+                        $query->where('program', $request->user()->program)
+                            ->where('year_level', $request->user()->year_level);
+                    })
                     ->whereBetween('day', [$startStr, $endStr])
                     ->exists();
+                $sectionHasDrafts = AttendanceDraft::where('gathering_type', $type)
+                    ->where('status', 'draft')
+                    ->when($validated['draft_id'] ?? null, fn ($query, $draftId) => $query->where('id', '!=', $draftId))
+                    ->whereBetween('day', [$startStr, $endStr])
+                    ->whereHas('user', function ($query) use ($request) {
+                        $query->where('program', $request->user()->program)
+                            ->where('year_level', $request->user()->year_level);
+                    })
+                    ->exists();
 
-                if ($sectionHasRecords || $this->parsingService->hasSubmittedThisCycle($request->user()->id, $type)) {
+                if ($sectionHasRecords || $sectionHasDrafts) {
                     return response()->json([
                         'status'                => 'duplicate_detected',
                         'requires_confirmation' => true,
