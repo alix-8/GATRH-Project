@@ -67,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Template Generator
         Route::get('/attendance/generate-template', [AttendanceController::class, 'generateTemplate']);
 
+        Route::post('/attendance/check-duplicates', [AttendanceController::class, 'checkDuplicates']);
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
         Route::post('/attendance/parse-batch-text', [AttendanceController::class, 'parseBatchText']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
