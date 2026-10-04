@@ -350,11 +350,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* width: 64px;
+    width: 64px;
     height: 64px;
     align-self: center;
     border: 1px solid #172B4D;
-    border-radius: 50%; */
+    border-radius: 50%;
 }
 
 .feature-icon {
