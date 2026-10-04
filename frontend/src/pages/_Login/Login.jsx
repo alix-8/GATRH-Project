@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import LVCCLogo from '../../assets/lvcc-logo.png'
-import Illustration from '../../assets/login-illustration.png'
-import ShowPasswordIcon from '../../assets/show-password-icon.png'
-import AttendanceTrackingIcon from '../../assets/attendance-tracking-icon.png'
-import AttendanceConverterIcon from '../../assets/attendance-converter-icon.png'
-import RecordManagementIcon from '../../assets/record-management.png'
-import ReportSubmissionIcon from '../../assets/report-submission-icon.png'
-import DropDownIcon from '../../assets/drop-down-icon.png'
+import LVCCLogo from '../../assets/lvcc-logo.webp'
+import Illustration from '../../assets/login-illustration.webp'
+import ShowPasswordIcon from '../../assets/show-password-icon.svg'
+import AttendanceTrackingIcon from '../../assets/attendance-tracking-icon.svg'
+import AttendanceConverterIcon from '../../assets/attendance-converter-icon.svg'
+import RecordManagementIcon from '../../assets/record-management.svg'
+import ReportSubmissionIcon from '../../assets/report-submission-icon.svg'
+import DropDownIcon from '../../assets/drop-down-icon.svg'
 import './Login.css'
 
 
@@ -165,7 +165,7 @@ function Login() {
                             type="email"
                             id="email"
                             name="email"
-                            placeholder="rimer@gmail.com"
+                            placeholder="example@laverdad.edu.ph"
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
                             autoComplete="email"
@@ -179,7 +179,7 @@ function Login() {
                             type={showPassword ? 'text' : 'password'}
                             id="password"
                             name="password"
-                            placeholder="************************"
+                            placeholder="****************"
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
                             autoComplete="current-password"

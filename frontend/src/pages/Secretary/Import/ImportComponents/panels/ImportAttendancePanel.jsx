@@ -70,9 +70,9 @@ function ImportAttendancePanel({
                         type="button"
                         className="import-parse-preview-btn"
                         onClick={isPreviewing ? onBackToEdit : onGeneratePreview}
-                        disabled={!isPreviewing && gatheringTypeMismatch}
+                        disabled={!isPreviewing && (gatheringTypeMismatch || isProcessing)}
                     >
-                        {isPreviewing ? 'Back to Raw Text' : 'Parse and See Preview'}
+                        {isPreviewing ? 'Back to Raw Text' : isProcessing ? 'Checking for duplicates...' : 'Parse and See Preview'}
                     </button>
                 </div>
 

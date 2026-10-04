@@ -10,6 +10,7 @@ import GenerateTemplate from './ImportComponents/modals/GenerateTemplate'
 
 // Modals
 import ConfirmBlankModal from './ImportComponents/modals/ConfirmBlankModal'
+import ConfirmOverrideModal from './ImportComponents/modals/ConfirmOverrideModal'
 import ErrorModal from './ImportComponents/modals/ErrorModal'
 import SuccessModal from './ImportComponents/modals/SuccessModal'
 
@@ -134,8 +135,14 @@ function Import({ onGoToAttendance = () => {} }) {
         setModal(null)
     }
 
-    const processAttendance = async event => {
-        event?.preventDefault?.()
+    const processAttendance = async (eventOrOpts) => {
+        if (eventOrOpts?.preventDefault) {
+            eventOrOpts.preventDefault()
+        }
+        const opts = (typeof eventOrOpts === 'object' && !eventOrOpts?.preventDefault) ? eventOrOpts : {}
+        const isConfirmBlank = opts.confirm_blank !== undefined ? opts.confirm_blank : confirmBlankPending
+        const isOverride = opts.override !== undefined ? opts.override : overridePending
+
         if (!form.program || !form.year_level || !form.raw_text.trim()) {
             setFieldWarning('Complete the program, year level, and attendance text.')
             return
@@ -159,8 +166,8 @@ function Import({ onGoToAttendance = () => {} }) {
         try {
             const endpoint = isWeekMode ? '/attendance/parse-batch-text' : '/attendance/parse-text'
             const payload = isWeekMode
-                ? { raw_text: form.raw_text, confirm_blank: confirmBlankPending }
-                : { ...form, confirm_blank: confirmBlankPending }
+                ? { raw_text: form.raw_text, confirm_blank: isConfirmBlank, override: isOverride }
+                : { ...form, confirm_blank: isConfirmBlank, override: isOverride }
 
             const data = await request(endpoint, { method: 'POST', body: JSON.stringify(payload) })
 
@@ -175,9 +182,15 @@ function Import({ onGoToAttendance = () => {} }) {
 
             setResult(data)
             setModal('success')
+            setOverridePending(false)
+            setDuplicateSource(null)
         } catch (error) {
             const details = error.details || {}
-            if (details.requires_confirmation) {
+            if (details.status === 'duplicate_detected' || (details.requires_confirmation && details.duplicate_records)) {
+                setDuplicateData(details)
+                setDuplicateSource('process')
+                setModal('confirm-override')
+            } else if (details.requires_confirmation) {
                 setModalMessage(details.all_no_response_warning || error.message)
                 setParseErrors(details)
                 setModal('confirm-blank')
@@ -195,7 +208,7 @@ function Import({ onGoToAttendance = () => {} }) {
     //Previewing functions
     const [isPreviewing, setIsPreviewing] = useState(false)
 
-    const handleGeneratePreview = () => {
+    const handleGeneratePreview = async () => {
         if (!form.raw_text.trim()) {
             setFieldWarning('Paste some attendance text first.')
             return
@@ -205,26 +218,64 @@ function Import({ onGoToAttendance = () => {} }) {
             return
         }
         setFieldWarning(null)
-        setIsPreviewing(true)
+
+        setIsProcessing(true)
+        try {
+            await request('/attendance/check-duplicates', {
+                method: 'POST',
+                body: JSON.stringify({
+                    raw_text: form.raw_text,
+                    gathering_type: form.gathering_type,
+                }),
+            })
+            setDuplicateSource('preview')
+            setIsPreviewing(true)
+        } catch (error) {
+            const details = error.details || {}
+            if (details.status === 'duplicate_detected') {
+                setDuplicateData(details)
+                setDuplicateSource('preview')
+                setModal('confirm-override')
+            } else {
+                setModalMessage(error.message)
+                setParseErrors(details)
+                setModal('error')
+            }
+        } finally {
+            setIsProcessing(false)
+        }
     }
 
     const handleBackToEdit = () => {
         setIsPreviewing(false)
+        setOverridePending(false)
     }
 
     const [confirmBlankPending, setConfirmBlankPending] = useState(false)
+    const [overridePending, setOverridePending] = useState(false)
+    const [duplicateData, setDuplicateData] = useState(null)
+    const [duplicateSource, setDuplicateSource] = useState(null)
 
     const handleConfirmBlankProceed = () => {
         setConfirmBlankPending(true)
         setModal(null)
+        processAttendance({ confirm_blank: true, override: overridePending })
     }
 
-    // Auto re-submit once confirmBlankPending flips true
-    useEffect(() => {
-        if (confirmBlankPending) {
-            processAttendance()
+    const handleConfirmOverrideProceed = () => {
+        if (duplicateSource === 'preview') {
+            setOverridePending(true)
+            setModal(null)
+            setDuplicateData(null)
+            setDuplicateSource(null)
+            setIsPreviewing(true)
+            return
         }
-    }, [confirmBlankPending])
+
+        setOverridePending(true)
+        setModal(null)
+        processAttendance({ override: true, confirm_blank: confirmBlankPending })
+    }
 
     const clearForm = () => {
         setForm(current => ({ ...current, raw_text: '' }))
@@ -232,6 +283,9 @@ function Import({ onGoToAttendance = () => {} }) {
         setFieldWarning(null)
         setIsPreviewing(false)
         setConfirmBlankPending(false)
+        setOverridePending(false)
+        setDuplicateData(null)
+        setDuplicateSource(null)
     }
 
     return (
@@ -269,6 +323,19 @@ function Import({ onGoToAttendance = () => {} }) {
                 />
                 </div>
             </main>
+            {modal === 'confirm-override' && (
+                <ConfirmOverrideModal
+                    duplicateData={duplicateData}
+                    isSubmitting={isProcessing}
+                    onCancel={() => {
+                        setModal(null)
+                        setDuplicateData(null)
+                        setOverridePending(false)
+                        setDuplicateSource(null)
+                    }}
+                    onOverride={handleConfirmOverrideProceed}
+                />
+            )}
             {modal === 'confirm-blank' && (
                 <ConfirmBlankModal
                     modalMessage={modalMessage}

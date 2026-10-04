@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import CalendarIcon from '../../assets/calendar-icon.png'
-import NotificationIcon from '../../assets/notification-icon.png'
-import MyReminderIcon from '../../assets/my-reminder-icon.png'
+import CalendarIcon from '../../assets/calendar-icon.svg'
+import NotificationIcon from '../../assets/notification-icon.svg'
+import MyReminderIcon from '../../assets/my-reminder-icon.svg'
 import { request } from '../../api/request'
 import './Notification.css'
 

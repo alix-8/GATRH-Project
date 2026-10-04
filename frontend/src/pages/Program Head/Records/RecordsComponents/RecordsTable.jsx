@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { request } from '../../../../api/request'
-import SearchIcon from '../../../../assets/search-icon.png'
+import SearchIcon from '../../../../assets/search-icon.svg'
 import GatheringIcon from '../../../../components/Icons/GatheringFilterIcon.svg'
 import YearIcon from '../../../../components/Icons/FilterYearIcon.svg'
 import FilterDropdown from '../../../../components/Filters/FilterDropdown'

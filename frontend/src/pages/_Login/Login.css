@@ -61,7 +61,7 @@
     width: 100%;
 }
 
-.form-group:first-child::before {
+.form-group::before {
     content: '';
     position: absolute;
     left: 0;
@@ -69,6 +69,12 @@
     height: calc(100% + 2px);
     width: 3px;
     background-color: #172B4D;
+    opacity: 0;
+    transition: opacity 180ms ease;
+}
+
+.form-group:has(input:focus)::before {
+    opacity: 1;
 }
 
 .form-group {
@@ -109,7 +115,7 @@
 }
 
 .form-group input::placeholder {
-    color: #172B4D;
+    color: #94A3B8;
     font-weight: 700;
     font-size: 12px;
 
@@ -344,11 +350,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 64px;
+    height: 64px;
+    align-self: center;
+    border: 1px solid #172B4D;
+    border-radius: 50%;
 }
 
 .feature-icon {
-    width: 80px;
-    height: 80px;
+    width: 40px;
+    height: 40px;
 }
 
 .feature-card p {

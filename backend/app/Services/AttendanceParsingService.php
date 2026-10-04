@@ -272,7 +272,7 @@ class AttendanceParsingService
     /**
      * Parses a single text line and matches it against student records.
      */
-    public function buildRecordFromLine(string $line, string $program, int $yearLevel, string $defaultDate, string $gatheringType, $cycle = null): array
+    public function buildRecordFromLine(string $line, string $program, int $yearLevel, string $defaultDate, string $gatheringType, $cycle = null, ?string $rawText = null): array
     {
         $parts = $this->extractLineParts($line, $defaultDate);
 
@@ -301,7 +301,7 @@ class AttendanceParsingService
         $hasAnyDetails = !empty($parts['raw_batch']) || !empty($parts['venue']) || !empty($parts['raw_date']);
 
         if (!empty($parts['raw_date'])) {
-            $range = $this->getApplicableWeekRange($gatheringType, $cycle);
+            $range = $this->getApplicableWeekRange($gatheringType, $cycle, $rawText);
             $resolution = $this->resolveWeekdayToDate($parts['raw_date'], $range['start'], $range['end']);
             if ($resolution['success']) {
                 $parts['date'] = $resolution['date'];
