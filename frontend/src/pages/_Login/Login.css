@@ -61,7 +61,7 @@
     width: 100%;
 }
 
-.form-group:first-child::before {
+.form-group::before {
     content: '';
     position: absolute;
     left: 0;
@@ -69,6 +69,12 @@
     height: calc(100% + 2px);
     width: 3px;
     background-color: #172B4D;
+    opacity: 0;
+    transition: opacity 180ms ease;
+}
+
+.form-group:has(input:focus)::before {
+    opacity: 1;
 }
 
 .form-group {
