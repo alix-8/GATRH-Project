@@ -441,13 +441,11 @@ class DashboardService
 
         // Attendance records store the approved state as `validated`.
         $approved = (clone $baseQuery)->where('validation_status', 'validated')->count();
-        $rejected = (clone $baseQuery)->where('validation_status', 'rejected')->count();
         $total = (clone $baseQuery)->count();
 
         return [
             'pending_review' => $pendingReview,
             'approved' => $approved,
-            'rejected' => $rejected,
             'escalation_count' => Escalation::query()->visibleTo($user)->count(),
             'total_submissions' => $total,
         ];

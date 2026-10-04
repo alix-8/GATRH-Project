@@ -6,6 +6,7 @@ import { request } from '../../../api/request'
 import PendingReviewIcon from '../../../components/Icons/PendingReviewIcon.svg'
 import ApprovedIcon from '../../../components/Icons/ApprovedIcon.svg'
 import RejectedIcon from '../../../components/Icons/RejectedIcon.svg'
+import NotificationIcon from '../../../assets/notification-icon.svg'
 import TotalSubmissionsIcon from '../../../components/Icons/TotalSubmissionsIcon.svg'
 import SubmittedIcon from '../../../components/Icons/SubmittedIcon.svg'
 import ResubmittedIcon from '../../../components/Icons/ResubmittedIcon.svg'
@@ -16,7 +17,7 @@ import './ProgramHeadDashboard.css'
 const metrics = [
     { key: 'pending_review', label: 'Pending Review', detail: 'Awaiting your review', icon: PendingReviewIcon },
     { key: 'approved', label: 'Approved', detail: 'Successfully reviewed', icon: ApprovedIcon },
-    { key: 'rejected', label: 'Rejected', detail: 'Returned for correction', icon: RejectedIcon },
+    { key: 'escalation_count', label: 'Escalations', detail: 'Students requiring intervention', icon: NotificationIcon },
     { key: 'total_submissions', label: 'Total Submissions', detail: 'All submitted records', icon: TotalSubmissionsIcon },
 ]
 

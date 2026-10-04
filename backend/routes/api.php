@@ -102,8 +102,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/attendance/review/{batchKey}/approve', [AttendanceController::class, 'approveSubmission'])
         ->where('batchKey', '.*');
 
-        Route::patch('/attendance/review/{batchKey}/reject', [AttendanceController::class, 'rejectSubmission'])
-        ->where('batchKey', '.*');
     });
 
     // CM Coordinator & Chancellor Scopes (Report Summaries)

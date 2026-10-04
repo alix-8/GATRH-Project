@@ -15,8 +15,6 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
     const [detail, setDetail] = useState(null)
     const [loading, setLoading] = useState(true)
     const [busy, setBusy] = useState(false)
-    const [reason, setReason] = useState('')
-    const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
     const [error, setError] = useState('')
     const [search, setSearch] = useState('')
     const [status, setStatus] = useState('all')
@@ -35,12 +33,11 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
 
     useEffect(() => {
         const onKeyDown = (event) => {
-            if (event.key === 'Escape' && rejectDialogOpen) setRejectDialogOpen(false)
-            else if (event.key === 'Escape') onClose()
+            if (event.key === 'Escape') onClose()
         }
         window.addEventListener('keydown', onKeyDown)
         return () => window.removeEventListener('keydown', onKeyDown)
-    }, [onClose, rejectDialogOpen])
+    }, [onClose])
 
     const students = useMemo(() => {
         const list = detail?.students || []
@@ -54,13 +51,12 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
     const pageCount = Math.max(1, Math.ceil(students.length / PAGE_SIZE))
     const pageStudents = students.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-    const submitDecision = async (decision) => {
+    const submitApproval = async () => {
         setBusy(true)
         setError('')
         try {
-            await request(`/attendance/review/${encodeURIComponent(submission.id)}/${decision}`, {
+            await request(`/attendance/review/${encodeURIComponent(submission.id)}/approve`, {
                 method: 'PATCH',
-                ...(decision === 'reject' ? { body: JSON.stringify({ reason: reason.trim() }) } : {}),
             })
             onUpdated()
         } catch (err) {
@@ -137,20 +133,10 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                     </>}
                 </div>
                 {submission.status === 'pending' && <footer className="ph-drawer-footer">
-                        <button type="button" className="ph-drawer-reject" disabled={loading || busy} onClick={() => setRejectDialogOpen(true)}><span aria-hidden="true">×</span> Reject</button>
-                        <button type="button" className="ph-drawer-approve" disabled={loading || busy} onClick={() => submitDecision('approve')}><span aria-hidden="true">✓</span> {busy ? 'Saving…' : 'Approve'}</button>
+                        <button type="button" className="ph-drawer-close" disabled={busy} onClick={onClose}>Close</button>
+                        <button type="button" className="ph-drawer-approve" disabled={loading || busy} onClick={submitApproval}><span aria-hidden="true">✓</span> {busy ? 'Saving…' : 'Approve'}</button>
                 </footer>}
             </section>
-            {rejectDialogOpen && <div className="ph-rejection-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setRejectDialogOpen(false)}>
-                <section className="ph-rejection-modal" role="dialog" aria-modal="true" aria-labelledby="ph-rejection-modal-title">
-                    <h2 id="ph-rejection-modal-title">Note for rejection</h2>
-                    <textarea autoFocus value={reason} onChange={(event) => setReason(event.target.value)} maxLength={50} placeholder="leave a message ..." aria-label="Rejection note" />
-                    <small className="ph-rejection-character-count">{reason.length}/50</small>
-                    {error && <p role="alert">{error}</p>}
-                    <div><button type="button" className="ph-rejection-cancel" disabled={busy} onClick={() => setRejectDialogOpen(false)}>Cancel</button>
-                        <button type="button" className="ph-rejection-confirm" disabled={busy || !reason.trim()} onClick={() => submitDecision('reject')}>{busy ? 'Rejecting…' : 'Reject'}</button></div>
-                </section>
-            </div>}
         </div>
     )
 }

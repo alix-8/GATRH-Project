@@ -1176,49 +1176,6 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Rejecting a submission
-     */
-    public function rejectSubmission(Request $request, string $batchKey)
-    {
-        $validated = $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
-
-        $query = AttendanceRecord::query();
-
-        if (str_contains($batchKey, '|')) {
-            [$gatheringType, $day, $submittedBy] = explode('|', $batchKey, 3);
-            $query->where('gathering_type', $gatheringType)
-                ->whereDate('day', $day)
-                ->where('submitted_by', $submittedBy);
-        } else {
-            $query->where('batch_id', $batchKey);
-        }
-
-        $query->whereHas('student', fn ($studentQuery) => $studentQuery->accessibleTo($request->user()))
-            ->where(function ($statusQuery) {
-                $statusQuery->whereNull('validation_status')->orWhere('validation_status', 'unvalidated');
-            });
-
-        $updatedCount = $query->update([
-            'validation_status' => 'rejected',
-            'rejection_reason'  => $validated['reason'],
-            'validated_by'      => $request->user()->id,
-            'updated_at'        => now(),
-        ]);
-
-        if ($updatedCount === 0) {
-            return response()->json(['status' => 'error', 'message' => 'Submission not found.'], 404);
-        }
-
-        return response()->json([
-            'status'        => 'success',
-            'message'       => "Submission rejected across {$updatedCount} records.",
-            'updated_count' => $updatedCount,
-        ], 200);
-    }
-
-    /**
      * Summary analytics for higher management (Coordinator / Chancellor).
      */
     public function summaryReport(Request $request)

@@ -27,9 +27,12 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.reminders-cards-chancellor,
-.reminders-cards-secretary {
+.reminders-cards-chancellor {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.reminders-cards-secretary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .reminders-card {

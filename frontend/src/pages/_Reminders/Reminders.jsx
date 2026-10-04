@@ -222,7 +222,7 @@ function Reminders() {
                     role === 'secretary'
                         ? request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal })
                         : Promise.resolve(null),
-                    ['program_head', 'chancellor'].includes(role)
+                    ['secretary', 'program_head', 'chancellor', 'cm_coordinator'].includes(role)
                         ? request('/reminders/role-summary', { signal: controller.signal }).catch(error => {
                             if (error.name === 'AbortError') throw error
                             return null
@@ -340,8 +340,12 @@ function Reminders() {
     const completedCard = { title: 'Completed', value: summary.completed, description: 'Completed reminders', icon: CompletedIcon, className: 'completed' }
     const reminderCards = role === 'chancellor'
         ? [upcomingCard, escalationCard, completedCard]
+        : role === 'cm_coordinator'
+            ? [upcomingCard, escalationCard, completedCard]
         : role === 'program_head'
             ? [upcomingCard, escalationCard, needsActionCard, completedCard]
+            : role === 'secretary'
+                ? [upcomingCard, escalationCard, needsActionCard, completedCard]
             : [upcomingCard, needsActionCard, completedCard]
 
     const now = new Date()

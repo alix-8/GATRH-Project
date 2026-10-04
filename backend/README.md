@@ -46,7 +46,7 @@ The following are the functions declared inside the controllers. This will be he
 | `generateTemplate` | Builds a pre-filled text template listing students (by program/year level) for attendance entry | Import Page |
 | `parseText` | Parses raw submitted attendance text into structured records, flags unmatched/incomplete/format-error lines, and saves as a draft | Import Page |
 | `store` | Validates and bulk-inserts attendance records, rejecting the batch if duplicates exist | Records Page |
-| `validateRecord` | Approves/rejects all attendance records for a given program/year/gathering/day | Attendance Page *(Program Head Screen)* |
+| `validateRecord` | Updates attendance validation for a given program/year/gathering/day | Attendance Page *(Program Head Screen)* |
 | `summaryReport` | Returns aggregated attendance analytics (present/no-response/excused counts, attendance rate) with optional filters | *(Program Head, CM Coordinator, Chancellor Screen)* |
 
 ### 💠AttendanceDraftController

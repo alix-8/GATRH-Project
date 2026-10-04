@@ -30,6 +30,9 @@ const navigationByRole = {
         { label: 'Monitoring', to: '/chancellor/monitoring', icon: AttendanceIcon },
         { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
     ],
+    cm_coordinator: [
+        { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
+    ],
     admin: [
         { label: 'Dashboard', to: '/admin/dashboard', icon: DashboardIcon },
         { label: 'User Roles', to: '/admin/user-roles', icon: StudentsIcon },

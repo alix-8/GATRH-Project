@@ -62,7 +62,7 @@ function AppRoutes() {
       <Route path="/students" element={<RoleRoute roles={['secretary']}><Students /></RoleRoute>} />
       <Route path="/import" element={<RoleRoute roles={['secretary']}><Import /></RoleRoute>} />
       <Route path="/attendance" element={<RoleRoute roles={['secretary']}><Attendance /></RoleRoute>} />
-      <Route path="/reminders" element={<RoleRoute roles={['secretary' , 'program_head', 'chancellor']}><Reminders /></RoleRoute>} />
+      <Route path="/reminders" element={<RoleRoute roles={['secretary', 'program_head', 'chancellor', 'cm_coordinator']}><Reminders /></RoleRoute>} />
       <Route path="/profile" element={<RoleRoute roles={['secretary', 'program_head', 'chancellor', 'admin']}><Profile /></RoleRoute>} />
 
       <Route path="/program-head/dashboard" element={<RoleRoute roles={['program_head']}><ProgramHeadDashboard /></RoleRoute>} />
