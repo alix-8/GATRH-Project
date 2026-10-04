@@ -165,7 +165,7 @@ function Login() {
                             type="email"
                             id="email"
                             name="email"
-                            placeholder="rimer@gmail.com"
+                            placeholder="example@laverdad.edu.ph"
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
                             autoComplete="email"
@@ -179,7 +179,7 @@ function Login() {
                             type={showPassword ? 'text' : 'password'}
                             id="password"
                             name="password"
-                            placeholder="************************"
+                            placeholder="****************"
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
                             autoComplete="current-password"
