@@ -34,7 +34,8 @@ export default function RecordsTable() {
     const [filters, setFilters] = useState({ gathering_type: '', date: '', year_level: '', search: '' })
     const [page, setPage] = useState(1)
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
+    const [loadError, setLoadError] = useState('')
+    const [exportError, setExportError] = useState('')
     const [activeRecord, setActiveRecord] = useState(null)
 
     const params = useMemo(() => {
@@ -47,14 +48,14 @@ export default function RecordsTable() {
 
     const loadRecords = useCallback(async (signal) => {
         setLoading(true)
-        setError('')
+        setLoadError('')
         try {
             const result = await request(`/program-head/records?${params}`, { signal })
             setRows(Array.isArray(result.data) ? result.data : [])
             setMeta(result.meta ?? { current_page: 1, last_page: 1, total: 0 })
         } catch (err) {
             if (err.name !== 'AbortError') {
-                setError(err.message || 'Could not load records.')
+                setLoadError(err.message || 'Could not load records.')
             }
         } finally {
             if (!signal?.aborted) setLoading(false)
@@ -73,7 +74,7 @@ export default function RecordsTable() {
     }
 
     const exportRecord = async (record) => {
-        setError('')
+        setExportError('')
         try {
             const token = localStorage.getItem('auth_token')
             const params = new URLSearchParams({
@@ -84,7 +85,7 @@ export default function RecordsTable() {
             })
             const response = await fetch(`http://127.0.0.1:8000/api/program-head/records/export?${params}`, {
                 headers: {
-                    Accept: 'text/csv',
+                    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
             })
@@ -95,13 +96,15 @@ export default function RecordsTable() {
             const url = URL.createObjectURL(await response.blob())
             const link = document.createElement('a')
             link.href = url
-            link.download = `approved-${record.gathering_type}-${record.date_iso}.csv`
+            const disposition = response.headers.get('Content-Disposition') || ''
+            const extension = disposition.match(/\.([a-z0-9]+)"?$/i)?.[1] || 'xls'
+            link.download = `approved-${record.gathering_type}-${record.date_iso}.${extension}`
             document.body.append(link)
             link.click()
             link.remove()
             URL.revokeObjectURL(url)
         } catch (err) {
-            setError(err.message || 'Could not export records.')
+            setExportError(err.message || 'Could not export records.')
         }
     }
 
@@ -135,7 +138,7 @@ export default function RecordsTable() {
                     />
                 </label>
             </section>
-            {error && <p className="ph-record-error" role="alert">{error}</p>}
+            {(loadError || exportError) && <p className="ph-record-error" role="alert">{exportError || loadError}</p>}
             <section className="ph-submissions-table-panel" aria-label="Approved attendance records">
                 <div className="ph-submissions-table-scroll">
                     <table className="ph-submissions-table ph-records-table">
@@ -157,7 +160,7 @@ export default function RecordsTable() {
                                         <LoadingCircle label="Loading records…" />
                                     </td>
                                 </tr>
-                            ) : error ? (
+                            ) : loadError ? (
                                 <tr>
                                     <td className="ph-submissions-state ph-submissions-error" colSpan="7">
                                         Could not load approved records.

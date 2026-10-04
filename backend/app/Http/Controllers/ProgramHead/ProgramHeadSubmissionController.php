@@ -5,6 +5,8 @@ namespace App\Http\Controllers\ProgramHead;
 use App\Http\Controllers\Controller;
 
 use App\Models\AttendanceRecord;
+use App\Services\ProgramHeadAttendanceWorkbookService;
+use App\Services\ProgramHeadRecordsExportService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -165,8 +167,11 @@ class ProgramHeadSubmissionController extends Controller
         ]);
     }
 
-    public function exportRecords(Request $request)
-    {
+    public function exportRecords(
+        Request $request,
+        ProgramHeadRecordsExportService $exportService,
+        ProgramHeadAttendanceWorkbookService $workbookService
+    ) {
         $filters = $request->validate([
             'date' => ['nullable', 'date'],
             'gathering_type' => ['nullable', 'in:pm,ws,tg,special'],
@@ -174,55 +179,19 @@ class ProgramHeadSubmissionController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'batch_key' => ['nullable', 'string', 'max:100'],
         ]);
-        $user = $request->user();
-        $query = AttendanceRecord::query()->with(['student', 'submitter'])
-            ->where('validation_status', 'validated')
-            ->whereHas('student', function ($builder) use ($user, $filters) {
-                $builder->accessibleTo($user);
-                if (!empty($filters['year_level'])) $builder->where('year_level', (int) $filters['year_level']);
-            });
-        if (!empty($filters['date'])) $query->whereDate('day', $filters['date']);
-        if (!empty($filters['gathering_type'])) $query->where('gathering_type', $filters['gathering_type']);
-        if (!empty($filters['batch_key'])) {
-            $batchKey = $filters['batch_key'];
-            if (str_contains($batchKey, '|')) {
-                [$type, $day, $submitter] = explode('|', $batchKey, 3);
-                $query->where('gathering_type', $type)->whereDate('day', $day)->where('submitted_by', $submitter);
-            } else {
-                $query->where('batch_id', $batchKey);
-            }
-        }
-        if (!empty($filters['search'])) {
-            $term = mb_strtolower(trim($filters['search']));
-            $gatheringTypes = collect(['pm' => 'prayer meeting', 'ws' => 'worship service', 'tg' => 'thanksgiving', 'special' => 'special gathering']);
-            $matchingTypes = $gatheringTypes->filter(fn ($label) => str_contains($label, $term))->keys()->all();
-            $query->where(function ($builder) use ($term, $matchingTypes) {
-                $builder->whereHas('student', fn ($student) => $student->where('name', 'like', "%{$term}%")
-                    ->orWhere('program', 'like', "%{$term}%"))
-                    ->orWhereHas('submitter', fn ($submitter) => $submitter->where('name', 'like', "%{$term}%"));
-                if ($matchingTypes) $builder->orWhereIn('gathering_type', $matchingTypes);
-            });
-        }
-        $records = $query->orderByDesc('day')->get();
-        $callback = function () use ($records) {
-            $handle = fopen('php://output', 'w');
-            fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, ['Secretary', 'Gathering', 'Program', 'Year', 'Date', 'Student', 'Time', 'Location', 'Attendance Status']);
-            foreach ($records as $record) {
-                fputcsv($handle, [
-                    $record->submitter?->name ?? 'Unknown Secretary', $this->gatheringLabel($record->gathering_type),
-                    $record->student?->program ?? 'N/A', $this->ordinalYear($record->student?->year_level),
-                    Carbon::parse($record->day)->format('Y-m-d'), $record->student?->name ?? 'Unknown',
-                    $record->batch ? Carbon::parse($record->batch)->format('g:i A') : '', $record->venue ?? '',
-                    $record->status === 'present' ? 'Present' : 'No Response',
-                ]);
-            }
-            fclose($handle);
-        };
-        return response()->stream($callback, 200, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="approved-attendance-records.csv"',
-        ]);
+        $records = $exportService->query($request->user(), $filters)->get();
+        $workbookPath = $workbookService->create($records);
+
+        return response()
+            ->download(
+                $workbookPath,
+                'approved-attendance-records.' . $workbookService->fileExtension(),
+                [
+                    'Content-Type' => $workbookService->mimeType(),
+                    'Access-Control-Expose-Headers' => 'Content-Disposition',
+                ]
+            )
+            ->deleteFileAfterSend(true);
     }
 
     private function gatheringLabel(?string $type): string
@@ -238,7 +207,10 @@ class ProgramHeadSubmissionController extends Controller
 
     private function ordinalYear(?int $year): string
     {
-        if (!$year) return 'N/A';
+        if (!$year) {
+            return 'N/A';
+        }
+
         $suffix = match (true) {
             $year % 100 >= 11 && $year % 100 <= 13 => 'th',
             $year % 10 === 1 => 'st',
@@ -246,6 +218,7 @@ class ProgramHeadSubmissionController extends Controller
             $year % 10 === 3 => 'rd',
             default => 'th',
         };
+
         return "{$year}{$suffix} Year";
     }
 }
