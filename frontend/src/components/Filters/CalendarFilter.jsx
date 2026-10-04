@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import CalendarIcon from '../../assets/calendar-icon.png'
-import DropdownIcon from '../../assets/drop-down-icon.png'
+import CalendarIcon from '../../assets/calendar-icon.svg'
+import DropdownIcon from '../../assets/drop-down-icon.svg'
 import Calendar from '../Calendar/Calendar'
 import './FilterDropdown.css'
 

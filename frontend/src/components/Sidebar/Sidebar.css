@@ -58,6 +58,7 @@
 
 .sidebar-link.active .sidebar-icon {
     opacity: 1;
+    filter: brightness(0) invert(1);
 }
 
 .sidebar-signout {

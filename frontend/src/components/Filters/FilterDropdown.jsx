@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import DropdownIcon from '../../assets/drop-down-icon.png'
+import DropdownIcon from '../../assets/drop-down-icon.svg'
 import DropdownChevronWhite from '../Icons/DropdownChevronWhite.svg'
 import './FilterDropdown.css'
 
