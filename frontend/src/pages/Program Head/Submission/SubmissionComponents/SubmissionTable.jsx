@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { request } from '../../../../api/request'
-import SearchIcon from '../../../../assets/search-icon.png'
+import SearchIcon from '../../../../assets/search-icon.svg'
 import GatheringIcon from '../../../../components/Icons/GatheringFilterIcon.svg'
 import YearIcon from '../../../../components/Icons/FilterYearIcon.svg'
 import StatusIcon from '../../../../components/Icons/FilterStatusIcon.svg'

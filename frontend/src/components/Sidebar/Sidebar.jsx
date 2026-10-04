@@ -1,15 +1,14 @@
 ﻿import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useNavigate } from 'react-router-dom'
-import LVCCLogo from '../../assets/lvcc-logo.png'
-import DashboardIcon from '../../assets/dashboard-icon.png'
-import StudentsIcon from '../../assets/students-icon.png'
-import ImportIcon from '../../assets/import-icon.png'
-import AttendanceIcon from '../../assets/attendance-icon.png'
-import RemindersIcon from '../../assets/reminders-icon.png'
-import SignOutIcon from '../../assets/sign-out-icon.png'
-import LogoutIcon from '../../assets/logout-icon.png'
-import ProfileIcon from '../../assets/profile-icon.png'
+import LVCCLogo from '../../assets/lvcc-logo.webp'
+import DashboardIcon from '../../assets/dashboard-icon.svg'
+import StudentsIcon from '../../assets/students-icon.svg'
+import ImportIcon from '../../assets/import-icon.svg'
+import AttendanceIcon from '../../assets/attendance-icon.svg'
+import RemindersIcon from '../../assets/reminders-icon.svg'
+import LogoutIcon from '../../assets/logout-icon.svg'
+import ProfileIcon from '../../assets/profile-icon.svg'
 import './Sidebar.css'
 
 const navigationByRole = {
@@ -108,7 +107,7 @@ function Sidebar() {
                 <button type="button" className="sidebar-signout" onClick={() => setIsLogoutModalOpen(true)}>
                     <img
                         className="sign-out-icon"
-                        src={SignOutIcon}
+                        src={LogoutIcon}
                         alt="Sign Out"
                     />
                 </button>
