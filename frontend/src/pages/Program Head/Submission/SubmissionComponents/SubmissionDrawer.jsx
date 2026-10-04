@@ -307,16 +307,6 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                     </button>
                                 </div>
                             </div>
-
-                            {onExport && (
-                                <button
-                                    type="button"
-                                    className="ph-record-detail-export"
-                                    onClick={() => onExport(submission)}
-                                >
-                                    <span aria-hidden="true">↓</span> Export
-                                </button>
-                            )}
                         </>
                     )}
                 </div>

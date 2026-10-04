@@ -98,6 +98,7 @@ function App() {
       <main className="screen-size-notice" role="status">
         <div>
           <h1>Please return to full screen</h1>
+          <h2>The website is not yet available on small screens</h2>
           <p>Widen your browser window to use the app.</p>
         </div>
       </main>

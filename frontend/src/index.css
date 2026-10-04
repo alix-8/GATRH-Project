@@ -78,6 +78,11 @@ body {
   font-size: 16px;
 }
 
+.screen-size-notice h2 {
+  color: #404c61;
+  font-size: 16px;
+}
+
 #root {
   width: 100%;
   min-height: 100vh;
