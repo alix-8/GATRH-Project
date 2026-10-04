@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Escalations;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Escalation;
 use Illuminate\Http\Request;
@@ -14,17 +16,7 @@ class EscalationController extends Controller
     {
         $user = $request->user();
 
-        $query = Escalation::with('student')
-            ->where('no_response_count', '>', 0);
-
-        // Scope by program if user is a Program Head
-        if ($user->role === 'program_head') {
-            $programs = $user->assignedProgramCodes();
-
-            $query->whereHas('student', function ($q) use ($programs) {
-                $q->whereIn('program', $programs);
-            });
-        }
+        $query = Escalation::query()->visibleTo($user)->with('student');
 
         // Optional filter by escalation level (e.g., Level 1, Level 2, Level 3)
         if ($request->has('level')) {
@@ -43,9 +35,11 @@ class EscalationController extends Controller
     /**
      * Display escalation details along with full attendance history.
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $escalation = Escalation::with(['student', 'student.attendanceRecords'])->findOrFail($id);
+        $escalation = Escalation::query()->visibleTo($request->user())
+            ->with(['student', 'student.attendanceRecords'])
+            ->findOrFail($id);
 
         return response()->json([
             'status' => 'success',
@@ -59,6 +53,11 @@ class EscalationController extends Controller
     public function update(Request $request, $id)
     {
         $escalation = Escalation::findOrFail($id);
+
+        abort_unless(
+            Escalation::query()->visibleTo($request->user())->whereKey($escalation->id)->exists(),
+            404
+        );
 
         $validated = $request->validate([
             'notes'  => 'nullable|string|max:1000',

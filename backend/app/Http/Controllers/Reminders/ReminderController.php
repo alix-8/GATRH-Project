@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Reminders;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Reminder;
 use App\Models\AttendanceRecord;
@@ -66,6 +68,7 @@ class ReminderController extends Controller
                 'upcoming'     => $request->user()->reminders()->where('status', 'upcoming')->count(),
                 'needs_action' => $request->user()->reminders()->where('status', 'needs_action')->count(),
                 'completed'    => $request->user()->reminders()->where('status', 'completed')->count(),
+                'escalation_count' => Escalation::query()->visibleTo($request->user())->count(),
             ],
             'data' => $reminders,
         ]); 
@@ -75,7 +78,7 @@ class ReminderController extends Controller
     public function roleSummary(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_unless(in_array($user->role, ['program_head', 'chancellor'], true), 403, 'Unauthorized. You do not have permission to access this resource.');
+        abort_unless(in_array($user->role, ['secretary', 'program_head', 'chancellor', 'cm_coordinator'], true), 403, 'Unauthorized. You do not have permission to access this resource.');
 
         $groups = AttendanceRecord::query()
             ->with('student')
@@ -84,12 +87,7 @@ class ReminderController extends Controller
             ->groupBy(fn (AttendanceRecord $record) => $record->batch_id
                 ?: implode('|', [$record->gathering_type, Carbon::parse($record->day)->toDateString(), $record->submitted_by]));
 
-        $level = $user->role === 'program_head' ? 'Level 2' : 'Level 3';
-        $escalationCount = Escalation::query()
-            ->where('escalation_level', $level)
-            ->where('no_response_count', '>', 0)
-            ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->count();
+        $escalationCount = Escalation::query()->visibleTo($user)->count();
 
         $attendanceCount = $user->role === 'program_head'
             ? $groups->filter(fn ($group) => !$group->contains('validation_status', 'rejected')

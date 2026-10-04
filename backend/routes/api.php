@@ -2,13 +2,13 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\StudentController;
-use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\AttendanceDraftController;
-use App\Http\Controllers\EscalationController;
-use App\Http\Controllers\ReminderController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProgramHeadSubmissionController;
+use App\Http\Controllers\Students\StudentController;
+use App\Http\Controllers\Attendance\AttendanceController;
+use App\Http\Controllers\Attendance\AttendanceDraftController;
+use App\Http\Controllers\Escalations\EscalationController;
+use App\Http\Controllers\Reminders\ReminderController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\ProgramHead\ProgramHeadSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 /*
