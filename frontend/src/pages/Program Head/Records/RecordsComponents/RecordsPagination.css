@@ -41,7 +41,8 @@
     cursor: default;
 }
 
-.ph-records-pagination-controls button:first-child,.ph-records-pagination-controls button:last-child {
+.ph-records-pagination-controls button:first-child,
+.ph-records-pagination-controls button:last-child {
     font-size: 17px;
     line-height: 1;
 }

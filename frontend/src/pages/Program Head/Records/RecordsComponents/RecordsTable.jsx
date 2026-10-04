@@ -14,13 +14,18 @@ import './RecordsTable.css'
 
 const PAGE_SIZE = 10
 const GATHERINGS = [
-    { value: '', label: 'Gathering' }, { value: 'pm', label: 'Prayer Meeting' },
-    { value: 'ws', label: 'Worship Service' }, { value: 'tg', label: 'Thanksgiving' },
+    { value: '', label: 'Gathering' },
+    { value: 'pm', label: 'Prayer Meeting' },
+    { value: 'ws', label: 'Worship Service' },
+    { value: 'tg', label: 'Thanksgiving' },
     { value: 'special', label: 'Special Gathering' },
 ]
 const YEARS = [
-    { value: '', label: 'Year' }, { value: '1', label: '1st Year' }, { value: '2', label: '2nd Year' },
-    { value: '3', label: '3rd Year' }, { value: '4', label: '4th Year' },
+    { value: '', label: 'Year' },
+    { value: '1', label: '1st Year' },
+    { value: '2', label: '2nd Year' },
+    { value: '3', label: '3rd Year' },
+    { value: '4', label: '4th Year' },
 ]
 
 export default function RecordsTable() {
@@ -34,7 +39,9 @@ export default function RecordsTable() {
 
     const params = useMemo(() => {
         const values = new URLSearchParams({ page: String(page), per_page: String(PAGE_SIZE) })
-        Object.entries(filters).forEach(([key, value]) => value && values.set(key, value))
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value) values.set(key, value)
+        })
         return values.toString()
     }, [filters, page])
 
@@ -46,7 +53,9 @@ export default function RecordsTable() {
             setRows(Array.isArray(result.data) ? result.data : [])
             setMeta(result.meta ?? { current_page: 1, last_page: 1, total: 0 })
         } catch (err) {
-            if (err.name !== 'AbortError') setError(err.message || 'Could not load records.')
+            if (err.name !== 'AbortError') {
+                setError(err.message || 'Could not load records.')
+            }
         } finally {
             if (!signal?.aborted) setLoading(false)
         }
@@ -74,7 +83,10 @@ export default function RecordsTable() {
                 batch_key: record.batch_key,
             })
             const response = await fetch(`http://127.0.0.1:8000/api/program-head/records/export?${params}`, {
-                headers: { Accept: 'text/csv', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                headers: {
+                    Accept: 'text/csv',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
             })
             if (!response.ok) {
                 const result = await response.json().catch(() => ({}))
@@ -96,30 +108,111 @@ export default function RecordsTable() {
     return (
         <section className="ph-records-content">
             <section className="ph-record-filters" aria-label="Filter approved records">
-                <FilterDropdown label="Gathering" icon={GatheringIcon} options={GATHERINGS} value={filters.gathering_type} onChange={(value) => updateFilter('gathering_type', value)} primary />
+                <FilterDropdown
+                    label="Gathering"
+                    icon={GatheringIcon}
+                    options={GATHERINGS}
+                    value={filters.gathering_type}
+                    onChange={(value) => updateFilter('gathering_type', value)}
+                    primary
+                />
                 <CalendarFilter value={filters.date} onChange={(value) => updateFilter('date', value)} />
-                <FilterDropdown label="Year" icon={YearIcon} options={YEARS} value={filters.year_level} onChange={(value) => updateFilter('year_level', value)} />
-                <label className="ph-search-control"><img src={SearchIcon} alt="" /><input aria-label="Search records" type="search" placeholder="Search Records…" value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} /></label>
+                <FilterDropdown
+                    label="Year"
+                    icon={YearIcon}
+                    options={YEARS}
+                    value={filters.year_level}
+                    onChange={(value) => updateFilter('year_level', value)}
+                />
+                <label className="ph-search-control">
+                    <img src={SearchIcon} alt="" />
+                    <input
+                        aria-label="Search records"
+                        type="search"
+                        placeholder="Search Records…"
+                        value={filters.search}
+                        onChange={(event) => updateFilter('search', event.target.value)}
+                    />
+                </label>
             </section>
             {error && <p className="ph-record-error" role="alert">{error}</p>}
             <section className="ph-submissions-table-panel" aria-label="Approved attendance records">
-                <div className="ph-submissions-table-scroll"><table className="ph-submissions-table ph-records-table">
-                    <thead><tr><th>Secretary</th><th>Gathering</th><th>Program</th><th>Year</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
-                    <tbody>
-                        {loading ? <tr><td className="ph-submissions-state" colSpan="7"><LoadingCircle label="Loading records…" /></td></tr>
-                            : error ? <tr><td className="ph-submissions-state ph-submissions-error" colSpan="7">Could not load approved records.</td></tr>
-                                : rows.length === 0 ? <tr><td className="ph-submissions-state" colSpan="7">No approved records match these filters.</td></tr>
-                                    : rows.map((row) => <tr key={row.id}>
-                                        <td><UserAvatar className="ph-submitter-avatar" name={row.secretary} program={row.program} />{row.secretary}</td>
-                                        <td>{row.gathering}</td><td>{row.program}</td><td>{row.year_label}</td><td>{row.date}</td>
-                                        <td><span className="ph-submission-status approved"><i />Approved</span></td>
-                                        <td><button type="button" className="ph-submission-review" onClick={() => setActiveRecord(row)}>View <span>›</span></button></td>
-                                    </tr>)}
-                    </tbody>
-                </table></div>
+                <div className="ph-submissions-table-scroll">
+                    <table className="ph-submissions-table ph-records-table">
+                        <thead>
+                            <tr>
+                                <th>Secretary</th>
+                                <th>Gathering</th>
+                                <th>Program</th>
+                                <th>Year</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td className="ph-submissions-state" colSpan="7">
+                                        <LoadingCircle label="Loading records…" />
+                                    </td>
+                                </tr>
+                            ) : error ? (
+                                <tr>
+                                    <td className="ph-submissions-state ph-submissions-error" colSpan="7">
+                                        Could not load approved records.
+                                    </td>
+                                </tr>
+                            ) : rows.length === 0 ? (
+                                <tr>
+                                    <td className="ph-submissions-state" colSpan="7">
+                                        No approved records match these filters.
+                                    </td>
+                                </tr>
+                            ) : rows.map((row) => (
+                                <tr key={row.id}>
+                                    <td>
+                                        <UserAvatar
+                                            className="ph-submitter-avatar"
+                                            name={row.secretary}
+                                            program={row.program}
+                                        />
+                                        {row.secretary}
+                                    </td>
+                                    <td>{row.gathering}</td>
+                                    <td>{row.program}</td>
+                                    <td>{row.year_label}</td>
+                                    <td>{row.date}</td>
+                                    <td>
+                                        <span className="ph-submission-status approved">
+                                            <i />
+                                            Approved
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button
+                                            type="button"
+                                            className="ph-submission-review"
+                                            onClick={() => setActiveRecord(row)}
+                                        >
+                                            View <span>›</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                 <RecordsPagination page={page} lastPage={meta.last_page} onPageChange={setPage} disabled={loading} />
             </section>
-            {activeRecord && <SubmissionDrawer submission={{ ...activeRecord, id: activeRecord.batch_key, status: 'approved' }} onClose={() => setActiveRecord(null)} onUpdated={() => {}} onExport={exportRecord} />}
+            {activeRecord && (
+                <SubmissionDrawer
+                    submission={{ ...activeRecord, id: activeRecord.batch_key, status: 'approved' }}
+                    onClose={() => setActiveRecord(null)}
+                    onUpdated={() => {}}
+                    onExport={exportRecord}
+                />
+            )}
         </section>
     )
 }

@@ -6,7 +6,11 @@
 
 .ph-record-filters {
     display: grid;
-    grid-template-columns: minmax(135px,1fr) minmax(135px,1fr) minmax(120px,.9fr) minmax(190px,2fr);
+    grid-template-columns:
+        minmax(135px, 1fr)
+        minmax(135px, 1fr)
+        minmax(120px, 0.9fr)
+        minmax(190px, 2fr);
     gap: 8px;
 }
 
@@ -16,14 +20,14 @@
     font-size: 12px;
 }
 
-.ph-records-table th,.ph-records-table td {
+.ph-records-table th,
+.ph-records-table td {
     padding-right: 14px;
     padding-left: 14px;
 }
 
 @media (max-width: 800px) {
     .ph-record-filters {
-        grid-template-columns: repeat(2,minmax(0,1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
 }
