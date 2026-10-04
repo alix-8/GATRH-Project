@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
+use App\Models\Escalation;
 use App\Models\Student;
 use App\Models\Reminder;
 use Carbon\Carbon;
@@ -150,6 +151,7 @@ class DashboardService
                 ->where('user_id', $user->id)
                 ->whereIn('status', ['draft', 'pending'])
                 ->count(),
+            'escalation_count' => Escalation::query()->visibleTo($user)->count(),
         ];
     }
 
@@ -395,7 +397,7 @@ class DashboardService
             ->values();
 
         return [
-            'role' => 'chancellor',
+            'role' => $user->role,
 
             // Four cards at the top
             'summary' => [
@@ -404,6 +406,7 @@ class DashboardService
                 'no_report' => $noReport,
                 'total_programs' => $totalPrograms,
                 'completion_rate' => $completionRate,
+                'escalation_count' => Escalation::query()->visibleTo($user)->count(),
             ],
 
             // Overall Reporting Progress card
@@ -445,6 +448,7 @@ class DashboardService
             'pending_review' => $pendingReview,
             'approved' => $approved,
             'rejected' => $rejected,
+            'escalation_count' => Escalation::query()->visibleTo($user)->count(),
             'total_submissions' => $total,
         ];
     }

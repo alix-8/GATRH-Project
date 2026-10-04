@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Attendance;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\AttendanceDraft;
 use App\Models\Reminder;

@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Dashboard;
+
+use App\Http\Controllers\Controller;
 
 use App\Services\DashboardService;
 use Illuminate\Http\JsonResponse;
@@ -45,7 +47,7 @@ class DashboardController extends Controller
         ];
 
         // Direct request handling based on user role
-        if ($user->hasRole('chancellor') || $user->hasRole('admin')) {
+        if ($user->hasRole(['chancellor', 'cm_coordinator', 'admin'])) {
             $data = $this->dashboardService->getChancellorDashboardPayload($user, $filters);
         } elseif ($user->hasRole('program_head')) {
             $data = $this->dashboardService->getProgramHeadDashboardPayload($user, $filters);

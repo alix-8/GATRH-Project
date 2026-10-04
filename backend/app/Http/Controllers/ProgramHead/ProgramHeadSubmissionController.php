@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ProgramHead;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\AttendanceRecord;
 use Carbon\Carbon;
