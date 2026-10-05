@@ -56,8 +56,6 @@ class DashboardService
                 $weekRange
             ),
 
-            
-
             // Attendance Overview bar chart
             'attendance_overview' => $this->getAttendanceChartData(
                 $user,
