@@ -222,7 +222,7 @@ function Dashboard() {
                 <section className="dashboard-kpis" aria-label="Attendance key metrics">
                     {kpiCards.map(card => (
                         <article className="kpi-card" key={card.key}>
-                            <span className="kpi-icon">
+                            <span className={`kpi-icon kpi-icon-${card.key}`}>
                                 <img src={card.icon} alt="" aria-hidden="true" />
                             </span>
                             <div className="kpi-copy">
