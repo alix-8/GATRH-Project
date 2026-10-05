@@ -14,6 +14,7 @@ import ProgramHeadRecords from './pages/Program Head/Records/ProgramHeadRecords'
 
 const landingByRole = {
   secretary: '/dashboard',
+  program_secretary: '/program-secretary/dashboard',
   program_head: '/program-head/dashboard',
   chancellor: '/chancellor/dashboard',
   admin: '/admin/dashboard',
@@ -62,12 +63,16 @@ function AppRoutes() {
       <Route path="/students" element={<RoleRoute roles={['secretary']}><Students /></RoleRoute>} />
       <Route path="/import" element={<RoleRoute roles={['secretary']}><Import /></RoleRoute>} />
       <Route path="/attendance" element={<RoleRoute roles={['secretary']}><Attendance /></RoleRoute>} />
-      <Route path="/reminders" element={<RoleRoute roles={['secretary', 'program_head', 'chancellor', 'cm_coordinator']}><Reminders /></RoleRoute>} />
-      <Route path="/profile" element={<RoleRoute roles={['secretary', 'program_head', 'chancellor', 'admin']}><Profile /></RoleRoute>} />
+      <Route path="/reminders" element={<RoleRoute roles={['secretary', 'program_head', 'program_secretary', 'cm_coordinator']}><Reminders /></RoleRoute>} />
+      <Route path="/profile" element={<RoleRoute roles={['secretary', 'program_secretary', 'program_head', 'chancellor', 'cm_coordinator']}><Profile /></RoleRoute>} />
 
       <Route path="/program-head/dashboard" element={<RoleRoute roles={['program_head']}><ProgramHeadDashboard /></RoleRoute>} />
       <Route path="/program-head/submission" element={<RoleRoute roles={['program_head']}><ProgramHeadSubmissions /></RoleRoute>} />
       <Route path="/program-head/records" element={<RoleRoute roles={['program_head']}><ProgramHeadRecords /></RoleRoute>} />
+
+      <Route path="/program-secretary/dashboard" element={<RoleRoute roles={['program_secretary']}><ProgramHeadDashboard /></RoleRoute>} />
+      <Route path="/program-secretary/submission" element={<RoleRoute roles={['program_secretary']}><ProgramHeadSubmissions /></RoleRoute>} />
+      <Route path="/program-secretary/records" element={<RoleRoute roles={['program_secretary']}><ProgramHeadRecords /></RoleRoute>} />
 
       <Route path="/chancellor/dashboard" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Dashboard" /></RoleRoute>} />
       <Route path="/chancellor/monitoring" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Monitoring" /></RoleRoute>} />

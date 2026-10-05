@@ -9,14 +9,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['secretary', 'program_head', 'cm_coordinator', 'chancellor', 'admin'])->change();
+            $table->enum('role', [
+                'secretary',
+                'program_secretary',
+                'program_head',
+                'cm_coordinator',
+                'chancellor',
+                'admin',
+            ])->change();
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['secretary', 'program_head', 'cm_coordinator', 'chancellor'])->change();
+            $table->enum('role', [
+                'secretary',
+                'program_head',
+                'cm_coordinator',
+                'chancellor',
+                'admin',
+            ])->change();
         });
     }
 };

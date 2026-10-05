@@ -49,7 +49,7 @@ class DashboardController extends Controller
         // Direct request handling based on user role
         if ($user->hasRole(['chancellor', 'cm_coordinator', 'admin'])) {
             $data = $this->dashboardService->getChancellorDashboardPayload($user, $filters);
-        } elseif ($user->hasRole('program_head')) {
+        } elseif ($user->hasRole(['program_head', 'program_secretary'])) {
             $data = $this->dashboardService->getProgramHeadDashboardPayload($user, $filters);
         } else {
             // Default payload for other roles (e.g., Secretary)

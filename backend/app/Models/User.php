@@ -54,6 +54,11 @@ class User extends Authenticatable
         return $this->role === 'secretary';
     }
 
+    public function isProgramSecretary(): bool
+    {
+        return $this->role === 'program_secretary';
+    }
+    
     public function isProgramHead(): bool
     {
         return $this->role === 'program_head';
