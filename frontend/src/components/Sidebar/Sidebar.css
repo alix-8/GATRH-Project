@@ -1,4 +1,4 @@
-﻿.sidebar {
+.sidebar {
     position: sticky;
     top: 0;
     width: 214px;
@@ -38,7 +38,6 @@
     text-decoration: none;
     font-size: 13px;
     border-left: 2px solid transparent;
-    transition: all 0.2s ease;
 }
 
 .sidebar-link:not(.active) {
@@ -48,15 +47,22 @@
 .sidebar-link.active {
     color: #ffffff;
     border-left-color: #F2C94C;
+    gap: 12px;
+    padding-block: 12px;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .sidebar-icon {
     width: 20px;
     opacity: 0.62;
-    transition: opacity 0.2s ease;
+    transition: width 0.2s ease, height 0.2s ease, flex-basis 0.2s ease, opacity 0.2s ease;
 }
 
 .sidebar-link.active .sidebar-icon {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
     opacity: 1;
     filter: brightness(0) invert(1);
 }

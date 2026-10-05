@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useNavigate } from 'react-router-dom'
 import LVCCLogo from '../../assets/lvcc-logo.webp'
@@ -103,7 +103,6 @@ function Sidebar() {
                         <span>{item.label}</span>
                     </NavLink>
                 ))}
-
             </nav>
 
             <div className="sidebar-footer">
