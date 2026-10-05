@@ -34,7 +34,7 @@ class DashboardController extends Controller
             'week' => ['nullable', 'string'],
             'month' => ['nullable', 'integer', 'between:1,12'],
             'year' => ['nullable', 'integer', 'between:2000,2100'],
-            'attendance_period' => ['nullable', 'in:week,month'],
+            'attendance_period' => ['nullable', 'in:week,last_week'],
         ]);
 
         $filters = [
