@@ -33,6 +33,17 @@ class DashboardService
         );
 
         $chartPeriod = $filters['attendance_period'] ?? 'week';
+        
+        $chartRange = $weekRange;
+
+        if ($chartPeriod === 'last_week') {
+            $lastWeekStart = $weekStart->copy()->subWeek();
+            $chartRange = [
+                'start' => $lastWeekStart,
+                'end' => $lastWeekStart->copy()->addDays(6)->endOfDay(),
+            ];
+        }
+
 
         $chartRange = $chartPeriod === 'month'
             ? [
