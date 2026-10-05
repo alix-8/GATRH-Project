@@ -107,10 +107,12 @@ function Sidebar() {
 
             <div className="sidebar-footer">
                 <button type="button" className="sidebar-signout" onClick={() => setIsLogoutModalOpen(true)}>
+                    <span>Sign Out</span>
                     <img
                         className="sign-out-icon"
                         src={LogoutIcon}
-                        alt="Sign Out"
+                        alt=""
+                        aria-hidden="true"
                     />
                 </button>
                 <NavLink

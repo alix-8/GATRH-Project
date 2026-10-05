@@ -70,12 +70,16 @@
 .sidebar-signout {
     display: flex;
     flex: 1;
-    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
     height: 44px;
-    margin: 0;
-    padding: 0;
+    padding: 0 12px 0 16px;
     border: none;
-    background: transparent;
+    border-radius: 15px;
+    background: #ffffff;
+    color: #172B4D;
+    font: inherit;
+    font-size: 13px;
     cursor: pointer;
 }
 
@@ -92,10 +96,9 @@
 
 .sidebar-signout img {
     display: block;
-    width: min(100%, 150px);
-    height: 44px;
+    width: 28px;
+    height: 28px;
     object-fit: contain;
-    object-position: left center;
 }
 
 .sidebar-profile {
@@ -178,51 +181,4 @@
     border: 1px solid #e52328;
     background: #e52328;
     color: white;
-}
-
-@media (max-width: 900px) {
-    .sidebar {
-        position: relative;
-        width: 100%;
-        height: auto;
-        min-height: auto;
-        padding: 10px 16px;
-    }
-
-    .sidebar-logo {
-        display: none;
-    }
-
-    .sidebar-nav {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 4px;
-        margin-top: 0;
-        overflow-x: auto;
-    }
-
-    .sidebar-link {
-        flex: 0 0 auto;
-        flex-direction: column;
-        gap: 4px;
-        padding: 6px 8px;
-        border-left: 0;
-        border-bottom: 2px solid transparent;
-        font-size: 11px;
-        white-space: nowrap;
-    }
-
-    .sidebar-link.active {
-        border-left-color: transparent;
-        border-bottom-color: #F2C94C;
-    }
-
-    .sidebar-icon {
-        width: 18px;
-    }
-
-    .sidebar-footer { display: flex; justify-content: flex-end; margin-top: 8px; padding: 4px 8px; }
-    .sidebar-signout { flex: 0 1 150px; height: 40px; }
-    .sidebar-signout img { height: 40px; }
 }
