@@ -46,7 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('reminders', [ReminderController::class, 'index']);
     Route::get('reminders/role-summary', [ReminderController::class, 'roleSummary'])
-        ->middleware('role:program_head,program_secretary,chancellor');
+        ->middleware('role:program_head,cm_coordinator,program_secretary,chancellor');
     // Reminder routes for custom reminders
     Route::apiResource('reminders', ReminderController::class);
 
@@ -60,7 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance', [AttendanceController::class, 'index']);
 
     /*  -----------------------------------------------------------------
-    |Secretary (Submission, Parsing, and Reminders)
+    |Secretary
     ----------------------------------------------------------------------*/
     Route::middleware('role:secretary')->group(function () {
 
