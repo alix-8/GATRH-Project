@@ -32,7 +32,7 @@
 }
 
 .reminders-cards-secretary {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .reminders-card {
@@ -67,6 +67,10 @@
 
 .upcoming-icon-wrap {
     background-color: #172B4D;
+}
+
+.upcoming-icon-wrap .reminders-card-icon {
+    filter: brightness(0) invert(1);
 }
 
 .needs-action-icon-wrap {

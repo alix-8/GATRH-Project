@@ -5,12 +5,11 @@ import Header from '../../../components/Header/Header'
 
 import PencilIcon from '../../../assets/pencil-icon.svg'
 import EraserIcon from '../../../assets/eraser-icon.svg'
-import DashboardIllustration from '../../../assets/dashboard-illustration.webp'
+import DashboardIllustration from '../../../assets/dashboard-illustration.svg'
 import TotalStudentsKpiIcon from '../../../assets/total-students-kpi-icon.svg'
 import ResponseKpiIcon from '../../../assets/response-kpi-icon.svg'
 import NoResponseKpiIcon from '../../../assets/no-response-kpi-icon.svg'
 import PendingSubmissionKpiIcon from '../../../assets/pending-submission-kpi-icon.svg'
-import EscalationKpiIcon from '../../../assets/notification-icon.svg'
 import DashboardSkeleton from '../../../skeletons/Dashboard/DashboardSkeleton'
 import './SecDashboard.css'
 
@@ -150,12 +149,6 @@ function Dashboard() {
             icon: PendingSubmissionKpiIcon,
             value: kpis?.pending_submission,
         },
-        {
-            key: 'escalation_count',
-            title: 'Escalations',
-            icon: EscalationKpiIcon,
-            value: kpis?.escalation_count,
-        },
     ]
 
     const changeMonth = amount => {
@@ -203,7 +196,7 @@ function Dashboard() {
                                     alt="Pencil Icon"
                                 />
                             </div>
-                            <p className="week-attendance">This Week's Attendance <br/> {kpis?.week_respondents}</p>
+                            <p className="month-attendance">This Month's Attendance <br/> {kpis?.week_respondents}</p>
 
                             <div className="dashboard-eraser-container">
                                 <img
@@ -212,7 +205,7 @@ function Dashboard() {
                                     alt="Eraser Icon"
                                 />
                             </div>
-                            <p className="week-absences">This Week's Absences <br/> {kpis?.week_no_response}</p>
+                            <p className="month-absences">This Month's No Response <br/> {kpis?.week_no_response}</p>
                         </div>
                     </div>
                     <div className="dashboard-content-column-right">
@@ -229,7 +222,7 @@ function Dashboard() {
                 <section className="dashboard-kpis" aria-label="Attendance key metrics">
                     {kpiCards.map(card => (
                         <article className="kpi-card" key={card.key}>
-                            <span className="kpi-icon">
+                            <span className={`kpi-icon kpi-icon-${card.key}`}>
                                 <img src={card.icon} alt="" aria-hidden="true" />
                             </span>
                             <div className="kpi-copy">

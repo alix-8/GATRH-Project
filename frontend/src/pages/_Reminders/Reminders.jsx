@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Header from '../../components/Header/Header'
 import RemindersIcon from '../../assets/reminders-icon.svg'
-import NeedsActionIcon from '../../assets/needs-action-icon.svg'
+import NeedsActionIcon from '../../assets/needs-action.png'
 import CompletedIcon from '../../assets/completed-icon.svg'
 import DropDownIcon from '../../assets/drop-down-icon.svg'
 import NotificationIcon from '../../assets/notification-icon.svg'
@@ -345,7 +345,7 @@ function Reminders() {
         : role === 'program_head'
             ? [upcomingCard, escalationCard, needsActionCard, completedCard]
             : role === 'secretary'
-                ? [upcomingCard, escalationCard, needsActionCard, completedCard]
+                ? [upcomingCard, needsActionCard, completedCard]
             : [upcomingCard, needsActionCard, completedCard]
 
     const now = new Date()

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useNavigate } from 'react-router-dom'
 import LVCCLogo from '../../assets/lvcc-logo.webp'
@@ -111,15 +111,16 @@ function Sidebar() {
                         <span>{item.label}</span>
                     </NavLink>
                 ))}
-
             </nav>
 
             <div className="sidebar-footer">
                 <button type="button" className="sidebar-signout" onClick={() => setIsLogoutModalOpen(true)}>
+                    <span>Sign Out</span>
                     <img
                         className="sign-out-icon"
                         src={LogoutIcon}
-                        alt="Sign Out"
+                        alt=""
+                        aria-hidden="true"
                     />
                 </button>
                 <NavLink
