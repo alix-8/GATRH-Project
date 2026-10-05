@@ -80,8 +80,16 @@ function Login() {
             // Store the user information
             localStorage.setItem('user', JSON.stringify(data.user))
 
-            // Redirect to Dashboard
-            navigate('/dashboard')
+            // Send each role directly to a page it can access.
+            const landingByRole = {
+                secretary: '/dashboard',
+                program_secretary: '/program-secretary/dashboard',
+                program_head: '/program-head/dashboard',
+                cm_coordinator: '/reminders',
+                chancellor: '/chancellor/dashboard',
+                admin: '/admin/dashboard',
+            }
+            navigate(landingByRole[data.user.role] || '/unauthorized', { replace: true })
 
         } catch (error) {
             setError(

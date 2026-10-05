@@ -78,7 +78,7 @@ class ReminderController extends Controller
     public function roleSummary(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_unless(in_array($user->role, ['secretary', 'program_head', 'chancellor', 'cm_coordinator'], true), 403, 'Unauthorized. You do not have permission to access this resource.');
+        abort_unless(in_array($user->role, ['secretary', 'program_head', 'program_secretary', 'chancellor', 'cm_coordinator'], true), 403, 'Unauthorized. You do not have permission to access this resource.');
 
         $groups = AttendanceRecord::query()
             ->with('student')
@@ -87,9 +87,11 @@ class ReminderController extends Controller
             ->groupBy(fn (AttendanceRecord $record) => $record->batch_id
                 ?: implode('|', [$record->gathering_type, Carbon::parse($record->day)->toDateString(), $record->submitted_by]));
 
-        $escalationCount = Escalation::query()->visibleTo($user)->count();
+        $escalationCount = $user->role === 'program_head' // program secretaries can't see escalations, only program heads can
+            ? Escalation::query()->visibleTo($user)->count()
+            : 0;
 
-        $attendanceCount = $user->role === 'program_head'
+        $attendanceCount = $user->role === 'program_head' || $user->role === 'program_secretary'
             ? $groups->filter(fn ($group) => !$group->contains('validation_status', 'rejected')
                 && !$group->every(fn ($record) => $record->validation_status === 'validated'))->count()
             : $groups->count();

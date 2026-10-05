@@ -228,7 +228,7 @@ function Reminders() {
                             return null
                         })
                         : Promise.resolve(null),
-                    role === 'program_head'
+                    role === 'program_head' || role === 'program_secretary'
                         ? fetchProgramHeadSubmissions(controller.signal)
                         : Promise.resolve(null),
                 ])
@@ -236,7 +236,7 @@ function Reminders() {
                 const nextReminders = remindersData.data ?? []
                 const attendanceRows = attendanceData?.data ?? []
                 const programHeadSubmissions = programHeadSubmissionData?.submissions ?? []
-                const nextAttendanceTasks = role === 'program_head'
+                const nextAttendanceTasks = role === 'program_head' || role === 'program_secretary'
                     ? programHeadSubmissions.map(record => ({
                         id: `submission-${record.id}`,
                         type: 'attendance',
@@ -665,8 +665,8 @@ function Reminders() {
                                                             gathering_date: item.sourceReminder.gathering_date,
                                                         },
                                                     })
-                                                } else if (role === 'program_head') {
-                                                    navigate('/program-head/submission', {
+                                                } else if (role === 'program_head' || role === 'program_secretary') {
+                                                    navigate(role === 'program_secretary' ? '/program-secretary/submission' : '/program-head/submission', {
                                                         state: { openSubmission: { ...item.sourceRecord, status: 'pending' } },
                                                     })
                                                 } else {

@@ -64,9 +64,8 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
         return list.filter((student) => {
             const matchesYear = !submission.year_level
                 || Number(student.year_level) === Number(submission.year_level)
-            const matchesSearch = student.student_name
-                ?.toLowerCase()
-                .includes(search.toLowerCase())
+            const studentName = String(student.student_name ?? '').toLowerCase()
+            const matchesSearch = studentName.includes(String(search).toLowerCase())
             const matchesStatus = status === 'all'
                 || (status === 'present'
                     ? student.status === 'present'
@@ -239,8 +238,8 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         ariaLabel="Search students"
                                         placeholder="Search Student…"
                                         value={search}
-                                        onChange={(value) => {
-                                            setSearch(value)
+                                        onChange={(event) => {
+                                            setSearch(event.target.value)
                                             setPage(1)
                                         }}
                                     />

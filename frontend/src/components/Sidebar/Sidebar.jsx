@@ -19,6 +19,14 @@ const navigationByRole = {
         { label: 'Attendance', to: '/attendance', icon: AttendanceIcon },
         { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
     ],
+
+    program_secretary: [
+        { label: 'Dashboard', to: '/program-secretary/dashboard', icon: DashboardIcon },
+        { label: 'Submissions', to: '/program-secretary/submission', icon: AttendanceIcon },
+        { label: 'Records', to: '/program-secretary/records', icon: StudentsIcon },
+        { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
+    ],
+
     program_head: [
         { label: 'Dashboard', to: '/program-head/dashboard', icon: DashboardIcon },
         { label: 'Submission', to: '/program-head/submission', icon: ImportIcon },
