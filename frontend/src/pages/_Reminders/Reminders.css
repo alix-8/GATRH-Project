@@ -69,6 +69,10 @@
     background-color: #172B4D;
 }
 
+.upcoming-icon-wrap .reminders-card-icon {
+    filter: brightness(0) invert(1);
+}
+
 .needs-action-icon-wrap {
     background-color: #F2C94C;
 }
