@@ -5,6 +5,7 @@ import Header from '../../../components/Header/Header'
 
 import PencilIcon from '../../../assets/pencil-icon.svg'
 import EraserIcon from '../../../assets/eraser-icon.svg'
+import DropdownIcon from '../../../assets/drop-down-icon.svg'
 import DashboardIllustration from '../../../assets/dashboard-illustration.svg'
 import TotalStudentsKpiIcon from '../../../assets/total-students-kpi-icon.svg'
 import ResponseKpiIcon from '../../../assets/response-kpi-icon.svg'
@@ -12,6 +13,12 @@ import NoResponseKpiIcon from '../../../assets/no-response-kpi-icon.svg'
 import PendingSubmissionKpiIcon from '../../../assets/pending-submission-kpi-icon.svg'
 import DashboardSkeleton from '../../../skeletons/Dashboard/DashboardSkeleton'
 import './SecDashboard.css'
+
+const gatheringLabels = {
+    PM: 'Prayer Meeting',
+    WS: 'Worship Service',
+    TG: 'Thanksgiving',
+}
 
 function Dashboard() {
     const [isLoading, setIsLoading] = useState(true)
@@ -241,35 +248,40 @@ function Dashboard() {
                                 <div>
                                     <h2>Attendance Overview</h2>
                                     <div className="overview-legend">
-                                        <span><i className="overview-present" />present</span>
-                                        <span><i className="overview-absent" />absent</span>
+                                        <span><i className="overview-present" />Responses</span>
+                                        <span><i className="overview-absent" />No Response</span>
                                     </div>
                                 </div>
 
-                                <div className="dashboard-period-dropdown app-dropdown" ref={attendancePeriodDropdownRef}>
+                                <div className="dashboard-period-dropdown" ref={attendancePeriodDropdownRef}>
                                     <button
                                         type="button"
-                                        className="app-dropdown-trigger dashboard-period-trigger"
+                                        className="dashboard-period-trigger"
                                         aria-label="Attendance graph date range"
                                         aria-haspopup="listbox"
                                         aria-expanded={isAttendancePeriodOpen}
                                         onClick={() => setIsAttendancePeriodOpen(open => !open)}
                                     >
-                                        {attendancePeriod === 'week' ? 'This Week' : 'This Month'}
-                                        <span className="dashboard-period-chevron" aria-hidden="true" />
+                                        {attendancePeriod === 'week' ? 'This Week' : 'Last Week'}
+                                        <img
+                                            className={`dashboard-drop-down${isAttendancePeriodOpen ? ' is-open' : ''}`}
+                                            src={DropdownIcon}
+                                            alt=""
+                                            aria-hidden="true"
+                                        />
                                     </button>
                                     {isAttendancePeriodOpen && (
-                                        <ul className="app-dropdown-menu dashboard-period-menu" role="listbox" aria-label="Attendance date range">
+                                        <ul className="dashboard-period-menu" role="listbox" aria-label="Attendance date range">
                                             {[
                                                 { value: 'week', label: 'This Week' },
-                                                { value: 'month', label: 'This Month' },
+                                                { value: 'last_week', label: 'Last Week' },
                                             ].map(option => (
                                                 <button
                                                     type="button"
                                                     role="option"
                                                     aria-selected={attendancePeriod === option.value}
                                                     key={option.value}
-                                                    className={`app-dropdown-option${attendancePeriod === option.value ? ' selected' : ''}`}
+                                                    className={`dashboard-period-option${attendancePeriod === option.value ? ' selected' : ''}`}
                                                     onClick={() => {
                                                         setAttendancePeriod(option.value)
                                                         setIsAttendancePeriodOpen(false)
@@ -309,7 +321,7 @@ function Dashboard() {
                                                                 title={`No Response: ${group.absent}`}
                                                             />
                                                         </div>
-                                                        <small>{group.category}</small>
+                                                        <small>{gatheringLabels[group.category] ?? group.category}</small>
                                                     </div>
                                                 ))}
                                             </div>
@@ -375,10 +387,11 @@ function Dashboard() {
                                     {categorizedReminders.map(item => (
                                         <div className="dashboard-reminder-item" key={`${item.category}-${item.id}`}>
                                             <span className="dashboard-reminder-category">{item.category}</span>
-                                            <span className="dashboard-reminder-description">{item.gathering || item.title}</span>
+                                            <span className="dashboard-reminder-description">{item.description || item.gathering || item.title}</span>
                                             <time>{item.date || ''}</time>
                                             <button
                                                 type="button"
+                                                aria-label={`View reminder: ${item.title}`}
                                                 onClick={() => navigate('/reminders', { state: { highlightReminderId: item.id } })}
                                             >
                                                 View <span>›</span>

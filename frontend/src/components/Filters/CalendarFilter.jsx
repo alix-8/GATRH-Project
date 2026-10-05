@@ -36,8 +36,8 @@ export default function CalendarFilter({ value, onChange }) {
     }, [])
 
     return (
-        <div className={`app-dropdown filter-dropdown filter-calendar-dropdown ${open ? 'is-open' : ''}`} ref={root}>
-            <button type="button" className="app-dropdown-trigger filter-dropdown-trigger" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+        <div className={`filter-dropdown filter-calendar-dropdown ${open ? 'is-open' : ''}`} ref={root}>
+            <button type="button" className="filter-dropdown-trigger" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
                 <img className="filter-dropdown-icon" src={CalendarIcon} alt="" />
                 <span>{label}</span>
                 <img className={`filter-dropdown-chevron ${open ? 'open' : ''}`} src={DropdownIcon} alt="" />

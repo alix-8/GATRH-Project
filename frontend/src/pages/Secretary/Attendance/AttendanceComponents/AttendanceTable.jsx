@@ -219,9 +219,9 @@ function AttendanceTable() {
     return (
         <section className="attendance-table-section">
             <div className="attendance-toolbar">
-                <div className="gathering-dropdown-container app-dropdown" ref={gatheringDropdownRef}>
+                <div className="gathering-dropdown-container" ref={gatheringDropdownRef}>
                     <div
-                        className={`toolbar-dropdown-row app-dropdown-trigger app-dropdown-trigger--primary toolbar-dropdown-row-primary ${isGatheringOpen ? 'active' : ''}`}
+                        className={`toolbar-dropdown-row toolbar-dropdown-row-primary ${isGatheringOpen ? 'active' : ''}`}
                         onClick={() => {
                             setIsGatheringOpen((prev) => !prev)
                             setIsSortOpen(false)
@@ -238,11 +238,11 @@ function AttendanceTable() {
                     </div>
 
                     {isGatheringOpen && (
-                        <ul className="toolbar-dropdown-menu app-dropdown-menu">
+                        <ul className="toolbar-dropdown-menu">
                             {GATHERING_OPTIONS.map((option) => (
                                 <li
                                     key={option.value || 'all'}
-                                    className={`toolbar-dropdown-item app-dropdown-option ${gathering === option.value ? 'selected' : ''}`}
+                                    className={`toolbar-dropdown-item ${gathering === option.value ? 'selected' : ''}`}
                                     onClick={() => handleSelectGathering(option.value)}
                                 >
                                     {option.label}
@@ -252,9 +252,9 @@ function AttendanceTable() {
                     )}
                 </div>
 
-                <div className="calendar-dropdown-container app-dropdown" ref={calendarDropdownRef}>
+                <div className="calendar-dropdown-container" ref={calendarDropdownRef}>
                     <div
-                        className={`toolbar-dropdown-row app-dropdown-trigger ${isCalendarOpen ? 'active' : ''}`}
+                        className={`toolbar-dropdown-row ${isCalendarOpen ? 'active' : ''}`}
                         onClick={() => {
                             setIsCalendarOpen((prev) => !prev)
                             setIsGatheringOpen(false)
@@ -281,9 +281,9 @@ function AttendanceTable() {
                     )}
                 </div>
 
-                <div className="sort-dropdown-container app-dropdown" ref={sortDropdownRef}>
+                <div className="sort-dropdown-container" ref={sortDropdownRef}>
                     <div
-                        className={`toolbar-dropdown-row app-dropdown-trigger ${isSortOpen ? 'active' : ''}`}
+                        className={`toolbar-dropdown-row ${isSortOpen ? 'active' : ''}`}
                         onClick={() => {
                             setIsSortOpen((prev) => !prev)
                             setIsGatheringOpen(false)
@@ -300,11 +300,11 @@ function AttendanceTable() {
                     </div>
 
                     {isSortOpen && (
-                        <ul className="toolbar-dropdown-menu app-dropdown-menu">
+                        <ul className="toolbar-dropdown-menu">
                             {SORT_OPTIONS.map((option) => (
                                 <li
                                     key={option.value}
-                                    className={`toolbar-dropdown-item app-dropdown-option ${sortBy === option.value ? 'selected' : ''}`}
+                                    className={`toolbar-dropdown-item ${sortBy === option.value ? 'selected' : ''}`}
                                     onClick={() => handleSelectSort(option.value)}
                                 >
                                     {option.label}

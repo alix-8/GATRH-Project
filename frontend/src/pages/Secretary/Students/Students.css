@@ -39,6 +39,65 @@
 
 }
 
+.filter-section-row:hover,
+.filter-section-row.active {
+    border-color: #5c7499;
+    background: #eef2f8;
+}
+
+.sort-dropdown-menu,
+.response-dropdown-menu,
+.level-dropdown-menu {
+    box-sizing: border-box;
+    position: absolute;
+    z-index: 120;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 4px 0;
+    overflow: hidden;
+    border: 1px solid #d6d9de;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(23, 43, 77, 0.12);
+    list-style: none;
+}
+
+.sort-dropdown-item,
+.response-dropdown-item,
+.level-dropdown-item {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 7px 12px;
+    color: #172b4d;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.sort-dropdown-item:hover,
+.response-dropdown-item:hover,
+.level-dropdown-item:hover {
+    background: #5c7499;
+    color: #fff;
+}
+
+.sort-dropdown-item.selected,
+.response-dropdown-item.selected,
+.level-dropdown-item.selected {
+    background: #eef2f8;
+    font-weight: 600;
+}
+
+.sort-dropdown-item.selected:hover,
+.response-dropdown-item.selected:hover,
+.level-dropdown-item.selected:hover {
+    background: #5c7499;
+    color: #fff;
+}
+
 .sort-dropdown-container,
 .response-dropdown-container,
 .level-dropdown-container {
@@ -458,6 +517,7 @@
 }
 
 .overview-filter-control {
+    box-sizing: border-box;
     align-items: center;
     background: #fff;
     border: 1px solid #bec9d8;
@@ -468,6 +528,17 @@
     padding: 7px 9px;
     text-align: left;
     width: 100%;
+}
+
+.overview-filter-control:hover,
+.overview-filter-control[aria-expanded="true"] {
+    border-color: #5c7499;
+    background: #eef2f8;
+}
+
+.overview-filter-control:focus-visible {
+    outline: 2px solid #159fe8;
+    outline-offset: 2px;
 }
 
 .overview-filter-control img {
@@ -512,9 +583,16 @@
     padding: 1px 8px;
 }
 
-.overview-filter-menu li:hover {
+.overview-filter-option:hover,
+.overview-filter-option:focus-visible {
+    outline: none;
     background: #5c7499;
     color: #fff;
+}
+
+.overview-filter-option.selected {
+    background: #eef2f8;
+    font-weight: 600;
 }
 
 .overview-history-header {

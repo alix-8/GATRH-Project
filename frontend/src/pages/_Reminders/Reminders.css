@@ -473,6 +473,7 @@
 }
 
 .reminder-select {
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     gap: 9px;
@@ -487,6 +488,71 @@
     font-weight: 700;
     padding: 0 11px;
     text-align: left;
+}
+
+.reminder-select-field {
+    position: relative;
+}
+
+.reminder-select:hover,
+.reminder-select[aria-expanded="true"] {
+    border-color: #5c7499;
+    background: #eef2f8;
+}
+
+.reminder-select:focus-visible {
+    outline: 2px solid #159fe8;
+    outline-offset: 2px;
+}
+
+.reminder-menu {
+    box-sizing: border-box;
+    position: absolute;
+    z-index: 120;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    max-height: 220px;
+    margin: 0;
+    padding: 4px 0;
+    overflow-y: auto;
+    border: 1px solid #d6d9de;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(23, 43, 77, 0.12);
+}
+
+.reminder-option {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 0;
+    background: #fff;
+    color: #172b4d;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+}
+
+.reminder-option:hover,
+.reminder-option:focus-visible {
+    outline: none;
+    background: #5c7499;
+    color: #fff;
+}
+
+.reminder-option.selected {
+    background: #eef2f8;
+    font-weight: 600;
+}
+
+.reminder-option.selected:hover {
+    background: #5c7499;
+    color: #fff;
 }
 
 .reminder-select>img:first-child {

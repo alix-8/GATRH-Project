@@ -711,20 +711,20 @@ function Reminders() {
                             />
                         </label>
 
-                        <div className="reminder-field reminder-select-field app-dropdown">
+                        <div className="reminder-field reminder-select-field">
                             <span>Type<b>*</b></span>
-                            <button type="button" className="reminder-select app-dropdown-trigger" aria-required="true" aria-expanded={openMenu === 'type'} onClick={() => setOpenMenu(openMenu === 'type' ? '' : 'type')}>
+                            <button type="button" className="reminder-select" aria-required="true" aria-expanded={openMenu === 'type'} onClick={() => setOpenMenu(openMenu === 'type' ? '' : 'type')}>
                                 <img src={CalendarIcon} alt="" aria-hidden="true" />
                                 {selectedTypeLabel}
                                 <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
                             </button>
                             {openMenu === 'type' && (
-                                <div className="reminder-menu app-dropdown-menu">
+                                <div className="reminder-menu">
                                     {REMINDER_TYPES.map(option => (
                                         <button
                                             type="button"
                                             key={option.value}
-                                            className={`app-dropdown-option ${formData.type === option.value ? 'selected' : ''}`}
+                                            className={`reminder-option ${formData.type === option.value ? 'selected' : ''}`}
                                             onClick={() => {
                                                 setFormData(prev => ({ ...prev, type: option.value }))
                                                 setOpenMenu('')
@@ -737,20 +737,20 @@ function Reminders() {
                             )}
                         </div>
 
-                        <div className="reminder-field reminder-select-field app-dropdown">
+                        <div className="reminder-field reminder-select-field">
                             <span>Related Gathering<b>*</b></span>
-                            <button type="button" className="reminder-select app-dropdown-trigger" aria-required="true" aria-expanded={openMenu === 'gathering'} onClick={() => setOpenMenu(openMenu === 'gathering' ? '' : 'gathering')}>
+                            <button type="button" className="reminder-select" aria-required="true" aria-expanded={openMenu === 'gathering'} onClick={() => setOpenMenu(openMenu === 'gathering' ? '' : 'gathering')}>
                                 <img src={GatheringIcon} alt="" aria-hidden="true" />
                                 {selectedGatheringLabel}
                                 <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
                             </button>
                             {openMenu === 'gathering' && (
-                                <div className="reminder-menu app-dropdown-menu">
+                                <div className="reminder-menu">
                                     {GATHERING_OPTIONS.map(option => (
                                         <button
                                             type="button"
                                             key={option.value}
-                                            className={`app-dropdown-option ${formData.gathering === option.value ? 'selected' : ''}`}
+                                            className={`reminder-option ${formData.gathering === option.value ? 'selected' : ''}`}
                                             onClick={() => {
                                                 setFormData(prev => ({ ...prev, gathering: option.value }))
                                                 setOpenMenu('')
@@ -764,9 +764,9 @@ function Reminders() {
                         </div>
 
                         <div className="reminder-date-row">
-                            <div className="reminder-field reminder-select-field app-dropdown">
+                            <div className="reminder-field reminder-select-field">
                                 <span>Date<b>*</b></span>
-                                <button type="button" className="reminder-select app-dropdown-trigger" aria-required="true" aria-expanded={openMenu === 'date'} onClick={() => setOpenMenu(openMenu === 'date' ? '' : 'date')}>
+                                <button type="button" className="reminder-select" aria-required="true" aria-expanded={openMenu === 'date'} onClick={() => setOpenMenu(openMenu === 'date' ? '' : 'date')}>
                                     <img src={CalendarIcon} alt="" aria-hidden="true" />
                                     {formData.date ? formatReminderDate(formData.date) : 'Select Date'}
                                     <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />

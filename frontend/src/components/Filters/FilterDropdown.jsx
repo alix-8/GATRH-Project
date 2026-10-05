@@ -22,15 +22,15 @@ export default function FilterDropdown({ label, value, options, icon, onChange, 
     }, [])
 
     return (
-        <div className={`app-dropdown filter-dropdown ${open ? 'is-open' : ''}`} ref={root}>
-            <button type="button" className={`app-dropdown-trigger filter-dropdown-trigger ${primary ? 'app-dropdown-trigger--primary' : ''}`} aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+        <div className={`filter-dropdown ${open ? 'is-open' : ''}`} ref={root}>
+            <button type="button" className={`filter-dropdown-trigger ${primary ? 'filter-dropdown-trigger--primary' : ''}`} aria-expanded={open} onClick={() => setOpen((current) => !current)}>
                 {icon && <img className="filter-dropdown-icon" src={icon} alt="" />}
                 <span>{selectedLabel}</span>
                 <img className={`filter-dropdown-chevron ${open ? 'open' : ''}`} src={primary ? DropdownChevronWhite : DropdownIcon} alt="" />
             </button>
-            {open && <ul className="app-dropdown-menu filter-dropdown-menu" role="listbox" aria-label={label}>
+            {open && <ul className="filter-dropdown-menu" role="listbox" aria-label={label}>
                 {options.map((option) => <li key={option.value || 'all'}>
-                    <button type="button" role="option" aria-selected={value === option.value} className={`app-dropdown-option ${value === option.value ? 'selected' : ''}`} onClick={() => { onChange(option.value); setOpen(false) }}>{option.label}</button>
+                    <button type="button" role="option" aria-selected={value === option.value} className={`filter-dropdown-option ${value === option.value ? 'selected' : ''}`} onClick={() => { onChange(option.value); setOpen(false) }}>{option.label}</button>
                 </li>)}
             </ul>}
         </div>
