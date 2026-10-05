@@ -345,7 +345,7 @@ function Reminders() {
         : role === 'program_head'
             ? [upcomingCard, escalationCard, needsActionCard, completedCard]
             : role === 'secretary'
-                ? [upcomingCard, escalationCard, needsActionCard, completedCard]
+                ? [upcomingCard, needsActionCard, completedCard]
             : [upcomingCard, needsActionCard, completedCard]
 
     const now = new Date()

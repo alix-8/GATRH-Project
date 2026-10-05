@@ -10,7 +10,6 @@ import TotalStudentsKpiIcon from '../../../assets/total-students-kpi-icon.svg'
 import ResponseKpiIcon from '../../../assets/response-kpi-icon.svg'
 import NoResponseKpiIcon from '../../../assets/no-response-kpi-icon.svg'
 import PendingSubmissionKpiIcon from '../../../assets/pending-submission-kpi-icon.svg'
-import EscalationKpiIcon from '../../../assets/notification-icon.svg'
 import DashboardSkeleton from '../../../skeletons/Dashboard/DashboardSkeleton'
 import './SecDashboard.css'
 
@@ -149,12 +148,6 @@ function Dashboard() {
             title: 'Pending Submission',
             icon: PendingSubmissionKpiIcon,
             value: kpis?.pending_submission,
-        },
-        {
-            key: 'escalation_count',
-            title: 'Escalations',
-            icon: EscalationKpiIcon,
-            value: kpis?.escalation_count,
         },
     ]
 
