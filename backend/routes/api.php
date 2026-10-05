@@ -46,7 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('reminders', [ReminderController::class, 'index']);
     Route::get('reminders/role-summary', [ReminderController::class, 'roleSummary'])
-        ->middleware('role:program_head,chancellor');
+        ->middleware('role:program_head,program_secretary,chancellor');
     // Reminder routes for custom reminders
     Route::apiResource('reminders', ReminderController::class);
 
@@ -83,7 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
         
     // Program Head & CM Coordinator Scopes (Approval & Escalations)
-    Route::middleware('role:program_head')->group(function () {
+    Route::middleware('role:program_head,program_secretary')->group(function () {
         Route::get('/program-head/submissions', [ProgramHeadSubmissionController::class, 'index']);
         Route::get('/program-head/records', [ProgramHeadSubmissionController::class, 'records']);
         Route::get('/program-head/records/export', [ProgramHeadSubmissionController::class, 'exportRecords']);
@@ -91,9 +91,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::get('/students', [StudentController::class, 'index']);
         
         Route::patch('/attendance/validate', [AttendanceController::class, 'validateRecord']);
-        Route::get('/escalations', [EscalationController::class, 'index']);
-        Route::get('/escalations/{id}', [EscalationController::class, 'show']);
-        Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
+        Route::middleware('role:program_head')->group(function () {
+            Route::get('/escalations', [EscalationController::class, 'index']);
+            Route::get('/escalations/{id}', [EscalationController::class, 'show']);
+            Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
+        });
 
         // Program head actionable functions
         Route::get('/attendance/review/{batchKey}', [AttendanceController::class, 'reviewSubmission'])

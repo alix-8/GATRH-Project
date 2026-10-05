@@ -17,8 +17,8 @@ class StudentPolicy
             return true;
         }
 
-        // 2. Program Heads can access any student in their assigned program
-        if ($user->role === 'program_head') {
+        // 2. Program Heads and Program Secretaries can access any student in their assigned program
+        if (in_array($user->role, ['program_head', 'program_secretary'], true)) {
             return in_array($student->program, $user->assignedProgramCodes(), true);
         }
 

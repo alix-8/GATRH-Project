@@ -61,6 +61,7 @@ class ProgramHeadSubmissionController extends Controller
                     'status' => $status,
                     'status_label' => ucfirst($status),
                     'student_count' => $group->count(),
+                    '_search_text' => $group->pluck('student.name')->filter()->implode(' '),
                 ];
             })
             ->sortByDesc('date_iso')
@@ -82,6 +83,7 @@ class ProgramHeadSubmissionController extends Controller
             $needle = mb_strtolower(trim($filters['search']));
             $records = $records->filter(fn (array $record) => str_contains(mb_strtolower(implode(' ', [
                 $record['secretary'], $record['gathering'], $record['program'], $record['year_label'],
+                $record['date'], $record['status_label'], $record['_search_text'],
             ])), $needle))->values();
         }
 
@@ -93,7 +95,12 @@ class ProgramHeadSubmissionController extends Controller
 
         return response()->json([
             'pending_count' => $pendingCount,
-            'data' => $records->slice(($page - 1) * $perPage, $perPage)->values(),
+            'data' => $records->slice(($page - 1) * $perPage, $perPage)
+                ->map(function (array $record) {
+                    unset($record['_search_text']);
+                    return $record;
+                })
+                ->values(),
             'meta' => [
                 'current_page' => $page,
                 'last_page' => $lastPage,
@@ -142,6 +149,7 @@ class ProgramHeadSubmissionController extends Controller
                     'status' => 'approved',
                     'status_label' => 'Approved',
                     'student_count' => $group->count(),
+                    '_search_text' => $group->pluck('student.name')->filter()->implode(' '),
                 ];
             })
             ->sortByDesc('date_iso')->values();
@@ -153,6 +161,7 @@ class ProgramHeadSubmissionController extends Controller
             $needle = mb_strtolower(trim($filters['search']));
             $groups = $groups->filter(fn (array $record) => str_contains(mb_strtolower(implode(' ', [
                 $record['secretary'], $record['gathering'], $record['program'], $record['year_label'],
+                $record['date'], $record['status_label'], $record['_search_text'],
             ])), $needle))->values();
         }
 
@@ -162,7 +171,12 @@ class ProgramHeadSubmissionController extends Controller
         $lastPage = max(1, (int) ceil($total / $perPage));
         $page = min($page, $lastPage);
         return response()->json([
-            'data' => $groups->slice(($page - 1) * $perPage, $perPage)->values(),
+            'data' => $groups->slice(($page - 1) * $perPage, $perPage)
+                ->map(function (array $record) {
+                    unset($record['_search_text']);
+                    return $record;
+                })
+                ->values(),
             'meta' => ['current_page' => $page, 'last_page' => $lastPage, 'per_page' => $perPage, 'total' => $total],
         ]);
     }

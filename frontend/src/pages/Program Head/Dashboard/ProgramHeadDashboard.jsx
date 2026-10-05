@@ -42,6 +42,8 @@ function ProgramHeadDashboard() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const navigate = useNavigate()
+    const role = JSON.parse(localStorage.getItem('user') || 'null')?.role
+    const submissionPath = role === 'program_secretary' ? '/program-secretary/submission' : '/program-head/submission'
 
     const loadDashboard = useCallback(async () => {
         setLoading(true)
@@ -62,7 +64,7 @@ function ProgramHeadDashboard() {
 
     useEffect(() => { loadDashboard() }, [loadDashboard])
 
-    const openReview = () => navigate('/program-head/submission')
+    const openReview = () => navigate(submissionPath)
 
     return (
         <div className="ph-dashboard">
@@ -99,7 +101,7 @@ function ProgramHeadDashboard() {
                                             <td><UserAvatar className="ph-secretary-avatar" name={submission.secretary} program={submission.program} />{submission.secretary}</td>
                                             <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td>{submission.date}</td>
                                             <td><span className="ph-status"><i />{submission.status_label || 'Pending'}</span></td>
-                                            <td><button className="ph-review-button" type="button" onClick={() => navigate('/program-head/submission', { state: { openSubmission: { ...submission, status: 'pending', year_label: submission.year_label || `${submission.year_level}${/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}` } } })}>View</button></td>
+                                            <td><button className="ph-review-button" type="button" onClick={() => navigate(submissionPath, { state: { openSubmission: { ...submission, status: 'pending', year_label: submission.year_label || `${submission.year_level}${/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}` } } })}>View</button></td>
                                         </tr>
                                     ))}
                                 </tbody>

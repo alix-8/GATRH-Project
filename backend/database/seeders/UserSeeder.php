@@ -13,6 +13,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $users = [
+            // Chancellor
             [
                 'name' => 'Sharene Labung',
                 'email' => 'chancellor@laverdad.edu.ph',
@@ -22,6 +23,8 @@ class UserSeeder extends Seeder
                 'year_level' => null,
                 'contact_number' => '09000000000'
             ],
+
+            // CM Coordinator
             [
                 'name' => 'Rommel Alba',
                 'email' => 'cm.coordinator@laverdad.edu.ph',
@@ -30,6 +33,17 @@ class UserSeeder extends Seeder
                 'program' => null,
                 'year_level' => null,
                 'contact_number' => '09123456789'
+            ],
+
+            // Admin
+            [
+                'name' => 'System Admin Test',
+                'email' => 'admin@laverdad.edu.ph',
+                'password' => Hash::make('Password123!'),
+                'role' => 'admin',
+                'program' => null,
+                'year_level' => null,
+                'contact_number' => '09123456781'
             ],
 
             //Program Heads
@@ -52,6 +66,19 @@ class UserSeeder extends Seeder
                 'programs' => ['BSSW'],
                 'year_level' => null,
                 'contact_number' => '09111111222'
+            ],
+
+            
+            // Program Secretaries
+            [
+                'name' => 'Jamela Fernandez',
+                'email' => 'program.secretary@laverdad.edu.ph',
+                'password' => Hash::make('Password123!'),
+                'role' => 'program_secretary',
+                'program' => 'BSIS',
+                'programs' => ['BSIS'],
+                'year_level' => null,
+                'contact_number' => '09123456780'
             ],
 
             // Secretaries

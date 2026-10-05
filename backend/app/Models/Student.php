@@ -23,7 +23,7 @@ class Student extends Model
             return $query;
         }
 
-        if ($user->role === 'program_head') {
+        if (in_array($user->role, ['program_head', 'program_secretary'], true)) {
             return $query->whereIn('program', $user->assignedProgramCodes());
         }
 
