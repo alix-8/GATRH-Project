@@ -9,7 +9,7 @@ class GatheringCycle
     private const WINDOW_DAYS = [
         'pm' => 3, // Wed, Thu, Fri
         'ws' => 2, // Sat, Sun
-        'tg' => 1, // Sat only
+        'tg' => 2, // Sat, Sun
     ];
 
     /**
