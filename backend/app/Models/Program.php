@@ -18,4 +18,5 @@ class Program extends Model
     {
         return $this->belongsToMany(User::class);
     }
+
 }
