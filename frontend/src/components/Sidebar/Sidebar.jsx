@@ -46,6 +46,7 @@ const navigationByRole = {
         { label: 'User Roles', to: '/admin/user-roles', icon: StudentsIcon },
         { label: 'Students', to: '/admin/students', icon: StudentsIcon },
         { label: 'Programs', to: '/admin/programs', icon: ImportIcon },
+        { label: 'System Settings', to: '/admin/settings', icon: AttendanceIcon },
     ],
 }
 

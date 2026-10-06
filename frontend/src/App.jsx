@@ -11,6 +11,7 @@ import Sidebar from './components/Sidebar/Sidebar'
 import Profile from './pages/_Profile/Profile'
 import ProgramHeadSubmissions from './pages/Program Head/Submission/ProgramHeadSubmissions'
 import ProgramHeadRecords from './pages/Program Head/Records/ProgramHeadRecords'
+import AdminDashboard from './pages/Admin/Dashboard/AdminDashboard'
 
 const landingByRole = {
   secretary: '/dashboard',
@@ -77,10 +78,11 @@ function AppRoutes() {
       <Route path="/chancellor/dashboard" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Dashboard" /></RoleRoute>} />
       <Route path="/chancellor/monitoring" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Monitoring" /></RoleRoute>} />
 
-      <Route path="/admin/dashboard" element={<RoleRoute roles={['admin']}><RolePlaceholder title="Dashboard" /></RoleRoute>} />
+      <Route path="/admin/dashboard" element={<RoleRoute roles={['admin']}><AdminDashboard /></RoleRoute>} />
       <Route path="/admin/user-roles" element={<RoleRoute roles={['admin']}><RolePlaceholder title="User Roles" /></RoleRoute>} />
       <Route path="/admin/students" element={<RoleRoute roles={['admin']}><RolePlaceholder title="Students" /></RoleRoute>} />
       <Route path="/admin/programs" element={<RoleRoute roles={['admin']}><RolePlaceholder title="Programs" /></RoleRoute>} />
+      <Route path="/admin/settings" element={<RoleRoute roles={['admin']}><RolePlaceholder title="System Settings" /></RoleRoute>} />
 
       <Route path="/unauthorized" element={session ? <RolePlaceholder title="Access not configured" /> : <Navigate to="/" replace />} />
 
