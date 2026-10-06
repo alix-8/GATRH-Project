@@ -8,6 +8,7 @@ use App\Http\Controllers\Attendance\AttendanceDraftController;
 use App\Http\Controllers\Escalations\EscalationController;
 use App\Http\Controllers\Reminders\ReminderController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\CmCoordinatorMonitoringController;
 use App\Http\Controllers\ProgramHead\ProgramHeadSubmissionController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,6 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/students/{id}/overview', [StudentController::class, 'overview']);
     
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/monitoring', [CmCoordinatorMonitoringController::class, 'index'])
+        ->middleware('role:cm_coordinator');
 
     Route::get('reminders', [ReminderController::class, 'index']);
     Route::get('reminders/role-summary', [ReminderController::class, 'roleSummary'])

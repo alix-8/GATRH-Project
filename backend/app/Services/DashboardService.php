@@ -601,14 +601,6 @@ class DashboardService
     }
 
     /** ============================================================
-     * For CM Coordinator
-     *============================================================*/
-    public function getCmCoordinatorDashboardPayload($user, array $filters): array
-    {
-        // CM Coordinator dashboard
-    }
-
-    /** ============================================================
      * For Chancellor
      *============================================================*/
     public function getChancellorDashboardPayload($user, array $filters): array

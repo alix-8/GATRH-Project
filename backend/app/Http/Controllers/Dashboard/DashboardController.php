@@ -10,8 +10,10 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function __construct(private DashboardService $dashboardService)
-    {
+    public function __construct(
+        private DashboardService $dashboardService,
+        private \App\Services\CmCoordinatorMonitoringService $monitoringService
+    ) {
     }
 
     /**
@@ -48,7 +50,9 @@ class DashboardController extends Controller
 
         // Direct request handling based on user role
         if ($user->hasRole(['chancellor', 'cm_coordinator', 'admin'])) {
-            $data = $this->dashboardService->getChancellorDashboardPayload($user, $filters);
+            $data = $user->isCmCoordinator()
+                ? $this->monitoringService->getPayload($filters)
+                : $this->dashboardService->getChancellorDashboardPayload($user, $filters);
         } elseif ($user->hasRole(['program_head', 'program_secretary'])) {
             $data = $this->dashboardService->getProgramHeadDashboardPayload($user, $filters);
         } else {
