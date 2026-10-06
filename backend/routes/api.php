@@ -1,31 +1,31 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Students\StudentController;
 use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Attendance\AttendanceDraftController;
-use App\Http\Controllers\Escalations\EscalationController;
-use App\Http\Controllers\Reminders\ReminderController;
-use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\CmCoordinatorMonitoringController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Escalations\EscalationController;
 use App\Http\Controllers\ProgramHead\ProgramHeadSubmissionController;
+use App\Http\Controllers\Reminders\ReminderController;
+use App\Http\Controllers\Students\StudentController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Public Routes Here
+| Public Routes
 |--------------------------------------------------------------------------
 */
 
-// test route to check if the API is working
 Route::get('/health', function () {
     return response()->json([
         'message' => 'API is working',
         'status' => 'success',
-        'app'=> config('app.name'),
+        'app' => config('app.name'),
         'timestamp' => now()->setTimezone('Asia/Manila')->toIso8601String(),
-        ]);
+    ]);
 });
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -34,85 +34,80 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 /*
 |--------------------------------------------------------------------------
-| Protected Sanctum Routes Here
+| Authenticated Routes
 |--------------------------------------------------------------------------
 */
+
 Route::middleware('auth:sanctum')->group(function () {
-
-    Route::get('/students', [StudentController::class, 'index']);
-    Route::get('/students/attendance-snapshot', [StudentController::class, 'attendanceSnapshot']);
-    Route::get('/students/{id}/overview', [StudentController::class, 'overview']);
-    
-    Route::get('/dashboard', [DashboardController::class, 'index']);
-    Route::get('/monitoring/courses/{program}/{yearLevel}', [CmCoordinatorMonitoringController::class, 'showCourse'])
-        ->where(['program' => '[A-Za-z0-9_-]+', 'yearLevel' => '[0-9]+'])
-        ->middleware('role:cm_coordinator');
-    Route::get('/monitoring', [CmCoordinatorMonitoringController::class, 'index'])
-        ->middleware('role:cm_coordinator');
-
-    Route::get('reminders', [ReminderController::class, 'index']);
-    Route::get('reminders/role-summary', [ReminderController::class, 'roleSummary'])
-        ->middleware('role:program_head,cm_coordinator,program_secretary,chancellor');
-    // Reminder routes for custom reminders
-    Route::apiResource('reminders', ReminderController::class);
-
+    /* Account and profile */
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [ProfileController::class, 'changePassword']);
     Route::patch('/profile/contact', [ProfileController::class, 'changeContact']);
 
-    //attendance page
-    Route::delete('/attendance/drafts', [AttendanceDraftController::class, 'destroyMany']);
+    /* Shared dashboard and student data */
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/students', [StudentController::class, 'index']);
+    Route::get('/students/attendance-snapshot', [StudentController::class, 'attendanceSnapshot']);
+    Route::get('/students/{id}/overview', [StudentController::class, 'overview']);
+
+    /* Reminders */
+    Route::get('/reminders/role-summary', [ReminderController::class, 'roleSummary'])
+        ->middleware('role:program_head,cm_coordinator,program_secretary,chancellor');
+    Route::apiResource('reminders', ReminderController::class);
+
+    /* Shared attendance data */
     Route::get('/attendance', [AttendanceController::class, 'index']);
+    Route::delete('/attendance/drafts', [AttendanceDraftController::class, 'destroyMany']);
 
-    /*  -----------------------------------------------------------------
-    |Secretary
-    ----------------------------------------------------------------------*/
+    /* Administrator */
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
+    });
+
+    /* Secretary */
     Route::middleware('role:secretary')->group(function () {
-
-        // Template Generator
         Route::get('/attendance/generate-template', [AttendanceController::class, 'generateTemplate']);
-
         Route::post('/attendance/check-duplicates', [AttendanceController::class, 'checkDuplicates']);
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
         Route::post('/attendance/parse-batch-text', [AttendanceController::class, 'parseBatchText']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
         Route::get('/attendance/session', [AttendanceController::class, 'showGatheringRecords']);
 
-        // Attendance Drafts Routes
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);
         Route::post('/attendance/drafts/{id}/submit', [AttendanceDraftController::class, 'submit']);
 
-        // Reminder routes for gathering reminders and submission countdowns
-        Route::post('reminders/gathering', [ReminderController::class, 'storeGathering']);
-        Route::patch('reminders/{id}/complete', [ReminderController::class, 'markCompleted']);
+        Route::post('/reminders/gathering', [ReminderController::class, 'storeGathering']);
+        Route::patch('/reminders/{id}/complete', [ReminderController::class, 'markCompleted']);
     });
-        
-    // Program Head & CM Coordinator Scopes (Approval & Escalations)
+
+    /* Program head and program secretary */
     Route::middleware('role:program_head,program_secretary')->group(function () {
         Route::get('/program-head/submissions', [ProgramHeadSubmissionController::class, 'index']);
         Route::get('/program-head/records', [ProgramHeadSubmissionController::class, 'records']);
         Route::get('/program-head/records/export', [ProgramHeadSubmissionController::class, 'exportRecords']);
 
-        // Route::get('/students', [StudentController::class, 'index']);
-        
         Route::patch('/attendance/validate', [AttendanceController::class, 'validateRecord']);
+        Route::get('/attendance/review/{batchKey}', [AttendanceController::class, 'reviewSubmission'])
+            ->where('batchKey', '.*');
+        Route::patch('/attendance/review/{batchKey}/approve', [AttendanceController::class, 'approveSubmission'])
+            ->where('batchKey', '.*');
+
         Route::middleware('role:program_head')->group(function () {
             Route::get('/escalations', [EscalationController::class, 'index']);
             Route::get('/escalations/{id}', [EscalationController::class, 'show']);
             Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
         });
-
-        // Program head actionable functions
-        Route::get('/attendance/review/{batchKey}', [AttendanceController::class, 'reviewSubmission'])
-        ->where('batchKey', '.*'); // allow the "|" fallback key to pass through as one param
-
-        Route::patch('/attendance/review/{batchKey}/approve', [AttendanceController::class, 'approveSubmission'])
-        ->where('batchKey', '.*');
-
     });
 
-    // CM Coordinator & Chancellor Scopes (Report Summaries)
+    /* CM coordinator */
+    Route::middleware('role:cm_coordinator')->group(function () {
+        Route::get('/monitoring', [CmCoordinatorMonitoringController::class, 'index']);
+        Route::get('/monitoring/courses/{program}/{yearLevel}', [CmCoordinatorMonitoringController::class, 'showCourse'])
+            ->where(['program' => '[A-Za-z0-9_-]+', 'yearLevel' => '[0-9]+']);
+    });
+
+    /* CM coordinator and chancellor reports */
     Route::middleware('role:cm_coordinator,chancellor')->group(function () {
         Route::get('/reports/summary', [AttendanceController::class, 'summaryReport']);
     });

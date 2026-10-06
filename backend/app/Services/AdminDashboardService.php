@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\AuditLog;
+use App\Models\Program;
+use App\Models\Student;
+use App\Models\User;
+
+class AdminDashboardService
+{
+    public function getPayload(): array
+    {
+        return [
+            'summary' => [
+                'user_accounts' => User::query()->count(),
+                'students' => Student::query()->count(),
+                'programs' => Program::query()->count(),
+            ],
+            'accounts' => $this->getAccountSummary(),
+            'recent_activity' => $this->getRecentActivity(),
+            'system_status' => 'Active',
+        ];
+    }
+
+    private function getAccountSummary(): array
+    {
+        $roleLabels = [
+            'chancellor' => 'Chancellor',
+            'program_head' => 'Program Heads',
+            'program_secretary' => 'Program Secretaries',
+            'secretary' => 'Secretaries',
+            'admin' => 'Administrators',
+        ];
+
+        return User::query()
+            ->selectRaw('role, COUNT(*) as total')
+            ->groupBy('role')
+            ->get()
+            ->map(fn ($row) => [
+                'role' => $row->role,
+                'label' => $roleLabels[$row->role] ?? str($row->role)->replace('_', ' ')->title()->toString(),
+                'count' => (int) $row->total,
+            ])
+            ->sortBy(fn ($account) => array_search($account['role'], array_keys($roleLabels), true) ?: 0)
+            ->values()
+            ->toArray();
+    }
+
+    private function getRecentActivity(): array
+    {
+        return AuditLog::query()
+            ->with('actor:id,name')
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(fn (AuditLog $log) => [
+                'id' => $log->id,
+                'action' => $log->action,
+                'target' => $log->target_table,
+                'target_id' => $log->target_id,
+                'performed_by' => $log->actor?->name ?? 'Unknown user',
+                'created_at' => $log->created_at?->toIso8601String(),
+            ])
+            ->toArray();
+    }
+}
