@@ -12,6 +12,12 @@ class CmCoordinatorMonitoringService
 {
     private const GATHERING_TYPES = ['pm', 'ws', 'tg'];
 
+    private const GATHERING_LABELS = [
+        'pm' => 'Prayer Meeting',
+        'ws' => 'Worship Service',
+        'tg' => 'Thanksgiving',
+    ];
+
     public function getPayload(array $filters): array
     {
         $month = Carbon::create(
@@ -106,6 +112,125 @@ class CmCoordinatorMonitoringService
                     ->values();
                 return $course;
             })->values(),
+        ];
+    }
+
+    public function getCourseDetails(string $programCode, int $yearLevel, array $filters): ?array
+    {
+        $month = Carbon::create(
+            $filters['year'] ?? now()->year,
+            $filters['month'] ?? now()->month,
+            1
+        )->startOfMonth();
+
+        $programCode = strtoupper(trim($programCode));
+        $roster = Student::query()
+            ->whereRaw('UPPER(TRIM(program)) = ?', [$programCode])
+            ->where('year_level', $yearLevel)
+            ->orderBy('name')
+            ->get(['id', 'name', 'program', 'year_level']);
+
+        if ($roster->isEmpty()) {
+            return null;
+        }
+
+        $selectedWeek = (int) ($filters['week'] ?? 1);
+        $week = $this->getWeeks($month)->firstWhere('number', $selectedWeek);
+
+        if (! $week) {
+            return null;
+        }
+
+        $records = AttendanceRecord::query()
+            ->with(['validator:id,name'])
+            ->whereIn('student_id', $roster->pluck('id'))
+            ->whereIn('gathering_type', self::GATHERING_TYPES)
+            ->whereBetween('day', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->orderBy('day')
+            ->get();
+
+        $weekRecords = $records->filter(fn (AttendanceRecord $record) =>
+            $record->day->toDateString() >= $week['start']
+            && $record->day->toDateString() <= $week['end']
+        );
+
+        $entries = $weekRecords
+            ->groupBy(fn (AttendanceRecord $record) => $record->gathering_type . '|' . $record->day->toDateString())
+            ->map(function ($eventRecords, string $eventKey) use ($roster) {
+                [$type, $date] = explode('|', $eventKey, 2);
+                $recordedStudentIds = $eventRecords->pluck('student_id')->unique();
+                $missingStudents = $roster
+                    ->reject(fn (Student $student) => $recordedStudentIds->contains($student->id))
+                    ->map(fn (Student $student) => [
+                        'id' => $student->id,
+                        'name' => $student->name,
+                    ])->values();
+
+                $allValidated = $eventRecords->every(fn (AttendanceRecord $record) =>
+                    in_array($record->validation_status, ['validated', 'approved'], true)
+                );
+                $latestApproval = $eventRecords
+                    ->filter(fn (AttendanceRecord $record) => in_array($record->validation_status, ['validated', 'approved'], true))
+                    ->sortByDesc('updated_at')
+                    ->first();
+
+                return [
+                    'gathering_type' => $type,
+                    'gathering' => self::GATHERING_LABELS[$type] ?? ucfirst($type),
+                    'date' => $date,
+                    'status' => $missingStudents->isEmpty() ? 'completed' : 'incomplete',
+                    'approval_status' => $allValidated ? 'approved' : 'pending',
+                    'approved_on' => $allValidated ? $latestApproval?->updated_at?->toIso8601String() : null,
+                    'program_head' => $allValidated
+                        ? $latestApproval?->validator?->name
+                        : null,
+                    'recorded_students' => $recordedStudentIds->count(),
+                    'total_students' => $roster->count(),
+                    'remarks' => $recordedStudentIds->count() . '/' . $roster->count(),
+                    'missing_students' => $missingStudents,
+                ];
+            })
+            ->sortBy(fn (array $entry) => $entry['date'] . '|' . $entry['gathering_type'])
+            ->values();
+
+        $program = Program::query()->whereRaw('UPPER(TRIM(code)) = ?', [$programCode])->first();
+        $latestApproval = $records
+            ->filter(fn (AttendanceRecord $record) => in_array($record->validation_status, ['validated', 'approved'], true))
+            ->sortByDesc('updated_at')
+            ->first();
+        $completedEvents = $records
+            ->groupBy(fn (AttendanceRecord $record) => $record->gathering_type . '|' . $record->day->toDateString())
+            ->filter(fn ($eventRecords) => $eventRecords->pluck('student_id')->unique()->count() >= $roster->count())
+            ->count();
+        $monthlyEventTotal = $this->getWeeks($month)->count() * count(self::GATHERING_TYPES);
+
+        return [
+            'course' => [
+                'program' => $programCode,
+                'program_name' => $program?->name ?: $programCode,
+                'year_level' => $yearLevel,
+                'label' => $programCode . ' ' . $yearLevel,
+                'students_count' => $roster->count(),
+            ],
+            'month' => [
+                'month' => $month->month,
+                'year' => $month->year,
+                'label' => $month->format('F Y'),
+            ],
+            'progress' => [
+                'completed' => $completedEvents,
+                'total' => $monthlyEventTotal,
+                'percentage' => (int) round(($completedEvents / max(1, $monthlyEventTotal)) * 100),
+            ],
+            'approval' => [
+                'approved_on' => $latestApproval?->updated_at?->toIso8601String(),
+                'program_head' => $latestApproval?->validator?->name,
+            ],
+            'week' => $week,
+            'week_details' => $entries,
+            'incomplete_entries' => $entries
+                ->where('status', 'incomplete')
+                ->values(),
         ];
     }
 

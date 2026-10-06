@@ -26,8 +26,10 @@ class GatheringService
 
     public function isScheduledDay(string $type, Carbon $date): bool
     {
-        return $type === 'pm'
-            ? $date->isWednesday()
-            : $date->isSaturday();
+        return match ($type) {
+            'pm' => $date->isWednesday(),
+            'ws', 'tg' => $date->isSaturday() || $date->isSunday(),
+            default => false,
+        };
     }
 }

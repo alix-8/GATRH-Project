@@ -202,7 +202,7 @@ class ReminderController extends Controller
                 'status'  => 'error',
                 'message' => sprintf('%s reminders can only be scheduled on %s.',
                     strtoupper($validated['gathering_type']),
-                    $validated['gathering_type'] === 'pm' ? 'Wednesday' : 'Saturday'
+                    $validated['gathering_type'] === 'pm' ? 'Wednesday' : 'Saturday or Sunday'
                 ),
             ], 422);
         }

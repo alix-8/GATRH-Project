@@ -44,6 +44,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/students/{id}/overview', [StudentController::class, 'overview']);
     
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/monitoring/courses/{program}/{yearLevel}', [CmCoordinatorMonitoringController::class, 'showCourse'])
+        ->where(['program' => '[A-Za-z0-9_-]+', 'yearLevel' => '[0-9]+'])
+        ->middleware('role:cm_coordinator');
     Route::get('/monitoring', [CmCoordinatorMonitoringController::class, 'index'])
         ->middleware('role:cm_coordinator');
 
