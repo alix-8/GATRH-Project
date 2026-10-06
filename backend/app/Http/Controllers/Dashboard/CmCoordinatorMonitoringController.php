@@ -26,4 +26,21 @@ class CmCoordinatorMonitoringController extends Controller
 
         return response()->json($this->monitoringService->getPayload($filters));
     }
+
+    public function showCourse(Request $request, string $program, int $yearLevel): JsonResponse
+    {
+        $filters = $request->validate([
+            'month' => ['nullable', 'integer', 'between:1,12'],
+            'year' => ['nullable', 'integer', 'between:2000,2100'],
+            'week' => ['required', 'integer', 'between:1,5'],
+        ]);
+
+        $details = $this->monitoringService->getCourseDetails($program, $yearLevel, $filters);
+
+        if ($details === null) {
+            return response()->json(['message' => 'Course or reporting week not found.'], 404);
+        }
+
+        return response()->json($details);
+    }
 }
