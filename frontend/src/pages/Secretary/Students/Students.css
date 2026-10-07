@@ -10,6 +10,10 @@
     background-color: #ffffff;
 }
 
+.students-header .header-title h3 {
+    font-size: 20px;
+}
+
 /* .students-header handled by reusable Header component */
 
 .filter-section {

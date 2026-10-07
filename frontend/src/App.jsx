@@ -12,6 +12,7 @@ import Profile from './pages/_Profile/Profile'
 import ProgramHeadSubmissions from './pages/Program Head/Submission/ProgramHeadSubmissions'
 import ProgramHeadRecords from './pages/Program Head/Records/ProgramHeadRecords'
 import AdminDashboard from './pages/Admin/Dashboard/AdminDashboard'
+import ChancellorDashboard from './pages/Chancellor/Dashboard/ChancellorDashboard'
 
 const landingByRole = {
   secretary: '/dashboard',
@@ -75,7 +76,7 @@ function AppRoutes() {
       <Route path="/program-secretary/submission" element={<RoleRoute roles={['program_secretary']}><ProgramHeadSubmissions /></RoleRoute>} />
       <Route path="/program-secretary/records" element={<RoleRoute roles={['program_secretary']}><ProgramHeadRecords /></RoleRoute>} />
 
-      <Route path="/chancellor/dashboard" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Dashboard" /></RoleRoute>} />
+      <Route path="/chancellor/dashboard" element={<RoleRoute roles={['chancellor']}><ChancellorDashboard /></RoleRoute>} />
 
       <Route path="/admin/dashboard" element={<RoleRoute roles={['admin']}><AdminDashboard /></RoleRoute>} />
       <Route path="/admin/user-roles" element={<RoleRoute roles={['admin']}><RolePlaceholder title="User Roles" /></RoleRoute>} />

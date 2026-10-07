@@ -14,6 +14,10 @@
     background-color: #ffffff;
 }
 
+.dashboard-header .header-title h3 {
+    font-size: 20px;
+}
+
 
 /* DASHBOARD HEADER - Handled by reusable Header component */
 
