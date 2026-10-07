@@ -12,15 +12,20 @@ use App\Models\AttendanceDraft;
 use App\Models\Reminder;
 use App\Models\Student;
 use App\Services\AttendanceParsingService;
+use App\Services\AuditLogService;
 use App\Support\GatheringCycle;
 
 class AttendanceController extends Controller
 {
     protected AttendanceParsingService $parsingService;
+    protected AuditLogService $auditLogService;
 
-    public function __construct(AttendanceParsingService $parsingService)
-    {
+    public function __construct(
+        AttendanceParsingService $parsingService,
+        AuditLogService $auditLogService
+    ) {
         $this->parsingService = $parsingService;
+        $this->auditLogService = $auditLogService;
     }
 
     /**
@@ -662,6 +667,13 @@ class AttendanceController extends Controller
             'matched_count'  => $presentCount,
         ], $request->user()->id);
 
+        $this->auditLogService->recordAction(
+            'Imported ' . $this->gatheringLabel($metadata['gathering_type']) . ' attendance draft (' . $sectionData['total_students'] . ' students)',
+            'attendance_drafts',
+            (string) $draft->id,
+            $request->user()
+        );
+
         return response()->json([
             'message'  => 'Attendance text parsed successfully and saved as draft.',
             'draft_id' => $draft->id,
@@ -842,6 +854,19 @@ class AttendanceController extends Controller
                 'total_students' => $sectionData['total_students'],
                 'present_count'  => count($submissions),
             ];
+        }
+
+        if ($drafts !== []) {
+            $gatherings = collect(array_keys($drafts))
+                ->map(fn (string $type) => $this->gatheringLabel($type))
+                ->implode(', ');
+
+            $this->auditLogService->recordAction(
+                "Imported attendance drafts for {$gatherings}",
+                'attendance_drafts',
+                implode(',', array_values($drafts)),
+                $user
+            );
         }
 
         return response()->json([
@@ -1066,6 +1091,21 @@ class AttendanceController extends Controller
             ];
         });
 
+        $recordCount = count($savedRecords['records']);
+        $gatherings = collect($savedRecords['records'])
+            ->pluck('gathering_type')
+            ->unique()
+            ->map(fn (string $type) => $this->gatheringLabel($type))
+            ->implode(', ');
+        $batchId = $savedRecords['records'][0]->batch_id ?? 'unknown';
+
+        $this->auditLogService->recordAction(
+            "Submitted {$gatherings} attendance ({$recordCount} records)",
+            'attendance_records',
+            (string) $batchId,
+            $request->user()
+        );
+
         return response()->json([
             'status'           => 'success',
             'message'          => $savedRecords['overridden_count'] > 0
@@ -1167,6 +1207,13 @@ class AttendanceController extends Controller
         if ($updatedCount === 0) {
             return response()->json(['status' => 'error', 'message' => 'Submission not found.'], 404);
         }
+
+        $this->auditLogService->recordAction(
+            "Approved attendance batch ({$updatedCount} records)",
+            'attendance_records',
+            $batchKey,
+            $request->user()
+        );
 
         return response()->json([
             'status'        => 'success',
