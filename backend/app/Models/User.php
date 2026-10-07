@@ -11,11 +11,21 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    public const ROLES = [
+        'secretary',
+        'program_secretary',
+        'program_head',
+        'cm_coordinator',
+        'chancellor',
+        'admin',
+    ];
+
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',        // 'secretary', 'program_head', 'cm_coordinator', 'chancellor', 'admin'
+        'is_active',
         'program',
         'year_level',
         'contact_number',
@@ -29,6 +39,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_active' => 'boolean',
     ];
 
     // ==========================================

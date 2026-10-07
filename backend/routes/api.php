@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Attendance\AttendanceController;
@@ -46,7 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/profile/contact', [ProfileController::class, 'changeContact']);
 
     /* Shared dashboard and student data */
-    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('role:secretary,program_head,program_secretary,cm_coordinator,chancellor');
     Route::get('/students', [StudentController::class, 'index']);
     Route::get('/students/attendance-snapshot', [StudentController::class, 'attendanceSnapshot']);
     Route::get('/students/{id}/overview', [StudentController::class, 'overview']);
@@ -63,6 +65,10 @@ Route::middleware('auth:sanctum')->group(function () {
     /* Administrator */
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
+        Route::get('/admin/users', [AdminUserController::class, 'index']);
+        Route::post('/admin/users', [AdminUserController::class, 'store']);
+        Route::get('/admin/users/{user}', [AdminUserController::class, 'show']);
+        Route::patch('/admin/users/{user}', [AdminUserController::class, 'update']);
     });
 
     /* Secretary */

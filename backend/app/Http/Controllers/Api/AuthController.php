@@ -42,6 +42,10 @@ class AuthController extends Controller
 
         RateLimiter::clear($throttleKey);
 
+        if (! $user->is_active) {
+            return response()->json(['message' => 'This account is inactive.'], 403);
+        }
+
         $user->load('programs');
 
         $remember = $request->boolean('remember');
