@@ -76,7 +76,6 @@ function AppRoutes() {
       <Route path="/program-secretary/records" element={<RoleRoute roles={['program_secretary']}><ProgramHeadRecords /></RoleRoute>} />
 
       <Route path="/chancellor/dashboard" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Dashboard" /></RoleRoute>} />
-      <Route path="/chancellor/monitoring" element={<RoleRoute roles={['chancellor']}><RolePlaceholder title="Monitoring" /></RoleRoute>} />
 
       <Route path="/admin/dashboard" element={<RoleRoute roles={['admin']}><AdminDashboard /></RoleRoute>} />
       <Route path="/admin/user-roles" element={<RoleRoute roles={['admin']}><RolePlaceholder title="User Roles" /></RoleRoute>} />
