@@ -20,10 +20,34 @@ const gatheringLabels = {
     TG: 'Thanksgiving',
 }
 
+function parseDashboardReminderDate(value) {
+    if (!value) return null
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value))
+    const date = dateOnlyMatch
+        ? new Date(Number(dateOnlyMatch[1]), Number(dateOnlyMatch[2]) - 1, Number(dateOnlyMatch[3]))
+        : new Date(value)
+
+    return Number.isNaN(date.getTime()) ? null : date
+}
+
+function formatDashboardReminderDate(value) {
+    if (!value) return ''
+    const date = parseDashboardReminderDate(value)
+
+    if (!date) return String(value)
+
+    return date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    })
+}
+
 function Dashboard() {
     const [isLoading, setIsLoading] = useState(true)
     const [overview, setOverview] = useState([])
     const [overviewError, setOverviewError] = useState('')
+    const [monthlySummary, setMonthlySummary] = useState(null)
     const [kpis, setKpis] = useState(null)
     const [recentRecords, setRecentRecords] = useState([])
     const [monthlyGathering, setMonthlyGathering] = useState([])
@@ -81,6 +105,7 @@ function Dashboard() {
             .then(data => {
                 setOverview(data?.attendance_overview ?? data?.chart_data?.series ?? [])
                 setOverviewError('')
+                setMonthlySummary(data?.monthly_summary ?? null)
                 setKpis(data?.kpis ?? null)
                 setRecentRecords(data?.recent_records ?? [])
                 setTasksAndReminders(data?.tasks_and_reminders ?? [])
@@ -90,6 +115,7 @@ function Dashboard() {
             .catch(error => {
                 setOverview([])
                 setOverviewError(error.message || 'Unable to load attendance data.')
+                setMonthlySummary(null)
                 setKpis(null)
                 setRecentRecords([])
                 setTasksAndReminders([])
@@ -123,13 +149,17 @@ function Dashboard() {
     const monthStartOffset = (monthStart.getDay() + 6) % 7
     const selectedMonthLabel = monthStart.toLocaleString('en-US', { month: 'long', year: 'numeric' })
     const chartTicks = [30, 25, 20, 15, 10, 5, 0]
+    const chartGroups = overview.length > 0
+        ? overview
+        : Object.keys(gatheringLabels).map(category => ({ category, present: 0, absent: 0 }))
     const dayTypeMap = new Map((calendarMarks.highlight_days ?? []).map(day => [day.day, day.type]))
-    const reminderCategories = ['My Reminder', 'System Reminder', 'Needs Action', 'Submission']
-    const categorizedReminders = reminderCategories.flatMap(category =>
-        tasksAndReminders
-            .filter(item => item.category === category)
-            .map(item => ({ ...item, category }))
-    )
+    const orderedReminders = [...tasksAndReminders].sort((first, second) => {
+        const firstDate = parseDashboardReminderDate(first.date)?.getTime() ?? Number.POSITIVE_INFINITY
+        const secondDate = parseDashboardReminderDate(second.date)?.getTime() ?? Number.POSITIVE_INFINITY
+        return firstDate - secondDate
+    })
+    const dashboardReminders = orderedReminders.slice(0, 3)
+    const dashboardRecords = recentRecords.slice(0, 3)
 
     const kpiCards = [
         {
@@ -203,7 +233,7 @@ function Dashboard() {
                                     alt="Pencil Icon"
                                 />
                             </div>
-                            <p className="month-attendance">This Month's Attendance <br/> {kpis?.week_respondents}</p>
+                            <p className="month-attendance">This Month's Attendance <br/> {monthlySummary?.attendance ?? '—'}</p>
 
                             <div className="dashboard-eraser-container">
                                 <img
@@ -212,7 +242,7 @@ function Dashboard() {
                                     alt="Eraser Icon"
                                 />
                             </div>
-                            <p className="month-absences">This Month's No Response <br/> {kpis?.week_no_response}</p>
+                            <p className="month-absences">This Month's No Response <br/> {monthlySummary?.no_response ?? '—'}</p>
                         </div>
                     </div>
                     <div className="dashboard-content-column-right">
@@ -295,8 +325,8 @@ function Dashboard() {
                                 </div>
                             </div>
                             <div className="overview-chart">
-                                {overviewError || overview.length === 0 ? (
-                                    <span className="overview-empty">{overviewError ? `${overviewError} Check that the API is running and you are signed in.` : 'No attendance data returned for this period.'}</span>
+                                {overviewError ? (
+                                    <span className="overview-empty">{overviewError} Check that the API is running and you are signed in.</span>
                                 ) : (
                                     <>
                                         <div className="overview-y-axis" aria-hidden="true">
@@ -307,7 +337,7 @@ function Dashboard() {
                                                 {chartTicks.map(tick => <span key={tick} />)}
                                             </div>
                                             <div className="overview-bars-row">
-                                                {overview.map(group => (
+                                                {chartGroups.map(group => (
                                                     <div className="overview-group" key={group.category}>
                                                         <div className="overview-bars">
                                                             <span
@@ -333,8 +363,11 @@ function Dashboard() {
 
                         <section className="attendance-records">
                             <div className="records-heading">
-                                <h2>Recent Attendance Records</h2>
-                                <button type="button" onClick={() => navigate('/attendance')}>View All Records <span>→</span></button>
+                                <div>
+                                    <h2>Recent Attendance Record</h2>
+                                    <p>Latest records processed this week.</p>
+                                </div>
+                                <button type="button" onClick={() => navigate('/attendance')}>View All Attendance <span aria-hidden="true">→</span></button>
                             </div>
 
                             <div className="records-table-wrapper">
@@ -353,19 +386,23 @@ function Dashboard() {
                                             <tr>
                                                 <td className="records-empty" colSpan="5">No attendance records yet</td>
                                             </tr>
-                                        ) : recentRecords.map(record => (
+                                        ) : dashboardRecords.map(record => (
                                             <tr key={record.id}>
                                                 <td>{record.gathering}</td>
                                                 <td>{record.date}</td>
-                                                <td>{record.students}</td>
-                                                <td>{record.status_label || record.status}</td>
+                                                <td>{String(record.students ?? '').replace(/\s*students?$/i, '')}</td>
+                                                <td>
+                                                    <span className={`records-status records-status-${String(record.status || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                                                        {record.status_label || record.status}
+                                                    </span>
+                                                </td>
                                                 <td>
                                                     <button
                                                         type="button"
-                                                        className="action-btn"
+                                                        className="records-action"
                                                         onClick={() => navigate('/attendance', { state: { openAttendanceRecord: record } })}
                                                     >
-                                                        {record.action || 'View'} &gt;
+                                                        {record.status === 'validating' ? 'View' : record.action || 'View'} <span aria-hidden="true">›</span>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -382,13 +419,18 @@ function Dashboard() {
                                 <div><h3>Task and Reminders</h3><p>Items that need your attention.</p></div>
                                 <button type="button" onClick={() => navigate('/reminders')}>View All Reminders <span>→</span></button>
                             </div>
-                            {categorizedReminders.length === 0 ? <p className="dashboard-reminders-empty">No upcoming tasks or reminders.</p> : (
+                            {orderedReminders.length === 0 ? <p className="dashboard-reminders-empty">No upcoming tasks or reminders.</p> : (
                                 <div className="dashboard-reminder-list">
-                                    {categorizedReminders.map(item => (
+                                    {dashboardReminders.map(item => (
                                         <div className="dashboard-reminder-item" key={`${item.category}-${item.id}`}>
                                             <span className="dashboard-reminder-category">{item.category}</span>
-                                            <span className="dashboard-reminder-description">{item.description || item.gathering || item.title}</span>
-                                            <time>{item.date || ''}</time>
+                                            <span
+                                                className="dashboard-reminder-description"
+                                                title={item.title || item.gathering || item.description || ''}
+                                            >
+                                                {item.title || item.gathering || item.description}
+                                            </span>
+                                            <time dateTime={item.date || undefined}>{formatDashboardReminderDate(item.date)}</time>
                                             <button
                                                 type="button"
                                                 aria-label={`View reminder: ${item.title}`}

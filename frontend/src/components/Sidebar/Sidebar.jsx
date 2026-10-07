@@ -35,8 +35,6 @@ const navigationByRole = {
     ],
     chancellor: [
         { label: 'Dashboard', to: '/chancellor/dashboard', icon: DashboardIcon },
-        { label: 'Monitoring', to: '/chancellor/monitoring', icon: AttendanceIcon },
-        { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
     ],
     cm_coordinator: [
         { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
