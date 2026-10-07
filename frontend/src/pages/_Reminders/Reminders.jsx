@@ -47,10 +47,6 @@ const EMPTY_FORM = {
     time: '',
 }
 
-const truncateReminderNotes = (notes = '') => (
-    notes.length > 5 ? `${notes.slice(0, 5)}...` : notes
-)
-
 const ATTENDANCE_TASK_STATUS = {
     validating: {
         label: 'Attendance record ready for submission',
@@ -392,7 +388,7 @@ function Reminders() {
                 title,
                 description: isGathering
                     ? formatGatheringReminderDateTime(reminder)
-                    : [reminder.description ? `Note : ${truncateReminderNotes(reminder.description)}` : '', formatSavedReminderDateTime(reminder.due_date)].filter(Boolean).join(' · '),
+                    : [reminder.description ? `Note : ${reminder.description}` : '', formatSavedReminderDateTime(reminder.due_date)].filter(Boolean).join(' · '),
                 status: reminder.status,
                 statusLabel: isGathering
                     ? alreadyRecorded
