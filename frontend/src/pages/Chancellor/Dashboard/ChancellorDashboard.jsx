@@ -7,6 +7,10 @@ import CalendarIcon from '../../../assets/calendar-icon.svg'
 import AllProgramsIcon from '../../../assets/all-programs-icon.svg'
 import AllWeeksIcon from '../../../assets/all-weeks-icon.svg'
 import DropdownIcon from '../../../assets/drop-down-icon.svg'
+import CompletedProgramsIcon from '../../../assets/completed-programs-icon.svg'
+// import InProgressProgramsIcon from '../../../assets/in-progress-programs-icon.svg'
+// import NoReportProgramsIcon from '../../../assets/no-report-programs-icon.svg'
+// import TotalProgramsIcon from '../../../assets/total-programs-icon.svg'
 import './ChancellorDashboard.css'
 
 function getTodayDateValue() {
@@ -28,6 +32,12 @@ function ChancellorDashboard() {
     const [program, setProgram] = useState('')
     const [week, setWeek] = useState('all')
     const [programs, setPrograms] = useState([])
+    const [summary, setSummary] = useState({
+        completed: 0,
+        incomplete: 0,
+        no_report: 0,
+        total_programs: 0,
+    })
     const [loadError, setLoadError] = useState('')
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [isProgramOpen, setIsProgramOpen] = useState(false)
@@ -40,7 +50,7 @@ function ChancellorDashboard() {
         if (program) params.set('program', program)
         if (week !== 'all') params.set('week', week)
         return params.toString()
-    }, [date, program])
+    }, [date, program, week])
     const selectedDate = date ? fromDateValue(date) : null
 
     useEffect(() => {
@@ -52,6 +62,12 @@ function ChancellorDashboard() {
             try {
                 const data = await request(`/dashboard?${query}`, { signal: controller.signal })
                 setPrograms(Array.isArray(data.programs) ? data.programs : [])
+                setSummary(data.summary || {
+                    completed: 0,
+                    incomplete: 0,
+                    no_report: 0,
+                    total_programs: 0,
+                })
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     setLoadError(error.message || 'Could not load dashboard filters.')
@@ -231,6 +247,50 @@ function ChancellorDashboard() {
                         )}
                     </div>
                    
+                </section>
+                <section className="chancellor-summary-cards" aria-label="Reporting summary">
+                    <article className="chancellor-summary-card chancellor-summary-card--completed">
+                        <span className="chancellor-summary-icon">
+                            <img src={CompletedProgramsIcon} alt="" />
+                        </span>
+                        <div className="chancellor-summary-content">
+                            <span className="chancellor-summary-label">Completed</span>
+                            <strong>{summary.completed}</strong>
+                            <p>Programs with full reports</p>
+                        </div>
+                    </article>
+                    {/*
+                    <article className="chancellor-summary-card chancellor-summary-card--in-progress">
+                        <span className="chancellor-summary-icon">
+                            <img src={InProgressProgramsIcon} alt="" />
+                        </span>
+                        <div className="chancellor-summary-content">
+                            <span className="chancellor-summary-label">In Progress</span>
+                            <strong>{summary.incomplete}</strong>
+                            <p>Programs with partial reports</p>
+                        </div>
+                    </article>
+                    <article className="chancellor-summary-card chancellor-summary-card--no-report">
+                        <span className="chancellor-summary-icon">
+                            <img src={NoReportProgramsIcon} alt="" />
+                        </span>
+                        <div className="chancellor-summary-content">
+                            <span className="chancellor-summary-label">No Report</span>
+                            <strong>{summary.no_report}</strong>
+                            <p>Programs with no submission</p>
+                        </div>
+                    </article>
+                    <article className="chancellor-summary-card chancellor-summary-card--total">
+                        <span className="chancellor-summary-icon">
+                            <img src={TotalProgramsIcon} alt="" />
+                        </span>
+                        <div className="chancellor-summary-content">
+                            <span className="chancellor-summary-label">Total Programs</span>
+                            <strong>{summary.total_programs}</strong>
+                            <p>Across all departments</p>
+                        </div>
+                    </article>
+                    */}
                 </section>
                 {loadError && <p className="chancellor-dashboard-error" role="alert">{loadError}</p>}
             </main>

@@ -27,15 +27,15 @@
     margin-left: 10px;
 }
 
-.chancellor-dashboard-filters > :first-child {
+.chancellor-dashboard-filters> :first-child {
     width: 200px;
 }
 
-.chancellor-dashboard-filters > :nth-child(2) {
+.chancellor-dashboard-filters> :nth-child(2) {
     width: 200px;
 }
 
-.chancellor-dashboard-filters > :nth-child(3) {
+.chancellor-dashboard-filters> :nth-child(3) {
     width: 200px;
 }
 
@@ -76,14 +76,14 @@
     outline-offset: 2px;
 }
 
-.chancellor-filter-trigger > span {
+.chancellor-filter-trigger>span {
     overflow: hidden;
     flex: 1;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.chancellor-filter-trigger > .chancellor-program-label {
+.chancellor-filter-trigger>.chancellor-program-label {
     font-size: 12px;
 }
 
@@ -200,4 +200,96 @@
 .chancellor-program-option.selected:hover {
     background: #5c7499;
     color: #fff;
+}
+
+.chancellor-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 26px 28px;
+}
+
+.chancellor-summary-card {
+    box-sizing: border-box;
+    display: flex;
+    height: 100%;
+    width: 100%;
+    gap: 12px;
+    padding: 9px;
+    border: 1px solid;
+    border-radius: 7px;
+}
+
+.chancellor-summary-card--completed {
+    border-color: #c8ecd2;
+    background: #f7fdf9;
+}
+
+.chancellor-summary-card--in-progress {
+    border-color: #c3e4ff;
+    background: #f1f8fd;
+}
+
+.chancellor-summary-card--no-report {
+    border-color: #f4e4b5;
+    background: #fffdfa;
+}
+
+.chancellor-summary-card--total {
+    border-color: #d5dfef;
+    background: #f5f8fd;
+}
+
+.chancellor-summary-icon {
+    display: flex;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-top: 10px;
+}
+
+.chancellor-summary-icon img {
+    width: 38px;
+}
+
+.chancellor-summary-card--completed .chancellor-summary-icon {
+    background: #1fa34a;
+}
+
+.chancellor-summary-card--in-progress .chancellor-summary-icon {
+    background: #159df2;
+}
+
+.chancellor-summary-card--no-report .chancellor-summary-icon {
+    background: #f5cb45;
+}
+
+.chancellor-summary-card--total .chancellor-summary-icon {
+    border: 1px solid #d2def1;
+    background: #e3edff;
+}
+
+.chancellor-summary-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 10px;
+}
+
+.chancellor-summary-label {
+    color: #172b4d;
+    font-size: 12px;
+}
+
+.chancellor-summary-content strong {
+    color: #172b4d;
+    font-size: 30px;
+}
+
+.chancellor-summary-content p {
+    margin-top: 8px;
+    font-size: 11px;
 }
