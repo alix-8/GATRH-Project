@@ -11,6 +11,10 @@
     background-color: #DBDEE4;
 }
 
+.reminders-header .header-title h3 {
+    font-size: 20px;
+}
+
 /* .reminders-header handled by reusable Header component */
 
 .reminders-cards {

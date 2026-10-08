@@ -1,0 +1,203 @@
+.chancellor-dashboard {
+    display: flex;
+    min-height: 100vh;
+    background: #ffffff;
+}
+
+.chancellor-dashboard-main {
+    min-width: 0;
+    flex: 1;
+    background: #ffffff;
+}
+
+.chancellor-dashboard-header {
+    min-height: 72px;
+}
+
+.chancellor-dashboard-header .header-title h3 {
+    font-size: 20px;
+}
+
+.chancellor-dashboard-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 11px;
+    padding: 15px 18px 0;
+    margin-top: 12px;
+    margin-left: 10px;
+}
+
+.chancellor-dashboard-filters > :first-child {
+    width: 200px;
+}
+
+.chancellor-dashboard-filters > :nth-child(2) {
+    width: 200px;
+}
+
+.chancellor-dashboard-filters > :nth-child(3) {
+    width: 200px;
+}
+
+.chancellor-filter-dropdown {
+    position: relative;
+    min-width: 0;
+}
+
+.chancellor-filter-dropdown.is-open {
+    z-index: 122;
+}
+
+.chancellor-filter-trigger {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+    gap: 7px;
+    padding: 0 9px;
+    border: 1px solid #cecdcd;
+    border-radius: 6px;
+    background: white;
+    color: #172b4d;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+}
+
+.chancellor-filter-trigger:hover,
+.chancellor-filter-trigger[aria-expanded="true"] {
+    border-color: #7e92e6;
+    background: #eef0f8;
+}
+
+.chancellor-filter-trigger:focus-visible {
+    outline: 2px solid #159fe8;
+    outline-offset: 2px;
+}
+
+.chancellor-filter-trigger > span {
+    overflow: hidden;
+    flex: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chancellor-filter-trigger > .chancellor-program-label {
+    font-size: 12px;
+}
+
+#all-weeks-icon {
+    opacity: 0.8;
+    height: 22px;
+}
+
+.chancellor-filter-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    object-fit: contain;
+    opacity: 1;
+}
+
+.chancellor-filter-chevron {
+    width: 18px;
+    height: 18px;
+    opacity: .7;
+    transition: transform .15s ease;
+}
+
+.chancellor-filter-chevron.open {
+    transform: rotate(180deg);
+}
+
+.chancellor-calendar-menu,
+.chancellor-program-menu {
+    box-sizing: border-box;
+    position: absolute;
+    left: 0;
+    border: 1px solid #d3d9e5;
+    border-radius: 8px;
+}
+
+.chancellor-calendar-menu {
+    padding: 4px;
+}
+
+.chancellor-calendar-menu .rcal {
+    box-sizing: border-box;
+    width: 190px;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 9px 10px;
+}
+
+.chancellor-calendar-menu .rcal-header {
+    margin-bottom: 7px;
+}
+
+.chancellor-calendar-menu .rcal-title {
+    color: black;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.chancellor-calendar-menu .rcal-nav-btn {
+    color: #172b4d;
+    font-size: 13px;
+}
+
+.chancellor-calendar-menu .rcal-grid {
+    row-gap: 2px;
+}
+
+.chancellor-calendar-menu .rcal-day {
+    width: 22px;
+    height: 22px;
+    color: #172b4d;
+    font-size: 12px;
+}
+
+.chancellor-calendar-menu .rcal-day-outside {
+    color: #a9b2c4;
+}
+
+.chancellor-program-menu {
+    width: 100%;
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+}
+
+.chancellor-program-option {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 38px;
+    padding: 6px 9px;
+    border: 0;
+    background: white;
+    color: #172b4d;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+}
+
+.chancellor-program-option:hover,
+.chancellor-program-option:focus-visible {
+    outline: none;
+    background: #5c7499;
+    color: white;
+}
+
+.chancellor-program-option.selected {
+    background: #eef2f8;
+    font-weight: 600;
+}
+
+.chancellor-program-option.selected:hover {
+    background: #5c7499;
+    color: #fff;
+}

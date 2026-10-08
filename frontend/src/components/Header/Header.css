@@ -61,20 +61,3 @@
     right: auto;
     z-index: 90;
 }
-
-@media (max-width: 768px) {
-    .app-header.page-header {
-        padding: 16px;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .app-header .header-meta {
-        gap: 16px;
-    }
-
-    .app-header .header-meta .page-date,
-    .app-header .header-date {
-        font-size: 14px;
-    }
-}

@@ -8,4 +8,8 @@
     background-color: #ffffff;
 }
 
+.attendance-header .header-title h3 {
+    font-size: 20px;
+}
+
 /* .attendance-header handled by reusable Header component */
