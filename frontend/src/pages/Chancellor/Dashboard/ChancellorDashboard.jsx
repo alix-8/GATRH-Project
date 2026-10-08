@@ -8,7 +8,7 @@ import AllProgramsIcon from '../../../assets/all-programs-icon.svg'
 import AllWeeksIcon from '../../../assets/all-weeks-icon.svg'
 import DropdownIcon from '../../../assets/drop-down-icon.svg'
 import CompletedProgramsIcon from '../../../assets/completed-programs-icon.svg'
-// import InProgressProgramsIcon from '../../../assets/in-progress-programs-icon.svg'
+import InProgressProgramsIcon from '../../../assets/in-progress-programs-icon.svg'
 // import NoReportProgramsIcon from '../../../assets/no-report-programs-icon.svg'
 // import TotalProgramsIcon from '../../../assets/total-programs-icon.svg'
 import './ChancellorDashboard.css'
@@ -259,7 +259,6 @@ function ChancellorDashboard() {
                             <p>Programs with full reports</p>
                         </div>
                     </article>
-                    {/*
                     <article className="chancellor-summary-card chancellor-summary-card--in-progress">
                         <span className="chancellor-summary-icon">
                             <img src={InProgressProgramsIcon} alt="" />
@@ -270,6 +269,7 @@ function ChancellorDashboard() {
                             <p>Programs with partial reports</p>
                         </div>
                     </article>
+                    {/*
                     <article className="chancellor-summary-card chancellor-summary-card--no-report">
                         <span className="chancellor-summary-icon">
                             <img src={NoReportProgramsIcon} alt="" />
