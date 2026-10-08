@@ -5,7 +5,7 @@ import Calendar from '../../../components/Calendar/Calendar'
 import { request } from '../../../api/request'
 import CalendarIcon from '../../../assets/calendar-icon.svg'
 import AllProgramsIcon from '../../../assets/all-programs-icon.svg'
-// import AllWeeksIcon from '../../../assets/all-weeks-icon.svg'
+import AllWeeksIcon from '../../../assets/all-weeks-icon.svg'
 import DropdownIcon from '../../../assets/drop-down-icon.svg'
 import './ChancellorDashboard.css'
 
@@ -26,19 +26,19 @@ function toDateValue(date) {
 function ChancellorDashboard() {
     const [date, setDate] = useState('')
     const [program, setProgram] = useState('')
-    // const [week, setWeek] = useState('all')
+    const [week, setWeek] = useState('all')
     const [programs, setPrograms] = useState([])
     const [loadError, setLoadError] = useState('')
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [isProgramOpen, setIsProgramOpen] = useState(false)
-    // const [isWeekOpen, setIsWeekOpen] = useState(false)
+    const [isWeekOpen, setIsWeekOpen] = useState(false)
     const calendarRef = useRef(null)
     const programRef = useRef(null)
-    // const weekRef = useRef(null)
+    const weekRef = useRef(null)
     const query = useMemo(() => {
         const params = new URLSearchParams({ date: date || getTodayDateValue() })
         if (program) params.set('program', program)
-        // if (week !== 'all') params.set('week', week)
+        if (week !== 'all') params.set('week', week)
         return params.toString()
     }, [date, program])
     const selectedDate = date ? fromDateValue(date) : null
@@ -71,15 +71,15 @@ function ChancellorDashboard() {
             if (programRef.current && !programRef.current.contains(event.target)) {
                 setIsProgramOpen(false)
             }
-            // if (weekRef.current && !weekRef.current.contains(event.target)) {
-            //     setIsWeekOpen(false)
-            // }
+            if (weekRef.current && !weekRef.current.contains(event.target)) {
+                setIsWeekOpen(false)
+            }
         }
         const closeOnEscape = (event) => {
             if (event.key === 'Escape') {
                 setIsCalendarOpen(false)
                 setIsProgramOpen(false)
-                // setIsWeekOpen(false)
+                setIsWeekOpen(false)
             }
         }
 
@@ -189,7 +189,7 @@ function ChancellorDashboard() {
                             </ul>
                         )}
                     </div>
-                    {/*
+                    
                     <div className={`chancellor-filter-dropdown ${isWeekOpen ? 'is-open' : ''}`} ref={weekRef}>
                         <button
                             type="button"
@@ -230,7 +230,7 @@ function ChancellorDashboard() {
                             </ul>
                         )}
                     </div>
-                    */}
+                   
                 </section>
                 {loadError && <p className="chancellor-dashboard-error" role="alert">{loadError}</p>}
             </main>
