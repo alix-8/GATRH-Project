@@ -24,7 +24,7 @@ class ProfileController extends Controller
         ]);
     }
 
-        /**
+    /**
      * Helper to retrieve shared password validation rules across Auth actions.
      */
     private function passwordRules(): Password
@@ -38,11 +38,16 @@ class ProfileController extends Controller
     /**
      * Change the authenticated user's password after verifying the current one.
      */
-    function changePassword(Request $request)
+    public function changePassword(Request $request)
     {
         $validated = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'confirmed', $this->passwordRules()],
+            'password' => [
+                'required',
+                'confirmed',
+                'different:current_password',
+                $this->passwordRules(),
+            ],
         ]);
 
         $user = $request->user();

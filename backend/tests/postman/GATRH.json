@@ -96,6 +96,314 @@
           ]
         },
         {
+          "name": "Log in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/login",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1:8000"
+              ],
+              "path": [
+                "api",
+                "login"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  // \"email\": \"alexandrian.bon@student.laverdad.edu.ph\", //bsis 1\n  // \"email\": \"sec.bsis3@laverdad.edu.ph\",\n  // \"email\": \"sec.bsa3@laverdad.edu.ph\",\n  // \"email\": \"bsis.head@laverdad.edu.ph\",\n  // \"email\": \"sec.bssw1@laverdad.edu.ph\",\n  //     \"email\": \"bssw.head@laverdad.edu.ph\",\n  // \"email\": \"cm.coordinator@laverdad.edu.ph\",\n  // \"email\": \"chancellor@laverdad.edu.ph\",\n  \"email\": \"admin@laverdad.edu.ph\",\n  \"password\": \"Password123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "if (pm.response.body && pm.response.body.access_token) {",
+                  "  pm.variables.set('token', pm.response.body.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Current User",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/me",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1:8000"
+              ],
+              "path": [
+                "api",
+                "me"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"chancellor@laverdad.edu.ph\",\r\n    \"password\": \"Password123!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Log out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "description": "",
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/logout",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1:8000"
+              ],
+              "path": [
+                "api",
+                "logout"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "1|VKlkJI1doKpye9VAQWclQdHfAp43fKAr4si4LFRC5ce42a01",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/change-password",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1:8000"
+              ],
+              "path": [
+                "api",
+                "change-password"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"current_password\": \"Password123!\",\n  \n//   new\n    \"password\": \"NewPassword123!\",\n    \"password_confirmation\": \"NewPassword123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Functions",
+      "item": [
+        {
+          "name": "Shared",
+          "item": [
+            {
+              "name": "List Students",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "4|p6pK5exYyajIyLp7H2ThIZDv5B73EBE8ptoQLw80ab7bc9d3",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/students",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1:8000"
+                  ],
+                  "path": [
+                    "api",
+                    "students"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Change Contact",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "http://",
+                  "protocol": "http",
+                  "host": [],
+                  "path": [],
+                  "query": [],
+                  "variable": []
+                }
+              }
+            },
+            {
+              "name": "Dashboard display",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "description": "",
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/dashboard",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1:8000"
+                  ],
+                  "path": [
+                    "api",
+                    "dashboard"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              }
+            }
+          ]
+        },
+        {
           "name": "Secretary",
           "item": [
             {
@@ -628,236 +936,34 @@
           ]
         },
         {
-          "name": "Log in",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "description": "",
-                "disabled": false,
-                "type": "default"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "",
-            "url": {
-              "raw": "http://127.0.0.1:8000/api/login",
-              "protocol": "http",
-              "host": [
-                "127",
-                "0",
-                "0",
-                "1:8000"
-              ],
-              "path": [
-                "api",
-                "login"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  // \"email\": \"alexandrian.bon@student.laverdad.edu.ph\", //bsis 1\n  // \"email\": \"sec.bsis3@laverdad.edu.ph\",\n  // \"email\": \"sec.bsa3@laverdad.edu.ph\",\n  // \"email\": \"bsis.head@laverdad.edu.ph\",\n  // \"email\": \"sec.bssw1@laverdad.edu.ph\",\n  //     \"email\": \"bssw.head@laverdad.edu.ph\",\n  // \"email\": \"cm.coordinator@laverdad.edu.ph\",\n  // \"email\": \"chancellor@laverdad.edu.ph\",\n  \"email\": \"admin@laverdad.edu.ph\",\n  \"password\": \"Password123!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {},
-                "exec": [
-                  "if (pm.response.body && pm.response.body.access_token) {",
-                  "  pm.variables.set('token', pm.response.body.access_token);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Current User",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "description": "",
-                "disabled": false,
-                "type": "default"
-              }
-            ],
-            "description": "",
-            "url": {
-              "raw": "http://127.0.0.1:8000/api/me",
-              "protocol": "http",
-              "host": [
-                "127",
-                "0",
-                "0",
-                "1:8000"
-              ],
-              "path": [
-                "api",
-                "me"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"email\": \"chancellor@laverdad.edu.ph\",\r\n    \"password\": \"Password123!\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "text"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Log out",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "description": "",
-                "disabled": false,
-                "type": "default"
-              }
-            ],
-            "description": "",
-            "url": {
-              "raw": "http://127.0.0.1:8000/api/logout",
-              "protocol": "http",
-              "host": [
-                "127",
-                "0",
-                "0",
-                "1:8000"
-              ],
-              "path": [
-                "api",
-                "logout"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "text"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Change Password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "description": "",
-                "disabled": false,
-                "type": "default"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "1|VKlkJI1doKpye9VAQWclQdHfAp43fKAr4si4LFRC5ce42a01",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "",
-            "url": {
-              "raw": "http://127.0.0.1:8000/api/change-password",
-              "protocol": "http",
-              "host": [
-                "127",
-                "0",
-                "0",
-                "1:8000"
-              ],
-              "path": [
-                "api",
-                "change-password"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"current_password\": \"Password123!\",\n  \n//   new\n    \"password\": \"NewPassword123!\",\n    \"password_confirmation\": \"NewPassword123!\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Functions",
-      "item": [
-        {
-          "name": "Shared",
+          "name": "Program Head/Program Sec",
           "item": [
             {
-              "name": "List Students",
-              "protocolProfileBehavior": {
-                "disableBodyPruning": true
-              },
+              "name": "Validate Report",
               "request": {
-                "method": "GET",
-                "header": [],
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "description": "",
+                    "disabled": false,
+                    "type": "default"
+                  }
+                ],
                 "auth": {
                   "type": "bearer",
                   "bearer": [
                     {
                       "key": "token",
-                      "value": "4|p6pK5exYyajIyLp7H2ThIZDv5B73EBE8ptoQLw80ab7bc9d3",
+                      "value": "2|vzdupe7AB1Dr41hHzDpGHU52lAden3I5M0iEkN4i8a78addd",
                       "type": "string"
                     }
                   ]
                 },
                 "description": "",
                 "url": {
-                  "raw": "http://127.0.0.1:8000/api/students",
+                  "raw": "http://127.0.0.1:8000/api/attendance/validate",
                   "protocol": "http",
                   "host": [
                     "127",
@@ -867,14 +973,15 @@
                   ],
                   "path": [
                     "api",
-                    "students"
+                    "attendance",
+                    "validate"
                   ],
                   "query": [],
                   "variable": []
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "",
+                  "raw": "{\r\n    \"program\": \"bsis\",\r\n    \"year_level\": \"3\",\r\n    \"gathering_type\": \"ws\",\r\n    \"day\": \"2026-08-28\",\r\n    \"status\": \"validated\"\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -884,50 +991,16 @@
               }
             },
             {
-              "name": "Change Contact",
+              "name": "New Request",
               "request": {
                 "method": "GET",
                 "header": [],
-                "auth": {
-                  "type": "bearer",
-                  "bearer": [
-                    {
-                      "key": "token",
-                      "value": "",
-                      "type": "string"
-                    }
-                  ]
-                },
                 "description": "",
                 "url": {
-                  "raw": "http://",
-                  "protocol": "http",
+                  "raw": "",
+                  "protocol": "",
                   "host": [],
                   "path": [],
-                  "query": [],
-                  "variable": []
-                }
-              }
-            },
-            {
-              "name": "Dashboard display",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "description": "",
-                "url": {
-                  "raw": "http://127.0.0.1:8000/api/dashboard",
-                  "protocol": "http",
-                  "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1:8000"
-                  ],
-                  "path": [
-                    "api",
-                    "dashboard"
-                  ],
                   "query": [],
                   "variable": []
                 }
@@ -1016,148 +1089,473 @@
           ]
         },
         {
-          "name": "Program Head",
-          "item": [
-            {
-              "name": "Validate Report",
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "description": "",
-                    "disabled": false,
-                    "type": "default"
-                  }
-                ],
-                "auth": {
-                  "type": "bearer",
-                  "bearer": [
-                    {
-                      "key": "token",
-                      "value": "2|vzdupe7AB1Dr41hHzDpGHU52lAden3I5M0iEkN4i8a78addd",
-                      "type": "string"
-                    }
-                  ]
-                },
-                "description": "",
-                "url": {
-                  "raw": "http://127.0.0.1:8000/api/attendance/validate",
-                  "protocol": "http",
-                  "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1:8000"
-                  ],
-                  "path": [
-                    "api",
-                    "attendance",
-                    "validate"
-                  ],
-                  "query": [],
-                  "variable": []
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\r\n    \"program\": \"bsis\",\r\n    \"year_level\": \"3\",\r\n    \"gathering_type\": \"ws\",\r\n    \"day\": \"2026-08-28\",\r\n    \"status\": \"validated\"\r\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "name": "New Request",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "description": "",
-                "url": {
-                  "raw": "",
-                  "protocol": "",
-                  "host": [],
-                  "path": [],
-                  "query": [],
-                  "variable": []
-                }
-              }
-            }
-          ]
-        },
-        {
           "name": "Admin",
           "item": [
             {
-              "name": "List Users",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
+              "name": "Users and Roles Page",
+              "item": [
+                {
+                  "name": "List users",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [],
                     "description": "",
-                    "disabled": false,
-                    "type": "default"
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/admin/users/",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users",
+                        ""
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
                   }
-                ],
-                "description": "",
-                "url": {
-                  "raw": "http://127.0.0.1:8000/api/admin/users",
-                  "protocol": "http",
-                  "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1:8000"
-                  ],
-                  "path": [
-                    "api",
-                    "admin",
-                    "users"
-                  ],
-                  "query": [],
-                  "variable": []
                 },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"Diana Teves\",\n  \"email\": \"diana.teves@student.laverdad.edu.ph\",\n  \"role\": \"program_secretary\",\n  \"contact_number\": \"09121212121\",\n  \"password\": \"Password123!\",\n  \"password_confirmation\": \"Password123!\",\n  \"program\": \"BSSW\",\n  \"year_level\": \"4\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
+                {
+                  "name": "Add Users",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "description": "",
+                        "disabled": false,
+                        "type": "default"
+                      }
+                    ],
+                    "description": "",
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/admin/users",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\":\"Diana Teves\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "Edit user",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [],
+                    "description": "",
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/admin/users/7",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "users",
+                        "7"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"is_active\": true\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
                     }
                   }
                 }
-              }
+              ]
             },
             {
-              "name": "Show user",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "description": "",
-                "url": {
-                  "raw": "http://127.0.0.1:8000/api/admin/users/",
-                  "protocol": "http",
-                  "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1:8000"
-                  ],
-                  "path": [
-                    "api",
-                    "admin",
-                    "users",
-                    ""
-                  ],
-                  "query": [],
-                  "variable": []
+              "name": "Students Page",
+              "item": [
+                {
+                  "name": "List Students",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "description": "",
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/admin/students",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "students"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"search\": \"jonn\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "Add Students",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "description": "",
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/admin/students",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "students"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Bishop, Kate\",\n  \"program\": \"bab\",\n  \"year_level\": \"3\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "Edit Students",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [],
+                    "description": "",
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/admin/students/49",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "students",
+                        "49"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"is_active\": true\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  }
                 }
-              }
+              ]
+            },
+            {
+              "name": "Programs Page",
+              "item": [
+                {
+                  "name": "List Programs",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "description": "",
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/admin/programs",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "programs"
+                      ],
+                      "query": [],
+                      "variable": []
+                    }
+                  }
+                },
+                {
+                  "name": "Edit Program",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [],
+                    "description": "",
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/admin/programs/2",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "admin",
+                        "programs",
+                        "2"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"is_active\": true\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Settings",
+              "item": [
+                {
+                  "name": "General",
+                  "item": [
+                    {
+                      "name": "List Settings",
+                      "request": {
+                        "method": "GET",
+                        "header": [],
+                        "description": "",
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/admin/settings/general",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1:8000"
+                          ],
+                          "path": [
+                            "api",
+                            "admin",
+                            "settings",
+                            "general"
+                          ],
+                          "query": [],
+                          "variable": []
+                        }
+                      }
+                    },
+                    {
+                      "name": "Edit Settings",
+                      "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "description": "",
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/admin/settings/general",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1:8000"
+                          ],
+                          "path": [
+                            "api",
+                            "admin",
+                            "settings",
+                            "general"
+                          ],
+                          "query": [],
+                          "variable": []
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"timezone\":\"\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Gatherings",
+                  "item": [
+                    {
+                      "name": "List Gathering Settings",
+                      "request": {
+                        "method": "GET",
+                        "header": [],
+                        "description": "",
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/admin/settings/gatherings",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1:8000"
+                          ],
+                          "path": [
+                            "api",
+                            "admin",
+                            "settings",
+                            "gatherings"
+                          ],
+                          "query": [],
+                          "variable": []
+                        }
+                      }
+                    },
+                    {
+                      "name": "Edit Gathering Settings",
+                      "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "description": "",
+                        "url": {
+                          "raw": "http://127.0.0.1:8000/api/admin/settings/gatherings",
+                          "protocol": "http",
+                          "host": [
+                            "127",
+                            "0",
+                            "0",
+                            "1:8000"
+                          ],
+                          "path": [
+                            "api",
+                            "admin",
+                            "settings",
+                            "gatherings"
+                          ],
+                          "query": [],
+                          "variable": []
+                        },
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"schedules\": {\n    \"pm\": [\"wednesday\"],\n    \"ws\": [\"saturday\", \"sunday\"],\n    \"tg\": [\"saturday\", \"sunday\"]\n  }\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Change Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "description": "",
+                    "url": {
+                      "raw": "http://127.0.0.1:8000/api/change-password",
+                      "protocol": "http",
+                      "host": [
+                        "127",
+                        "0",
+                        "0",
+                        "1:8000"
+                      ],
+                      "path": [
+                        "api",
+                        "change-password"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"current_password\":\"Password123!\",\n  \"password\": \"Password1!\",\n \"password_confirmation\": \"Password1!\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
             },
             {
               "name": "Admin Dashboard display",
@@ -1224,19 +1622,29 @@
           "",
           "  const isScalar = v => v === null || typeof v !== 'object';",
           "  const isPlain = v => v !== null && typeof v === 'object' && !Array.isArray(v);",
+          "  const isScalarArray = v => Array.isArray(v) && v.length > 0 && v.every(isScalar);",
           "",
-          "",
+          "  // \"contact_number\" -> \"Contact Number\"",
           "  const pretty = key =>",
           "    key.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());",
           "",
-          "  const addTable = (name, rows) => {",
-          "    if (!Array.isArray(rows) || rows.length === 0) return;",
+          "  // Keep simple values, and join arrays of simple values into \"a, b, c\"",
+          "  const flatten = row => {",
+          "    const out = {};",
+          "    Object.keys(row).forEach(k => {",
+          "      const v = row[k];",
+          "      if (isScalar(v)) out[k] = v;",
+          "      else if (isScalarArray(v)) out[k] = v.join(', ');",
+          "    });",
+          "    return out;",
+          "  };",
           "",
-          "    // Collect every simple (non-nested) field across all rows",
+          "  const addTable = (name, rows) => {",
+          "    const flat = rows.map(flatten);",
           "    const keys = [];",
-          "    rows.forEach(row =>",
-          "      Object.keys(row).forEach(k => {",
-          "        if (isScalar(row[k]) && !keys.includes(k)) keys.push(k);",
+          "    flat.forEach(r =>",
+          "      Object.keys(r).forEach(k => {",
+          "        if (!keys.includes(k)) keys.push(k);",
           "      })",
           "    );",
           "    if (keys.length === 0) return;",
@@ -1245,20 +1653,24 @@
           "      name,",
           "      provider: 'ag-grid',",
           "      props: {",
-          "        rowData: rows,",
+          "        rowData: flat,",
           "        columnDefinitions: keys.map(k => ({ header: pretty(k), field: k }))",
           "      }",
           "    });",
           "  };",
           "",
           "  const walk = (value, path) => {",
+          "    // [\"monday\", \"tuesday\", ...] -> one-column table",
+          "    if (isScalarArray(value)) {",
+          "      addTable(path, value.map(v => ({ value: v })));",
+          "      return;",
+          "    }",
           "    if (Array.isArray(value)) {",
           "      if (value.length > 0 && value.every(isPlain)) addTable(path, value);",
           "      return;",
           "    }",
           "    if (isPlain(value)) {",
-          "      const hasScalars = Object.keys(value).some(k => isScalar(value[k]));",
-          "      if (hasScalars) addTable(path, [value]);",
+          "      if (Object.keys(flatten(value)).length > 0) addTable(path, [value]);",
           "      Object.keys(value).forEach(k => {",
           "        if (!isScalar(value[k])) walk(value[k], `${path} > ${k}`);",
           "      });",
