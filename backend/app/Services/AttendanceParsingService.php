@@ -124,6 +124,7 @@ class AttendanceParsingService
     public function generateWeeklyTemplate(string $program, int $yearLevel): array
     {
         $students = Student::where('program', $program)
+            ->active()
             ->where('year_level', $yearLevel)
             ->orderBy('name', 'asc')
             ->get();
@@ -217,6 +218,7 @@ class AttendanceParsingService
     private function findMatchingStudent(string $program, int $yearLevel, string $studentName): ?Student
     {
         return Student::where('program', $program)
+            ->active()
             ->where('year_level', $yearLevel)
             ->where('name', 'LIKE', "%{$studentName}%")
             ->first();
@@ -228,6 +230,7 @@ class AttendanceParsingService
     public function findMissingStudents(string $program, int $yearLevel, array $parsedSubmissions): array
     {
         return Student::where('program', $program)
+            ->active()
             ->where('year_level', $yearLevel)
             ->whereNotIn('id', array_keys($parsedSubmissions))
             ->get(['id', 'name'])
@@ -549,6 +552,7 @@ class AttendanceParsingService
         $missingStudents = [];
         foreach (['pm', 'ws', 'tg'] as $type) {
             $missingStudents[$type] = Student::where('program', $program)
+                ->active()
                 ->where('year_level', $yearLevel)
                 ->whereNotIn('id', $matchedStudentIds)
                 ->get(['id', 'name'])
@@ -768,6 +772,7 @@ class AttendanceParsingService
     public function buildFullSectionRecords(string $program, int $yearLevel, array $parsedSubmissions, string $defaultDate, string $gatheringType): array
     {
         $allSectionStudents = Student::where('program', $program)
+            ->active()
             ->where('year_level', $yearLevel)
             ->get();
 

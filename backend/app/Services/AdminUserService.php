@@ -31,18 +31,26 @@ class AdminUserService
         ];
     }
 
-    public function create(array $data): User
+    public function create(array $data): array
     {
-        return DB::transaction(function () use ($data) {
+        $generatedPassword = $this->generatePassword();
+
+        $user = DB::transaction(function () use ($data, $generatedPassword) {
             $programIds = $this->resolveProgramIds($data);
             $data['program'] = $this->resolvePrimaryProgram($data, $programIds);
             unset($data['program_ids']);
+            $data['password'] = $generatedPassword;
 
             $user = User::query()->create($data);
             $user->programs()->sync($programIds);
 
             return $user->load('programs:id,code,name');
         });
+
+        return [
+            'user' => $user,
+            'generated_password' => $generatedPassword,
+        ];
     }
 
     public function update(User $user, array $data, User $actor): User
@@ -179,5 +187,35 @@ class AdminUserService
                 'user' => ['The last active administrator account must remain active.'],
             ]);
         }
+    }
+
+    private function generatePassword(): string
+    {
+        $characterGroups = [
+            'abcdefghijkmnopqrstuvwxyz',
+            'ABCDEFGHJKLMNPQRSTUVWXYZ',
+            '23456789',
+            '!@#$%&*+-=?',
+        ];
+
+        $characters = [];
+        foreach ($characterGroups as $group) {
+            $characters[] = $group[random_int(0, strlen($group) - 1)];
+        }
+
+        $allCharacters = implode('', $characterGroups);
+        for ($index = 0; $index < 12; $index++) {
+            $characters[] = $allCharacters[random_int(0, strlen($allCharacters) - 1)];
+        }
+
+        for ($index = count($characters) - 1; $index > 0; $index--) {
+            $swapIndex = random_int(0, $index);
+            [$characters[$index], $characters[$swapIndex]] = [
+                $characters[$swapIndex],
+                $characters[$index],
+            ];
+        }
+
+        return implode('', $characters);
     }
 }

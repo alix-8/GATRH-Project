@@ -7,6 +7,7 @@ use App\Models\AttendanceRecord;
 use App\Models\Escalation;
 use App\Models\Student;
 use App\Models\Reminder;
+use App\Models\Program;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -141,6 +142,7 @@ class DashboardService
 
         return [
             'total_students' => Student::query()
+                ->active()
                 ->accessibleTo($user)
                 ->count(),
 
@@ -363,7 +365,7 @@ class DashboardService
 
     public function getRecentRecords($user, ?array $dateRange = null): array
     {
-        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
+        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
 
         // 1. Unsubmitted Drafts
         $drafts = AttendanceDraft::query()
@@ -466,7 +468,7 @@ class DashboardService
         $month = Carbon::create($year, $monthNumber, 1)->startOfDay();
         $monthStart = $month->toDateString();
         $monthEnd = $month->copy()->endOfMonth()->toDateString();
-        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
+        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
 
         $records = AttendanceRecord::query()
             ->select('gathering_type', DB::raw("COUNT(DISTINCT CASE WHEN status = 'present' THEN student_id END) as present_count"))
@@ -602,16 +604,22 @@ class DashboardService
     public function getChancellorDashboardPayload($user, array $filters): array
     {
         $selectedDate = Carbon::parse($filters['date'] ?? now());
-        $dateRange = $this->resolveDateRange($filters['week'] ?? 'this_week');
+        $dateRange = [
+            'start' => $selectedDate->copy()->startOfWeek(),
+            'end' => $selectedDate->copy()->endOfWeek(),
+        ];
+        // Use the program catalog so seeded programs remain available without enrolled students.
+        $allPrograms = Program::query()
+            ->orderBy('code')
+            ->pluck('code');
+        $selectedProgram = $filters['program'] ?? null;
+        $programs = $allPrograms;
 
-        // List of programs comes from students.program.
-        $programs = Student::query()
-            ->select('program')
-            ->whereNotNull('program')
-            ->where('program', '!=', '')
-            ->distinct()
-            ->orderBy('program')
-            ->pluck('program');
+        if ($selectedProgram !== null) {
+            $programs = $programs
+                ->filter(fn ($programCode) => $programCode === $selectedProgram)
+                ->values();
+        }
 
         // Records for the currently selected reporting period.
         $records = AttendanceRecord::query()
@@ -745,6 +753,8 @@ class DashboardService
                 $selectedDate,
                 $fourWeekRecords,
                 $programs,
+                $selectedProgram,
+                $allPrograms,
                 $getProgramStatus
             ) {
                 $weekStart = $selectedDate->copy()
@@ -777,6 +787,11 @@ class DashboardService
                     'incomplete' => $statuses
                         ->filter(fn ($status) => $status === 'incomplete')
                         ->count(),
+                    'filters' => [
+                        'date' => $selectedDate->toDateString(),
+                        'program' => $selectedProgram,
+                    ],
+                    'programs' => $allPrograms->values(),
                     'no_report' => $statuses
                         ->filter(fn ($status) => $status === 'no_report')
                         ->count(),

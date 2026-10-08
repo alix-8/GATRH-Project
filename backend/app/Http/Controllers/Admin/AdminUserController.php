@@ -35,13 +35,6 @@ class AdminUserController extends Controller
         return response()->json($this->userService->getPageData($validated));
     }
 
-    public function show(User $user): JsonResponse
-    {
-        return response()->json([
-            'user' => $user->load('programs:id,code,name'),
-        ]);
-    }
-
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -49,13 +42,18 @@ class AdminUserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', Rule::in(User::ROLES)],
             'contact_number' => ['required', 'string', 'regex:/^09\d{9}$/'],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => ['prohibited'],
+            'password_confirmation' => ['prohibited'],
             'program' => ['nullable', 'string', Rule::exists('programs', 'code')],
             'program_ids' => ['nullable', 'array'],
             'program_ids.*' => ['integer', 'distinct', Rule::exists('programs', 'id')],
             'year_level' => ['nullable', 'string', 'max:20', 'required_if:role,secretary,program_secretary'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        if (isset($validated['program'])) {
+            $validated['program'] = strtoupper(trim($validated['program']));
+        }
 
         if (in_array($validated['role'], ['secretary', 'program_secretary'], true) && empty($validated['program'])) {
             return response()->json([
@@ -64,11 +62,12 @@ class AdminUserController extends Controller
             ], 422);
         }
 
-        $user = $this->userService->create($validated);
+        $created = $this->userService->create($validated);
 
         return response()->json([
             'message' => 'User account created successfully.',
-            'user' => $user,
+            'user' => $created['user'],
+            'generated_password' => $created['generated_password'],
         ], 201);
     }
 
@@ -86,6 +85,10 @@ class AdminUserController extends Controller
             'year_level' => ['sometimes', 'nullable', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        if (isset($validated['program'])) {
+            $validated['program'] = strtoupper(trim($validated['program']));
+        }
 
         $role = $validated['role'] ?? $user->role;
         $program = array_key_exists('program', $validated)
@@ -105,7 +108,19 @@ class AdminUserController extends Controller
             }
         }
 
-        if (in_array($role, ['secretary', 'program_secretary'], true) && (! $program || ! $yearLevel)) {
+        $programIdsChanged = array_key_exists('program_ids', $validated)
+            && $this->sortedIds($validated['program_ids'] ?? [])
+                !== $this->sortedIds($user->programs()->pluck('programs.id')->all());
+        $assignmentChanged = $role !== $user->role
+            || strtoupper((string) $program) !== strtoupper((string) $user->program)
+            || $programIdsChanged
+            || (string) $yearLevel !== (string) $user->year_level;
+
+        if (
+            in_array($role, ['secretary', 'program_secretary'], true)
+            && $assignmentChanged
+            && (! $program || ! $yearLevel)
+        ) {
             return response()->json([
                 'message' => 'A program and year level are required for secretary accounts.',
                 'errors' => [
@@ -121,5 +136,13 @@ class AdminUserController extends Controller
             'message' => 'User account updated successfully.',
             'user' => $updatedUser,
         ]);
+    }
+
+    private function sortedIds(array $ids): array
+    {
+        $ids = array_map('intval', $ids);
+        sort($ids);
+
+        return $ids;
     }
 }

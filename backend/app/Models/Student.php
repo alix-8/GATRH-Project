@@ -15,7 +15,17 @@ class Student extends Model
         'name',
         'program',
         'year_level',
+        'is_active',
     ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 
     public function scopeAccessibleTo($query, User $user)
     {
