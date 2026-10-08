@@ -201,8 +201,8 @@ class ReminderController extends Controller
             return response()->json([
                 'status'  => 'error',
                 'message' => sprintf('%s reminders can only be scheduled on %s.',
-                    strtoupper($validated['gathering_type']),
-                    $validated['gathering_type'] === 'pm' ? 'Wednesday' : 'Saturday or Sunday'
+                    $this->gatheringService->label($validated['gathering_type']),
+                    $this->gatheringService->scheduledDayNames($validated['gathering_type'])
                 ),
             ], 422);
         }

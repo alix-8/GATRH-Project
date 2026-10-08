@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminProgramController;
+use App\Http\Controllers\Admin\AdminSystemSettingController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminStudentController;
 use App\Http\Controllers\Api\AuthController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Escalations\EscalationController;
 use App\Http\Controllers\ProgramHead\ProgramHeadSubmissionController;
 use App\Http\Controllers\Reminders\ReminderController;
 use App\Http\Controllers\Students\StudentController;
+use App\Http\Middleware\ApplySystemTimezone;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -41,7 +43,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function () {
     /* Account and profile */
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -67,6 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
     /* Administrator */
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
+        Route::get('/admin/settings/general', [AdminSystemSettingController::class, 'show']);
+        Route::patch('/admin/settings/general', [AdminSystemSettingController::class, 'update']);
+        Route::get('/admin/settings/gatherings', [AdminSystemSettingController::class, 'showGatheringSchedules']);
+        Route::patch('/admin/settings/gatherings', [AdminSystemSettingController::class, 'updateGatheringSchedules']);
         Route::get('/admin/programs', [AdminProgramController::class, 'index']);
         Route::post('/admin/programs', [AdminProgramController::class, 'store']);
         Route::get('/admin/programs/{program}', [AdminProgramController::class, 'show']);
