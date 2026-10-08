@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminStudentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Attendance\AttendanceController;
@@ -67,8 +68,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
         Route::get('/admin/users', [AdminUserController::class, 'index']);
         Route::post('/admin/users', [AdminUserController::class, 'store']);
-        Route::get('/admin/users/{user}', [AdminUserController::class, 'show']);
         Route::patch('/admin/users/{user}', [AdminUserController::class, 'update']);
+        Route::get('/admin/students', [AdminStudentController::class, 'index']);
+        Route::post('/admin/students', [AdminStudentController::class, 'store']);
+        Route::get('/admin/students/{student}', [AdminStudentController::class, 'show']);
+        Route::patch('/admin/students/{student}', [AdminStudentController::class, 'update']);
     });
 
     /* Secretary */

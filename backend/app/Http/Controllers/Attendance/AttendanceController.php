@@ -400,6 +400,7 @@ class AttendanceController extends Controller
 
         // Fetch students belonging to the program & year level, ordered alphabetically by name
         $students = Student::where('program', $program)
+            ->active()
             ->where('year_level', $yearLevel)
             ->orderBy('name', 'asc')
             ->get();
@@ -897,6 +898,7 @@ class AttendanceController extends Controller
         $gatheringTypes = collect($validated['records'])->pluck('gathering_type')->unique();
         $studentIds = collect($validated['records'])->pluck('student_id')->unique();
         $accessibleStudentCount = Student::whereKey($studentIds)
+            ->active()
             ->accessibleTo($request->user())
             ->count();
 

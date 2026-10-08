@@ -35,13 +35,6 @@ class AdminUserController extends Controller
         return response()->json($this->userService->getPageData($validated));
     }
 
-    public function show(User $user): JsonResponse
-    {
-        return response()->json([
-            'user' => $user->load('programs:id,code,name'),
-        ]);
-    }
-
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -49,7 +42,8 @@ class AdminUserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', Rule::in(User::ROLES)],
             'contact_number' => ['required', 'string', 'regex:/^09\d{9}$/'],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => ['prohibited'],
+            'password_confirmation' => ['prohibited'],
             'program' => ['nullable', 'string', Rule::exists('programs', 'code')],
             'program_ids' => ['nullable', 'array'],
             'program_ids.*' => ['integer', 'distinct', Rule::exists('programs', 'id')],
@@ -64,11 +58,12 @@ class AdminUserController extends Controller
             ], 422);
         }
 
-        $user = $this->userService->create($validated);
+        $created = $this->userService->create($validated);
 
         return response()->json([
             'message' => 'User account created successfully.',
-            'user' => $user,
+            'user' => $created['user'],
+            'generated_password' => $created['generated_password'],
         ], 201);
     }
 

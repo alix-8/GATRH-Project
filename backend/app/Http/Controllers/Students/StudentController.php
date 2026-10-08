@@ -14,13 +14,14 @@ class StudentController extends Controller
     public function index(Request $request)
     {
         return response()->json(
-            Student::query()->accessibleTo($request->user())->get()
+            Student::query()->active()->accessibleTo($request->user())->get()
         );
     }
     public function attendanceSnapshot(Request $request)
     {
         $user = $request->user();
         $students = Student::query()
+            ->active()
             ->accessibleTo($user)
             ->with('escalation')
             ->orderBy('name')

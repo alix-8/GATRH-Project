@@ -141,6 +141,7 @@ class DashboardService
 
         return [
             'total_students' => Student::query()
+                ->active()
                 ->accessibleTo($user)
                 ->count(),
 
@@ -363,7 +364,7 @@ class DashboardService
 
     public function getRecentRecords($user, ?array $dateRange = null): array
     {
-        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
+        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
 
         // 1. Unsubmitted Drafts
         $drafts = AttendanceDraft::query()
@@ -466,7 +467,7 @@ class DashboardService
         $month = Carbon::create($year, $monthNumber, 1)->startOfDay();
         $monthStart = $month->toDateString();
         $monthEnd = $month->copy()->endOfMonth()->toDateString();
-        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
+        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
 
         $records = AttendanceRecord::query()
             ->select('gathering_type', DB::raw("COUNT(DISTINCT CASE WHEN status = 'present' THEN student_id END) as present_count"))
