@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use DateTimeZone;
 use App\Http\Controllers\Controller;
 use App\Models\SystemSetting;
 use App\Services\AdminSystemSettingService;
@@ -17,8 +18,21 @@ class AdminSystemSettingController extends Controller
 
     public function show(): JsonResponse
     {
+        $timezoneOptions = collect(DateTimeZone::listIdentifiers())
+            ->map(function (string $timezone) {
+                $offset = now()->setTimezone($timezone)->format('P');
+
+                return [
+                    'value' => $timezone,
+                    'label' => "{$timezone} (UTC{$offset})",
+                    'utc_offset' => $offset,
+                ];
+            })
+            ->values();
+
         return response()->json([
             'settings' => $this->settingService->getGeneralSettings(),
+            'timezone_options' => $timezoneOptions,
         ]);
     }
 
