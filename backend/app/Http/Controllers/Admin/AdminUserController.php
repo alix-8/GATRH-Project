@@ -51,6 +51,10 @@ class AdminUserController extends Controller
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
+        if (isset($validated['program'])) {
+            $validated['program'] = strtoupper(trim($validated['program']));
+        }
+
         if (in_array($validated['role'], ['secretary', 'program_secretary'], true) && empty($validated['program'])) {
             return response()->json([
                 'message' => 'A program is required for secretary accounts.',
@@ -82,6 +86,10 @@ class AdminUserController extends Controller
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
+        if (isset($validated['program'])) {
+            $validated['program'] = strtoupper(trim($validated['program']));
+        }
+
         $role = $validated['role'] ?? $user->role;
         $program = array_key_exists('program', $validated)
             ? $validated['program']
@@ -100,7 +108,19 @@ class AdminUserController extends Controller
             }
         }
 
-        if (in_array($role, ['secretary', 'program_secretary'], true) && (! $program || ! $yearLevel)) {
+        $programIdsChanged = array_key_exists('program_ids', $validated)
+            && $this->sortedIds($validated['program_ids'] ?? [])
+                !== $this->sortedIds($user->programs()->pluck('programs.id')->all());
+        $assignmentChanged = $role !== $user->role
+            || strtoupper((string) $program) !== strtoupper((string) $user->program)
+            || $programIdsChanged
+            || (string) $yearLevel !== (string) $user->year_level;
+
+        if (
+            in_array($role, ['secretary', 'program_secretary'], true)
+            && $assignmentChanged
+            && (! $program || ! $yearLevel)
+        ) {
             return response()->json([
                 'message' => 'A program and year level are required for secretary accounts.',
                 'errors' => [
@@ -116,5 +136,13 @@ class AdminUserController extends Controller
             'message' => 'User account updated successfully.',
             'user' => $updatedUser,
         ]);
+    }
+
+    private function sortedIds(array $ids): array
+    {
+        $ids = array_map('intval', $ids);
+        sort($ids);
+
+        return $ids;
     }
 }

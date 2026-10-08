@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminProgramController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminStudentController;
 use App\Http\Controllers\Api\AuthController;
@@ -66,6 +67,10 @@ Route::middleware('auth:sanctum')->group(function () {
     /* Administrator */
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
+        Route::get('/admin/programs', [AdminProgramController::class, 'index']);
+        Route::post('/admin/programs', [AdminProgramController::class, 'store']);
+        Route::get('/admin/programs/{program}', [AdminProgramController::class, 'show']);
+        Route::patch('/admin/programs/{program}', [AdminProgramController::class, 'update']);
         Route::get('/admin/users', [AdminUserController::class, 'index']);
         Route::post('/admin/users', [AdminUserController::class, 'store']);
         Route::patch('/admin/users/{user}', [AdminUserController::class, 'update']);

@@ -33,6 +33,7 @@ class DashboardController extends Controller
         $validated = $request->validate([
             'date' => ['nullable', 'date'],
             'program_id' => ['nullable', 'exists:programs,id'],
+            'program' => ['nullable', 'string', 'max:50', 'exists:programs,code'],
             'week' => ['nullable', 'string'],
             'month' => ['nullable', 'integer', 'between:1,12'],
             'year' => ['nullable', 'integer', 'between:2000,2100'],
@@ -42,6 +43,7 @@ class DashboardController extends Controller
         $filters = [
             'date' => $validated['date'] ?? now()->toDateString(),
             'program_id' => $validated['program_id'] ?? null,
+            'program' => $validated['program'] ?? null,
             'week' => $validated['week'] ?? 'all',
             'month' => $validated['month'] ?? now()->month,
             'year' => $validated['year'] ?? now()->year,
