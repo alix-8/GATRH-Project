@@ -4,7 +4,7 @@ import Header from '../../../components/Header/Header'
 import Calendar from '../../../components/Calendar/Calendar'
 import { request } from '../../../api/request'
 import CalendarIcon from '../../../assets/calendar-icon.svg'
-// import AllProgramsIcon from '../../../assets/all-programs-icon.svg'
+import AllProgramsIcon from '../../../assets/all-programs-icon.svg'
 // import AllWeeksIcon from '../../../assets/all-weeks-icon.svg'
 import DropdownIcon from '../../../assets/drop-down-icon.svg'
 import './ChancellorDashboard.css'
@@ -25,22 +25,22 @@ function toDateValue(date) {
 
 function ChancellorDashboard() {
     const [date, setDate] = useState('')
-    // const [program, setProgram] = useState('')
+    const [program, setProgram] = useState('')
     // const [week, setWeek] = useState('all')
-    // const [programs, setPrograms] = useState([])
+    const [programs, setPrograms] = useState([])
     const [loadError, setLoadError] = useState('')
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-    // const [isProgramOpen, setIsProgramOpen] = useState(false)
+    const [isProgramOpen, setIsProgramOpen] = useState(false)
     // const [isWeekOpen, setIsWeekOpen] = useState(false)
     const calendarRef = useRef(null)
-    // const programRef = useRef(null)
+    const programRef = useRef(null)
     // const weekRef = useRef(null)
     const query = useMemo(() => {
         const params = new URLSearchParams({ date: date || getTodayDateValue() })
-        // if (program) params.set('program', program)
+        if (program) params.set('program', program)
         // if (week !== 'all') params.set('week', week)
         return params.toString()
-    }, [date])
+    }, [date, program])
     const selectedDate = date ? fromDateValue(date) : null
 
     useEffect(() => {
@@ -50,8 +50,8 @@ function ChancellorDashboard() {
             setLoadError('')
 
             try {
-                await request(`/dashboard?${query}`, { signal: controller.signal })
-                // setPrograms(Array.isArray(data.programs) ? data.programs : [])
+                const data = await request(`/dashboard?${query}`, { signal: controller.signal })
+                setPrograms(Array.isArray(data.programs) ? data.programs : [])
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     setLoadError(error.message || 'Could not load dashboard filters.')
@@ -68,9 +68,9 @@ function ChancellorDashboard() {
             if (calendarRef.current && !calendarRef.current.contains(event.target)) {
                 setIsCalendarOpen(false)
             }
-            // if (programRef.current && !programRef.current.contains(event.target)) {
-            //     setIsProgramOpen(false)
-            // }
+            if (programRef.current && !programRef.current.contains(event.target)) {
+                setIsProgramOpen(false)
+            }
             // if (weekRef.current && !weekRef.current.contains(event.target)) {
             //     setIsWeekOpen(false)
             // }
@@ -78,7 +78,7 @@ function ChancellorDashboard() {
         const closeOnEscape = (event) => {
             if (event.key === 'Escape') {
                 setIsCalendarOpen(false)
-                // setIsProgramOpen(false)
+                setIsProgramOpen(false)
                 // setIsWeekOpen(false)
             }
         }
@@ -108,6 +108,7 @@ function ChancellorDashboard() {
                             aria-expanded={isCalendarOpen}
                             onClick={() => {
                                 setIsCalendarOpen((open) => !open)
+                                setIsProgramOpen(false)
                             }}
                         >
                             <img className="chancellor-filter-icon" src={CalendarIcon} alt="" />
@@ -135,7 +136,6 @@ function ChancellorDashboard() {
                             </div>
                         )}
                     </div>
-                    {/*
                     <div className={`chancellor-filter-dropdown ${isProgramOpen ? 'is-open' : ''}`} ref={programRef}>
                         <button
                             type="button"
@@ -144,7 +144,6 @@ function ChancellorDashboard() {
                             onClick={() => {
                                 setIsProgramOpen((open) => !open)
                                 setIsCalendarOpen(false)
-                                setIsWeekOpen(false)
                             }}
                         >
                             <img className="chancellor-filter-icon" src={AllProgramsIcon} alt="" />
@@ -190,6 +189,7 @@ function ChancellorDashboard() {
                             </ul>
                         )}
                     </div>
+                    {/*
                     <div className={`chancellor-filter-dropdown ${isWeekOpen ? 'is-open' : ''}`} ref={weekRef}>
                         <button
                             type="button"
