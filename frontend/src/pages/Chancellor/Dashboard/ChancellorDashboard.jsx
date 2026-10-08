@@ -13,6 +13,8 @@ import NoReportProgramsIcon from '../../../assets/no-report-programs-icon.svg'
 import TotalProgramsIcon from '../../../assets/total-programs-icon.svg'
 import './ChancellorDashboard.css'
 
+const PROGRAM_OPTIONS = ['ACT', 'BAB', 'BSA', 'BSAIS', 'BSIS', 'BSSW']
+
 function getTodayDateValue() {
     const today = new Date()
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -31,7 +33,6 @@ function ChancellorDashboard() {
     const [date, setDate] = useState('')
     const [program, setProgram] = useState('')
     const [week, setWeek] = useState('all')
-    const [programs, setPrograms] = useState([])
     const [summary, setSummary] = useState({
         completed: 0,
         incomplete: 0,
@@ -47,10 +48,9 @@ function ChancellorDashboard() {
     const weekRef = useRef(null)
     const query = useMemo(() => {
         const params = new URLSearchParams({ date: date || getTodayDateValue() })
-        if (program) params.set('program', program)
         if (week !== 'all') params.set('week', week)
         return params.toString()
-    }, [date, program, week])
+    }, [date, week])
     const selectedDate = date ? fromDateValue(date) : null
 
     useEffect(() => {
@@ -61,7 +61,6 @@ function ChancellorDashboard() {
 
             try {
                 const data = await request(`/dashboard?${query}`, { signal: controller.signal })
-                setPrograms(Array.isArray(data.programs) ? data.programs : [])
                 setSummary(data.summary || {
                     completed: 0,
                     incomplete: 0,
@@ -186,7 +185,7 @@ function ChancellorDashboard() {
                                         All Programs
                                     </button>
                                 </li>
-                                {programs.map((code) => (
+                                {PROGRAM_OPTIONS.map((code) => (
                                     <li key={code}>
                                         <button
                                             type="button"
