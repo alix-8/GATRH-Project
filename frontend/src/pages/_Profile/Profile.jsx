@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_BASE_URL } from '../../api/request'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Header from '../../components/Header/Header'
 import UserAvatar from '../../components/UserAvatar'
 import ShowPasswordIcon from '../../assets/show-password-icon.svg'
 import './Profile.css'
-
-const API_URL = 'http://127.0.0.1:8000/api'
 
 function formatRole(role = '') {
     return role.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase())
@@ -52,7 +51,7 @@ function Profile() {
             return
         }
 
-        fetch(`${API_URL}/me`, {
+        fetch(`${API_BASE_URL}/me`, {
             headers: {
                 Accept: 'application/json',
                 Authorization: `Bearer ${token}`,
@@ -75,7 +74,7 @@ function Profile() {
 
         setSavingContact(true)
 
-        fetch(`${API_URL}/profile/contact`, {
+        fetch(`${API_BASE_URL}/profile/contact`, {
             method: 'PATCH',
             headers: {
                 Accept: 'application/json',
@@ -111,7 +110,7 @@ function Profile() {
     const handlePasswordSubmit = () => {
         const token = localStorage.getItem('auth_token')
 
-        fetch(`${API_URL}/change-password`, {
+        fetch(`${API_BASE_URL}/change-password`, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',

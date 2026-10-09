@@ -9,15 +9,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement(<<<'SQL'
-            DELETE duplicate_students
-            FROM students AS duplicate_students
-            INNER JOIN students AS existing_students
-                ON duplicate_students.name = existing_students.name
-                AND duplicate_students.program = existing_students.program
-                AND duplicate_students.year_level = existing_students.year_level
-                AND duplicate_students.id > existing_students.id
-        SQL);
+        $duplicateStudents = DB::table('students as duplicate_students')
+            ->select('duplicate_students.id as id')
+            ->whereExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('students as existing_students')
+                    ->whereColumn('duplicate_students.name', 'existing_students.name')
+                    ->whereColumn('duplicate_students.program', 'existing_students.program')
+                    ->whereColumn('duplicate_students.year_level', 'existing_students.year_level')
+                    ->whereColumn('duplicate_students.id', '>', 'existing_students.id');
+            });
+
+        $duplicateStudents->chunkById(500, function ($students): void {
+            DB::table('students')->whereIn('id', $students->pluck('id'))->delete();
+        }, 'duplicate_students.id', 'id');
 
         Schema::table('students', function (Blueprint $table) {
             $table->unique(

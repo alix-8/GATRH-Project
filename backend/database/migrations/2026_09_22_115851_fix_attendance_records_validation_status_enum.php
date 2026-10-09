@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE attendance_records MODIFY validation_status ENUM('unvalidated','validated','rejected') NOT NULL DEFAULT 'unvalidated'");
+        Schema::table('attendance_records', function (Blueprint $table): void {
+            $table->enum('validation_status', ['unvalidated', 'validated', 'rejected'])
+                ->default('unvalidated')
+                ->change();
+        });
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE attendance_records MODIFY validation_status ENUM('unvalidated','validated') NOT NULL DEFAULT 'unvalidated'");
+        Schema::table('attendance_records', function (Blueprint $table): void {
+            $table->enum('validation_status', ['unvalidated', 'validated'])
+                ->default('unvalidated')
+                ->change();
+        });
     }
 };

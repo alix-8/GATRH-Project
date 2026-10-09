@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
+import { request } from '../../../api/request'
 
 //Reusables
 import Sidebar from '../../../components/Sidebar/Sidebar'
@@ -70,27 +71,6 @@ function Import({ onGoToAttendance = () => {} }) {
     const updateField = event => {
         const { name, value } = event.target
         setForm(current => ({ ...current, [name]: value }))
-    }
-
-    const request = async (url, options = {}) => {
-        const token = localStorage.getItem('auth_token')
-        const response = await fetch(`http://127.0.0.1:8000/api${url}`, {
-            ...options,
-            headers: {
-                Accept: 'application/json',
-                ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                ...options.headers,
-            },
-        })
-
-        const data = await response.json().catch(() => ({}))
-        if (!response.ok) {
-            const error = new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'The request failed.')
-            error.details = data
-            throw error
-        }
-        return data
     }
 
     const openGenerateModal = () => {
