@@ -67,6 +67,7 @@ function Import({ onGoToAttendance = () => {} }) {
     const [parseErrors, setParseErrors] = useState(null)
     const [previewText, setPreviewText] = useState('')
     const [previewCount, setPreviewCount] = useState(0)
+    const [templateError, setTemplateError] = useState('')
 
     const updateField = event => {
         const { name, value } = event.target
@@ -83,6 +84,7 @@ function Import({ onGoToAttendance = () => {} }) {
         setParseErrors(null)
         setPreviewText('')
         setPreviewCount(0)
+        setTemplateError('')
         setModal('generate')
     }
 
@@ -101,7 +103,14 @@ function Import({ onGoToAttendance = () => {} }) {
             const data = await request(`/attendance/generate-template?${query}`)
             setPreviewText(data.template)
             setPreviewCount(data.count)
+            setTemplateError('')
         } catch (error) {
+            if (error.details?.template === null && /no active students/i.test(error.details?.message || error.message)) {
+                setPreviewText('')
+                setPreviewCount(0)
+                setTemplateError('There are no active students assigned to your program and year level. Ask an administrator to activate or add students, then try again.')
+                return
+            }
             setModalMessage(error.message)
             setParseErrors(null)
             setModal('error')
@@ -329,10 +338,12 @@ function Import({ onGoToAttendance = () => {} }) {
                     updateField={updateField}
                     previewText={previewText}
                     previewCount={previewCount}
+                    templateError={templateError}
                     setModal={setModal}
                     resetPreview={() => {
                         setPreviewText('')
                         setPreviewCount(0)
+                        setTemplateError('')
                     }}
                     isGenerating={isGenerating}
                     generateTemplate={generateTemplate}

@@ -114,7 +114,7 @@ function ErrorItems({ type, items }) {
 
 function ErrorModal({ errorMessage, errorDetails, onClose }) {
     const [expandedError, setExpandedError] = useState(null)
-    const errorItems = getErrorItems(errorDetails)
+    const errorItems = getErrorItems(errorDetails || {})
 
     return (
         <div className="import-modal-overlay">
