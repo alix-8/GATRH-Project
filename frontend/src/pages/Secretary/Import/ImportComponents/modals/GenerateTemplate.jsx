@@ -6,6 +6,7 @@ function GenerateTemplate({
     updateField,
     previewText,
     previewCount,
+    templateError,
     setModal,
     resetPreview,
     isGenerating,
@@ -50,10 +51,19 @@ function GenerateTemplate({
                 </div>
 
                 <div className="import-modal-preview">
-                    <pre>{previewText}</pre>
+                    {templateError ? (
+                        <div className="import-template-empty-state" role="status">
+                            <strong>No active students found</strong>
+                            <p>{templateError}</p>
+                        </div>
+                    ) : (
+                        <pre>{previewText}</pre>
+                    )}
                 </div>
 
-                <p className="import-modal-count">{previewCount} student names found for this program and year level.</p>
+                <p className="import-modal-count">
+                    {templateError ? 'The format will be available after active students are added.' : `${previewCount} student names found for this program and year level.`}
+                </p>
 
                 <div className="import-modal-buttons">
                     <button className="import-clear-button" type="button" onClick={() => setModal(null)}>
