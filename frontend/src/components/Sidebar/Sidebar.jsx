@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { API_BASE_URL } from '../../api/request'
 import LVCCLogo from '../../assets/lvcc-logo.webp'
 import DashboardIcon from '../../assets/dashboard-icon.svg'
 import StudentsIcon from '../../assets/students-icon.svg'
@@ -63,7 +64,7 @@ function Sidebar() {
         navigate('/', { replace: true })
 
         if (token) {
-            fetch('http://127.0.0.1:8000/api/logout', {
+            fetch(`${API_BASE_URL}/logout`, {
                 method: 'POST',
                 headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
             }).catch(() => {

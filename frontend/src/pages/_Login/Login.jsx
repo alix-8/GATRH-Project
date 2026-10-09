@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { API_BASE_URL } from '../../api/request'
 import LVCCLogo from '../../assets/lvcc-logo.webp'
 import Illustration from '../../assets/login-illustration.webp'
 import ShowPasswordIcon from '../../assets/show-password-icon.svg'
@@ -39,7 +40,7 @@ function Login() {
         setLoading(true)
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/login', {
+            const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -109,7 +110,7 @@ function Login() {
         }
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/forgot-password', {
+            const response = await fetch(`${API_BASE_URL}/forgot-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

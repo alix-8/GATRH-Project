@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_BASE_URL } from '../../../api/request'
 import Sidebar from '../../../components/Sidebar/Sidebar'
 import Header from '../../../components/Header/Header'
 
@@ -92,7 +93,7 @@ function Dashboard() {
             attendance_period: attendancePeriod,
         })
 
-        fetch(`http://127.0.0.1:8000/api/dashboard?${params.toString()}`, {
+        fetch(`${API_BASE_URL}/dashboard?${params.toString()}`, {
             headers: {
                 Accept: 'application/json',
                 Authorization: `Bearer ${token}`,

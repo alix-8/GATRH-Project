@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { request } from '../../../../api/request'
+import { API_BASE_URL, request } from '../../../../api/request'
 import SearchIcon from '../../../../assets/search-icon.svg'
 import GatheringIcon from '../../../../components/Icons/GatheringFilterIcon.svg'
 import YearIcon from '../../../../components/Icons/FilterYearIcon.svg'
@@ -83,7 +83,7 @@ export default function RecordsTable() {
                 year_level: String(record.year_level),
                 batch_key: record.batch_key,
             })
-            const response = await fetch(`http://127.0.0.1:8000/api/program-head/records/export?${params}`, {
+            const response = await fetch(`${API_BASE_URL}/program-head/records/export?${params}`, {
                 headers: {
                     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),

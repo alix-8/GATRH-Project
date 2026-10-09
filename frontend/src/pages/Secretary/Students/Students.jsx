@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { API_BASE_URL } from '../../../api/request'
 import Sidebar from '../../../components/Sidebar/Sidebar'
 import Header from '../../../components/Header/Header'
 import SortbyIcon from '../../../assets/sort-by-icon.svg'
@@ -46,7 +47,7 @@ function Students() {
             return
         }
 
-        fetch('http://127.0.0.1:8000/api/students/attendance-snapshot', {
+        fetch(`${API_BASE_URL}/students/attendance-snapshot`, {
             headers: {
                 Accept: 'application/json',
                 Authorization: `Bearer ${token}`,
@@ -136,7 +137,7 @@ function Students() {
         setOverviewStatus('')
         setOverviewOpenFilter(null)
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/students/${student.id}/overview`, {
+            const response = await fetch(`${API_BASE_URL}/students/${student.id}/overview`, {
                 headers: { Accept: 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
             })
             if (!response.ok) throw new Error('Unable to load this student’s overview.')
