@@ -293,3 +293,82 @@
     margin-top: 8px;
     font-size: 11px;
 }
+
+.chancellor-overall-progress {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 1.5fr);
+    align-items: end;
+    width: 59%;
+    margin: 0 28px;
+    padding: 16px 18px;
+    border: 1px solid #c3e4ff;
+    border-radius: 9px;
+    background: #f7fafc;
+}
+
+.chancellor-overall-progress-heading {
+    grid-column: 1 / -1;
+}
+
+.chancellor-overall-progress-heading h2 {
+    color: #172b4d;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    padding: 2px;
+    margin: 2px;
+}
+
+.chancellor-overall-progress-heading p {
+    display: flex;
+    font-size: 11px;
+    margin-left: 4px;
+    margin-bottom: 8px;
+}
+
+.chancellor-overall-progress-value {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    color: #172b4d;
+}
+
+.chancellor-overall-progress-value strong {
+    font-size: 40px;
+    line-height: 1;
+}
+
+.chancellor-overall-progress-value span {
+    font-size: 11px;
+    margin-left: 4px;
+}
+
+.chancellor-overall-progress-track {
+    overflow: hidden;
+    height: 20px;
+    border-radius: 50px;
+    background: #e2f1fa;
+    margin-bottom: 22px;
+}
+
+.chancellor-overall-progress-track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #159df2;
+    transition: width .2s ease;
+}
+
+@media (max-width: 640px) {
+    .chancellor-overall-progress {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+        margin-right: 18px;
+        margin-left: 18px;
+    }
+
+    .chancellor-overall-progress-heading {
+        grid-column: auto;
+    }
+}

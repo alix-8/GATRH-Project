@@ -39,6 +39,10 @@ function ChancellorDashboard() {
         no_report: 0,
         total_programs: 0,
     })
+    const [overallProgress, setOverallProgress] = useState({
+        percentage: 0,
+        tally: '0 of 0 programs completed',
+    })
     const [loadError, setLoadError] = useState('')
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [isProgramOpen, setIsProgramOpen] = useState(false)
@@ -66,6 +70,10 @@ function ChancellorDashboard() {
                     incomplete: 0,
                     no_report: 0,
                     total_programs: 0,
+                })
+                setOverallProgress(data.overall_progress || {
+                    percentage: 0,
+                    tally: '0 of 0 programs completed',
                 })
             } catch (error) {
                 if (error.name !== 'AbortError') {
@@ -105,6 +113,8 @@ function ChancellorDashboard() {
             document.removeEventListener('keydown', closeOnEscape)
         }
     }, [])
+
+    const progressPercentage = Math.min(100, Math.max(0, Number(overallProgress.percentage) || 0))
 
     return (
         <div className="chancellor-dashboard">
@@ -290,6 +300,27 @@ function ChancellorDashboard() {
                         </div>
                     </article>
                    
+                </section>
+                <section className="chancellor-overall-progress" aria-labelledby="chancellor-overall-progress-title">
+                    <div className="chancellor-overall-progress-heading">
+                        <h2 id="chancellor-overall-progress-title">Overall Reporting Progress</h2>
+                        <p>Total attendance reports from all programs.</p>
+                    </div>
+                    <div className="chancellor-overall-progress-value">
+                        <strong>{progressPercentage}%</strong>
+                        <span>{overallProgress.tally}</span>
+                    </div>
+                    <div
+                        className="chancellor-overall-progress-track"
+                        role="progressbar"
+                        aria-label="Overall reporting progress"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={progressPercentage}
+                        aria-valuetext={`${progressPercentage}% complete; ${overallProgress.tally}`}
+                    >
+                        <span style={{ width: `${progressPercentage}%` }} />
+                    </div>
                 </section>
                 {loadError && <p className="chancellor-dashboard-error" role="alert">{loadError}</p>}
             </main>
