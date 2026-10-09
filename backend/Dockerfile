@@ -1,7 +1,7 @@
 FROM php:8.4-fpm-bookworm
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends nginx supervisor libicu-dev libzip-dev unzip ca-certificates \
+    && apt-get install -y --no-install-recommends nginx supervisor libicu-dev libzip-dev libonig-dev unzip ca-certificates \
     && docker-php-ext-install bcmath intl mbstring opcache pdo_mysql zip \
     && rm -rf /var/lib/apt/lists/*
 
