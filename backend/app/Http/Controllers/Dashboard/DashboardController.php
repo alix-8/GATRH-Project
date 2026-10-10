@@ -34,6 +34,7 @@ class DashboardController extends Controller
             'date' => ['nullable', 'date'],
             'program_id' => ['nullable', 'exists:programs,id'],
             'program' => ['nullable', 'string', 'max:50', 'exists:programs,code'],
+            'year_level' => ['nullable', 'integer', 'between:1,4'],
             'week' => ['nullable', 'string'],
             'month' => ['nullable', 'integer', 'between:1,12'],
             'year' => ['nullable', 'integer', 'between:2000,2100'],
@@ -44,6 +45,7 @@ class DashboardController extends Controller
             'date' => $validated['date'] ?? now()->toDateString(),
             'program_id' => $validated['program_id'] ?? null,
             'program' => $validated['program'] ?? null,
+            'year_level' => $validated['year_level'] ?? null,
             'week' => $validated['week'] ?? 'all',
             'month' => $validated['month'] ?? now()->month,
             'year' => $validated['year'] ?? now()->year,
@@ -65,3 +67,4 @@ class DashboardController extends Controller
         return response()->json($data);
     }
 }
+

@@ -5,9 +5,9 @@ namespace App\Services;
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
 use App\Models\Escalation;
+use App\Models\Program;
 use App\Models\Student;
 use App\Models\Reminder;
-use App\Models\Program;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -142,7 +142,6 @@ class DashboardService
 
         return [
             'total_students' => Student::query()
-                ->active()
                 ->accessibleTo($user)
                 ->count(),
 
@@ -365,7 +364,7 @@ class DashboardService
 
     public function getRecentRecords($user, ?array $dateRange = null): array
     {
-        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
+        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
 
         // 1. Unsubmitted Drafts
         $drafts = AttendanceDraft::query()
@@ -468,7 +467,7 @@ class DashboardService
         $month = Carbon::create($year, $monthNumber, 1)->startOfDay();
         $monthStart = $month->toDateString();
         $monthEnd = $month->copy()->endOfMonth()->toDateString();
-        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
+        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
 
         $records = AttendanceRecord::query()
             ->select('gathering_type', DB::raw("COUNT(DISTINCT CASE WHEN status = 'present' THEN student_id END) as present_count"))
@@ -609,10 +608,12 @@ class DashboardService
             'end' => $selectedDate->copy()->endOfWeek(),
         ];
         // Use the program catalog so seeded programs remain available without enrolled students.
-        $allPrograms = Program::query()
+         $allPrograms = Program::query()
             ->orderBy('code')
             ->pluck('code');
+         $programNames = Program::query()->pluck('name', 'code');
         $selectedProgram = $filters['program'] ?? null;
+        $selectedYearLevel = $filters['year_level'] ?? null;
         $programs = $allPrograms;
 
         if ($selectedProgram !== null) {
@@ -623,7 +624,7 @@ class DashboardService
 
         // Records for the currently selected reporting period.
         $records = AttendanceRecord::query()
-            ->with('student:id,program')
+            ->with('student:id,program,year_level')
             ->whereBetween('day', [
                 $dateRange['start'],
                 $dateRange['end'],
@@ -639,7 +640,7 @@ class DashboardService
             ->endOfWeek();
 
         $fourWeekRecords = AttendanceRecord::query()
-            ->with('student:id,program')
+            ->with('student:id,program,year_level')
             ->whereBetween('day', [
                 $weekFourStart,
                 $weekFourEnd,
@@ -688,7 +689,8 @@ class DashboardService
                 $fourWeekRecords,
                 $selectedDate,
                 $getProgramStatus,
-                $getCompletionPercentage
+                $getCompletionPercentage,
+                $programNames
             ) {
                 $weeklyStatuses = collect(range(3, 0))
                     ->map(function ($weekOffset) use (
@@ -717,6 +719,7 @@ class DashboardService
 
                 return [
                     'code' => $programCode,
+                    'name' => $programNames[$programCode] ?? $programCode,
                     'status' => $getProgramStatus($programCode, $records),
                     'completion' => $getCompletionPercentage(
                         $programCode,
@@ -728,6 +731,65 @@ class DashboardService
                 ];
             }
         )->values();
+
+        $programYearReporting = $programReporting;
+
+        if ($selectedYearLevel !== null) {
+            $yearPrograms = (int) $selectedYearLevel > 2
+                ? $programs->reject(fn ($programCode) => $programCode === 'ACT')->values()
+                : $programs;
+            $yearRecords = $records->filter(
+                fn ($record) => (string) $record->student?->year_level === (string) $selectedYearLevel
+            );
+            $fourWeekYearRecords = $fourWeekRecords->filter(
+                fn ($record) => (string) $record->student?->year_level === (string) $selectedYearLevel
+            );
+
+            $programYearReporting = $yearPrograms->map(
+                function ($programCode) use (
+                    $yearRecords,
+                    $fourWeekYearRecords,
+                    $selectedDate,
+                    $selectedYearLevel,
+                    $getProgramStatus,
+                    $getCompletionPercentage,
+                    $programNames
+                ) {
+                    $weeklyStatuses = collect(range(3, 0))
+                        ->map(function ($weekOffset) use (
+                            $programCode,
+                            $fourWeekYearRecords,
+                            $selectedDate,
+                            $getProgramStatus
+                        ) {
+                            $weekStart = $selectedDate->copy()
+                                ->startOfWeek()
+                                ->subWeeks($weekOffset);
+
+                            $weekEnd = $weekStart->copy()->endOfWeek();
+                            $recordsForWeek = $fourWeekYearRecords->filter(
+                                fn ($record) => $record->day->betweenIncluded(
+                                    $weekStart,
+                                    $weekEnd
+                                )
+                            );
+
+                            return $getProgramStatus($programCode, $recordsForWeek);
+                        })
+                        ->values()
+                        ->toArray();
+
+                    return [
+                        'code' => $programCode,
+                        'name' => $programNames[$programCode] ?? $programCode,
+                        'year_level' => (int) $selectedYearLevel,
+                        'status' => $getProgramStatus($programCode, $yearRecords),
+                        'completion' => $getCompletionPercentage($programCode, $yearRecords),
+                        'weekly_statuses' => $weeklyStatuses,
+                    ];
+                }
+            )->values();
+        }
 
         $completed = $programReporting
             ->where('status', 'completed')
@@ -753,8 +815,6 @@ class DashboardService
                 $selectedDate,
                 $fourWeekRecords,
                 $programs,
-                $selectedProgram,
-                $allPrograms,
                 $getProgramStatus
             ) {
                 $weekStart = $selectedDate->copy()
@@ -787,11 +847,6 @@ class DashboardService
                     'incomplete' => $statuses
                         ->filter(fn ($status) => $status === 'incomplete')
                         ->count(),
-                    'filters' => [
-                        'date' => $selectedDate->toDateString(),
-                        'program' => $selectedProgram,
-                    ],
-                    'programs' => $allPrograms->values(),
                     'no_report' => $statuses
                         ->filter(fn ($status) => $status === 'no_report')
                         ->count(),
@@ -801,6 +856,7 @@ class DashboardService
 
         return [
             'role' => $user->role,
+            'programs' => $allPrograms->values(),
 
             // Four cards at the top
             'summary' => [
@@ -823,6 +879,7 @@ class DashboardService
             // Programs Needing Attention table
             // plus the Program Completion Overview list
             'program_reporting' => $programReporting,
+            'program_year_reporting' => $programYearReporting,
 
             // Progress by Week chart
             'weekly_progress' => $weeklyProgress,
