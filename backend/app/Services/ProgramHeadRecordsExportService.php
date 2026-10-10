@@ -3,8 +3,12 @@
 namespace App\Services;
 
 use App\Models\AttendanceRecord;
+use App\Models\Student;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProgramHeadRecordsExportService
 {
@@ -49,6 +53,31 @@ class ProgramHeadRecordsExportService
             ->orderByDesc('day')
             ->orderBy('gathering_type')
             ->orderBy('student_id');
+    }
+
+    /** Load the program roster and its approved attendance for one export period. */
+    public function periodStudents(
+        User $user,
+        string $program,
+        int $yearLevel,
+        CarbonImmutable $start,
+        CarbonImmutable $end
+    ): Collection {
+        return Student::query()
+            ->accessibleTo($user)
+            ->where('program', $program)
+            ->where('year_level', $yearLevel)
+            ->with('escalation')
+            ->with(['attendanceRecords' => function (HasMany $records) use ($start, $end) {
+                $records
+                    ->whereIn('validation_status', ['validated', 'approved'])
+                    ->whereIn('gathering_type', ['ws', 'tg', 'pm'])
+                    ->whereBetween('day', [$start->toDateString(), $end->toDateString()])
+                    ->orderBy('day')
+                    ->orderBy('gathering_type');
+            }])
+            ->orderBy('name')
+            ->get(['id', 'name', 'program', 'year_level']);
     }
 
     private function applyBatchFilter(Builder $query, string $batchKey): void

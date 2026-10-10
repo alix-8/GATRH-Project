@@ -5,11 +5,14 @@ namespace App\Http\Controllers\ProgramHead;
 use App\Http\Controllers\Controller;
 
 use App\Models\AttendanceRecord;
+use App\Models\Program;
 use App\Services\ProgramHeadAttendanceWorkbookService;
 use App\Services\ProgramHeadRecordsExportService;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProgramHeadSubmissionController extends Controller
 {
@@ -192,14 +195,54 @@ class ProgramHeadSubmissionController extends Controller
             'year_level' => ['nullable', 'integer', 'between:1,4'],
             'search' => ['nullable', 'string', 'max:100'],
             'batch_key' => ['nullable', 'string', 'max:100'],
+            'period' => ['nullable', 'in:session,week,month'],
+            'program' => ['required_if:period,week,month', 'nullable', 'string', 'max:100'],
         ]);
-        $records = $exportService->query($request->user(), $filters)->get();
-        $workbookPath = $workbookService->create($records);
+
+        $period = $filters['period'] ?? 'session';
+
+        if ($period !== 'session') {
+            $periodFilters = $request->validate([
+                'date' => ['required', 'date'],
+                'year_level' => ['required', 'integer', 'between:1,4'],
+            ]);
+            $selectedDate = CarbonImmutable::parse($periodFilters['date']);
+            $program = strtoupper(trim($filters['program']));
+            $yearLevel = (int) $periodFilters['year_level'];
+            [$start, $end] = $workbookService->periodBounds($selectedDate, $period);
+            $students = $exportService->periodStudents(
+                $request->user(),
+                $program,
+                $yearLevel,
+                $start,
+                $end
+            );
+            $programName = Program::query()->where('code', $program)->value('name');
+            $workbookPath = $workbookService->createPeriod(
+                $students,
+                $selectedDate,
+                $period,
+                $program,
+                $yearLevel,
+                $programName
+            );
+            $filename = sprintf(
+                '%s-attendance-%s-%s-to-%s.xlsx',
+                $period === 'week' ? 'weekly' : 'monthly',
+                Str::slug($program),
+                $start->toDateString(),
+                $end->toDateString()
+            );
+        } else {
+            $records = $exportService->query($request->user(), $filters)->get();
+            $workbookPath = $workbookService->create($records);
+            $filename = 'approved-attendance-records.' . $workbookService->fileExtension();
+        }
 
         return response()
             ->download(
                 $workbookPath,
-                'approved-attendance-records.' . $workbookService->fileExtension(),
+                $filename,
                 [
                     'Content-Type' => $workbookService->mimeType(),
                     'Access-Control-Expose-Headers' => 'Content-Disposition',
