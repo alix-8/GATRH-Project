@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Login from './pages/_Login/Login'
+import { ForgotPassword, ResetPassword } from './pages/_Login/PasswordReset'
 import Dashboard from './pages/Secretary/Dashboard/SecDashboard'
 import Students from './pages/Secretary/Students/Students'
 import Import from './pages/Secretary/Import/Import'
@@ -60,6 +61,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={session ? <Navigate to={defaultLanding} replace /> : <Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route path="/dashboard" element={<RoleRoute roles={['secretary']}><Dashboard /></RoleRoute>} />
       <Route path="/students" element={<RoleRoute roles={['secretary']}><Students /></RoleRoute>} />
@@ -100,7 +103,9 @@ function App() {
     return () => window.removeEventListener('resize', updateScreenSize)
   }, [])
 
-  if (isCompactScreen) {
+  const isPasswordFlow = ['/forgot-password', '/reset-password'].includes(window.location.pathname)
+
+  if (isCompactScreen && !isPasswordFlow) {
     return (
       <main className="screen-size-notice" role="status">
         <div>

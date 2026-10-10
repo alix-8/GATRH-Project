@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRules;
 
 class AuthController extends Controller
 {
@@ -89,17 +90,17 @@ class AuthController extends Controller
             'email' => 'required|email',
         ]);
 
-        $status = PasswordBroker::sendResetLink(
-            $request->only('email')
-        );
+        if (!User::where('email', $request->input('email'))->exists()) {
+            return response()->json([
+                'message' => 'We couldn’t find an account with that email address. Check it or try another email.',
+            ], 404);
+        }
 
-        return $status === PasswordBroker::RESET_LINK_SENT
-            ? response()->json([
-                'message' => 'Password reset link sent to your email.'
-            ], 200)
-            : response()->json([
-                'message' => __($status)
-            ], 400);
+        PasswordBroker::sendResetLink($request->only('email'));
+
+        return response()->json([
+            'message' => 'A password reset link has been sent to your email.',
+        ]);
     }
 
     /**
@@ -110,7 +111,12 @@ class AuthController extends Controller
         $request->validate([
             'token' => 'required|string',
             'email' => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                PasswordRules::min(8)->mixedCase()->numbers()->symbols(),
+            ],
         ]);
 
         $status = PasswordBroker::reset(
