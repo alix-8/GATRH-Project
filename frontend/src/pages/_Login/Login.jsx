@@ -12,12 +12,12 @@ import DropDownIcon from '../../assets/drop-down-icon.svg'
 import './Login.css'
 
 
-function Login() {
+function Login({ initialEmail = '' }) {
     const navigate = useNavigate()
     const location = useLocation()
 
     const [activeNav, setActiveNav] = useState('home')
-    const [email, setEmail] = useState('')
+    const [email, setEmail] = useState(() => initialEmail || location.state?.email || '')
     const [password, setPassword] = useState('')
     const [remember, setRemember] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
@@ -103,34 +103,8 @@ function Login() {
         }
     }
 
-    const handleForgotPassword = async () => {
-        if (!email.trim()) {
-            setError('Please enter your email address first.')
-            return
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/forgot-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Unable to send password reset link.')
-            }
-
-            setError(data.message || 'Password reset link sent to your email.')
-            setErrorType('success')
-        } catch (error) {
-            setError(error.message)
-            setErrorType('error')
-        }
+    const handleForgotPassword = () => {
+        navigate('/forgot-password', { state: { email } })
     }
 
     return (
