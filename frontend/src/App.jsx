@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Login from './pages/_Login/Login'
 import { ForgotPassword, ResetPassword } from './pages/_Login/PasswordReset'
@@ -94,8 +94,9 @@ function AppRoutes() {
   )
 }
 
-function App() {
+function ResponsiveApp() {
   const [isCompactScreen, setIsCompactScreen] = useState(() => window.innerWidth <= 900)
+  const location = useLocation()
 
   useEffect(() => {
     const updateScreenSize = () => setIsCompactScreen(window.innerWidth <= 900)
@@ -103,21 +104,29 @@ function App() {
     return () => window.removeEventListener('resize', updateScreenSize)
   }, [])
 
-  const isPasswordFlow = ['/forgot-password', '/reset-password'].includes(window.location.pathname)
+  const isPasswordFlow = ['/forgot-password', '/reset-password'].includes(location.pathname)
+  const showScreenSizeNotice = isCompactScreen && !isPasswordFlow
 
-  if (isCompactScreen && !isPasswordFlow) {
-    return (
-      <main className="screen-size-notice" role="status">
-        <div>
-          <h1>Please return to full screen</h1>
-          <h2>The website is not yet available on small screens</h2>
-          <p>Widen your browser window to use the app.</p>
-        </div>
-      </main>
-    )
-  }
+  return (
+    <>
+      <div style={showScreenSizeNotice ? { display: 'none' } : undefined}>
+        <AppRoutes />
+      </div>
+      {showScreenSizeNotice && (
+        <main className="screen-size-notice" role="status">
+          <div>
+            <h1>Please return to full screen</h1>
+            <h2>The website is not yet available on small screens</h2>
+            <p>Widen your browser window to use the app.</p>
+          </div>
+        </main>
+      )}
+    </>
+  )
+}
 
-  return <BrowserRouter><AppRoutes /></BrowserRouter>
+function App() {
+  return <BrowserRouter><ResponsiveApp /></BrowserRouter>
 }
 
 export default App
