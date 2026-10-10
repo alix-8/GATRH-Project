@@ -11,9 +11,32 @@ import CompletedProgramsIcon from '../../../assets/completed-programs-icon.svg'
 import InProgressProgramsIcon from '../../../assets/in-progress-programs-icon.svg'
 import NoReportProgramsIcon from '../../../assets/no-report-programs-icon.svg'
 import TotalProgramsIcon from '../../../assets/total-programs-icon.svg'
+import CompletedReportsIcon from '../../../assets/completed-reports-icon.svg'
+import IncompleteReportsIcon from '../../../assets/incomplete-reports-icon.svg'
+import NoReportsIcon from '../../../assets/no-reports-icon.svg'
 import './ChancellorDashboard.css'
 
 const PROGRAM_OPTIONS = ['ACT', 'BAB', 'BSA', 'BSAIS', 'BSIS', 'BSSW']
+const YEAR_LEVEL_OPTIONS = ['1', '2', '3', '4']
+const YEAR_LEVEL_OPTION_LABELS = {
+    1: '1st Year',
+    2: '2nd Year',
+    3: '3rd Year',
+    4: '4th Year',
+}
+const PROGRAM_DISPLAY_NAMES = {
+    ACT: 'ACT',
+    BAB: 'BA Broadcasting',
+    BSA: 'BS Accounting',
+    BSAIS: 'BS Accounting Information Systems',
+    BSIS: 'BS Information Systems',
+    BSSW: 'BS Social Work',
+}
+const REPORT_STATUS_LABELS = {
+    completed: 'Completed',
+    incomplete: 'Incomplete',
+    no_report: 'No Report',
+}
 
 function getTodayDateValue() {
     const today = new Date()
@@ -33,24 +56,35 @@ function ChancellorDashboard() {
     const [date, setDate] = useState('')
     const [program, setProgram] = useState('')
     const [week, setWeek] = useState('all')
+    const [yearLevel, setYearLevel] = useState('1')
+    const [programYearReporting, setProgramYearReporting] = useState([])
     const [summary, setSummary] = useState({
         completed: 0,
         incomplete: 0,
         no_report: 0,
         total_programs: 0,
     })
+    const [overallProgress, setOverallProgress] = useState({
+        percentage: 0,
+        tally: '0 of 0 programs completed',
+    })
     const [loadError, setLoadError] = useState('')
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [isProgramOpen, setIsProgramOpen] = useState(false)
     const [isWeekOpen, setIsWeekOpen] = useState(false)
+    const [isYearOpen, setIsYearOpen] = useState(false)
     const calendarRef = useRef(null)
     const programRef = useRef(null)
     const weekRef = useRef(null)
+    const yearRef = useRef(null)
     const query = useMemo(() => {
-        const params = new URLSearchParams({ date: date || getTodayDateValue() })
+        const params = new URLSearchParams({
+            date: date || getTodayDateValue(),
+            year_level: yearLevel,
+        })
         if (week !== 'all') params.set('week', week)
         return params.toString()
-    }, [date, week])
+    }, [date, week, yearLevel])
     const selectedDate = date ? fromDateValue(date) : null
 
     useEffect(() => {
@@ -67,6 +101,11 @@ function ChancellorDashboard() {
                     no_report: 0,
                     total_programs: 0,
                 })
+                setOverallProgress(data.overall_progress || {
+                    percentage: 0,
+                    tally: '0 of 0 programs completed',
+                })
+                setProgramYearReporting(data.program_year_reporting || [])
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     setLoadError(error.message || 'Could not load dashboard filters.')
@@ -89,12 +128,16 @@ function ChancellorDashboard() {
             if (weekRef.current && !weekRef.current.contains(event.target)) {
                 setIsWeekOpen(false)
             }
+            if (yearRef.current && !yearRef.current.contains(event.target)) {
+                setIsYearOpen(false)
+            }
         }
         const closeOnEscape = (event) => {
             if (event.key === 'Escape') {
                 setIsCalendarOpen(false)
                 setIsProgramOpen(false)
                 setIsWeekOpen(false)
+                setIsYearOpen(false)
             }
         }
 
@@ -105,6 +148,8 @@ function ChancellorDashboard() {
             document.removeEventListener('keydown', closeOnEscape)
         }
     }, [])
+
+    const progressPercentage = Math.min(100, Math.max(0, Number(overallProgress.percentage) || 0))
 
     return (
         <div className="chancellor-dashboard">
@@ -290,6 +335,148 @@ function ChancellorDashboard() {
                         </div>
                     </article>
                    
+                </section>
+                <section className="chancellor-overall-progress" aria-labelledby="chancellor-overall-progress-title">
+                    <div className="chancellor-overall-progress-heading">
+                        <h2 id="chancellor-overall-progress-title">Overall Reporting Progress</h2>
+                        <p>Total attendance reports from all programs.</p>
+                    </div>
+                    <div className="chancellor-overall-progress-value">
+                        <strong>{progressPercentage}%</strong>
+                        <span>{overallProgress.tally}</span>
+                    </div>
+                    <div
+                        className="chancellor-overall-progress-track"
+                        role="progressbar"
+                        aria-label="Overall reporting progress"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={progressPercentage}
+                        aria-valuetext={`${progressPercentage}% complete; ${overallProgress.tally}`}
+                    >
+                        <span style={{ width: `${progressPercentage}%` }} />
+                    </div>
+                </section>
+                <section className="chancellor-programs-attention" aria-labelledby="chancellor-programs-attention-title">
+                    <div className="chancellor-programs-attention-header">
+                        <div>
+                            <h2 id="chancellor-programs-attention-title">Programs Needing Attention</h2>
+                            <p>Programs with incomplete or missing reports.</p>
+                        </div>
+                        <div className="chancellor-year-filter" ref={yearRef}>
+                            <span>Program year</span>
+                            <div className={`chancellor-year-dropdown ${isYearOpen ? 'is-open' : ''}`}>
+                                <button
+                                    type="button"
+                                    className="chancellor-year-trigger"
+                                    aria-haspopup="listbox"
+                                    aria-expanded={isYearOpen}
+                                    aria-label={`Program year: ${YEAR_LEVEL_OPTION_LABELS[yearLevel]}`}
+                                    onClick={() => setIsYearOpen((open) => !open)}
+                                >
+                                    <span>{YEAR_LEVEL_OPTION_LABELS[yearLevel]}</span>
+                                    <img
+                                        className={`chancellor-year-chevron ${isYearOpen ? 'open' : ''}`}
+                                        src={DropdownIcon}
+                                        alt=""
+                                    />
+                                </button>
+                                {isYearOpen && (
+                                    <ul className="chancellor-year-menu" role="listbox" aria-label="Program year">
+                                        {YEAR_LEVEL_OPTIONS.map((year) => (
+                                            <li key={year}>
+                                                <button
+                                                    type="button"
+                                                    role="option"
+                                                    aria-selected={yearLevel === year}
+                                                    className={`chancellor-year-option ${yearLevel === year ? 'selected' : ''}`}
+                                                    onClick={() => {
+                                                        setYearLevel(year)
+                                                        setIsYearOpen(false)
+                                                    }}
+                                                >
+                                                    {YEAR_LEVEL_OPTION_LABELS[year]}
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="chancellor-program-reporting-scroll">
+                        <table className="chancellor-program-reporting-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Program</th>
+                                    {[1, 2, 3, 4].map((weekNumber) => (
+                                        <th key={weekNumber} scope="col">Week {weekNumber}</th>
+                                    ))}
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {programYearReporting.map((report) => (
+                                    <tr key={report.code}>
+                                        <th scope="row">
+                                            <span>{PROGRAM_DISPLAY_NAMES[report.code] || report.name || report.code} {yearLevel}</span>
+                                        </th>
+                                        {(report.weekly_statuses || []).map((status, index) => (
+                                            <td key={`${report.code}-${index}`}>
+                                                <span
+                                                    className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`}
+                                                    role="img"
+                                                    aria-label={REPORT_STATUS_LABELS[status] || 'No Report'}
+                                                >
+                                                    <img
+                                                        src={status === 'completed'
+                                                            ? CompletedReportsIcon
+                                                            : status === 'incomplete'
+                                                                ? IncompleteReportsIcon
+                                                                : NoReportsIcon}
+                                                        alt=""
+                                                    />
+                                                </span>
+                                            </td>
+                                        ))}
+                                        <td>
+                                            <span className={`chancellor-report-status-label chancellor-report-status-label--${report.status}`}>
+                                                <span />
+                                                {REPORT_STATUS_LABELS[report.status] || 'No Report'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {programYearReporting.length === 0 && (
+                                    <tr>
+                                        <td className="chancellor-program-reporting-empty" colSpan="6">
+                                            No program reporting data is available.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="chancellor-program-reporting-footer">
+                        <div className="chancellor-program-reporting-legend" aria-label="Report status legend">
+                            {Object.entries(REPORT_STATUS_LABELS).map(([status, label]) => (
+                                <span key={status}>
+                                    <span className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`} aria-hidden="true">
+                                        <img
+                                            src={status === 'completed'
+                                                ? CompletedReportsIcon
+                                                : status === 'incomplete'
+                                                    ? IncompleteReportsIcon
+                                                    : NoReportsIcon}
+                                            alt=""
+                                        />
+                                    </span>
+                                    {label}
+                                </span>
+                            ))}
+                        </div>
+                        <span>Showing {programYearReporting.length} programs</span>
+                    </div>
                 </section>
                 {loadError && <p className="chancellor-dashboard-error" role="alert">{loadError}</p>}
             </main>
