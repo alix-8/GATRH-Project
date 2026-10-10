@@ -297,7 +297,7 @@
 .chancellor-overall-progress {
     box-sizing: border-box;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(180px, 1.5fr);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr);
     align-items: end;
     width: 59%;
     margin: 0 28px;
@@ -358,17 +358,4 @@
     border-radius: inherit;
     background: #159df2;
     transition: width .2s ease;
-}
-
-@media (max-width: 640px) {
-    .chancellor-overall-progress {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 12px;
-        margin-right: 18px;
-        margin-left: 18px;
-    }
-
-    .chancellor-overall-progress-heading {
-        grid-column: auto;
-    }
 }
