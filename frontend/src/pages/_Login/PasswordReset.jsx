@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE_URL } from '../../api/request'
 import Login from './Login'
 import './PasswordReset.css'
+
+const CODE_LIFETIME_SECONDS = 15 * 60
 
 function MailMark() {
     return <div className="password-mail-mark" aria-hidden="true">✉</div>
 }
 
-function PasswordDialog({ children, variant = '' }) {
+function PasswordDialog({ children, variant = '', email = '' }) {
     return (
         <>
-            <Login />
+            <Login initialEmail={email} />
             <div className="password-modal-overlay">
                 <section className={`password-modal ${variant}`} role="dialog" aria-modal="true">
                     {children}
@@ -25,20 +27,37 @@ function HelpFooter() {
     return <p className="password-help">Need help? <span>Contact your administrator</span></p>
 }
 
+function formatCountdown(seconds) {
+    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+const passwordRules = [
+    { label: 'At least 8 characters', test: (value) => value.length >= 8 },
+    { label: 'One uppercase and lowercase letter', test: (value) => /[A-Z]/.test(value) && /[a-z]/.test(value) },
+    { label: 'One number', test: (value) => /\d/.test(value) },
+    { label: 'One special character', test: (value) => /[^A-Za-z0-9]/.test(value) },
+]
+
 export function ForgotPassword() {
     const navigate = useNavigate()
     const location = useLocation()
-    const [email, setEmail] = useState(location.state?.email || '')
-    const [sent, setSent] = useState(false)
+    const [params] = useSearchParams()
+    const [email, setEmail] = useState(location.state?.email || params.get('email') || '')
+    const [stage, setStage] = useState('email')
     const [emailNotFound, setEmailNotFound] = useState(false)
-    const [expiresIn, setExpiresIn] = useState(15 * 60)
+    const [code, setCode] = useState('')
+    const [password, setPassword] = useState('')
+    const [confirmation, setConfirmation] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmation, setShowConfirmation] = useState(false)
+    const [expiresIn, setExpiresIn] = useState(CODE_LIFETIME_SECONDS)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
     const backToLogin = () => navigate('/', { replace: true })
 
     useEffect(() => {
-        if (!sent) return undefined
+        if (stage !== 'code' && stage !== 'password') return undefined
         const timer = window.setInterval(() => {
             setExpiresIn((remaining) => {
                 if (remaining <= 1) {
@@ -49,11 +68,9 @@ export function ForgotPassword() {
             })
         }, 1000)
         return () => window.clearInterval(timer)
-    }, [sent])
+    }, [stage])
 
-    const formattedCountdown = `${String(Math.floor(expiresIn / 60)).padStart(2, '0')}:${String(expiresIn % 60).padStart(2, '0')}`
-
-    const sendLink = async (event) => {
+    const sendCode = async (event) => {
         event.preventDefault()
         setError('')
         setLoading(true)
@@ -68,8 +85,10 @@ export function ForgotPassword() {
                 setEmailNotFound(true)
                 return
             }
-            if (!response.ok) throw new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'Could not send the reset link. Please try again.')
-            setSent(true)
+            if (!response.ok) throw new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'Could not send the reset code. Please try again.')
+            setCode('')
+            setExpiresIn(CODE_LIFETIME_SECONDS)
+            setStage('code')
         } catch (requestError) {
             setError(requestError instanceof TypeError ? 'Unable to connect to the server. Please try again.' : requestError.message)
         } finally {
@@ -77,85 +96,29 @@ export function ForgotPassword() {
         }
     }
 
-    if (sent) {
-        return (
-            <PasswordDialog variant="password-modal-success">
-                <MailMark />
-                <h2>Check your Email</h2>
-                <p className="password-sent-to">We sent a verification link to<br /><strong>{email}</strong></p>
-                <p className="password-success-copy">Click the link in your email to continue resetting your password.</p>
-                {expiresIn > 0 ? (
-                    <p className="password-countdown">Link expires in <strong>{formattedCountdown}</strong></p>
-                ) : (
-                    <div className="password-expired-message">
-                        <p>This reset link has expired.</p>
-                        <button type="button" onClick={() => { setExpiresIn(15 * 60); setSent(false) }}>Request a new link</button>
-                    </div>
-                )}
-                <div className="password-tip"><span aria-hidden="true">●</span><div><strong>Didn’t receive the email?</strong><ul><li>Check your spam or junk folder.</li><li>Make sure you entered the correct email address.</li></ul></div></div>
-                <button className="password-primary" type="button" onClick={backToLogin}>Back to Login</button>
-            </PasswordDialog>
-        )
-    }
-
-    if (emailNotFound) {
-        return (
-            <PasswordDialog variant="password-modal-error">
-                <div className="password-error-mark" aria-hidden="true">!</div>
-                <h2>Email not found</h2>
-                <p className="password-success-copy">We couldn’t find an account with that email address. Check the spelling or try another email.</p>
-                <button className="password-primary" type="button" onClick={() => { setEmailNotFound(false); setEmail('') }}>Try Another Email</button>
-                <button className="password-back password-error-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Log In</button>
-            </PasswordDialog>
-        )
-    }
-
-    return (
-        <PasswordDialog variant="password-modal-forgot">
-            <h2>Forgot Password?</h2>
-            <p className="password-intro">No worries! Enter your email address and we’ll<br className="desktop-break" /> send you a verification link to reset your password.</p>
-            <form onSubmit={sendLink}>
-                <label htmlFor="reset-email">Email Address</label>
-                <div className="password-input-wrap"><span aria-hidden="true">✉</span><input id="reset-email" type="email" autoComplete="email" placeholder="youremail@lvcc.edu.ph" value={email} onChange={(event) => setEmail(event.target.value)} required /></div>
-                {error && <p className="password-error" role="alert">{error}</p>}
-                <button className="password-primary" type="submit" disabled={loading}>{loading ? 'Sending...' : 'Send Verification Link'}</button>
-            </form>
-            <button className="password-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Login</button>
-            <HelpFooter />
-        </PasswordDialog>
-    )
-}
-
-const passwordRules = [
-    { label: 'At least 8 characters', test: (value) => value.length >= 8 },
-    { label: 'One uppercase and lowercase letter', test: (value) => /[A-Z]/.test(value) && /[a-z]/.test(value) },
-    { label: 'One number', test: (value) => /\d/.test(value) },
-    { label: 'One special character', test: (value) => /[^A-Za-z0-9]/.test(value) },
-]
-
-export function ResetPassword() {
-    const navigate = useNavigate()
-    const [params] = useSearchParams()
-    const token = params.get('token') || ''
-    const email = params.get('email') || ''
-    const [password, setPassword] = useState('')
-    const [confirmation, setConfirmation] = useState('')
-    const [showPassword, setShowPassword] = useState(false)
-    const [showConfirmation, setShowConfirmation] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState('')
-    const [complete, setComplete] = useState(false)
-
-    const backToLogin = () => navigate('/', { replace: true })
-    const requestAnotherLink = () => navigate('/forgot-password', { replace: true, state: { email } })
-
-    const submitReset = async (event) => {
+    const verifyCode = async (event) => {
         event.preventDefault()
         setError('')
-        if (!token || !email) {
-            setError('This password reset link is incomplete or expired. Request a new link to continue.')
-            return
+        setLoading(true)
+        try {
+            const response = await fetch(`${API_BASE_URL}/verify-reset-code`, {
+                method: 'POST',
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code }),
+            })
+            const data = await response.json().catch(() => ({}))
+            if (!response.ok) throw new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'That code is incorrect or expired.')
+            setStage('password')
+        } catch (requestError) {
+            setError(requestError instanceof TypeError ? 'Unable to connect to the server. Please try again.' : requestError.message)
+        } finally {
+            setLoading(false)
         }
+    }
+
+    const resetPassword = async (event) => {
+        event.preventDefault()
+        setError('')
         const failedRule = passwordRules.find((rule) => !rule.test(password))
         if (failedRule) {
             setError('Please meet all password requirements.')
@@ -171,11 +134,11 @@ export function ResetPassword() {
             const response = await fetch(`${API_BASE_URL}/reset-password`, {
                 method: 'POST',
                 headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, email, password, password_confirmation: confirmation }),
+                body: JSON.stringify({ email, code, password, password_confirmation: confirmation }),
             })
             const data = await response.json().catch(() => ({}))
-            if (!response.ok) throw new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'Could not reset your password. The link may have expired.')
-            setComplete(true)
+            if (!response.ok) throw new Error(data.message || Object.values(data.errors || {}).flat()[0] || 'Could not reset your password. Request a new code and try again.')
+            setStage('complete')
         } catch (requestError) {
             setError(requestError instanceof TypeError ? 'Unable to connect to the server. Please try again.' : requestError.message)
         } finally {
@@ -183,9 +146,21 @@ export function ResetPassword() {
         }
     }
 
-    if (complete) {
+    if (emailNotFound) {
         return (
-            <PasswordDialog variant="password-modal-success">
+            <PasswordDialog variant="password-modal-error" email={email}>
+                <div className="password-error-mark" aria-hidden="true">!</div>
+                <h2>Email not found</h2>
+                <p className="password-success-copy">We couldn’t find an account with that email address. Check the spelling or try another email.</p>
+                <button className="password-primary" type="button" onClick={() => { setEmailNotFound(false); setEmail('') }}>Try Another Email</button>
+                <button className="password-back password-error-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Log In</button>
+            </PasswordDialog>
+        )
+    }
+
+    if (stage === 'complete') {
+        return (
+            <PasswordDialog variant="password-modal-success" email={email}>
                 <MailMark />
                 <h2>Password Updated</h2>
                 <p className="password-success-copy">Your password has been changed successfully. You can now sign in with your new password.</p>
@@ -194,28 +169,68 @@ export function ResetPassword() {
         )
     }
 
-    return (
-        <PasswordDialog variant="password-modal-reset">
-            <h2>Reset Your Password</h2>
-            <p className="password-intro">Enter your new password below.</p>
-            {!token || !email ? (
-                <>
-                    <p className="password-error" role="alert">This password reset link is incomplete or expired.</p>
-                    <button className="password-primary" type="button" onClick={requestAnotherLink}>Request a New Link</button>
-                </>
-            ) : (
-                <form onSubmit={submitReset}>
+    if (stage === 'code') {
+        return (
+            <PasswordDialog variant="password-modal-success password-modal-code" email={email}>
+                <MailMark />
+                <h2>Check your Email</h2>
+                <p className="password-sent-to">We sent a 6-digit reset code to<br /><strong>{email}</strong></p>
+                {expiresIn > 0 ? (
+                    <p className="password-countdown">Code expires in <strong>{formatCountdown(expiresIn)}</strong></p>
+                ) : (
+                    <div className="password-expired-message"><p>This code has expired.</p></div>
+                )}
+                <form onSubmit={verifyCode}>
+                    <label htmlFor="reset-code">Verification Code</label>
+                    <div className="password-input-wrap password-code-input"><input id="reset-code" type="text" inputMode="numeric" autoComplete="one-time-code" aria-label="6-digit verification code" placeholder="000000" maxLength={6} pattern="[0-9]{6}" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} required /></div>
+                    {error && <p className="password-error" role="alert">{error}</p>}
+                    <button className="password-primary" type="submit" disabled={loading || expiresIn === 0}>{loading ? 'Checking...' : 'Verify Code'}</button>
+                </form>
+                {expiresIn === 0 && <button className="password-resend" type="button" onClick={() => { setStage('email'); setError('') }}>Request a new code</button>}
+                <button className="password-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Login</button>
+            </PasswordDialog>
+        )
+    }
+
+    if (stage === 'password') {
+        return (
+            <PasswordDialog variant="password-modal-reset" email={email}>
+                <h2>Reset Your Password</h2>
+                <p className="password-intro">Enter your new password below.</p>
+                <form onSubmit={resetPassword}>
                     <label htmlFor="new-password">New Password</label>
                     <div className="password-input-wrap"><input id="new-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)}>◉</button></div>
                     <ul className="password-rules">{passwordRules.map((rule) => <li className={rule.test(password) ? 'is-met' : ''} key={rule.label}><span aria-hidden="true">✓</span>{rule.label}</li>)}</ul>
                     <label htmlFor="confirm-password">Confirm New Password</label>
                     <div className="password-input-wrap"><input id="confirm-password" type={showConfirmation ? 'text' : 'password'} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /><button type="button" aria-label={showConfirmation ? 'Hide password' : 'Show password'} onClick={() => setShowConfirmation(!showConfirmation)}>◉</button></div>
                     {error && <p className="password-error" role="alert">{error}</p>}
-                    <button className="password-primary" type="submit" disabled={loading}>{loading ? 'Updating...' : 'Continue to Log In'}</button>
+                    {expiresIn === 0 && <p className="password-error" role="alert">This code has expired. Request a new one.</p>}
+                    <button className="password-primary" type="submit" disabled={loading || expiresIn === 0}>{loading ? 'Updating...' : 'Continue to Log In'}</button>
                 </form>
-            )}
+                {expiresIn === 0 && <button className="password-resend" type="button" onClick={() => { setStage('email'); setPassword(''); setConfirmation('') }}>Request a new code</button>}
+                <button className="password-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Login</button>
+                <HelpFooter />
+            </PasswordDialog>
+        )
+    }
+
+    return (
+        <PasswordDialog variant="password-modal-forgot" email={email}>
+            <h2>Forgot Password?</h2>
+            <p className="password-intro">No worries! Enter your email address and we’ll<br className="desktop-break" /> send you a verification code to reset your password.</p>
+            <form onSubmit={sendCode}>
+                <label htmlFor="reset-email">Email Address</label>
+                <div className="password-input-wrap"><span aria-hidden="true">✉</span><input id="reset-email" type="email" autoComplete="email" placeholder="youremail@lvcc.edu.ph" value={email} onChange={(event) => setEmail(event.target.value)} required /></div>
+                {error && <p className="password-error" role="alert">{error}</p>}
+                <button className="password-primary" type="submit" disabled={loading}>{loading ? 'Sending...' : 'Send Verification Code'}</button>
+            </form>
             <button className="password-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Login</button>
             <HelpFooter />
         </PasswordDialog>
     )
+}
+
+export function ResetPassword() {
+    const [params] = useSearchParams()
+    return <Navigate to="/forgot-password" replace state={{ email: params.get('email') || '' }} />
 }

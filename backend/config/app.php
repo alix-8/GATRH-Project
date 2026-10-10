@@ -54,7 +54,6 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    'password_reset_url' => env('PASSWORD_RESET_URL', 'http://localhost:5173/reset-password'),
 
     /*
     |--------------------------------------------------------------------------

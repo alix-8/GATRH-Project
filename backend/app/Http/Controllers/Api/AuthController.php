@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password as PasswordBroker;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRules;
@@ -81,36 +82,85 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logged out successfully']);
     }
 
-    /**
-     * Send a password reset link to the user's email.
-     */
+    /** Send a short-lived password reset code to the user's email. */
     function forgotPassword(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
         ]);
 
-        if (!User::where('email', $request->input('email'))->exists()) {
+        $email = strtolower(trim($request->input('email')));
+        $sendKey = 'password-reset-send:' . $email . '|' . $request->ip();
+        if (RateLimiter::tooManyAttempts($sendKey, 3)) {
+            return response()->json(['message' => 'Too many code requests. Please wait a few minutes and try again.'], 429);
+        }
+        RateLimiter::hit($sendKey, 600);
+
+        $user = User::where('email', $email)->first();
+        if (!$user) {
             return response()->json([
                 'message' => 'We couldn’t find an account with that email address. Check it or try another email.',
             ], 404);
         }
 
-        PasswordBroker::sendResetLink($request->only('email'));
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $table = config('auth.passwords.users.table');
+        DB::table($table)->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => Hash::make($code), 'created_at' => now()]
+        );
+
+        try {
+            Mail::send([
+                'html' => 'emails.password-reset-code',
+                'text' => 'emails.password-reset-code-text',
+            ], [
+                'code' => $code,
+                'expiresIn' => config('auth.passwords.users.expire'),
+            ], function ($message) use ($user): void {
+                $message->to($user->email)->subject('Your GATRH password reset code');
+            });
+        } catch (\Throwable $exception) {
+            DB::table($table)->where('email', $user->email)->delete();
+            report($exception);
+            return response()->json(['message' => 'We couldn’t send the reset code right now. Please try again later.'], 503);
+        }
+
+        RateLimiter::clear($this->passwordResetAttemptKey($user->email, $request));
 
         return response()->json([
-            'message' => 'A password reset link has been sent to your email.',
+            'message' => 'A password reset code has been sent to your email.',
         ]);
     }
 
-    /**
-     * Reset a user's password with a valid password reset token.
-     */
+    /** Verify the emailed code before showing the new-password form. */
+    function verifyPasswordResetCode(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|digits:6',
+        ]);
+
+        $key = $this->passwordResetAttemptKey($validated['email'], $request);
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return response()->json(['message' => 'Too many incorrect code attempts. Request a new code and try again.'], 429);
+        }
+
+        if (!$this->passwordResetCodeIsValid($validated['email'], $validated['code'])) {
+            RateLimiter::hit($key, 600);
+            return response()->json(['message' => 'That code is incorrect or expired. Check it and try again.'], 422);
+        }
+
+        RateLimiter::clear($key);
+        return response()->json(['message' => 'Code verified.']);
+    }
+
+    /** Reset a user's password using the emailed code. */
     function resetPassword(Request $request)
     {
-        $request->validate([
-            'token' => 'required|string',
+        $validated = $request->validate([
             'email' => 'required|email',
+            'code' => 'required|digits:6',
             'password' => [
                 'required',
                 'string',
@@ -119,17 +169,50 @@ class AuthController extends Controller
             ],
         ]);
 
-        $status = PasswordBroker::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password): void {
-                $user->password = $password;
-                $user->setRememberToken(Str::random(60));
-                $user->save();
-            }
-        );
+        $key = $this->passwordResetAttemptKey($validated['email'], $request);
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return response()->json(['message' => 'Too many incorrect code attempts. Request a new code and try again.'], 429);
+        }
 
-        return $status === PasswordBroker::PASSWORD_RESET
-            ? response()->json(['message' => 'Password reset successfully.'])
-            : response()->json(['message' => __($status)], 400);
+        if (!$this->passwordResetCodeIsValid($validated['email'], $validated['code'])) {
+            RateLimiter::hit($key, 600);
+            return response()->json(['message' => 'That code is incorrect or expired. Request a new code and try again.'], 422);
+        }
+
+        $user = User::where('email', strtolower(trim($validated['email'])))->firstOrFail();
+        $user->password = $validated['password'];
+        $user->setRememberToken(Str::random(60));
+        $user->save();
+        $user->tokens()->delete();
+
+        DB::table(config('auth.passwords.users.table'))
+            ->where('email', $user->email)
+            ->delete();
+        RateLimiter::clear($key);
+
+        return response()->json(['message' => 'Password reset successfully.']);
+    }
+
+    private function passwordResetAttemptKey(string $email, Request $request): string
+    {
+        return 'password-reset-code:' . strtolower(trim($email)) . '|' . $request->ip();
+    }
+
+    private function passwordResetCodeIsValid(string $email, string $code): bool
+    {
+        $table = config('auth.passwords.users.table');
+        $record = DB::table($table)->where('email', strtolower(trim($email)))->first();
+        if (!$record) {
+            return false;
+        }
+
+        $expiresAt = \Illuminate\Support\Carbon::parse($record->created_at)
+            ->addMinutes(config('auth.passwords.users.expire'));
+        if ($expiresAt->isPast()) {
+            DB::table($table)->where('email', $record->email)->delete();
+            return false;
+        }
+
+        return Hash::check($code, $record->token);
     }
 }
