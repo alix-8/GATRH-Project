@@ -359,3 +359,280 @@
     background: #159df2;
     transition: width .2s ease;
 }
+
+.chancellor-programs-attention {
+    box-sizing: border-box;
+    width: 59%;
+    margin: 14px 28px;
+    padding: 18px;
+    border: 1px solid #d5dfef;
+    border-radius: 9px;
+    text-align: left;
+}
+
+.chancellor-programs-attention-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.chancellor-programs-attention-header h2 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.chancellor-programs-attention-header p {
+    margin: 5px 0 0;
+    color: #71809a;
+    font-size: 11px;
+}
+
+.chancellor-year-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #536580;
+    font-size: 12px;
+}
+
+.chancellor-year-dropdown {
+    position: relative;
+    min-width: 102px;
+}
+
+.chancellor-year-dropdown.is-open {
+    z-index: 123;
+}
+
+.chancellor-year-trigger {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 34px;
+    gap: 8px;
+    padding: 0 9px;
+    border: 1px solid #ced8e6;
+    border-radius: 6px;
+    background: #fff;
+    color: #172b4d;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.chancellor-year-trigger:hover,
+.chancellor-year-trigger[aria-expanded="true"] {
+    border-color: #7e92e6;
+    background: #eef0f8;
+}
+
+.chancellor-year-trigger:focus-visible {
+    outline: 2px solid #159df2;
+    outline-offset: 2px;
+}
+
+.chancellor-year-chevron {
+    width: 16px;
+    height: 16px;
+    opacity: .7;
+    transition: transform .15s ease;
+}
+
+.chancellor-year-chevron.open {
+    transform: rotate(180deg);
+}
+
+.chancellor-year-menu {
+    box-sizing: border-box;
+    position: absolute;
+    z-index: 1;
+    top: calc(100% + 2px);
+    right: 0;
+    width: 100%;
+    margin: 0;
+    padding: 4px 0;
+    border: 1px solid #d3d9e5;
+    border-radius: 6px;
+    background: #fff;
+    list-style: none;
+}
+
+.chancellor-year-option {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    padding: 4px 9px;
+    border: 0;
+    background: #fff;
+    color: #172b4d;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.chancellor-year-option:hover,
+.chancellor-year-option:focus-visible {
+    outline: none;
+    background: #5c7499;
+    color: #fff;
+}
+
+.chancellor-year-option.selected {
+    background: #eef2f8;
+    font-weight: 600;
+}
+
+.chancellor-year-option.selected:hover {
+    background: #5c7499;
+    color: #fff;
+}
+
+.chancellor-program-reporting-scroll {
+    overflow-x: auto;
+    border: 1px solid #d3d9e5;
+    border-radius: 7px;
+}
+
+.chancellor-program-reporting-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #172b4d;
+    font-size: 11px;
+}
+
+.chancellor-program-reporting-table thead {
+    background: #e9eef5;
+    color: #536580;
+}
+
+.chancellor-program-reporting-table th,
+.chancellor-program-reporting-table td {
+    padding: 4px 10px;
+    border-bottom: 1px solid #e5e9ef;
+    text-align: center;
+    font-weight: 400;
+}
+
+.chancellor-program-reporting-table thead th:first-child,
+.chancellor-program-reporting-table tbody th {
+    width: 34%;
+    text-align: left;
+}
+
+.chancellor-program-reporting-table tbody th span,
+.chancellor-program-reporting-table tbody th small {
+    display: block;
+}
+
+.chancellor-program-reporting-table tbody th span {
+    font-weight: 500;
+}
+
+.chancellor-program-reporting-table tbody th small {
+    margin-top: 3px;
+    color: #71809a;
+    font-size: 10px;
+}
+
+.chancellor-report-status-icon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.chancellor-report-status-icon img {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+.chancellor-report-status-icon--incomplete {
+    background: #f5cb45;
+}
+
+.chancellor-report-status-icon--incomplete img {
+    box-sizing: content-box;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.chancellor-report-status-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 8px;
+    border-radius: 12px;
+    font-size: 9px;
+}
+
+.chancellor-report-status-label>span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.chancellor-report-status-label--completed {
+    background: #eaf8ee;
+    color: #16833a;
+}
+
+.chancellor-report-status-label--completed>span {
+    background: #1fa34a;
+}
+
+.chancellor-report-status-label--incomplete {
+    background: #fff8df;
+    color: #a17a00;
+}
+
+.chancellor-report-status-label--incomplete>span {
+    background: #f5c52e;
+}
+
+.chancellor-report-status-label--no_report {
+    background: #fff0f0;
+    color: #d02e2e;
+}
+
+.chancellor-report-status-label--no_report>span {
+    background: #e83c3c;
+}
+
+.chancellor-program-reporting-empty {
+    padding: 24px !important;
+    color: #71809a;
+}
+
+.chancellor-program-reporting-footer,
+.chancellor-program-reporting-legend,
+.chancellor-program-reporting-legend>span {
+    display: flex;
+    align-items: center;
+}
+
+.chancellor-program-reporting-footer {
+    justify-content: space-between;
+    margin-top: 12px;
+    color: #536580;
+    font-size: 10px;
+}
+
+.chancellor-program-reporting-legend {
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.chancellor-program-reporting-legend>span {
+    gap: 5px;
+}
