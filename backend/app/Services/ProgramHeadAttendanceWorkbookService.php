@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use RuntimeException;
-use ZipArchive;
 
 class ProgramHeadAttendanceWorkbookService
 {
     private const MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    private array $mergeCells = [];
 
     /** Create a formatted, single-session Excel workbook and return its temp path. */
     public function create(Collection $records): string
@@ -17,116 +18,317 @@ class ProgramHeadAttendanceWorkbookService
         $rows = $this->buildRows($records);
         $lastRow = count($rows);
 
-        if (!$this->zipArchiveAvailable()) {
-            return $this->createExcelCompatibleHtml($rows);
-        }
-
-        $worksheet = $this->worksheetXml($rows, $lastRow);
         $workbookPath = tempnam(sys_get_temp_dir(), 'gatrh-attendance-');
 
         if ($workbookPath === false) {
             throw new RuntimeException('Unable to create the attendance workbook.');
         }
 
-        $archive = new ZipArchive();
-        $opened = $archive->open($workbookPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $files = [
+            '[Content_Types].xml' => $this->contentTypesXml(),
+            '_rels/.rels' => $this->packageRelationshipsXml(),
+            'xl/workbook.xml' => $this->workbookXml(),
+            'xl/_rels/workbook.xml.rels' => $this->workbookRelationshipsXml(),
+            'xl/styles.xml' => $this->stylesXml(),
+            'xl/worksheets/sheet1.xml' => $this->worksheetXml($rows, $lastRow),
+        ];
 
-        if ($opened !== true) {
+        try {
+            if (file_put_contents($workbookPath, $this->zipFiles($files), LOCK_EX) === false) {
+                throw new RuntimeException('Unable to write the attendance workbook.');
+            }
+        } catch (RuntimeException $exception) {
             @unlink($workbookPath);
-            throw new RuntimeException('Unable to prepare the attendance workbook.');
+            throw $exception;
         }
-
-        $archive->addFromString('[Content_Types].xml', $this->contentTypesXml());
-        $archive->addFromString('_rels/.rels', $this->packageRelationshipsXml());
-        $archive->addFromString('xl/workbook.xml', $this->workbookXml());
-        $archive->addFromString('xl/_rels/workbook.xml.rels', $this->workbookRelationshipsXml());
-        $archive->addFromString('xl/styles.xml', $this->stylesXml());
-        $archive->addFromString('xl/worksheets/sheet1.xml', $worksheet);
-        $archive->close();
 
         return $workbookPath;
     }
 
     public function mimeType(): string
     {
-        return $this->zipArchiveAvailable()
-            ? self::MIME_TYPE
-            : 'application/vnd.ms-excel; charset=UTF-8';
+        return self::MIME_TYPE;
     }
 
     public function fileExtension(): string
     {
-        return $this->zipArchiveAvailable() ? 'xlsx' : 'xls';
+        return 'xlsx';
     }
 
-    protected function zipArchiveAvailable(): bool
-    {
-        return class_exists(ZipArchive::class);
-    }
-
-    private function createExcelCompatibleHtml(array $rows): string
-    {
+    /** Create one week or one calendar-month grid matching the supplied attendance template. */
+    public function createPeriod(
+        Collection $students,
+        CarbonImmutable $selectedDate,
+        string $period,
+        string $program,
+        int $yearLevel,
+        ?string $programName = null
+    ): string {
+        [$weeks] = $this->periodWeeks($selectedDate, $period);
+        $columns = $this->periodColumns($weeks);
+        $this->mergeCells = [];
+        $rows = $this->periodRows($students, $weeks, $columns, $selectedDate, $programName ?: $program, $yearLevel);
         $path = tempnam(sys_get_temp_dir(), 'gatrh-attendance-');
 
         if ($path === false) {
-            throw new RuntimeException('Unable to create the attendance export.');
+            throw new RuntimeException('Unable to create the attendance workbook.');
         }
 
-        $tableRows = [];
+        $files = [
+            '[Content_Types].xml' => $this->contentTypesXml(),
+            '_rels/.rels' => $this->packageRelationshipsXml(),
+            'xl/workbook.xml' => $this->workbookXml(),
+            'xl/_rels/workbook.xml.rels' => $this->workbookRelationshipsXml(),
+            'xl/styles.xml' => $this->stylesXml(),
+            'xl/worksheets/sheet1.xml' => $this->periodWorksheetXml($rows, $weeks, $columns, $students->count()),
+        ];
 
-        foreach ($rows as $index => $rowXml) {
-            preg_match_all('/<c r="([A-Z]+)(\d+)" s="(\d+)" t="inlineStr"><is><t xml:space="preserve">(.*?)<\/t><\/is><\/c>/', $rowXml, $cells, PREG_SET_ORDER);
-            $rowCells = [];
-            $nextColumn = 'A';
-
-            foreach ($cells as $cell) {
-                [$cellXml, $column, $rowNumber, $style, $value] = $cell;
-                $value = htmlspecialchars(html_entity_decode($value, ENT_QUOTES | ENT_XML1, 'UTF-8'), ENT_QUOTES, 'UTF-8');
-
-                if ($column !== $nextColumn) {
-                    $rowCells[] = '<td></td>';
-                }
-
-                $mergeTitle = (int) $rowNumber <= 3 && $column === 'B';
-                $rowCells[] = '<td style="' . $this->htmlCellStyle((int) $style) . '"'
-                    . ($mergeTitle ? ' colspan="2"' : '') . '>' . $value . '</td>';
-                $nextColumn = $mergeTitle ? 'D' : chr(ord($column) + 1);
+        try {
+            if (file_put_contents($path, $this->zipFiles($files), LOCK_EX) === false) {
+                throw new RuntimeException('Unable to write the attendance workbook.');
             }
-
-            $tableRows[] = '<tr>' . implode('', $rowCells) . '</tr>';
-        }
-
-        $html = '<!doctype html><html><head><meta charset="UTF-8"><style>'
-            . 'body{font-family:Arial,sans-serif}table{border-collapse:collapse;table-layout:fixed}'
-            . 'td{border:1px solid #000;padding:6px;vertical-align:middle;white-space:normal}'
-            . 'td:nth-child(1){width:240px}td:nth-child(2){width:360px}td:nth-child(3){width:180px}'
-            . '</style></head><body><table><tbody>' . implode('', $tableRows) . '</tbody></table></body></html>';
-
-        if (file_put_contents($path, $html) === false) {
+        } catch (RuntimeException $exception) {
             @unlink($path);
-            throw new RuntimeException('Unable to write the attendance export.');
+            throw $exception;
         }
 
         return $path;
     }
 
-    private function htmlCellStyle(int $style): string
+    /** Return Saturday-to-Wednesday reporting weeks and their attendance query bounds. */
+    public function periodBounds(CarbonImmutable $selectedDate, string $period): array
     {
-        return match ($style) {
-            1 => 'background:#ffe933;font-size:17px;font-weight:bold;text-align:center',
-            2 => 'background:#9fc5e8;font-weight:bold',
-            3 => 'background:#ffe933;font-size:17px;font-weight:bold;text-align:center',
-            4 => 'background:#666;color:#fff;font-size:12px;font-weight:bold;text-align:center',
-            5 => 'background:#d9eaf7;font-weight:bold;text-align:center',
-            6 => 'background:#1b3155;color:#fff;font-weight:bold;text-align:center',
-            7 => 'background:#f6b26b;font-weight:bold;text-align:center',
-            8 => 'background:#fff;font-weight:bold',
-            9 => 'background:#fff;text-align:center',
-            10 => 'background:#fff2cc;text-align:center',
-            11 => 'background:#d9ead3;text-align:center',
-            12 => 'background:#bdd7ee;text-align:center',
-            default => '',
-        };
+        [, $start, $end] = $this->periodWeeks($selectedDate, $period);
+
+        return [$start, $end];
+    }
+
+    private function periodWeeks(CarbonImmutable $selectedDate, string $period): array
+    {
+        if ($period === 'week') {
+            $start = $selectedDate->startOfWeek(Carbon::SATURDAY);
+            $end = $start->addDays(4);
+
+            return [[[
+                'number' => 1,
+                'start' => $start,
+                'end' => $end,
+                'label_end' => $end,
+            ]], $start, $end];
+        }
+
+        $monthStart = $selectedDate->startOfMonth();
+        $monthEnd = $selectedDate->endOfMonth();
+        $firstSaturday = $monthStart->startOfWeek(Carbon::SATURDAY);
+        $weeks = [];
+
+        for ($start = $firstSaturday, $number = 1; $start->lessThanOrEqualTo($monthEnd); $start = $start->addDays(7), $number++) {
+            $end = $start->addDays(4);
+            $weeks[] = [
+                'number' => $number,
+                'start' => $start,
+                'end' => $end,
+                'label_end' => $end->greaterThan($monthEnd) ? $monthEnd : $end,
+            ];
+        }
+
+        $lastWeek = $weeks[array_key_last($weeks)];
+
+        return [$weeks, $firstSaturday, $lastWeek['end']];
+    }
+
+    private function periodColumns(array $weeks): array
+    {
+        $columns = [];
+        $columnNumber = 2;
+
+        foreach ($weeks as $week) {
+            $week['first_column'] = $columnNumber;
+
+            foreach (['ws', 'tg', 'pm'] as $type) {
+                $day = $type === 'pm' ? $week['start']->addDays(4) : $week['start'];
+                $columns[] = [
+                    'week' => $week['number'],
+                    'type' => $type,
+                    'date' => $day,
+                    'date_end' => $day->addDay(),
+                    'column' => $columnNumber++,
+                ];
+            }
+        }
+
+        $columns[] = ['type' => 'escalation', 'column' => $columnNumber];
+
+        return $columns;
+    }
+
+    private function periodRows(
+        Collection $students,
+        array $weeks,
+        array $columns,
+        CarbonImmutable $selectedDate,
+        string $program,
+        int $yearLevel
+    ): array {
+        $slotColumns = array_slice($columns, 0, -1);
+        $lastColumn = $columns[array_key_last($columns)]['column'];
+        $yearLabel = $this->ordinalYear($yearLevel);
+        $rows = [];
+
+        $rows[] = $this->row([
+            $this->cell('A1', 'MONTH OF', 14),
+            $this->cell('B1', strtoupper($program . ' ' . $yearLabel), 1),
+            $this->cell($this->columnName($lastColumn) . '1', 'INTERVENTION STATUS', 4),
+        ], 30);
+        $rows[] = $this->row([
+            $this->cell('A2', strtoupper($selectedDate->format('F')), 13),
+        ], 34);
+        $rows[] = $this->row([
+            $this->cell('A3', 'WEEK DATES', 2),
+        ], 24);
+        $rows[] = $this->row([
+            $this->cell('A4', 'GATHERING', 2),
+        ], 24);
+        $rows[] = $this->row([
+            $this->cell('A5', 'DATE', 2),
+        ], 24);
+
+        foreach ($weeks as $index => $week) {
+            $firstColumn = 2 + ($index * 3);
+            $lastWeekColumn = $firstColumn + 2;
+            $weekDate = $week['start']->format('F j') . ' - ' . $week['label_end']->format('F j');
+            $rows[1] = $this->appendCell($rows[1], $this->cell($this->columnName($firstColumn) . '2', 'WEEK ' . $week['number'], 4));
+            $rows[2] = $this->appendCell($rows[2], $this->cell($this->columnName($firstColumn) . '3', $weekDate, 5));
+
+            foreach (array_slice($slotColumns, $index * 3, 3) as $slot) {
+                $column = $this->columnName($slot['column']);
+                $dateLabel = $slot['date']->format('M j') . ' - ' . $slot['date_end']->format('M j');
+                $rows[3] = $this->appendCell($rows[3], $this->cell($column . '4', strtoupper($slot['type']), $this->gatheringStyle($slot['type'])));
+                $rows[4] = $this->appendCell($rows[4], $this->cell($column . '5', $dateLabel, 15));
+            }
+
+            $this->mergeCells[] = $this->columnName($firstColumn) . '2:' . $this->columnName($lastWeekColumn) . '2';
+            $this->mergeCells[] = $this->columnName($firstColumn) . '3:' . $this->columnName($lastWeekColumn) . '3';
+        }
+
+        $this->mergeCells[] = 'B1:' . $this->columnName($lastColumn - 1) . '1';
+        $this->mergeCells[] = $this->columnName($lastColumn) . '1:' . $this->columnName($lastColumn) . '5';
+
+        $attendanceByStudentAndSlot = [];
+
+        foreach ($students as $student) {
+            foreach ($student->attendanceRecords as $record) {
+                $attendanceByStudentAndSlot[$student->id][$record->gathering_type . '|' . $record->day->toDateString()] = $record;
+            }
+        }
+
+        foreach ($students as $student) {
+            $rowNumber = count($rows) + 1;
+            $cells = [$this->cell('A' . $rowNumber, mb_strtoupper($student->name), 8)];
+
+            foreach ($slotColumns as $slot) {
+                $record = $attendanceByStudentAndSlot[$student->id][$slot['type'] . '|' . $slot['date']->toDateString()] ?? null;
+                $present = $record?->status === 'present';
+                $value = $present ? $this->attendanceDetails($record) : 'No Response';
+                $style = $present ? $this->gatheringStyle($slot['type']) : 7;
+                $cells[] = $this->cell($this->columnName($slot['column']) . $rowNumber, $value, $style);
+            }
+
+            $level = $student->escalation?->escalation_level ?? 'None';
+            $cells[] = $this->cell($this->columnName($lastColumn) . $rowNumber, $level, 9);
+            $rows[] = $this->row($cells, 34);
+        }
+
+        return $rows;
+    }
+
+    private function periodWorksheetXml(array $rows, array $weeks, array $columns, int $studentCount): string
+    {
+        $lastColumn = $this->columnName($columns[array_key_last($columns)]['column']);
+        $lastRow = count($rows);
+        $merges = $this->mergeCells;
+        $columnWidths = '<col min="1" max="1" width="32" customWidth="1"/>';
+
+        foreach ($columns as $column) {
+            $width = $column['type'] === 'escalation' ? 28 : 22;
+            $columnWidths .= '<col min="' . $column['column'] . '" max="' . $column['column'] . '" width="' . $width . '" customWidth="1"/>';
+        }
+
+        $mergeXml = '<mergeCells count="' . count($merges) . '">';
+        foreach ($merges as $merge) {
+            $mergeXml .= '<mergeCell ref="' . $merge . '"/>';
+        }
+        $mergeXml .= '</mergeCells>';
+        $bottomRow = max(5, $studentCount + 5);
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<sheetViews><sheetView workbookViewId="0"><pane xSplit="1" ySplit="5" topLeftCell="B6" activePane="bottomRight" state="frozen"/></sheetView></sheetViews>'
+            . '<sheetFormatPr defaultRowHeight="20"/><cols>' . $columnWidths . '</cols>'
+            . '<sheetData>' . implode('', $rows) . '</sheetData>' . $mergeXml
+            . '<autoFilter ref="A5:' . $lastColumn . $bottomRow . '"/>'
+            . '<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>'
+            . '<pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0" paperSize="9"/>'
+            . '</worksheet>';
+    }
+
+    private function columnName(int $number): string
+    {
+        $name = '';
+
+        while ($number > 0) {
+            $number--;
+            $name = chr(($number % 26) + 65) . $name;
+            $number = intdiv($number, 26);
+        }
+
+        return $name;
+    }
+
+    private function appendCell(string $row, string $cell): string
+    {
+        return substr($row, 0, -6) . $cell . '</row>';
+    }
+
+    /** Package OOXML files into a ZIP archive without requiring the PHP zip extension. */
+    private function zipFiles(array $files): string
+    {
+        if (!function_exists('gzdeflate')) {
+            throw new RuntimeException('The zlib extension is required to create the attendance workbook.');
+        }
+
+        $archive = '';
+        $centralDirectory = '';
+        $offset = 0;
+        $dosDate = 0x21; // 1980-01-01, the earliest valid ZIP date.
+
+        foreach ($files as $name => $contents) {
+            $name = str_replace('\\', '/', $name);
+            $compressed = gzdeflate($contents);
+
+            if ($compressed === false) {
+                throw new RuntimeException('Unable to compress the attendance workbook.');
+            }
+
+            $nameLength = strlen($name);
+            $compressedLength = strlen($compressed);
+            $contentLength = strlen($contents);
+            $checksum = crc32($contents);
+
+            $archive .= pack('VvvvvvVVVvv', 0x04034b50, 20, 0, 8, 0, $dosDate, $checksum, $compressedLength, $contentLength, $nameLength, 0)
+                . $name . $compressed;
+
+            $centralDirectory .= pack('VvvvvvvVVVvvvvvVV', 0x02014b50, 20, 20, 0, 8, 0, $dosDate, $checksum, $compressedLength, $contentLength, $nameLength, 0, 0, 0, 0, 0, $offset)
+                . $name;
+
+            $offset = strlen($archive);
+        }
+
+        $directoryLength = strlen($centralDirectory);
+        $fileCount = count($files);
+
+        return $archive . $centralDirectory
+            . pack('VvvvvVVv', 0x06054b50, 0, 0, $fileCount, $fileCount, $directoryLength, $offset, 0);
     }
 
     private function buildRows(Collection $records): array
@@ -273,9 +475,9 @@ class ProgramHeadAttendanceWorkbookService
             . '<col min="2" max="2" width="48" customWidth="1"/>'
             . '<col min="3" max="3" width="24" customWidth="1"/></cols>'
             . '<sheetData>' . implode('', $rows) . '</sheetData>'
+            . '<autoFilter ref="A6:C' . $lastRow . '"/>'
             . '<mergeCells count="3"><mergeCell ref="B1:C1"/>'
             . '<mergeCell ref="B2:C2"/><mergeCell ref="B3:C3"/></mergeCells>'
-            . '<autoFilter ref="A6:C' . $lastRow . '"/>'
             . '<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>'
             . '<pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0" paperSize="9"/>'
             . '</worksheet>';
@@ -323,13 +525,16 @@ class ProgramHeadAttendanceWorkbookService
     {
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<fonts count="4">'
+            . '<fonts count="7">'
             . '<font><sz val="11"/><name val="Arial"/></font>'
             . '<font><b/><sz val="11"/><name val="Arial"/></font>'
             . '<font><b/><sz val="17"/><name val="Arial"/></font>'
             . '<font><b/><color rgb="FFFFFFFF"/><sz val="12"/><name val="Arial"/></font>'
+            . '<font><b/><color rgb="FFFFFF00"/><sz val="17"/><name val="Arial"/></font>'
+            . '<font><i/><sz val="10"/><name val="Arial"/></font>'
+            . '<font><b/><color rgb="FFFFFF00"/><sz val="11"/><name val="Arial"/></font>'
             . '</fonts>'
-            . '<fills count="12">'
+            . '<fills count="14">'
             . '<fill><patternFill patternType="none"/></fill>'
             . '<fill><patternFill patternType="gray125"/></fill>'
             . '<fill><patternFill patternType="solid"><fgColor rgb="FF9FC5E8"/><bgColor indexed="64"/></patternFill></fill>'
@@ -342,13 +547,15 @@ class ProgramHeadAttendanceWorkbookService
             . '<fill><patternFill patternType="solid"><fgColor rgb="FFFFF2CC"/><bgColor indexed="64"/></patternFill></fill>'
             . '<fill><patternFill patternType="solid"><fgColor rgb="FFD9EAD3"/><bgColor indexed="64"/></patternFill></fill>'
             . '<fill><patternFill patternType="solid"><fgColor rgb="FF1B3155"/><bgColor indexed="64"/></patternFill></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FF4285F4"/><bgColor indexed="64"/></patternFill></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FFFCE4D6"/><bgColor indexed="64"/></patternFill></fill>'
             . '</fills>'
             . '<borders count="2">'
             . '<border><left/><right/><top/><bottom/><diagonal/></border>'
             . '<border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border>'
             . '</borders>'
             . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            . '<cellXfs count="13">'
+            . '<cellXfs count="16">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             . '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>'
@@ -362,6 +569,9 @@ class ProgramHeadAttendanceWorkbookService
             . '<xf numFmtId="0" fontId="1" fillId="9" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="10" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="8" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="4" fillId="12" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="5" fillId="12" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="6" fillId="13" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '</cellXfs>'
             . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
             . '</styleSheet>';
