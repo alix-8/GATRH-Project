@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class ProgramHeadAttendanceWorkbookService
@@ -62,9 +63,10 @@ class ProgramHeadAttendanceWorkbookService
         string $period,
         string $program,
         int $yearLevel,
-        ?string $programName = null
+        ?string $programName = null,
+        ?int $weekNumber = null
     ): string {
-        [$weeks] = $this->periodWeeks($selectedDate, $period);
+        [$weeks] = $this->periodWeeks($selectedDate, $period, $weekNumber);
         $columns = $this->periodColumns($weeks);
         $this->mergeCells = [];
         $rows = $this->periodRows($students, $weeks, $columns, $selectedDate, $programName ?: $program, $yearLevel);
@@ -80,7 +82,7 @@ class ProgramHeadAttendanceWorkbookService
             'xl/workbook.xml' => $this->workbookXml(),
             'xl/_rels/workbook.xml.rels' => $this->workbookRelationshipsXml(),
             'xl/styles.xml' => $this->stylesXml(),
-            'xl/worksheets/sheet1.xml' => $this->periodWorksheetXml($rows, $weeks, $columns, $students->count()),
+            'xl/worksheets/sheet1.xml' => $this->periodWorksheetXml($rows, $weeks, $columns),
         ];
 
         try {
@@ -96,21 +98,35 @@ class ProgramHeadAttendanceWorkbookService
     }
 
     /** Return Saturday-to-Wednesday reporting weeks and their attendance query bounds. */
-    public function periodBounds(CarbonImmutable $selectedDate, string $period): array
+    public function periodBounds(CarbonImmutable $selectedDate, string $period, ?int $weekNumber = null): array
     {
-        [, $start, $end] = $this->periodWeeks($selectedDate, $period);
+        [, $start, $end] = $this->periodWeeks($selectedDate, $period, $weekNumber);
 
         return [$start, $end];
     }
 
-    private function periodWeeks(CarbonImmutable $selectedDate, string $period): array
+    private function periodWeeks(CarbonImmutable $selectedDate, string $period, ?int $weekNumber = null): array
     {
         if ($period === 'week') {
-            $start = $selectedDate->startOfWeek(Carbon::SATURDAY);
+            $monthStart = $selectedDate->startOfMonth();
+            $monthEnd = $selectedDate->endOfMonth();
+            $firstSaturday = $monthStart->startOfWeek(Carbon::SATURDAY);
+            $weekCount = intdiv((int) $firstSaturday->diffInDays($monthEnd), 7) + 1;
+            $selectedWeekNumber = $weekNumber ?? (
+                intdiv((int) $firstSaturday->diffInDays($selectedDate->startOfWeek(Carbon::SATURDAY)), 7) + 1
+            );
+
+            if ($selectedWeekNumber < 1 || $selectedWeekNumber > $weekCount) {
+                throw ValidationException::withMessages([
+                    'week' => "Choose a week between 1 and {$weekCount} for the selected month.",
+                ]);
+            }
+
+            $start = $firstSaturday->addWeeks($selectedWeekNumber - 1);
             $end = $start->addDays(4);
 
             return [[[
-                'number' => 1,
+                'number' => $selectedWeekNumber,
                 'start' => $start,
                 'end' => $end,
                 'label_end' => $end,
@@ -227,7 +243,9 @@ class ProgramHeadAttendanceWorkbookService
             $cells = [$this->cell('A' . $rowNumber, mb_strtoupper($student->name), 8)];
 
             foreach ($slotColumns as $slot) {
-                $record = $attendanceByStudentAndSlot[$student->id][$slot['type'] . '|' . $slot['date']->toDateString()] ?? null;
+                $record = $attendanceByStudentAndSlot[$student->id][$slot['type'] . '|' . $slot['date']->toDateString()]
+                    ?? $attendanceByStudentAndSlot[$student->id][$slot['type'] . '|' . $slot['date_end']->toDateString()]
+                    ?? null;
                 $present = $record?->status === 'present';
                 $value = $present ? $this->attendanceDetails($record) : 'No Response';
                 $style = $present ? $this->gatheringStyle($slot['type']) : 7;
@@ -242,7 +260,7 @@ class ProgramHeadAttendanceWorkbookService
         return $rows;
     }
 
-    private function periodWorksheetXml(array $rows, array $weeks, array $columns, int $studentCount): string
+    private function periodWorksheetXml(array $rows, array $weeks, array $columns): string
     {
         $lastColumn = $this->columnName($columns[array_key_last($columns)]['column']);
         $lastRow = count($rows);
@@ -259,14 +277,12 @@ class ProgramHeadAttendanceWorkbookService
             $mergeXml .= '<mergeCell ref="' . $merge . '"/>';
         }
         $mergeXml .= '</mergeCells>';
-        $bottomRow = max(5, $studentCount + 5);
-
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
             . '<sheetViews><sheetView workbookViewId="0"><pane xSplit="1" ySplit="5" topLeftCell="B6" activePane="bottomRight" state="frozen"/></sheetView></sheetViews>'
             . '<sheetFormatPr defaultRowHeight="20"/><cols>' . $columnWidths . '</cols>'
-            . '<sheetData>' . implode('', $rows) . '</sheetData>' . $mergeXml
-            . '<autoFilter ref="A5:' . $lastColumn . $bottomRow . '"/>'
+            . '<sheetData>' . implode('', $rows) . '</sheetData>'
+            . $mergeXml
             . '<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>'
             . '<pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0" paperSize="9"/>'
             . '</worksheet>';
