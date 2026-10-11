@@ -514,7 +514,7 @@
     box-sizing: border-box;
     width: 100%;
     padding: 12px;
-    border: 1px solid #bbc5d3;
+    border: 1px solid #d7e0ec;
     border-radius: 14px;
     container-type: inline-size;
     text-align: left;
@@ -529,7 +529,6 @@
 
 .chancellor-progress-by-week p {
     font-size: 11px;
-    line-height: 1.4;
 }
 
 .chancellor-weekly-chart {
@@ -580,26 +579,23 @@
     font-size: 13px;
 }
 
-/* .chancellor-program-completion-overview {
-    box-sizing: border-box;
+.chancellor-program-completion-overview {
     padding: 18px 16px 14px;
     border: 1px solid #d7e0ec;
     border-radius: 12px;
-    background: #f9fbfe;
 }
 
 .chancellor-program-completion-overview h2 {
     margin: 0;
     color: #172b4d;
-    font-size: 21px;
-    font-weight: 700;
-    line-height: 1.25;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: left;
 }
 
 .chancellor-program-completion-overview p {
-    margin: 4px 0 16px;
-    color: #667995;
     font-size: 11px;
+    text-align: left;
 }
 
 .chancellor-program-completion-list {
@@ -608,16 +604,14 @@
     list-style: none;
 }
 
-.chancellor-program-completion-row + .chancellor-program-completion-row {
-    margin-top: 10px;
+.chancellor-program-completion-row+.chancellor-program-completion-row {
+    margin: 2px;
 }
 
 .chancellor-program-completion-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 6px;
+    margin-bottom: 3px;
     color: #172b4d;
     font-size: 12px;
 }
@@ -629,7 +623,7 @@
 .chancellor-program-completion-track {
     overflow: hidden;
     height: 12px;
-    border-radius: 999px;
+    border-radius: 50px;
     background: #dfe8f2;
 }
 
@@ -638,7 +632,7 @@
     height: 100%;
     border-radius: inherit;
     background: linear-gradient(90deg, #51a362 0%, #7bd5a0 100%);
-} */
+}
 
 .chancellor-program-reporting-scroll {
     overflow-x: auto;
