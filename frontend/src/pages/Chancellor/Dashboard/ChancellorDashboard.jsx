@@ -75,6 +75,7 @@ function ChancellorDashboard() {
     const [program, setProgram] = useState('')
     const [week, setWeek] = useState('all')
     const [yearLevel, setYearLevel] = useState('1')
+    const [programReporting, setProgramReporting] = useState([])
     const [programYearReporting, setProgramYearReporting] = useState([])
     const [weeklyProgress, setWeeklyProgress] = useState([])
     const [summary, setSummary] = useState({
@@ -124,6 +125,7 @@ function ChancellorDashboard() {
                     percentage: 0,
                     tally: '0 of 0 programs completed',
                 })
+                setProgramReporting(data.program_reporting || [])
                 setProgramYearReporting(data.program_year_reporting || [])
                 setWeeklyProgress(data.weekly_progress || [])
             } catch (error) {
@@ -170,7 +172,7 @@ function ChancellorDashboard() {
     }, [])
 
     const progressPercentage = Math.min(100, Math.max(0, Number(overallProgress.percentage) || 0))
-    const completionOverview = programYearReporting.length > 0 ? programYearReporting : []
+    const completionOverview = programReporting
     const weeklyChartScale = getWeeklyChartScale(weeklyProgress)
     const weeklyChartTicks = Array.from(
         { length: Math.floor(weeklyChartScale.maximum / weeklyChartScale.step) + 1 },
@@ -447,7 +449,10 @@ function ChancellorDashboard() {
                                         {programYearReporting.map((report) => (
                                             <tr key={report.code}>
                                                 <th scope="row">
-                                                    <span>{PROGRAM_DISPLAY_NAMES[report.code] || report.name || report.code}</span>
+                                                    <span>
+                                                        {PROGRAM_DISPLAY_NAMES[report.code] || report.name || report.code}{' '}
+                                                        {report.year_level ?? yearLevel}
+                                                    </span>
                                                 </th>
                                                 {(report.weekly_statuses || []).map((status, index) => (
                                                     <td key={`${report.code}-${index}`}>
