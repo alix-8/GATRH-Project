@@ -20,6 +20,46 @@
     font-size: 12px;
 }
 
+.ph-record-export-notice {
+    position: fixed;
+    z-index: 1500;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    width: min(420px, calc(100vw - 36px));
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid;
+    border-radius: 7px;
+    box-shadow: 0 8px 24px rgb(23 43 77 / 16%);
+    font-size: 13px;
+}
+
+.ph-record-export-notice.success {
+    border-color: #a6e0c0;
+    background: #f0fbf4;
+    color: #176b3a;
+}
+
+.ph-record-export-notice.error {
+    border-color: #fecaca;
+    background: #fff7f7;
+    color: #9b1c1c;
+}
+
+.ph-record-export-notice button {
+    flex: 0 0 auto;
+    border: 0;
+    background: transparent;
+    color: #44536a;
+    font: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
 .ph-records-table th,
 .ph-records-table td {
     padding-right: 14px;

@@ -35,7 +35,7 @@ export default function RecordsTable() {
     const [page, setPage] = useState(1)
     const [loading, setLoading] = useState(true)
     const [loadError, setLoadError] = useState('')
-    const [exportError, setExportError] = useState('')
+    const [exportNotice, setExportNotice] = useState(null)
     const [activeRecord, setActiveRecord] = useState(null)
 
     const params = useMemo(() => {
@@ -68,13 +68,20 @@ export default function RecordsTable() {
         return () => controller.abort()
     }, [loadRecords])
 
+    useEffect(() => {
+        if (!exportNotice) return undefined
+
+        const timeoutId = window.setTimeout(() => setExportNotice(null), 8000)
+        return () => window.clearTimeout(timeoutId)
+    }, [exportNotice])
+
     const updateFilter = (key, value) => {
         setFilters((current) => ({ ...current, [key]: value }))
         setPage(1)
     }
 
     const exportRecord = async (record) => {
-        setExportError('')
+        setExportNotice(null)
         try {
             const token = localStorage.getItem('auth_token')
             const params = new URLSearchParams({
@@ -102,9 +109,16 @@ export default function RecordsTable() {
             document.body.append(link)
             link.click()
             link.remove()
-            URL.revokeObjectURL(url)
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+            setExportNotice({
+                type: 'success',
+                message: `Started download: ${link.download}`,
+            })
         } catch (err) {
-            setExportError(err.message || 'Could not export records.')
+            setExportNotice({
+                type: 'error',
+                message: err.message || 'Could not download the attendance record.',
+            })
         }
     }
 
@@ -138,7 +152,19 @@ export default function RecordsTable() {
                     />
                 </label>
             </section>
-            {(loadError || exportError) && <p className="ph-record-error" role="alert">{exportError || loadError}</p>}
+            {loadError && <p className="ph-record-error" role="alert">{loadError}</p>}
+            {exportNotice && (
+                <div
+                    className={`ph-record-export-notice ${exportNotice.type}`}
+                    role={exportNotice.type === 'error' ? 'alert' : 'status'}
+                    aria-live={exportNotice.type === 'error' ? 'assertive' : 'polite'}
+                >
+                    <span>{exportNotice.message}</span>
+                    <button type="button" aria-label="Dismiss export message" onClick={() => setExportNotice(null)}>
+                        ×
+                    </button>
+                </div>
+            )}
             <section className="ph-submissions-table-panel" aria-label="Approved attendance records">
                 <div className="ph-submissions-table-scroll">
                     <table className="ph-submissions-table ph-records-table">
