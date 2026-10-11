@@ -209,6 +209,22 @@
     margin: 26px 28px;
 }
 
+.chancellor-dashboard-content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.72fr) minmax(300px, 1fr);
+    gap: 12px;
+    margin: 0 28px 18px;
+    align-items: start;
+}
+
+.chancellor-dashboard-content-column,
+.chancellor-dashboard-side-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 14px;
+}
+
 .chancellor-summary-card {
     box-sizing: border-box;
     display: flex;
@@ -299,8 +315,8 @@
     display: grid;
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr);
     align-items: end;
-    width: 59%;
-    margin: 0 28px;
+    width: 100%;
+    margin: 0;
     padding: 16px 18px;
     border: 1px solid #c3e4ff;
     border-radius: 9px;
@@ -362,8 +378,8 @@
 
 .chancellor-programs-attention {
     box-sizing: border-box;
-    width: 59%;
-    margin: 14px 28px;
+    width: 100%;
+    margin: 0;
     padding: 18px;
     border: 1px solid #d5dfef;
     border-radius: 9px;
@@ -492,6 +508,137 @@
     background: #5c7499;
     color: #fff;
 }
+
+
+.chancellor-progress-by-week {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #bbc5d3;
+    border-radius: 14px;
+    container-type: inline-size;
+    text-align: left;
+}
+
+.chancellor-progress-by-week h2 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.chancellor-progress-by-week p {
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.chancellor-weekly-chart {
+    display: block;
+    width: 100%;
+}
+
+.chancellor-weekly-axis-label {
+    fill: #52617d;
+    font-size: 14px;
+}
+
+.chancellor-weekly-axis-line {
+    stroke: #cbd4ca;
+    stroke-width: 1;
+}
+
+.chancellor-weekly-segment--completed {
+    fill: #1fa447;
+}
+
+.chancellor-weekly-segment--in-progress {
+    fill: #f4ca4b;
+}
+
+.chancellor-weekly-segment--no-report {
+    fill: #cbd4df;
+}
+
+.chancellor-weekly-label {
+    fill: #63718e;
+    font-size: 16px;
+    font-weight: 500;
+    text-anchor: middle;
+}
+
+.chancellor-weekly-legend {
+    fill: #1fa447;
+    font-size: 13px;
+}
+
+.chancellor-weekly-legend text:nth-of-type(2) {
+    fill: #f4ca4b;
+}
+
+.chancellor-weekly-no-report-label {
+    fill: #cbd4df;
+    font-size: 13px;
+}
+
+/* .chancellor-program-completion-overview {
+    box-sizing: border-box;
+    padding: 18px 16px 14px;
+    border: 1px solid #d7e0ec;
+    border-radius: 12px;
+    background: #f9fbfe;
+}
+
+.chancellor-program-completion-overview h2 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.chancellor-program-completion-overview p {
+    margin: 4px 0 16px;
+    color: #667995;
+    font-size: 11px;
+}
+
+.chancellor-program-completion-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.chancellor-program-completion-row + .chancellor-program-completion-row {
+    margin-top: 10px;
+}
+
+.chancellor-program-completion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+    color: #172b4d;
+    font-size: 12px;
+}
+
+.chancellor-program-completion-header strong {
+    font-size: 11px;
+}
+
+.chancellor-program-completion-track {
+    overflow: hidden;
+    height: 12px;
+    border-radius: 999px;
+    background: #dfe8f2;
+}
+
+.chancellor-program-completion-track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #51a362 0%, #7bd5a0 100%);
+} */
 
 .chancellor-program-reporting-scroll {
     overflow-x: auto;

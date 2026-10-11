@@ -38,6 +38,24 @@ const REPORT_STATUS_LABELS = {
     no_report: 'No Report',
 }
 
+const WEEKLY_CHART = {
+    baseline: 225,
+    top: 94,
+    barWidth: 60,
+    barX: [119, 219, 319, 419],
+}
+
+function getWeeklyChartScale(weeks) {
+    const largestTotal = Math.max(1, ...weeks.map((week) =>
+        (Number(week.completed) || 0) + (Number(week.incomplete) || 0) + (Number(week.no_report) || 0)
+    ))
+    const roughStep = Math.max(1, largestTotal / 3)
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep))
+    const step = [1, 2, 5, 10].map((value) => value * magnitude)
+        .reduce((closest, value) => Math.abs(value - roughStep) < Math.abs(closest - roughStep) ? value : closest)
+    return { maximum: largestTotal, step: Math.max(1, step) }
+}
+
 function getTodayDateValue() {
     const today = new Date()
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -58,6 +76,7 @@ function ChancellorDashboard() {
     const [week, setWeek] = useState('all')
     const [yearLevel, setYearLevel] = useState('1')
     const [programYearReporting, setProgramYearReporting] = useState([])
+    const [weeklyProgress, setWeeklyProgress] = useState([])
     const [summary, setSummary] = useState({
         completed: 0,
         incomplete: 0,
@@ -106,6 +125,7 @@ function ChancellorDashboard() {
                     tally: '0 of 0 programs completed',
                 })
                 setProgramYearReporting(data.program_year_reporting || [])
+                setWeeklyProgress(data.weekly_progress || [])
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     setLoadError(error.message || 'Could not load dashboard filters.')
@@ -150,6 +170,12 @@ function ChancellorDashboard() {
     }, [])
 
     const progressPercentage = Math.min(100, Math.max(0, Number(overallProgress.percentage) || 0))
+    const completionOverview = programYearReporting.length > 0 ? programYearReporting : []
+    const weeklyChartScale = getWeeklyChartScale(weeklyProgress)
+    const weeklyChartTicks = Array.from(
+        { length: Math.floor(weeklyChartScale.maximum / weeklyChartScale.step) + 1 },
+        (_, index) => index * weeklyChartScale.step
+    ).reverse()
 
     return (
         <div className="chancellor-dashboard">
@@ -336,148 +362,213 @@ function ChancellorDashboard() {
                     </article>
                    
                 </section>
-                <section className="chancellor-overall-progress" aria-labelledby="chancellor-overall-progress-title">
-                    <div className="chancellor-overall-progress-heading">
-                        <h2 id="chancellor-overall-progress-title">Overall Reporting Progress</h2>
-                        <p>Total attendance reports from all programs.</p>
-                    </div>
-                    <div className="chancellor-overall-progress-value">
-                        <strong>{progressPercentage}%</strong>
-                        <span>{overallProgress.tally}</span>
-                    </div>
-                    <div
-                        className="chancellor-overall-progress-track"
-                        role="progressbar"
-                        aria-label="Overall reporting progress"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        aria-valuenow={progressPercentage}
-                        aria-valuetext={`${progressPercentage}% complete; ${overallProgress.tally}`}
-                    >
-                        <span style={{ width: `${progressPercentage}%` }} />
-                    </div>
-                </section>
-                <section className="chancellor-programs-attention" aria-labelledby="chancellor-programs-attention-title">
-                    <div className="chancellor-programs-attention-header">
-                        <div>
-                            <h2 id="chancellor-programs-attention-title">Programs Needing Attention</h2>
-                            <p>Programs with incomplete or missing reports.</p>
-                        </div>
-                        <div className="chancellor-year-filter" ref={yearRef}>
-                            <span>Program year</span>
-                            <div className={`chancellor-year-dropdown ${isYearOpen ? 'is-open' : ''}`}>
-                                <button
-                                    type="button"
-                                    className="chancellor-year-trigger"
-                                    aria-haspopup="listbox"
-                                    aria-expanded={isYearOpen}
-                                    aria-label={`Program year: ${YEAR_LEVEL_OPTION_LABELS[yearLevel]}`}
-                                    onClick={() => setIsYearOpen((open) => !open)}
-                                >
-                                    <span>{YEAR_LEVEL_OPTION_LABELS[yearLevel]}</span>
-                                    <img
-                                        className={`chancellor-year-chevron ${isYearOpen ? 'open' : ''}`}
-                                        src={DropdownIcon}
-                                        alt=""
-                                    />
-                                </button>
-                                {isYearOpen && (
-                                    <ul className="chancellor-year-menu" role="listbox" aria-label="Program year">
-                                        {YEAR_LEVEL_OPTIONS.map((year) => (
-                                            <li key={year}>
-                                                <button
-                                                    type="button"
-                                                    role="option"
-                                                    aria-selected={yearLevel === year}
-                                                    className={`chancellor-year-option ${yearLevel === year ? 'selected' : ''}`}
-                                                    onClick={() => {
-                                                        setYearLevel(year)
-                                                        setIsYearOpen(false)
-                                                    }}
-                                                >
-                                                    {YEAR_LEVEL_OPTION_LABELS[year]}
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                <div className="chancellor-dashboard-content-grid">
+                    <div className="chancellor-dashboard-content-column">
+                        <section className="chancellor-overall-progress" aria-labelledby="chancellor-overall-progress-title">
+                            <div className="chancellor-overall-progress-heading">
+                                <h2 id="chancellor-overall-progress-title">Overall Reporting Progress</h2>
+                                <p>Total attendance reports from all programs.</p>
                             </div>
-                        </div>
-                    </div>
-                    <div className="chancellor-program-reporting-scroll">
-                        <table className="chancellor-program-reporting-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Program</th>
-                                    {[1, 2, 3, 4].map((weekNumber) => (
-                                        <th key={weekNumber} scope="col">Week {weekNumber}</th>
-                                    ))}
-                                    <th scope="col">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {programYearReporting.map((report) => (
-                                    <tr key={report.code}>
-                                        <th scope="row">
-                                            <span>{PROGRAM_DISPLAY_NAMES[report.code] || report.name || report.code} {yearLevel}</span>
-                                        </th>
-                                        {(report.weekly_statuses || []).map((status, index) => (
-                                            <td key={`${report.code}-${index}`}>
-                                                <span
-                                                    className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`}
-                                                    role="img"
-                                                    aria-label={REPORT_STATUS_LABELS[status] || 'No Report'}
-                                                >
-                                                    <img
-                                                        src={status === 'completed'
-                                                            ? CompletedReportsIcon
-                                                            : status === 'incomplete'
-                                                                ? IncompleteReportsIcon
-                                                                : NoReportsIcon}
-                                                        alt=""
-                                                    />
-                                                </span>
-                                            </td>
+                            <div className="chancellor-overall-progress-value">
+                                <strong>{progressPercentage}%</strong>
+                                <span>{overallProgress.tally}</span>
+                            </div>
+                            <div
+                                className="chancellor-overall-progress-track"
+                                role="progressbar"
+                                aria-label="Overall reporting progress"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-valuenow={progressPercentage}
+                                aria-valuetext={`${progressPercentage}% complete; ${overallProgress.tally}`}
+                            >
+                                <span style={{ width: `${progressPercentage}%` }} />
+                            </div>
+                        </section>
+                        <section className="chancellor-programs-attention" aria-labelledby="chancellor-programs-attention-title">
+                            <div className="chancellor-programs-attention-header">
+                                <div>
+                                    <h2 id="chancellor-programs-attention-title">Programs Needing Attention</h2>
+                                    <p>Programs with incomplete or missing reports.</p>
+                                </div>
+                                <div className="chancellor-year-filter" ref={yearRef}>
+                                    <span>Program year</span>
+                                    <div className={`chancellor-year-dropdown ${isYearOpen ? 'is-open' : ''}`}>
+                                        <button
+                                            type="button"
+                                            className="chancellor-year-trigger"
+                                            aria-haspopup="listbox"
+                                            aria-expanded={isYearOpen}
+                                            aria-label={`Program year: ${YEAR_LEVEL_OPTION_LABELS[yearLevel]}`}
+                                            onClick={() => setIsYearOpen((open) => !open)}
+                                        >
+                                            <span>{YEAR_LEVEL_OPTION_LABELS[yearLevel]}</span>
+                                            <img
+                                                className={`chancellor-year-chevron ${isYearOpen ? 'open' : ''}`}
+                                                src={DropdownIcon}
+                                                alt=""
+                                            />
+                                        </button>
+                                        {isYearOpen && (
+                                            <ul className="chancellor-year-menu" role="listbox" aria-label="Program year">
+                                                {YEAR_LEVEL_OPTIONS.map((year) => (
+                                                    <li key={year}>
+                                                        <button
+                                                            type="button"
+                                                            role="option"
+                                                            aria-selected={yearLevel === year}
+                                                            className={`chancellor-year-option ${yearLevel === year ? 'selected' : ''}`}
+                                                            onClick={() => {
+                                                                setYearLevel(year)
+                                                                setIsYearOpen(false)
+                                                            }}
+                                                        >
+                                                            {YEAR_LEVEL_OPTION_LABELS[year]}
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="chancellor-program-reporting-scroll">
+                                <table className="chancellor-program-reporting-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Program</th>
+                                            {[1, 2, 3, 4].map((weekNumber) => (
+                                                <th key={weekNumber} scope="col">Week {weekNumber}</th>
+                                            ))}
+                                            <th scope="col">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {programYearReporting.map((report) => (
+                                            <tr key={report.code}>
+                                                <th scope="row">
+                                                    <span>{PROGRAM_DISPLAY_NAMES[report.code] || report.name || report.code}</span>
+                                                </th>
+                                                {(report.weekly_statuses || []).map((status, index) => (
+                                                    <td key={`${report.code}-${index}`}>
+                                                        <span
+                                                            className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`}
+                                                            role="img"
+                                                            aria-label={REPORT_STATUS_LABELS[status] || 'No Report'}
+                                                        >
+                                                            <img
+                                                                src={status === 'completed'
+                                                                    ? CompletedReportsIcon
+                                                                    : status === 'incomplete'
+                                                                        ? IncompleteReportsIcon
+                                                                        : NoReportsIcon}
+                                                                alt=""
+                                                            />
+                                                        </span>
+                                                    </td>
+                                                ))}
+                                                <td>
+                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${report.status}`}>
+                                                        <span />
+                                                        {REPORT_STATUS_LABELS[report.status] || 'No Report'}
+                                                    </span>
+                                                </td>
+                                            </tr>
                                         ))}
-                                        <td>
-                                            <span className={`chancellor-report-status-label chancellor-report-status-label--${report.status}`}>
-                                                <span />
-                                                {REPORT_STATUS_LABELS[report.status] || 'No Report'}
+                                        {programYearReporting.length === 0 && (
+                                            <tr>
+                                                <td className="chancellor-program-reporting-empty" colSpan="6">
+                                                    No program reporting data is available.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="chancellor-program-reporting-footer">
+                                <div className="chancellor-program-reporting-legend" aria-label="Report status legend">
+                                    {Object.entries(REPORT_STATUS_LABELS).map(([status, label]) => (
+                                        <span key={status}>
+                                            <span className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`} aria-hidden="true">
+                                                <img
+                                                    src={status === 'completed'
+                                                        ? CompletedReportsIcon
+                                                        : status === 'incomplete'
+                                                            ? IncompleteReportsIcon
+                                                            : NoReportsIcon}
+                                                    alt=""
+                                                />
                                             </span>
-                                        </td>
-                                    </tr>
+                                            {label}
+                                        </span>
+                                    ))}
+                                </div>
+                                <span>Showing {programYearReporting.length} programs</span>
+                            </div>
+                        </section>
+                    </div>
+                    <aside className="chancellor-dashboard-side-column">
+                        <section className="chancellor-progress-by-week" aria-labelledby="chancellor-progress-by-week-title">
+                            <h2 id="chancellor-progress-by-week-title">Progress by Week</h2>
+                            <p>Number of programs with completed reports</p>
+                            <svg className="chancellor-weekly-chart" viewBox="0 0 616 275" role="img" aria-labelledby="chancellor-weekly-chart-title chancellor-weekly-chart-description">
+                                <title id="chancellor-weekly-chart-title">Progress by Week</title>
+                                <desc id="chancellor-weekly-chart-description">
+                                    {weeklyProgress.map((week) => `${week.label}: ${week.completed || 0} completed, ${week.incomplete || 0} in progress, ${week.no_report || 0} no report`).join('; ') || 'No weekly progress data available'}
+                                </desc>
+                                {weeklyChartTicks.map((tick) => (
+                                    <text key={tick} className="chancellor-weekly-axis-label" x="58" y={220 - tick / weeklyChartScale.maximum * 123}>
+                                        {tick}
+                                    </text>
                                 ))}
-                                {programYearReporting.length === 0 && (
-                                    <tr>
-                                        <td className="chancellor-program-reporting-empty" colSpan="6">
-                                            No program reporting data is available.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="chancellor-program-reporting-footer">
-                        <div className="chancellor-program-reporting-legend" aria-label="Report status legend">
-                            {Object.entries(REPORT_STATUS_LABELS).map(([status, label]) => (
-                                <span key={status}>
-                                    <span className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`} aria-hidden="true">
-                                        <img
-                                            src={status === 'completed'
-                                                ? CompletedReportsIcon
-                                                : status === 'incomplete'
-                                                    ? IncompleteReportsIcon
-                                                    : NoReportsIcon}
-                                            alt=""
-                                        />
-                                    </span>
-                                    {label}
-                                </span>
-                            ))}
-                        </div>
-                        <span>Showing {programYearReporting.length} programs</span>
-                    </div>
-                </section>
+                                <line className="chancellor-weekly-axis-line" x1="96" x2="500" y1={WEEKLY_CHART.baseline} y2={WEEKLY_CHART.baseline} />
+                                {weeklyProgress.slice(0, 4).map((week, index) => {
+                                    let bottom = WEEKLY_CHART.baseline
+                                    const segments = [
+                                        ['completed', week.completed],
+                                        ['in-progress', week.incomplete],
+                                        ['no-report', week.no_report],
+                                    ]
+                                    return (
+                                        <g key={week.label}>
+                                            {segments.map(([status, count]) => {
+                                                const height = Math.max(0, Number(count) || 0) / weeklyChartScale.maximum * (WEEKLY_CHART.baseline - WEEKLY_CHART.top)
+                                                bottom -= height
+                                                return <rect key={status} className={`chancellor-weekly-segment--${status}`} x={WEEKLY_CHART.barX[index]} y={bottom} width={WEEKLY_CHART.barWidth} height={height} />
+                                            })}
+                                            <text className="chancellor-weekly-label" x={WEEKLY_CHART.barX[index] + WEEKLY_CHART.barWidth / 2} y="257">{week.label}</text>
+                                        </g>
+                                    )
+                                })}
+                                <g className="chancellor-weekly-legend">
+                                    <circle className="chancellor-weekly-segment--completed" cx="530" cy="119" r="5.5" />
+                                    <text x="549" y="123">Completed</text>
+                                    <circle className="chancellor-weekly-segment--in-progress" cx="530" cy="153" r="5.5" />
+                                    <text x="549" y="157">In Progress</text>
+                                    <circle className="chancellor-weekly-segment--no-report" cx="530" cy="187" r="5.5" />
+                                    <text className="chancellor-weekly-no-report-label" x="549" y="191">No Report</text>
+                                </g>
+                            </svg>
+                        </section>
+                        <section className="chancellor-program-completion-overview" aria-labelledby="chancellor-program-completion-overview-title">
+                            <h2 id="chancellor-program-completion-overview-title">Program Completion Overview</h2>
+                            <p>Completion rate per program</p>
+                            <ul className="chancellor-program-completion-list">
+                                {completionOverview.map((program) => (
+                                    <li key={program.code} className="chancellor-program-completion-row">
+                                        <div className="chancellor-program-completion-header">
+                                            <span>{PROGRAM_DISPLAY_NAMES[program.code] || program.name || program.code}</span>
+                                            <strong>{program.completion || 0}%</strong>
+                                        </div>
+                                        <div className="chancellor-program-completion-track">
+                                            <span style={{ width: `${program.completion || 0}%` }} />
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    </aside>
+                </div>
                 {loadError && <p className="chancellor-dashboard-error" role="alert">{loadError}</p>}
             </main>
         </div>
