@@ -32,10 +32,13 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         $selectedDate = CarbonImmutable::parse('2026-09-20');
 
         [$weekStart, $weekEnd] = $service->periodBounds($selectedDate, 'week');
+        [$fifthWeekStart, $fifthWeekEnd] = $service->periodBounds($selectedDate, 'week', 5);
         [$monthStart, $monthEnd] = $service->periodBounds($selectedDate, 'month');
 
         $this->assertSame('2026-09-19', $weekStart->toDateString());
         $this->assertSame('2026-09-23', $weekEnd->toDateString());
+        $this->assertSame('2026-09-26', $fifthWeekStart->toDateString());
+        $this->assertSame('2026-09-30', $fifthWeekEnd->toDateString());
         $this->assertSame('2026-08-29', $monthStart->toDateString());
         $this->assertSame('2026-09-30', $monthEnd->toDateString());
 
@@ -47,5 +50,59 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         } finally {
             @unlink($path);
         }
+    }
+
+    public function test_period_worksheet_avoids_filters_over_merged_template_headers(): void
+    {
+        $service = new ProgramHeadAttendanceWorkbookService();
+        $path = $service->createPeriod(
+            new Collection(),
+            CarbonImmutable::parse('2026-09-01'),
+            'week',
+            'BSIS',
+            3,
+            null,
+            1
+        );
+
+        try {
+            $worksheet = $this->readZipEntry(
+                file_get_contents($path),
+                'xl/worksheets/sheet1.xml'
+            );
+
+            $this->assertNotFalse($worksheet);
+            $this->assertStringContainsString('<mergeCells', $worksheet);
+            $this->assertStringNotContainsString('<autoFilter', $worksheet);
+            $this->assertStringContainsString('<c r="B3" s="16"', $worksheet);
+            $this->assertStringContainsString('<c r="B5" s="17"', $worksheet);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    private function readZipEntry(string $archive, string $expectedName): string|false
+    {
+        $offset = 0;
+        $archiveLength = strlen($archive);
+
+        while ($offset + 30 <= $archiveLength && substr($archive, $offset, 4) === "PK\x03\x04") {
+            $header = unpack(
+                'Vsignature/vversion/vflags/vmethod/vtime/vdate/Vcrc/VcompressedSize/VuncompressedSize/vnameLength/vextraLength',
+                substr($archive, $offset, 30)
+            );
+            $nameOffset = $offset + 30;
+            $name = substr($archive, $nameOffset, $header['nameLength']);
+            $contentOffset = $nameOffset + $header['nameLength'] + $header['extraLength'];
+            $compressed = substr($archive, $contentOffset, $header['compressedSize']);
+
+            if ($name === $expectedName) {
+                return $header['method'] === 8 ? gzinflate($compressed) : $compressed;
+            }
+
+            $offset = $contentOffset + $header['compressedSize'];
+        }
+
+        return false;
     }
 }

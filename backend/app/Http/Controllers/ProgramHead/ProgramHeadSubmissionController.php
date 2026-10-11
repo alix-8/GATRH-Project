@@ -197,19 +197,25 @@ class ProgramHeadSubmissionController extends Controller
             'batch_key' => ['nullable', 'string', 'max:100'],
             'period' => ['nullable', 'in:session,week,month'],
             'program' => ['required_if:period,week,month', 'nullable', 'string', 'max:100'],
+            'month' => ['nullable', 'date_format:Y-m'],
+            'week' => ['nullable', 'integer', 'between:1,6', 'required_with:month'],
         ]);
 
         $period = $filters['period'] ?? 'session';
 
         if ($period !== 'session') {
             $periodFilters = $request->validate([
-                'date' => ['required', 'date'],
+                'month' => ['required_without:date', 'date_format:Y-m'],
+                'date' => ['required_without:month', 'date'],
                 'year_level' => ['required', 'integer', 'between:1,4'],
             ]);
-            $selectedDate = CarbonImmutable::parse($periodFilters['date']);
+            $selectedDate = !empty($periodFilters['month'])
+                ? CarbonImmutable::createFromFormat('!Y-m', $periodFilters['month'])
+                : CarbonImmutable::parse($periodFilters['date']);
+            $selectedWeek = $period === 'week' ? (int) $filters['week'] : null;
             $program = strtoupper(trim($filters['program']));
             $yearLevel = (int) $periodFilters['year_level'];
-            [$start, $end] = $workbookService->periodBounds($selectedDate, $period);
+            [$start, $end] = $workbookService->periodBounds($selectedDate, $period, $selectedWeek);
             $students = $exportService->periodStudents(
                 $request->user(),
                 $program,
@@ -224,7 +230,8 @@ class ProgramHeadSubmissionController extends Controller
                 $period,
                 $program,
                 $yearLevel,
-                $programName
+                $programName,
+                $selectedWeek
             );
             $filename = sprintf(
                 '%s-attendance-%s-%s-to-%s.xlsx',

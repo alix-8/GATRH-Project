@@ -72,7 +72,8 @@ class ProgramHeadRecordsExportService
                 $records
                     ->whereIn('validation_status', ['validated', 'approved'])
                     ->whereIn('gathering_type', ['ws', 'tg', 'pm'])
-                    ->whereBetween('day', [$start->toDateString(), $end->toDateString()])
+                    // Attendance slots span through the day after Wednesday for the PM session.
+                    ->whereBetween('day', [$start->toDateString(), $end->addDay()->toDateString()])
                     ->orderBy('day')
                     ->orderBy('gathering_type');
             }])
