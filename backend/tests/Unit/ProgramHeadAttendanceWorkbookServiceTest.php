@@ -74,6 +74,8 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
             $this->assertNotFalse($worksheet);
             $this->assertStringContainsString('<mergeCells', $worksheet);
             $this->assertStringNotContainsString('<autoFilter', $worksheet);
+            $this->assertStringContainsString('<c r="B3" s="16"', $worksheet);
+            $this->assertStringContainsString('<c r="B5" s="17"', $worksheet);
         } finally {
             @unlink($path);
         }

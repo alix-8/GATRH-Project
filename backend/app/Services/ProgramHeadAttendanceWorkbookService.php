@@ -214,13 +214,13 @@ class ProgramHeadAttendanceWorkbookService
             $lastWeekColumn = $firstColumn + 2;
             $weekDate = $week['start']->format('F j') . ' - ' . $week['label_end']->format('F j');
             $rows[1] = $this->appendCell($rows[1], $this->cell($this->columnName($firstColumn) . '2', 'WEEK ' . $week['number'], 4));
-            $rows[2] = $this->appendCell($rows[2], $this->cell($this->columnName($firstColumn) . '3', $weekDate, 5));
+            $rows[2] = $this->appendCell($rows[2], $this->cell($this->columnName($firstColumn) . '3', $weekDate, 16));
 
             foreach (array_slice($slotColumns, $index * 3, 3) as $slot) {
                 $column = $this->columnName($slot['column']);
                 $dateLabel = $slot['date']->format('M j') . ' - ' . $slot['date_end']->format('M j');
                 $rows[3] = $this->appendCell($rows[3], $this->cell($column . '4', strtoupper($slot['type']), $this->gatheringStyle($slot['type'])));
-                $rows[4] = $this->appendCell($rows[4], $this->cell($column . '5', $dateLabel, 15));
+                $rows[4] = $this->appendCell($rows[4], $this->cell($column . '5', $dateLabel, 17));
             }
 
             $this->mergeCells[] = $this->columnName($firstColumn) . '2:' . $this->columnName($lastWeekColumn) . '2';
@@ -541,7 +541,7 @@ class ProgramHeadAttendanceWorkbookService
     {
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            . '<fonts count="7">'
+            . '<fonts count="9">'
             . '<font><sz val="11"/><name val="Arial"/></font>'
             . '<font><b/><sz val="11"/><name val="Arial"/></font>'
             . '<font><b/><sz val="17"/><name val="Arial"/></font>'
@@ -549,6 +549,8 @@ class ProgramHeadAttendanceWorkbookService
             . '<font><b/><color rgb="FFFFFF00"/><sz val="17"/><name val="Arial"/></font>'
             . '<font><i/><sz val="10"/><name val="Arial"/></font>'
             . '<font><b/><color rgb="FFFFFF00"/><sz val="11"/><name val="Arial"/></font>'
+            . '<font><b/><color rgb="FF0070C0"/><sz val="11"/><name val="Arial"/></font>'
+            . '<font><b/><i/><color rgb="FF0070C0"/><sz val="10"/><name val="Arial"/></font>'
             . '</fonts>'
             . '<fills count="14">'
             . '<fill><patternFill patternType="none"/></fill>'
@@ -571,7 +573,7 @@ class ProgramHeadAttendanceWorkbookService
             . '<border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border>'
             . '</borders>'
             . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            . '<cellXfs count="16">'
+            . '<cellXfs count="18">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             . '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>'
@@ -588,6 +590,8 @@ class ProgramHeadAttendanceWorkbookService
             . '<xf numFmtId="0" fontId="4" fillId="12" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="5" fillId="12" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="6" fillId="13" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="7" fillId="5" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            . '<xf numFmtId="0" fontId="8" fillId="13" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '</cellXfs>'
             . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
             . '</styleSheet>';

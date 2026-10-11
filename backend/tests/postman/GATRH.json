@@ -137,7 +137,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  // \"email\": \"alexandrian.bon@student.laverdad.edu.ph\", //bsis 1\n  // \"email\": \"sec.bsis3@laverdad.edu.ph\",\n  // \"email\": \"sec.bsa3@laverdad.edu.ph\",\n  // \"email\": \"bsis.head@laverdad.edu.ph\",\n  // \"email\": \"sec.bssw1@laverdad.edu.ph\",\n  //     \"email\": \"bssw.head@laverdad.edu.ph\",\n  // \"email\": \"cm.coordinator@laverdad.edu.ph\",\n  // \"email\": \"chancellor@laverdad.edu.ph\",\n  \"email\": \"admin@laverdad.edu.ph\",\n  \"password\": \"Password123!\"\n}",
+              "raw": "{\n  // \"email\": \"alexandrian.bon@student.laverdad.edu.ph\", //bsis 1\n  // \"email\": \"sec.bsis3@laverdad.edu.ph\",\n  // \"email\": \"sec.bsa3@laverdad.edu.ph\",\n  \"email\": \"bsis.head@laverdad.edu.ph\",\n  // \"email\": \"sec.bssw1@laverdad.edu.ph\",\n  //     \"email\": \"bssw.head@laverdad.edu.ph\",\n  // \"email\": \"cm.coordinator@laverdad.edu.ph\",\n//   \"email\": \"chancellor@laverdad.edu.ph\",\n//   \"email\": \"admin@laverdad.edu.ph\",\n  \"password\": \"Password123!\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1242,7 +1242,7 @@
                     },
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"search\": \"jonn\"\n}",
+                      "raw": "{\n  \"is_active\": false\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -1579,6 +1579,147 @@
                   ],
                   "query": [],
                   "variable": []
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Export Functions",
+          "item": [
+            {
+              "name": "Export Gathering",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "description": "",
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/program-head/records/export",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1:8000"
+                  ],
+                  "path": [
+                    "api",
+                    "program-head",
+                    "records",
+                    "export"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"2026-10-11\",\n  \"gathering_type\": \"\",\n  \"year_level\": \"\",\n  \"batch_key\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Export Weekly Gathering",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true,
+                "disabledSystemHeaders": {
+                  "accept": true
+                }
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "description": "",
+                    "disabled": false,
+                    "type": "default"
+                  }
+                ],
+                "description": "",
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/program-head/records/export",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1:8000"
+                  ],
+                  "path": [
+                    "api",
+                    "program-head",
+                    "records",
+                    "export"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"period\": \"week\" ,\n  \"date\": \"2026-09\",\n  \"week\":\"4\",\n  \"program\": \"bsis\",\n  \"year_level\": \"1\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Export Monthly Gathering copy",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true,
+                "disabledSystemHeaders": {
+                  "accept": true
+                }
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "description": "",
+                    "disabled": false,
+                    "type": "default"
+                  }
+                ],
+                "description": "",
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/program-head/records/export",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1:8000"
+                  ],
+                  "path": [
+                    "api",
+                    "program-head",
+                    "records",
+                    "export"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"period\": \"month\" ,\n  \"date\": \"2026-09\",\n  \"week\":\"4\",\n  \"program\": \"bsis\",\n  \"year_level\": \"1\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 }
               }
             }
