@@ -3,7 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
-use App\Services\ReminderGenerationService;
+use App\Services\Reminders\ReminderGenerationService;
 use Carbon\Carbon;
 
 Artisan::command('inspire', function () {

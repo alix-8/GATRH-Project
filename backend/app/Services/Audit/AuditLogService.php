@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Audit;
 
 use App\Models\AuditLog;
 use App\Models\User;

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use DateTimeZone;
 use App\Http\Controllers\Controller;
 use App\Models\SystemSetting;
-use App\Services\AdminSystemSettingService;
+use App\Services\Admin\AdminSystemSettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;

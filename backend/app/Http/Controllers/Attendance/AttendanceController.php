@@ -11,8 +11,8 @@ use App\Models\AttendanceRecord;
 use App\Models\AttendanceDraft;
 use App\Models\Reminder;
 use App\Models\Student;
-use App\Services\AttendanceParsingService;
-use App\Services\AuditLogService;
+use App\Services\Attendance\AttendanceParsingService;
+use App\Services\Audit\AuditLogService;
 use App\Support\GatheringCycle;
 
 class AttendanceController extends Controller

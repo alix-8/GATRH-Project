@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Reminders;
 
 use App\Models\Reminder;
 use Carbon\Carbon;
