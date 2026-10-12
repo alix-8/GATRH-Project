@@ -5,6 +5,7 @@
 }
 
 .login-page {
+    --panel-content-top: clamp(112px, 18vh, 150px);
     position: relative;
     height: 100vh;
     min-height: 100vh;
@@ -314,29 +315,29 @@
 .login-illustration {
     position: absolute;
     width: 90%;
-    top: 150px;
     right: -34px;
+    margin-top: 130px;
 }
 
 .features-panel {
-    box-sizing: border-box;
-    margin-top: 10px;
-    margin-left: 10px;
-    padding: 112px 55px 20px;
+    position: absolute;
+    inset: var(--panel-content-top) 40px 14px;
+    box-sizing: border-box; 
+    padding: 0;
     color: #172B4D;
     text-align: center;
+    
 }
 
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(270px, 1fr));
-    height: 100%;
+    grid-template-rows: repeat(2, minmax(0, clamp(190px, 36vh, 260px)));
     gap: 16px;
 }
 
 .feature-card {
     box-sizing: border-box;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     padding: 12px 16px;
@@ -390,27 +391,32 @@
 }
 
 .process-panel {
+    position: absolute;
+    inset: var(--panel-content-top) 40px 14px;
     box-sizing: border-box;
-    height: 95%;
-    padding: 110px 40px 14px;
-    margin-top: 12px;
+    height: auto;
+    margin: 0;
+    padding: 0;
 }
 
 .process-flow {
     display: flex;
     height: 100%;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .process-card {
+    box-sizing: border-box;
+    min-height: 0;
+    flex: 0 1 clamp(78px, 14vh, 112px);
     background: white;
     border-radius: 12px;
-    padding: 18px;
+    padding: 8px 18px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin-left: 12px
+    gap: 4px;
 }
 
 .process-card-row {
@@ -423,7 +429,7 @@
 .process-card-title {
     color: #172B4D;
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1.2;
 }
 
@@ -435,13 +441,13 @@
 }
 
 .process-card-number {
-    width: 36px;
-    height: 36px;
-    flex: 0 0 36px;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
     border-radius: 30%;
     background-color: #172B4D;
     color: #fff;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
     display: inline-flex;
     align-items: center;
@@ -449,12 +455,18 @@
 }
 
 .faq-list {
-    width: 80%;
+    width: auto;
     display: flex;
     flex-direction: column;
-    margin-left: 72px;
-    margin-top: 120px;
+    margin: 0;
     gap: 14px;
+}
+
+.faq-panel {
+    position: absolute;
+    inset: var(--panel-content-top) 40px 14px;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 .faq-list details {

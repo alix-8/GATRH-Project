@@ -274,7 +274,11 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                             </div>
 
                             
-                            <AttendancePagination/>
+                            <AttendancePagination
+                                page={page}
+                                meta={{ current_page: page, last_page: pageCount }}
+                                goToPage={setPage}
+                            />
 
                             {record.status === 'rejected' && (
                                 <section className="program-head-note" aria-labelledby="program-head-note-title">

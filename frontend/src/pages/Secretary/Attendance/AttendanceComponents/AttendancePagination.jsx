@@ -18,6 +18,8 @@ export const AttendancePagination = ({ page, meta, goToPage }) => {
     const totalPages = meta?.last_page || 1;
     const currentPage = meta?.current_page || page || 1;
 
+    if (totalPages <= 1) return null;
+
     // Helper to generate page numbers with ellipses (...)
     const getPageNumbers = () => {
         const pages = [];
