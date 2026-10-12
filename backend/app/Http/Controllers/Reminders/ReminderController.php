@@ -9,6 +9,7 @@ use App\Models\AttendanceRecord;
 use App\Models\Escalation;
 use App\Services\ReminderCountdownService;
 use App\Services\GatheringService;
+use App\Services\ReminderGenerationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -17,19 +18,29 @@ class ReminderController extends Controller
 {
     protected ReminderCountdownService $countdownService;
     protected GatheringService $gatheringService;
+    protected ReminderGenerationService $reminderGenerationService;
 
     public function __construct(
         ReminderCountdownService $countdownService,
-        GatheringService $gatheringService
+        GatheringService $gatheringService,
+        ReminderGenerationService $reminderGenerationService
     )
     {
         $this->countdownService = $countdownService;
         $this->gatheringService = $gatheringService;
+        $this->reminderGenerationService = $reminderGenerationService;
     }
 
     public function index(Request $request)
     {
         $userId = $request->user()->id;
+
+        // Catch up for this secretary if the scheduled task ran while the
+        // Render instance was asleep or was restarting.
+        if ($request->user()->role === 'secretary') {
+            $this->reminderGenerationService->generateWeeklyGatheringReminders($request->user());
+            $this->reminderGenerationService->spawnSubmissionReminders(7, $userId);
+        }
 
         // Clean up gathering reminders left behind by attendance submissions
         // that were recorded before the submission endpoint began deleting them.

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\GatheringSchedule;
 use App\Models\SystemSetting;
 use Carbon\Carbon;
 
@@ -10,11 +9,9 @@ class GatheringService
 {
     private const DEFAULT_SCHEDULES = [
         'pm' => ['wednesday'],
-        'ws' => ['saturday', 'sunday'],
-        'tg' => ['saturday', 'sunday'],
+        'ws' => ['saturday'],
+        'tg' => ['saturday'],
     ];
-
-    private array $scheduleCache = [];
 
     public function label(string $type): string
     {
@@ -61,13 +58,9 @@ class GatheringService
 
     private function getScheduledDays(string $type): array
     {
-        if (! array_key_exists($type, $this->scheduleCache)) {
-            $this->scheduleCache[$type] = GatheringSchedule::query()
-                ->where('gathering_type', $type)
-                ->first()?->days ?? self::DEFAULT_SCHEDULES[$type] ?? [];
-        }
-
-        return $this->scheduleCache[$type];
+        // Reminder dates are the primary gathering days. Import attendance
+        // windows are handled separately by GatheringCycle.
+        return self::DEFAULT_SCHEDULES[$type] ?? [];
     }
 
     private function today(): Carbon
