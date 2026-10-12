@@ -86,7 +86,7 @@ function Login({ initialEmail = '' }) {
                 secretary: '/dashboard',
                 program_secretary: '/program-secretary/dashboard',
                 program_head: '/program-head/dashboard',
-                cm_coordinator: '/reminders',
+                cm_coordinator: '/coordinator/monitoring',
                 chancellor: '/chancellor/dashboard',
                 admin: '/admin/dashboard',
             }

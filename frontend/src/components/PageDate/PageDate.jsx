@@ -1,14 +1,20 @@
 import './PageDate.css'
 
 function PageDate({ className = '' }) {
-    const formattedDate = new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
+    const today = new Date()
+    const formattedDate = today.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
     })
+    const weekday = today.toLocaleDateString('en-US', { weekday: 'long' })
 
-    return <span className={`page-date ${className}`.trim()}>{formattedDate}</span>
+    return (
+        <time className={`page-date ${className}`.trim()}>
+            <span className="page-date-value">{formattedDate}</span>
+            <span className="page-date-weekday">{weekday}</span>
+        </time>
+    )
 }
 
 export default PageDate

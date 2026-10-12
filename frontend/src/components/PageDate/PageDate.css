@@ -1,5 +1,13 @@
 .page-date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.page-date-value {
     color: #172B4D;
-    font-size: 16px;
-    font-weight: 500;
+}
+
+.page-date-weekday {
+    color: #8a94a6;
 }
