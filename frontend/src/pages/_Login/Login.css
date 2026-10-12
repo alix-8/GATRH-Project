@@ -39,20 +39,20 @@
     font-size: 2.8rem;
     text-align: left;
     letter-spacing: 1px;
-    margin: 150px 0 0 78px;
+    margin: 130px 78px;
 }
 
 .welcome-message {
     position: absolute;
     text-align: left;
     color: #7c7a7a;
-    margin: 270px 0 0 78px;
+    margin: 255px 78px;
     line-height: 1.4;
 }
 
 .login-form {
     position: absolute;
-    top: 350px;
+    top: 330px;
     left: 80px;
     width: 370px;
 }
@@ -241,19 +241,13 @@
 
 .account-help {
     position: absolute;
-    top: 680px;
+    top: 610px;
     left: 80px;
     display: flex;
     gap: 4px;
     color: #7c7a7a;
     font-size: 13px;
 }
-
-.account-help-link {
-    color: #172B4D;
-    text-decoration: none;
-}
-
 
 .login-right {
     position: absolute;
@@ -319,9 +313,9 @@
 
 .login-illustration {
     position: absolute;
-    width: 100%;
+    width: 90%;
     top: 150px;
-    right: -74px;
+    right: -34px;
 }
 
 .features-panel {

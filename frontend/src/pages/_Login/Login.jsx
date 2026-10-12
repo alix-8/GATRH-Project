@@ -227,8 +227,7 @@ function Login({ initialEmail = '' }) {
 
             {/* ACCOUNT HELP */}
             <p className="account-help">
-                <span>Need help accessing your account?</span>
-                <span className="account-help-link">Contact your administrator</span>
+                <span>Need help accessing your account? Contact your administrator</span>
             </p>
 
             {/* RIGHT SIDE */}
