@@ -320,46 +320,57 @@
 
 .features-panel {
     box-sizing: border-box;
-    padding: 130px 55px 40px;
+    margin-top: 10px;
+    margin-left: 10px;
+    padding: 112px 55px 20px;
     color: #172B4D;
     text-align: center;
-    margin-top: 30px;
 }
 
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(270px, 1fr));
-    gap: 20px;
+    height: 100%;
+    gap: 16px;
 }
 
 .feature-card {
+    box-sizing: border-box;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    padding: 20px 22px 16px;
+    padding: 12px 16px;
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.96);
+    background: white;
 }
 
 .feature-icon-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 64px;
-    height: 64px;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
     align-self: center;
     border: 1px solid #172B4D;
     border-radius: 50%;
 }
 
 .feature-icon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
+}
+
+.feature-card h3 {
+    margin: 12px 0;
+    font-size: 18px;
+    line-height: 1.2;
 }
 
 .feature-card p {
     color: #53677f;
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.4;
     text-align: left;
     margin-left: 10px;
 }
@@ -369,7 +380,7 @@
     align-items: center;
     justify-content: space-between;
     margin-top: auto;
-    padding-top: 24px;
+    padding-top: 12px;
 }
 
 .feature-index {
