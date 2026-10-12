@@ -5,7 +5,7 @@ namespace App\Observers;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
-use App\Services\AuditLogService;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Database\Eloquent\Model;
 
 class AdminActivityObserver

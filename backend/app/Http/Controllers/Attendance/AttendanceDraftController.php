@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
 use App\Models\Reminder;
-use App\Services\AttendanceParsingService;
+use App\Services\Attendance\AttendanceParsingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;

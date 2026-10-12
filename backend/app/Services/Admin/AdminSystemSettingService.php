@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Models\GatheringSchedule;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Support\Facades\DB;
 
 class AdminSystemSettingService

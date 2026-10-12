@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Models\AttendanceRecord;
 use App\Models\Program;
-use App\Services\ProgramHeadAttendanceWorkbookService;
-use App\Services\ProgramHeadRecordsExportService;
+use App\Services\ProgramHead\ProgramHeadAttendanceWorkbookService;
+use App\Services\ProgramHead\ProgramHeadRecordsExportService;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;

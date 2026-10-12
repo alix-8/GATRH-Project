@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Attendance;
 
 use App\Models\Student;
 use App\Models\AttendanceDraft;

@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 
-use App\Services\DashboardService;
+use App\Services\Dashboard\CmCoordinatorMonitoringService;
+use App\Services\Dashboard\DashboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,7 +13,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private DashboardService $dashboardService,
-        private \App\Services\CmCoordinatorMonitoringService $monitoringService
+        private CmCoordinatorMonitoringService $monitoringService
     ) {
     }
 

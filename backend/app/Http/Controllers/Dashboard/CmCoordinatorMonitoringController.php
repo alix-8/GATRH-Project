@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Services\CmCoordinatorMonitoringService;
+use App\Services\Dashboard\CmCoordinatorMonitoringService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

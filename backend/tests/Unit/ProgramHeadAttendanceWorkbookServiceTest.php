@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\ProgramHeadAttendanceWorkbookService;
+use App\Services\ProgramHead\ProgramHeadAttendanceWorkbookService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use PHPUnit\Framework\TestCase;
