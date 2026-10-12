@@ -17,7 +17,7 @@ class ReminderGenerationService
      * Create the next weekly PM, WS, and TG reminders for every secretary.
      * Existing reminders for the same user, type, and date are left untouched.
      */
-    public function generateWeeklyGatheringReminders(): int
+    public function generateWeeklyGatheringReminders(?User $onlyUser = null): int
     {   
         $today = Carbon::today();
         $currentWeekEnd = Carbon::today()->endOfWeek();
@@ -36,6 +36,7 @@ class ReminderGenerationService
         User::where('role', 'secretary')
             ->whereNotNull('program')
             ->whereNotNull('year_level')
+            ->when($onlyUser, fn ($query) => $query->whereKey($onlyUser->id))
             ->each(function (User $secretary) use (&$created): void {
                 foreach (['pm', 'ws', 'tg'] as $type) {
                     $gatheringDate = $this->gatheringService->nextDate($type);
@@ -49,6 +50,17 @@ class ReminderGenerationService
                         ->exists();
 
                     if ($alreadyRecorded) {
+                        continue;
+                    }
+
+                    $alreadyReminded = Reminder::query()
+                        ->where('user_id', $secretary->id)
+                        ->where('reminder_type', 'gathering')
+                        ->where('gathering_type', $type)
+                        ->whereDate('gathering_date', $gatheringDate)
+                        ->exists();
+
+                    if ($alreadyReminded) {
                         continue;
                     }
 
@@ -87,10 +99,11 @@ class ReminderGenerationService
      * For every 'gathering' reminder whose gathering_date has arrived,
      * spawn a linked 'submission_countdown' reminder if one doesn't exist yet.
      */
-    public function spawnSubmissionReminders(int $submissionWindowDays = 7): void
+    public function spawnSubmissionReminders(int $submissionWindowDays = 7, ?int $onlyUserId = null): void
     {
         $dueGatherings = Reminder::where('reminder_type', 'gathering')
             ->whereDate('gathering_date', '<=', Carbon::today())
+            ->when($onlyUserId, fn ($query) => $query->where('user_id', $onlyUserId))
             ->whereDoesntHave('children') // no submission reminder spawned yet
             ->get();
 
