@@ -60,7 +60,6 @@ const GATHERING_LABELS = {
     pm: 'Prayer Meeting',
     ws: 'Worship Service',
     tg: 'Thanksgiving',
-    special: 'Special Gathering',
 }
 
 function Notification() {

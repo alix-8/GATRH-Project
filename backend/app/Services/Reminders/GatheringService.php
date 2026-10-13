@@ -19,7 +19,6 @@ class GatheringService
             'pm'      => 'Prayer meeting',
             'ws'      => 'Worship service',
             'tg'      => 'Thanksgiving',
-            'special' => 'Special gathering',
             default   => $type,
         };
     }

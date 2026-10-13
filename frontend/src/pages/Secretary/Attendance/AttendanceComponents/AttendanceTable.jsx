@@ -25,7 +25,6 @@ const GATHERING_OPTIONS = [
     { value: 'pm', label: 'Prayer Meeting' },
     { value: 'ws', label: 'Worship Service' },
     { value: 'tg', label: 'Thanksgiving' },
-    { value: 'special', label: 'Special' },
 ]
 
 const SORT_OPTIONS = [
@@ -134,8 +133,9 @@ function AttendanceTable() {
             const params = new URLSearchParams()
             if (gathering) params.set('gathering_type', gathering)
             if (selectedDate) params.set('date', toDateParam(selectedDate))
+            params.set('status', 'all')
             if (sortBy) params.set('sort_by', sortBy)
-            params.set('page', page)
+                params.set('page', page)
 
             const json = await request(`/attendance?${params.toString()}`, { signal })
 

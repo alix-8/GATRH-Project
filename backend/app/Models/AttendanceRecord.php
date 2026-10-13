@@ -14,7 +14,7 @@ class AttendanceRecord extends Model
     protected $fillable = [
         'batch_id',
         'student_id',
-        'gathering_type',    // 'pm', 'ws', 'tg', 'special'
+        'gathering_type',    // 'pm', 'ws', 'tg'
         'day',               // date of gathering
         'batch',
         'venue',
