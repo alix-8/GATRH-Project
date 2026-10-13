@@ -110,7 +110,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'gathering_type' => 'nullable|in:pm,ws,tg',
-            'status'         => 'nullable|in:validating,pending,rejected,approved',
+            'status'         => 'nullable|in:all,validating,pending,rejected,approved',
             'date'           => 'nullable|date',
             'sort_by'        => 'nullable|in:day,status,gathering_type',
             'sort_dir'       => 'nullable|in:asc,desc',
@@ -141,7 +141,7 @@ class AttendanceController extends Controller
                 'batch_id'       => null,
                 'course'         => $program,
                 'year'           => $yearLevel,
-                'date'    => optional($draft->created_at)->format('F j, Y'),
+                'date'    => optional($draft->day)->format('F j, Y'),
                 'day_iso' => optional($draft->day)->toDateString(),
                 'raw_day' => $draft->day,
                 'gathering_type' => $draft->gathering_type,
@@ -151,7 +151,7 @@ class AttendanceController extends Controller
             ];
         })->filter(function ($row) use ($validated) {
             if (!empty($validated['gathering_type']) && $row['gathering_type'] !== $validated['gathering_type']) return false;
-            if (!empty($validated['status']) && $row['status'] !== $validated['status']) return false;
+            if (!empty($validated['status']) && $validated['status'] !== 'all' && $row['status'] !== $validated['status']) return false;
             return true;
         })->values();
 
@@ -182,8 +182,6 @@ class AttendanceController extends Controller
             })
             ->map(function ($group) use ($program, $yearLevel) {
                 $first = $group->first();
-                $createdAt = $group->min('created_at');
-
                 $dayCarbon = $first->day instanceof Carbon
                     ? $first->day
                     : Carbon::parse($first->day);
@@ -195,7 +193,7 @@ class AttendanceController extends Controller
                     'batch_id'         => $first->batch_id ?? null,
                     'course'           => $program,
                     'year'             => $yearLevel,
-                    'date'             => optional($createdAt)->format('F j, Y'),
+                    'date'             => $dayCarbon->format('F j, Y'),
                     'day_iso'          => $dayCarbon->toDateString(),
                     'raw_day'          => $dayCarbon,
                     'gathering_type'   => $first->gathering_type,
@@ -207,7 +205,7 @@ class AttendanceController extends Controller
             })
             ->values();
 
-        if (!empty($validated['status'])) {
+        if (!empty($validated['status']) && $validated['status'] !== 'all') {
             $records = $records->filter(fn ($r) => $r['status'] === $validated['status'])->values();
         }
 

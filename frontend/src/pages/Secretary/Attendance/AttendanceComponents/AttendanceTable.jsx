@@ -133,8 +133,9 @@ function AttendanceTable() {
             const params = new URLSearchParams()
             if (gathering) params.set('gathering_type', gathering)
             if (selectedDate) params.set('date', toDateParam(selectedDate))
+            params.set('status', 'all')
             if (sortBy) params.set('sort_by', sortBy)
-            params.set('page', page)
+                params.set('page', page)
 
             const json = await request(`/attendance?${params.toString()}`, { signal })
 
