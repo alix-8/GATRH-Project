@@ -200,15 +200,15 @@ class ReminderController extends Controller
     public function storeGathering(Request $request)
     {
         $validated = $request->validate([
-            'gathering_type' => 'required|in:pm,ws,tg,special',
+            'gathering_type' => 'required|in:pm,ws,tg',
             'program'        => 'required|string',
             'year_level'     => 'required|integer',
-            'gathering_date' => 'nullable|date|required_if:gathering_type,special',
+            'gathering_date' => 'nullable|date|required_if:gathering_type',
         ]);
 
         $gatheringDate = $validated['gathering_date'] ?? $this->gatheringService->nextDate($validated['gathering_type']);
 
-        if ($validated['gathering_type'] !== 'special' && ! $this->gatheringService->isScheduledDay($validated['gathering_type'], Carbon::parse($gatheringDate))) {
+        if (! $this->gatheringService->isScheduledDay($validated['gathering_type'], Carbon::parse($gatheringDate))) {
             return response()->json([
                 'status'  => 'error',
                 'message' => sprintf('%s reminders can only be scheduled on %s.',

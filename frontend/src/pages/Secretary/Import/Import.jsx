@@ -39,8 +39,6 @@ const getGatheringTypeFromText = text => {
         'worship service': 'ws',
         tg: 'tg',
         thanksgiving: 'tg',
-        special: 'special',
-        'special gathering': 'special',
     }[gathering] || gathering
 }
 

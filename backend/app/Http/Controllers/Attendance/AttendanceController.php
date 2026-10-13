@@ -35,7 +35,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'raw_text'      => 'required|string',
-            'gathering_type'=> 'required|in:pm,ws,tg,special,week',
+            'gathering_type'=> 'required|in:pm,ws,tg,week',
             'cycle'         => 'nullable',
             'week_range'    => 'nullable',
         ]);
@@ -109,7 +109,7 @@ class AttendanceController extends Controller
   public function index(Request $request)
     {
         $validated = $request->validate([
-            'gathering_type' => 'nullable|in:pm,ws,tg,special',
+            'gathering_type' => 'nullable|in:pm,ws,tg',
             'status'         => 'nullable|in:validating,pending,rejected,approved',
             'date'           => 'nullable|date',
             'sort_by'        => 'nullable|in:day,status,gathering_type',
@@ -260,7 +260,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'batch_id'       => 'nullable|string',
-            'gathering_type' => 'required_without:batch_id|in:pm,ws,tg,special',
+            'gathering_type' => 'required_without:batch_id|in:pm,ws,tg',
             'day'            => 'required_without:batch_id|date',
         ]);
 
@@ -341,7 +341,6 @@ class AttendanceController extends Controller
             'pm'      => 'Prayer Meeting',
             'ws'      => 'Worship Service',
             'tg'      => 'Thanksgiving',
-            'special' => 'Special Gathering',
             default   => ucfirst($type),
         };
     }
@@ -363,7 +362,7 @@ class AttendanceController extends Controller
     {   
         //Weekly attendance
         $request->validate([
-            'gathering_type' => 'nullable|string|in:pm,ws,tg,special,week',
+            'gathering_type' => 'nullable|string|in:pm,ws,tg,week',
         ]);
 
         $user = $request->user();
@@ -438,7 +437,7 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'raw_text'       => 'required|string',
-            'gathering_type' => 'nullable|string|in:pm,ws,tg,special',
+            'gathering_type' => 'nullable|string|in:pm,ws,tg',
             'gathering_id'   => 'nullable|exists:gatherings,id',
             'draft_id'       => 'nullable|exists:attendance_drafts,id',
             'confirm_blank'  => 'nullable|boolean',
@@ -884,7 +883,7 @@ class AttendanceController extends Controller
             'draft_id'                  => 'nullable|exists:attendance_drafts,id',
             'records'                  => 'required|array|min:1',
             'records.*.student_id'     => 'required|exists:students,id',
-            'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
+            'records.*.gathering_type' => 'required|in:pm,ws,tg',
             'records.*.day'            => 'required|date',
             'records.*.status'         => 'required|in:present,no_response,excused',
             'records.*.batch'          => 'nullable|string',

@@ -172,7 +172,6 @@ class AttendanceParsingService
             'pm', 'prayer meeting' => 'pm',
             'ws', 'worship service' => 'ws',
             'tg', 'thanksgiving' => 'tg',
-            'special', 'special gathering' => 'special',
             default => strtolower(trim($matches[1])),
         };
     }
@@ -726,7 +725,6 @@ class AttendanceParsingService
             'pm' => ['prayer meeting', 'pm'],
             'ws' => ['worship service', 'ws'],
             'tg' => ['thanksgiving', 'tg'],
-            'special' => ['special gathering', 'special'],
         ];
 
         $lines = preg_split('/\r\n|\r|\n/', trim($rawText));

@@ -433,7 +433,6 @@ class ProgramHeadAttendanceWorkbookService
             'ws' => 'WS',
             'tg' => 'TG',
             'pm' => 'PM',
-            'special' => 'SPECIAL',
             default => strtoupper((string) $type),
         };
     }

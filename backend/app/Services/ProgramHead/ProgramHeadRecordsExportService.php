@@ -16,7 +16,6 @@ class ProgramHeadRecordsExportService
         'pm' => 'prayer meeting',
         'ws' => 'worship service',
         'tg' => 'thanksgiving',
-        'special' => 'special gathering',
     ];
 
     /** Build an approved-record query scoped to the signed-in Program Head. */

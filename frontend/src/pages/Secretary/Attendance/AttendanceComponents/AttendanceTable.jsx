@@ -25,7 +25,6 @@ const GATHERING_OPTIONS = [
     { value: 'pm', label: 'Prayer Meeting' },
     { value: 'ws', label: 'Worship Service' },
     { value: 'tg', label: 'Thanksgiving' },
-    { value: 'special', label: 'Special' },
 ]
 
 const SORT_OPTIONS = [

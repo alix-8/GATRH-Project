@@ -20,7 +20,7 @@ class ProgramHeadSubmissionController extends Controller
     {
         $filters = $request->validate([
             'date' => ['nullable', 'date'],
-            'gathering_type' => ['nullable', 'in:pm,ws,tg,special'],
+            'gathering_type' => ['nullable', 'in:pm,ws,tg'],
             'year_level' => ['nullable', 'integer', 'between:1,4'],
             'search' => ['nullable', 'string', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -117,7 +117,7 @@ class ProgramHeadSubmissionController extends Controller
     {
         $filters = $request->validate([
             'date' => ['nullable', 'date'],
-            'gathering_type' => ['nullable', 'in:pm,ws,tg,special'],
+            'gathering_type' => ['nullable', 'in:pm,ws,tg'],
             'year_level' => ['nullable', 'integer', 'between:1,4'],
             'search' => ['nullable', 'string', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -191,7 +191,7 @@ class ProgramHeadSubmissionController extends Controller
     ) {
         $filters = $request->validate([
             'date' => ['nullable', 'date'],
-            'gathering_type' => ['nullable', 'in:pm,ws,tg,special'],
+            'gathering_type' => ['nullable', 'in:pm,ws,tg'],
             'year_level' => ['nullable', 'integer', 'between:1,4'],
             'search' => ['nullable', 'string', 'max:100'],
             'batch_key' => ['nullable', 'string', 'max:100'],
@@ -264,7 +264,6 @@ class ProgramHeadSubmissionController extends Controller
             'pm' => 'Prayer Meeting',
             'ws' => 'Worship Service',
             'tg' => 'Thanksgiving',
-            'special' => 'Special Gathering',
             default => ucfirst((string) $type),
         };
     }
