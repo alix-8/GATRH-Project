@@ -1200,11 +1200,11 @@ class AttendanceController extends Controller
                 $statusQuery->whereNull('validation_status')->orWhere('validation_status', 'unvalidated');
             });
 
-        $updatedCount = $query->update([
+        $updatedCount = $query->toBase()->update([
             'validation_status' => 'validated',
             'rejection_reason'  => null, // clear any stale reason if this was previously rejected
             'validated_by'      => $request->user()->id,
-            'updated_at'        => now(),
+            'approved_at'       => now(),
         ]);
 
         if ($updatedCount === 0) {
