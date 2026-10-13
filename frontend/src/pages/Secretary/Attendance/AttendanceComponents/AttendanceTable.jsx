@@ -410,7 +410,11 @@ function AttendanceTable() {
                 </table>
             </div>
 
-            <AttendancePagination />
+            <AttendancePagination
+                page={page}
+                meta={meta}
+                goToPage={goToPage}
+            />
 
             {confirmOpen && (
                 <div className="delete-modal-overlay">

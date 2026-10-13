@@ -1,0 +1,19 @@
+.coordinator-dashboard {
+    display: flex;
+    min-height: 100vh;
+    background: #ffffff;
+}
+
+.coordinator-dashboard-main {
+    min-width: 0;
+    flex: 1;
+    background: #ffffff;
+}
+
+.coordinator-dashboard-header {
+    min-height: 72px;
+}
+
+.coordinator-dashboard-header .header-title h3 {
+    font-size: 20px;
+}

@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../../api/request'
 import LVCCLogo from '../../assets/lvcc-logo.webp'
 import DashboardIcon from '../../assets/dashboard-icon.svg'
+import MonitoringIcon from '../../assets/monitoring-icon.svg'
 import StudentsIcon from '../../assets/students-icon.svg'
 import ImportIcon from '../../assets/import-icon.svg'
 import AttendanceIcon from '../../assets/attendance-icon.svg'
@@ -38,6 +39,7 @@ const navigationByRole = {
         { label: 'Dashboard', to: '/chancellor/dashboard', icon: DashboardIcon },
     ],
     cm_coordinator: [
+        { label: 'Monitoring', to: '/coordinator/monitoring', icon: MonitoringIcon },
         { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
     ],
     admin: [

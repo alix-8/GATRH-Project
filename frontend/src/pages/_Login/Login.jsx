@@ -86,7 +86,7 @@ function Login({ initialEmail = '' }) {
                 secretary: '/dashboard',
                 program_secretary: '/program-secretary/dashboard',
                 program_head: '/program-head/dashboard',
-                cm_coordinator: '/reminders',
+                cm_coordinator: '/coordinator/monitoring',
                 chancellor: '/chancellor/dashboard',
                 admin: '/admin/dashboard',
             }
@@ -227,8 +227,7 @@ function Login({ initialEmail = '' }) {
 
             {/* ACCOUNT HELP */}
             <p className="account-help">
-                <span>Need help accessing your account?</span>
-                <span className="account-help-link">Contact your administrator</span>
+                <span>Need help accessing your account? Contact your administrator</span>
             </p>
 
             {/* RIGHT SIDE */}

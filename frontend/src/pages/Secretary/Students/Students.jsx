@@ -368,6 +368,43 @@ function Students() {
                             <div><strong>{overview.student.name}</strong><small>{overview.student.program} {normalizedYear(overview.student.year_level)}</small></div>
                         </section>
 
+                        <section className="overview-stats" aria-label="Attendance summary">
+                            <div className="overview-stat-card">
+                                <strong>This Month</strong>
+                                <div className="overview-stat-value">
+                                    <span className="overview-month-icon">
+                                        <img src={ResponseIcon} alt="" />
+                                    </span>
+                                    <b>{overview.summary?.this_month ?? 0}/{overview.summary?.this_month_total ?? 12}</b>
+                                </div>
+                            </div>
+                            <div className="overview-stat-card overview-stat-card-weekly">
+                                <strong>This week</strong>
+                                <div className="overview-week-gatherings">
+                                    {(overview.summary?.this_week || []).map((gathering) => (
+                                        <span key={gathering.type} aria-label={`${gathering.label}: ${gathering.status === 'present' ? 'Present' : 'No response'}`}>
+                                            <small>{gathering.label}</small>
+                                            <i className={gathering.status === 'present' ? 'present' : ''} />
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="overview-stat-card">
+                                <strong>Escalation</strong>
+                                <div className="overview-stat-escalation">
+                                    <span className="overview-escalation-indicator" aria-label={`${overview.summary?.escalation_count ?? 0} escalation levels`}>
+                                        {[0, 1, 2].map((level) => (
+                                            <i
+                                                key={level}
+                                                className={level < Math.min(3, Number(overview.summary?.escalation_count) || 0) ? 'filled' : ''}
+                                            />
+                                        ))}
+                                    </span>
+                                    <b>{overview.summary?.escalation_count ?? 0}</b>
+                                </div>
+                            </div>
+                        </section>
+
                         <div className="overview-filters" ref={overviewFiltersRef}>
                             <div className="overview-filter-container">
                                 <button type="button" className="overview-filter-control" aria-expanded={overviewOpenFilter === 'gathering'} onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'gathering' ? null : 'gathering')}>

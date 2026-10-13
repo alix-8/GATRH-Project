@@ -5,9 +5,10 @@
 }
 
 .login-page {
+    --panel-content-top: clamp(112px, 18vh, 150px);
     position: relative;
     height: 100vh;
-    min-height: 120vh;
+    min-height: 100vh;
     background: linear-gradient(to right,
             white 0%,
             white 50%,
@@ -39,20 +40,20 @@
     font-size: 2.8rem;
     text-align: left;
     letter-spacing: 1px;
-    margin: 150px 0 0 78px;
+    margin: 130px 78px;
 }
 
 .welcome-message {
     position: absolute;
     text-align: left;
     color: #7c7a7a;
-    margin: 270px 0 0 78px;
+    margin: 255px 78px;
     line-height: 1.4;
 }
 
 .login-form {
     position: absolute;
-    top: 350px;
+    top: 330px;
     left: 80px;
     width: 370px;
 }
@@ -241,19 +242,13 @@
 
 .account-help {
     position: absolute;
-    top: 680px;
+    top: 610px;
     left: 80px;
     display: flex;
     gap: 4px;
     color: #7c7a7a;
     font-size: 13px;
 }
-
-.account-help-link {
-    color: #172B4D;
-    text-decoration: none;
-}
-
 
 .login-right {
     position: absolute;
@@ -319,53 +314,64 @@
 
 .login-illustration {
     position: absolute;
-    width: 100%;
-    top: 150px;
-    right: -74px;
+    width: 90%;
+    right: -34px;
+    margin-top: 130px;
 }
 
 .features-panel {
-    box-sizing: border-box;
-    padding: 130px 55px 40px;
+    position: absolute;
+    inset: var(--panel-content-top) 40px 14px;
+    box-sizing: border-box; 
+    padding: 0;
     color: #172B4D;
     text-align: center;
-    margin-top: 30px;
+    
 }
 
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(270px, 1fr));
-    gap: 20px;
+    grid-template-rows: repeat(2, minmax(0, clamp(190px, 36vh, 260px)));
+    gap: 16px;
 }
 
 .feature-card {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: 20px 22px 16px;
+    padding: 12px 16px;
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.96);
+    background: white;
 }
 
 .feature-icon-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 64px;
-    height: 64px;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
     align-self: center;
     border: 1px solid #172B4D;
     border-radius: 50%;
 }
 
 .feature-icon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
+}
+
+.feature-card h3 {
+    margin: 12px 0;
+    font-size: 18px;
+    line-height: 1.2;
 }
 
 .feature-card p {
     color: #53677f;
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.4;
     text-align: left;
     margin-left: 10px;
 }
@@ -375,7 +381,7 @@
     align-items: center;
     justify-content: space-between;
     margin-top: auto;
-    padding-top: 24px;
+    padding-top: 12px;
 }
 
 .feature-index {
@@ -385,67 +391,82 @@
 }
 
 .process-panel {
-    padding: 135px 20px;
-    margin-top: 26px;
-    margin-left: 30px;
+    position: absolute;
+    inset: var(--panel-content-top) 40px 14px;
+    box-sizing: border-box;
+    height: auto;
+    margin: 0;
+    padding: 0;
 }
 
 .process-flow {
     display: flex;
+    height: 100%;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .process-card {
+    box-sizing: border-box;
+    min-height: 0;
+    flex: 0 1 clamp(78px, 14vh, 112px);
     background: white;
     border-radius: 12px;
-    padding: 18px 22px;
-    height: 77px;
+    padding: 8px 18px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin-right: 20px;
+    gap: 4px;
 }
 
 .process-card-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
 }
 
-.process-card-title  {
+.process-card-title {
     color: #172B4D;
-    margin-top: 50px;
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
 }
 
 .process-card-copy {
     text-align: left;
     color: #526174;
     font-size: 12px;
-    margin-bottom: 40px;
+    line-height: 1.35;
 }
 
 .process-card-number {
-    width: 42px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
     border-radius: 30%;
     background-color: #172B4D;
-    color: white;
-    font-size: 20px;
+    color: #fff;
+    font-size: 18px;
     font-weight: bold;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 30px;
 }
 
 .faq-list {
-    width: 80%;
+    width: auto;
     display: flex;
     flex-direction: column;
-    margin-left: 70px;
-    margin-top: 160px;
+    margin: 0;
     gap: 14px;
+}
+
+.faq-panel {
+    position: absolute;
+    inset: var(--panel-content-top) 40px 14px;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 .faq-list details {
