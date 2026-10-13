@@ -22,11 +22,13 @@ class AttendanceRecord extends Model
         'validation_status', // 'unvalidated', 'approved'
         'submitted_by',
         'validated_by',
+        'approved_at',
         'rejection_reason',
     ];
 
     protected $casts = [
         'day' => 'date',
+        'approved_at' => 'datetime',
     ];
 
     // The Secretary who submitted this record
