@@ -348,7 +348,7 @@ function AttendanceTable() {
                             )}
                             <th>Course</th>
                             <th>Year</th>
-                            <th>Date</th>
+                            <th>Submission Date</th>
                             <th>Gathering</th>
                             <th>Time</th>
                             <th>Status</th>
@@ -385,7 +385,7 @@ function AttendanceTable() {
                                     )}
                                     <td>{record.course}</td>
                                     <td>{record.year}</td>
-                                    <td>{record.date}</td>
+                                    <td>{record.submission_date || record.date}</td>
                                     <td>{record.gathering}</td>
                                     <td>{record.time}</td>
                                     <td>
