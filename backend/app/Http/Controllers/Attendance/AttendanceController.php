@@ -130,7 +130,7 @@ class AttendanceController extends Controller
             ->where('status', 'draft');
 
         if (!empty($validated['date'])) {
-            $draftsQuery->whereDate('day', $validated['date']);
+            $draftsQuery->whereDate('updated_at', $validated['date']);
         }
 
         $drafts = $draftsQuery->get()->map(function ($draft) use ($program, $yearLevel) {
@@ -142,6 +142,8 @@ class AttendanceController extends Controller
                 'course'         => $program,
                 'year'           => $yearLevel,
                 'date'    => optional($draft->day)->format('F j, Y'),
+                'submission_date' => optional($draft->updated_at)->format('F j, Y'),
+                'raw_submission_at' => $draft->updated_at,
                 'day_iso' => optional($draft->day)->toDateString(),
                 'raw_day' => $draft->day,
                 'gathering_type' => $draft->gathering_type,
@@ -165,7 +167,7 @@ class AttendanceController extends Controller
             $recordsQuery->where('gathering_type', $validated['gathering_type']);
         }
         if (!empty($validated['date'])) {
-            $recordsQuery->whereDate('day', $validated['date']);
+            $recordsQuery->whereDate('updated_at', $validated['date']);
         }
 
         $records = $recordsQuery->get()
@@ -194,11 +196,13 @@ class AttendanceController extends Controller
                     'course'           => $program,
                     'year'             => $yearLevel,
                     'date'             => $dayCarbon->format('F j, Y'),
+                    'submission_date'  => optional($group->max('updated_at'))->format('F j, Y'),
+                    'raw_submission_at' => $group->max('updated_at'),
                     'day_iso'          => $dayCarbon->toDateString(),
                     'raw_day'          => $dayCarbon,
                     'gathering_type'   => $first->gathering_type,
                     'gathering'        => $this->gatheringLabel($first->gathering_type),
-                    'time'             => optional($first->created_at)->format('g:i A'),
+                    'time'             => optional($group->max('updated_at'))->format('g:i A'),
                     'status'           => $this->aggregateStatus($group),
                     'rejection_reason' => $first->rejection_reason,
                 ];
@@ -215,7 +219,7 @@ class AttendanceController extends Controller
                 fn ($row) => match ($sortBy) {
                     'status'         => $row['status'],
                     'gathering_type' => $row['gathering_type'],
-                    default          => $row['raw_day'],
+                    default          => $row['raw_submission_at'] ?? $row['raw_day'],
                 },
                 SORT_REGULAR,
                 $sortDir === 'desc'
