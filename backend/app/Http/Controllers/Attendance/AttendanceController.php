@@ -841,6 +841,9 @@ class AttendanceController extends Controller
             $sectionData = $this->parsingService->buildFullSectionRecords(
                 strtoupper($user->program), $user->year_level, $submissions, $day, $type
             );
+            $presentCount = collect($sectionData['records'])
+                ->where('status', 'present')
+                ->count();
 
             $draft = $this->parsingService->saveDraft([
                 'gathering_type' => $type,
@@ -848,13 +851,14 @@ class AttendanceController extends Controller
                 'raw_text'       => $request->raw_text,
                 'parsed_data'    => $sectionData['records'],
                 'total_detected' => $sectionData['total_students'],
-                'matched_count'  => count($submissions),
+                'matched_count'  => $presentCount,
             ], $user->id);
 
             $drafts[$type] = $draft->id;
             $summary[$type] = [
                 'total_students' => $sectionData['total_students'],
-                'present_count'  => count($submissions),
+                'present_count'  => $presentCount,
+                'no_response_count' => $sectionData['total_students'] - $presentCount,
             ];
         }
 

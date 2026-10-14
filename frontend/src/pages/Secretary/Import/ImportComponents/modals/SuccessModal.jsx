@@ -28,13 +28,13 @@ function SuccessModal({ result, onClose, onGoToAttendance }) {
                                 <p key={type}>{type.toUpperCase()}: skipped — {s.reason}</p>
                             ) : (
                                 <p key={type}>
-                                    {type.toUpperCase()}: Draft #{result.drafts[type]} &middot; {s.total_students} students, {s.present_count} present
+                                    {type.toUpperCase()}: {s.total_students} students, {s.present_count} present, {s.no_response_count} no response
                                 </p>
                             )
                         ))
                     ) : (
                         <>
-                            <p>Draft #{result.draft_id} &middot; {result.summary.total_students} students detected</p>
+                            <p>{result.summary.total_students} students detected</p>
                             <p>{result.summary.present_count} present, {result.summary.no_response_count} no response
                                 {result.summary.unmatched_count > 0 && <>, {result.summary.unmatched_count} unmatched</>}
                             </p>
