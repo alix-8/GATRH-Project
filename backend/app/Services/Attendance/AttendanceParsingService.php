@@ -10,7 +10,7 @@ use App\Support\GatheringCycle;
 class AttendanceParsingService
 {
     /**
-     * FOR SUBMIT: Converts raw time strings (e.g., "10:30 AM", "2:15 PM") into MySQL TIME format (HH:MM:SS).
+     * FOR SUBMIT: Converts raw time strings (e.g., "8AM", "10:30 AM", "2:15 PM") into MySQL TIME format (HH:MM:SS).
      */
     public function formatBatchTime(?string $batchTime): ?string
     {
@@ -18,7 +18,12 @@ class AttendanceParsingService
             return null;
         }
 
-        $timestamp = strtotime(trim($batchTime));
+        $batchTime = trim($batchTime);
+        if (preg_match('/^(\d{1,2})\s*(AM|PM)$/i', $batchTime, $matches)) {
+            $batchTime = $matches[1] . ':00 ' . strtoupper($matches[2]);
+        }
+
+        $timestamp = strtotime($batchTime);
 
         if ($timestamp === false) {
             return null;
@@ -41,7 +46,7 @@ class AttendanceParsingService
 
     /**
      * Validates that a batch/time string matches an expected time format
-     * (e.g. "8:30 AM", "08:30", "2:15 PM"). Returns true if valid or empty (optional field).
+     * (e.g. "8AM", "8:30 AM", "08:30", "2:15 PM"). Returns true if valid or empty (optional field).
      */
     private function isValidBatchFormat(?string $rawBatch): bool
     {
@@ -49,8 +54,12 @@ class AttendanceParsingService
             return true; // empty is allowed — it's optional
         }
 
-        // Accepts: "8:30 AM", "08:30 PM", "8:30", "08:30:00"
-        return (bool) preg_match('/^\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM|am|pm)?$/', trim($rawBatch));
+        // Accepts compact meridiem times as well as the existing colon-separated formats.
+        $time = trim($rawBatch);
+        return (bool) (
+            preg_match('/^(?:[1-9]|1[0-2])\s*(?:AM|PM)$/i', $time)
+            || preg_match('/^\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?$/i', $time)
+        );
     }
 
     /**
@@ -296,7 +305,7 @@ class AttendanceParsingService
             $formatErrors[] = [
                 'field'  => 'batch',
                 'value'  => $parts['raw_batch'],
-                'reason' => 'Batch time must be in a valid time format, e.g. "8:30 AM".',
+                'reason' => 'Batch time must be in a valid time format, e.g. "8AM" or "8:30 AM".',
             ];
         }
 
@@ -466,7 +475,7 @@ class AttendanceParsingService
                     $timeErr = [
                         'field'  => 'time',
                         'value'  => $slot['time'],
-                        'reason' => 'Time must be in a valid format, e.g. "8:30 AM".',
+                        'reason' => 'Time must be in a valid format, e.g. "8AM" or "8:30 AM".',
                     ];
                     $formatErrorLines[] = [
                         'student_name'   => $student->name,

@@ -59,7 +59,7 @@ function serializeStudents(students) {
     }).join('\n\n')
 }
 
-const TIME_RE = /^\d{1,2}:\d{2}\s*(AM|PM|am|pm)?$/
+const TIME_RE = /^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}\s*(?:AM|PM)?)$/i
 
 function fieldError(slotType, field, value, errors) {
     if (!errors) return false

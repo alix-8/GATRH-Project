@@ -38,7 +38,7 @@ function serializeStudents(students) {
     return students.map((s) => `${s.number}. ${s.name} | ${serializeLine(s.slot)}`).join('\n')
 }
 
-const TIME_RE = /^\d{1,2}:\d{2}\s*(AM|PM|am|pm)?$/
+const TIME_RE = /^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}\s*(?:AM|PM)?)$/i
 
 export default function PreviewIndividualPanel({ rawText, onChange, errors, gatheringType }) {
     const [students, setStudents] = useState([])
