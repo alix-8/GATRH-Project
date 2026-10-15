@@ -142,9 +142,9 @@ class AttendanceParsingService
             return ['count' => 0, 'template' => null];
         }
 
-        $pmLabel = GatheringCycle::windowLabel('pm');
-        $wsLabel = GatheringCycle::windowLabel('ws');
-        $tgLabel = GatheringCycle::windowLabel('tg');
+        $pmLabel = GatheringCycle::reportWeekWindowLabel('pm');
+        $wsLabel = GatheringCycle::reportWeekWindowLabel('ws');
+        $tgLabel = GatheringCycle::reportWeekWindowLabel('tg');
 
         $template = "--- GATRH ATTENDANCE FORM ---\n";
         $template .= "Gathering: WEEKLY REPORTING\n";
@@ -230,6 +230,18 @@ class AttendanceParsingService
             ->where('year_level', $yearLevel)
             ->where('name', 'LIKE', "%{$studentName}%")
             ->first();
+    }
+
+    /** Finds a matching active student outside the secretary's assigned course and year. */
+    private function findMatchingStudentOutsideSection(string $program, int $yearLevel, string $studentName): ?Student
+    {
+        return Student::active()
+            ->where('name', 'LIKE', "%{$studentName}%")
+            ->where(function ($query) use ($program, $yearLevel) {
+                $query->where('program', '!=', $program)
+                    ->orWhere('year_level', '!=', $yearLevel);
+            })
+            ->first(['id', 'name', 'program', 'year_level']);
     }
 
     /**
@@ -335,8 +347,15 @@ class AttendanceParsingService
         $student = $this->findMatchingStudent($program, $yearLevel, $parts['student_name']);
 
         if (!$student) {
+            $outsideStudent = $this->findMatchingStudentOutsideSection($program, $yearLevel, $parts['student_name']);
             return [
                 'matched'        => false,
+                'out_of_course_data' => $outsideStudent ? [
+                    'extracted_name' => $parts['student_name'],
+                    'student_name' => $outsideStudent->name,
+                    'program' => $outsideStudent->program,
+                    'year_level' => $outsideStudent->year_level,
+                ] : null,
                 'unmatched_data' => $this->buildUnmatchedRecord(
                     $line,
                     $parts['student_name'],
@@ -412,6 +431,7 @@ class AttendanceParsingService
 
         $result = ['pm' => [], 'ws' => [], 'tg' => []];
         $unmatchedLines = [];
+        $outOfCourseStudents = [];
         $incompleteRecords = [];
         $formatErrorLines = [];
         $blankEntries = [];
@@ -421,10 +441,20 @@ class AttendanceParsingService
             $student = $this->findMatchingStudent($program, $yearLevel, $entry['name']);
 
             if (!$student) {
-                $unmatchedLines[] = [
-                    'raw_line'       => $entry['raw_line'],
-                    'extracted_name' => $entry['name'],
-                ];
+                $outsideStudent = $this->findMatchingStudentOutsideSection($program, $yearLevel, $entry['name']);
+                if ($outsideStudent) {
+                    $outOfCourseStudents[] = [
+                        'extracted_name' => $entry['name'],
+                        'student_name' => $outsideStudent->name,
+                        'program' => $outsideStudent->program,
+                        'year_level' => $outsideStudent->year_level,
+                    ];
+                } else {
+                    $unmatchedLines[] = [
+                        'raw_line'       => $entry['raw_line'],
+                        'extracted_name' => $entry['name'],
+                    ];
+                }
                 continue;
             }
 
@@ -580,6 +610,7 @@ class AttendanceParsingService
         return [
             'records'                 => $result,
             'unmatched_lines'         => $unmatchedLines,
+            'out_of_course_students' => $outOfCourseStudents,
             'incomplete_records'      => $incompleteRecords,
             'format_errors'           => $formatErrorLines,
             'blank_entries'           => $blankEntries,

@@ -506,6 +506,7 @@ class AttendanceController extends Controller
         $lines = explode("\n", trim($request->raw_text));
         $parsedSubmissions = [];
         $unmatchedLines = [];
+        $outOfCourseStudents = [];
         $incompleteRecords = [];
         $formatErrorLines = [];
         $hasAnyAttendanceDetail = false;
@@ -567,7 +568,11 @@ class AttendanceController extends Controller
                     ];
                 }
             } elseif ($result['unmatched_data']) {
-                $unmatchedLines[] = $result['unmatched_data'];
+                if (!empty($result['out_of_course_data'])) {
+                    $outOfCourseStudents[] = $result['out_of_course_data'];
+                } else {
+                    $unmatchedLines[] = $result['unmatched_data'];
+                }
             }
         }
 
@@ -586,13 +591,14 @@ class AttendanceController extends Controller
             );
 
         $allNoResponseWarning = $allStudentsNoResponse
-            ? 'Are you sure the data is correct? You cannot pass a completely blank record.'
+            ? 'Are you sure the data is correct? This is a completely blank record.'
             : null;
 
         $confirmBlank = (bool) $request->boolean('confirm_blank');
         $hasHardErrors = !empty($formatErrorLines)
             || !empty($incompleteRecords)
             || !empty($unmatchedLines)
+            || !empty($outOfCourseStudents)
             || !empty($missingStudents);
 
         $isOverride = (bool) $request->boolean('override');
@@ -653,6 +659,7 @@ class AttendanceController extends Controller
                 'message'                 => 'Attendance text contains errors. Please correct them before saving the draft.',
                 'metadata'                => $metadata,
                 'unmatched_lines'         => $unmatchedLines,
+                'out_of_course_students' => $outOfCourseStudents,
                 'missing_students'        => $missingStudents,
                 'incomplete_records'      => $incompleteRecords,
                 'format_errors'           => $formatErrorLines,
@@ -697,6 +704,7 @@ class AttendanceController extends Controller
             'parsed_data'    => $sectionData['records'],
             'unparsed_data'  => $unmatchedLines,
             'unmatched_lines'=> $unmatchedLines,
+            'out_of_course_students' => $outOfCourseStudents,
             'incomplete_records' => $incompleteRecords,
             'format_errors'  => $formatErrorLines,
             'total_detected' => $sectionData['total_students'],
@@ -725,6 +733,7 @@ class AttendanceController extends Controller
                 'format_error_count'  => count($formatErrorLines),
             ],
             'unmatched_lines'    => $unmatchedLines,
+            'out_of_course_students' => $outOfCourseStudents,
             'missing_students'   => $missingStudents,
             'incomplete_records' => $incompleteRecords,
             'format_errors'      => $formatErrorLines,
@@ -752,7 +761,7 @@ class AttendanceController extends Controller
         $confirmBlank = (bool) $request->boolean('confirm_blank');
         $isOverride = (bool) $request->boolean('override');
 
-        $hasHardErrors = !empty($parsed['unmatched_lines']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']);
+        $hasHardErrors = !empty($parsed['unmatched_lines']) || !empty($parsed['out_of_course_students']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']);
         $hasSoftWarnings = !empty($parsed['blank_entries']) || !empty($parsed['all_no_response_warning']);
 
         // Check for existing submissions in this week range FIRST
@@ -820,6 +829,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'message'                 => 'Weekly attendance text contains errors. Please correct them before saving the draft.',
                 'unmatched_lines'         => $parsed['unmatched_lines'],
+                'out_of_course_students' => $parsed['out_of_course_students'] ?? [],
                 'incomplete_records'      => $parsed['incomplete_records'],
                 'format_errors'           => $parsed['format_errors'],
                 'blank_entries'           => $parsed['blank_entries'] ?? [],
@@ -833,6 +843,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'message'                 => 'Some students have blank attendance fields. Confirm to mark them as no response and continue.',
                 'unmatched_lines'         => [],
+                'out_of_course_students' => [],
                 'incomplete_records'      => [],
                 'format_errors'           => [],
                 'blank_entries'           => $parsed['blank_entries'] ?? [],

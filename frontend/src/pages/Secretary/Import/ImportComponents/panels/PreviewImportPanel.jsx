@@ -59,6 +59,13 @@ function serializeStudents(students) {
     }).join('\n\n')
 }
 
+function preserveHeader(rawText, serializedStudents) {
+    const lines = (rawText || '').split(/\r\n|\r|\n/)
+    const firstStudentLine = lines.findIndex((line) => ENTRY_RE.test(line.trim()))
+    const header = firstStudentLine > 0 ? lines.slice(0, firstStudentLine).join('\n').trimEnd() : ''
+    return header ? `${header}\n\n${serializedStudents}` : serializedStudents
+}
+
 const TIME_RE = /^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}\s*(?:AM|PM)?)$/i
 
 function fieldError(slotType, field, value, errors) {
@@ -88,7 +95,7 @@ export default function PreviewImportPanel({ rawText, onChange, errors }) {
             i === index ? { ...s, [slotType]: { ...s[slotType], [field]: value } } : s
         )
         setStudents(next)
-        onChange?.(serializeStudents(next))
+        onChange?.(preserveHeader(rawText, serializeStudents(next)))
     }
 
     return (
