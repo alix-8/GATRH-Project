@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import DropdownIcon from '../../assets/drop-down-icon.svg'
-import DropdownChevronWhite from '../Icons/DropdownChevronWhite.svg'
+import DropdownIcon from '../../assets/icons/drop-down-icon.svg'
+import DropdownChevronWhite from '../../assets/icons/DropdownChevronWhite.svg'
 import './FilterDropdown.css'
 
 export default function FilterDropdown({ label, value, options, icon, onChange, primary = false }) {
