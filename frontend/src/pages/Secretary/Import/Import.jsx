@@ -361,6 +361,7 @@ function Import({ onGoToAttendance = () => {} }) {
                 <ErrorModal
                     errorMessage={modalMessage}
                     errorDetails={parseErrors}
+                    attendanceLocked={parseErrors?.status === 'attendance_locked'}
                     onClose={() => setModal(null)}
                 />
             )}

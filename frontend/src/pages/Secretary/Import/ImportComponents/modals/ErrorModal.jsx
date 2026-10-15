@@ -112,7 +112,7 @@ function ErrorItems({ type, items }) {
     ))
 }
 
-function ErrorModal({ errorMessage, errorDetails, onClose }) {
+function ErrorModal({ errorMessage, errorDetails, attendanceLocked = false, onClose }) {
     const [expandedError, setExpandedError] = useState(null)
     const errorItems = getErrorItems(errorDetails || {})
 
@@ -124,9 +124,11 @@ function ErrorModal({ errorMessage, errorDetails, onClose }) {
                     <WarningIcon />
                 </div>
                 <h2 className="import-modal-title">Import Failed</h2>
-                <p className="import-modal-subtext">
-                    The attendance text could not be imported. Fix the issue below and try again.
-                </p>
+                {!attendanceLocked && (
+                    <p className="import-modal-subtext">
+                        The attendance text could not be imported. Fix the issue below and try again.
+                    </p>
+                )}
 
                 {errorItems.length > 0 && (
                     <div className="import-error-details">
@@ -170,9 +172,11 @@ function ErrorModal({ errorMessage, errorDetails, onClose }) {
                     <button className="import-clear-button" type="button" onClick={onClose}>
                         Close
                     </button>
-                    <button className="import-primary-button" type="button" onClick={onClose}>
-                        Try again
-                    </button>
+                    {!attendanceLocked && (
+                        <button className="import-primary-button" type="button" onClick={onClose}>
+                            Try again
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

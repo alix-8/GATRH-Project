@@ -47,9 +47,7 @@ class ProgramHeadSubmissionController extends Controller
                 ]))
             ->map(function ($group, $key) {
                 $first = $group->first();
-                $status = $group->contains('validation_status', 'rejected')
-                    ? 'rejected'
-                    : ($group->every(fn ($record) => $record->validation_status === 'validated') ? 'approved' : 'pending');
+                $status = $group->every(fn ($record) => $record->validation_status === 'validated') ? 'approved' : 'pending';
 
                 return [
                     'id' => (string) $key,
@@ -62,7 +60,7 @@ class ProgramHeadSubmissionController extends Controller
                     'date' => Carbon::parse($first->day)->format('M j, Y'),
                     'date_iso' => Carbon::parse($first->day)->toDateString(),
                     'status' => $status,
-                    'status_label' => ucfirst($status),
+                    'status_label' => $status === 'approved' ? 'Approved' : 'Pending',
                     'student_count' => $group->count(),
                     '_search_text' => $group->pluck('student.name')->filter()->implode(' '),
                 ];

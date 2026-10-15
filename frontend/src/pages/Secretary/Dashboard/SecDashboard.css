@@ -585,15 +585,6 @@
     background: #35a864;
 }
 
-.records-status-rejected {
-    border-color: #f2cccc;
-    color: #b63838;
-}
-
-.records-status-rejected::before {
-    background: #e25050;
-}
-
 .records-action {
     box-sizing: border-box;
     display: inline-flex;

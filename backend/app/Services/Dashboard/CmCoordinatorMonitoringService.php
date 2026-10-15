@@ -51,8 +51,11 @@ class CmCoordinatorMonitoringService
         ]))->values();
         $programOptions = $programOptions->map(fn ($program) => (array) $program);
 
-        if (! empty($filters['program_id'])) {
-            $selectedCode = $programs->firstWhere('id', (int) $filters['program_id'])?->code;
+        $selectedCode = ! empty($filters['program_id'])
+            ? $programs->firstWhere('id', (int) $filters['program_id'])?->code
+            : ($filters['program_code'] ?? null);
+
+        if ($selectedCode !== null) {
             $programOptions = $programOptions->filter(fn ($program) => $program['code'] === $selectedCode)->values();
         }
 
@@ -83,6 +86,7 @@ class CmCoordinatorMonitoringService
             ],
             'filters' => [
                 'program_id' => $filters['program_id'] ?? null,
+                'program_code' => $filters['program_code'] ?? null,
                 'week' => $weekFilter,
                 'gathering_type' => $gatheringFilter,
                 'search' => $filters['search'] ?? '',
@@ -124,13 +128,20 @@ class CmCoordinatorMonitoringService
         )->startOfMonth();
 
         $programCode = strtoupper(trim($programCode));
+        $program = Program::query()->whereRaw('UPPER(TRIM(code)) = ?', [$programCode])->first();
+        $maximumYearLevel = $programCode === 'ACT' ? 2 : 4;
+
+        if ($yearLevel < 1 || $yearLevel > $maximumYearLevel) {
+            return null;
+        }
+
         $roster = Student::query()
             ->whereRaw('UPPER(TRIM(program)) = ?', [$programCode])
             ->where('year_level', $yearLevel)
             ->orderBy('name')
             ->get(['id', 'name', 'program', 'year_level']);
 
-        if ($roster->isEmpty()) {
+        if ($program === null && $roster->isEmpty()) {
             return null;
         }
 
@@ -193,7 +204,6 @@ class CmCoordinatorMonitoringService
             ->sortBy(fn (array $entry) => $entry['date'] . '|' . $entry['gathering_type'])
             ->values();
 
-        $program = Program::query()->whereRaw('UPPER(TRIM(code)) = ?', [$programCode])->first();
         $latestApproval = $records
             ->filter(fn (AttendanceRecord $record) => in_array($record->validation_status, ['validated', 'approved'], true))
             ->sortByDesc('updated_at')
@@ -237,19 +247,44 @@ class CmCoordinatorMonitoringService
     private function getCourses(Collection $programs, Carbon $month, array $filters): Collection
     {
         $programCodes = $programs->pluck('code')->all();
+        $search = trim((string) ($filters['search'] ?? ''));
+        $matchingProgramCodes = $search === ''
+            ? []
+            : $programs->filter(fn ($program) =>
+                str_contains(mb_strtolower((string) $program['code']), mb_strtolower($search))
+                || str_contains(mb_strtolower((string) $program['name']), mb_strtolower($search))
+            )->pluck('code')->all();
         $students = Student::query()
             ->whereIn('program', $programCodes)
-            ->when(! empty($filters['search']), function ($query) use ($filters) {
-                $search = trim($filters['search']);
-                $query->where(function ($studentQuery) use ($search) {
+            ->when($search !== '', function ($query) use ($search, $matchingProgramCodes) {
+                $query->where(function ($studentQuery) use ($search, $matchingProgramCodes) {
                     $studentQuery->where('program', 'like', "%{$search}%")
                         ->orWhere('year_level', 'like', "%{$search}%");
+                    if ($matchingProgramCodes !== []) {
+                        $studentQuery->orWhereIn('program', $matchingProgramCodes);
+                    }
                 });
             })
             ->orderBy('program')
             ->orderBy('year_level')
             ->get(['id', 'program', 'year_level'])
             ->groupBy(fn (Student $student) => strtoupper(trim($student->program)) . '|' . $student->year_level);
+
+        if (empty($filters['search'])) {
+            foreach ($programs as $program) {
+                $programCode = strtoupper(trim($program['code']));
+                $yearCount = $programCode === 'ACT' ? 2 : 4;
+
+                for ($yearLevel = 1; $yearLevel <= $yearCount; $yearLevel++) {
+                    $key = $programCode . '|' . $yearLevel;
+                    if (! $students->has($key)) {
+                        $students->put($key, collect());
+                    }
+                }
+            }
+
+            $students = $students->sortKeys();
+        }
 
         $weeks = $this->getWeeks($month);
         $records = AttendanceRecord::query()

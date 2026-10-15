@@ -103,8 +103,7 @@ class ReminderController extends Controller
             : 0;
 
         $attendanceCount = $user->role === 'program_head' || $user->role === 'program_secretary'
-            ? $groups->filter(fn ($group) => !$group->contains('validation_status', 'rejected')
-                && !$group->every(fn ($record) => $record->validation_status === 'validated'))->count()
+            ? $groups->filter(fn ($group) => !$group->every(fn ($record) => $record->validation_status === 'validated'))->count()
             : $groups->count();
 
         return response()->json([
