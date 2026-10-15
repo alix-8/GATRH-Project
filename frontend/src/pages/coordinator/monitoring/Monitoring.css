@@ -43,7 +43,7 @@
 
 .monitoring-table {
     width: 100%;
-    min-width: 820px;
+    min-width: 1000px;
     border-collapse: separate;
     border-spacing: 0;
     table-layout: fixed;
@@ -53,11 +53,11 @@
 }
 
 .monitoring-program-column {
-    width: 11%;
+    width: 10%;
 }
 
 .monitoring-type-column {
-    width: 10%;
+    width: 18%;
 }
 
 .monitoring-status-column {
@@ -69,7 +69,7 @@
 }
 
 .monitoring-action-column {
-    width: 9%;
+    width: 8%;
 }
 
 .monitoring-status-legend {
@@ -146,6 +146,7 @@
 .monitoring-week-title,
 .monitoring-week-heading small {
     display: block;
+    font-size: 16px;
 }
 
 .monitoring-week-heading small {
@@ -156,13 +157,18 @@
 }
 
 .monitoring-table-heading .monitoring-program-heading {
-    padding-left: 12px;
-    text-align: left;
+    text-align: center;
+    font-size: 13px;
 }
 
 .monitoring-table-heading .monitoring-type-heading {
-    padding-left: 10px;
-    text-align: left;
+    text-align: center;
+    font-size: 13px;
+}
+
+.monitoring-table-heading .monitoring-progress-heading,
+.monitoring-table-heading .monitoring-action-heading {
+    font-size: 13px;
 }
 
 .monitoring-week-gatherings {
@@ -175,11 +181,8 @@
     line-height: 23px;
 }
 
-.monitoring-week-gatherings span + span {
-    border-left: 1px solid #d4e2eb;
-}
-
 .monitoring-table .monitoring-status-cell {
+    border-left: 0;
     border-right: 0;
 }
 
@@ -265,7 +268,6 @@
 .monitoring-course-name {
     text-align: left;
     padding: 6px 11px;
-    border-right: 1px solid #e5ebf0;
     font-weight: 500;
 }
 
@@ -276,19 +278,57 @@
 }
 
 .monitoring-course-type-pill {
+    --type-bg: #edf2f7;
+    --type-ink: #475467;
+    --type-dot: #98a7b8;
     display: inline-flex;
+    box-sizing: border-box;
+    width: 168px;
     max-width: 100%;
     align-items: center;
+    justify-content: center;
     gap: 5px;
     padding: 4px 7px;
     border-radius: 999px;
-    background: #e9f6fd;
-    color: #138dd1;
+    background: var(--type-bg);
+    color: var(--type-ink);
     font-size: 9px;
     font-weight: 600;
-    line-height: 1.2;
-    text-align: left;
-    overflow-wrap: anywhere;
+    line-height: 1.8;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.monitoring-course-type-pill--act {
+    --type-bg: #fff0e4;
+    --type-ink: #a74b0b;
+    --type-dot: #ef7d2c;
+}
+
+.monitoring-course-type-pill--bsis {
+    --type-bg: #ffebeb;
+    --type-ink: #b4232d;
+    --type-dot: #e14953;
+}
+
+.monitoring-course-type-pill--bssw,
+.monitoring-course-type-pill--bsw {
+    --type-bg: #f2ebff;
+    --type-ink: #7543a9;
+    --type-dot: #9360c9;
+}
+
+.monitoring-course-type-pill--bsa,
+.monitoring-course-type-pill--bsais {
+    --type-bg: #fff6d7;
+    --type-ink: #826000;
+    --type-dot: #dfb627;
+}
+
+.monitoring-course-type-pill--bab {
+    --type-bg: #e9f6fd;
+    --type-ink: #138dd1;
+    --type-dot: #159cf0;
 }
 
 .monitoring-course-type-pill::before {
@@ -296,7 +336,7 @@
     height: 6px;
     flex: 0 0 6px;
     border-radius: 50%;
-    background: #159cf0;
+    background: var(--type-dot);
     content: '';
 }
 
@@ -309,8 +349,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     overflow: hidden;
 }
@@ -357,8 +397,12 @@
 }
 
 .monitoring-action-cell button {
-    min-width: 52px;
-    padding: 4px 12px;
+    display: inline-flex;
+    width: 72px;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 1px 12px;
     border: 0;
     border-radius: 12px;
     background: #159cf0;
@@ -367,6 +411,12 @@
     font: inherit;
     font-size: 10px;
     font-weight: 600;
+}
+
+.monitoring-action-cell button svg {
+    width: 10px;
+    height: 10px;
+    flex: 0 0 10px;
 }
 
 .monitoring-action-cell button:hover {

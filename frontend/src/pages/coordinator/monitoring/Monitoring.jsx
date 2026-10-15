@@ -29,7 +29,7 @@ const PROGRAM_TYPES = {
     ACT: 'Computer Technology',
     BAB: 'Broadcasting',
     BSA: 'Accountancy',
-    BSAIS: 'Accounting Information Systems',
+    BSAIS: 'Accountancy Information System',
     BSIS: 'Information Systems',
     BSSW: 'Social Work',
 }
@@ -173,7 +173,7 @@ function CoordinatorMonitoring() {
                         <div className="monitoring-table-scroll" aria-busy={loading}>
                             <table
                                 className="monitoring-table"
-                                style={{ '--monitoring-status-width': `${60 / Math.max(1, weeks.length * gatheringTypes.length)}%` }}
+                                style={{ '--monitoring-status-width': `${54 / Math.max(1, weeks.length * gatheringTypes.length)}%` }}
                             >
                                 <colgroup>
                                     <col className="monitoring-program-column" />
@@ -249,7 +249,10 @@ function CoordinatorMonitoring() {
                                                 >
                                                     <td className="monitoring-course-name">{course.label}</td>
                                                     <td className="monitoring-course-type">
-                                                        <span className="monitoring-course-type-pill" title={PROGRAM_TYPES[course.program.toUpperCase()] || course.program}>
+                                                        <span
+                                                            className={`monitoring-course-type-pill monitoring-course-type-pill--${course.program.toLowerCase()}`}
+                                                            title={PROGRAM_TYPES[course.program.toUpperCase()] || course.program}
+                                                        >
                                                             {PROGRAM_TYPES[course.program.toUpperCase()] || course.program}
                                                         </span>
                                                     </td>
@@ -295,6 +298,9 @@ function CoordinatorMonitoring() {
                                                             onClick={() => openCourseDetails(course)}
                                                         >
                                                             View
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
                                                         </button>
                                                     </td>
                                                 </tr>
