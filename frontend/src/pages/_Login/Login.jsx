@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../../api/request'
-import LVCCLogo from '../../assets/lvcc-logo.webp'
+import LVCCLogo from '../../assets/lvcc-logo.svg'
 import Illustration from '../../assets/login-illustration.webp'
 import ShowPasswordIcon from '../../assets/show-password-icon.svg'
 import AttendanceTrackingIcon from '../../assets/attendance-tracking-icon.svg'
