@@ -10,6 +10,7 @@ const WarningIcon = () => (
 
 const errorLabels = {
     unmatched_lines: ['Unmatched Lines', 'Student names could not be matched'],
+    out_of_course_students: ['Students Not in Your Course', 'These students belong to another program or year level'],
     missing_students: ['Missing Students', 'Students were not included in the attendance text'],
     incomplete_records: ['Incomplete Records', 'Required attendance information is missing'],
     format_errors: ['Format Errors', 'Attendance lines contain invalid formatting'],
@@ -20,6 +21,7 @@ const errorLabels = {
 const getErrorItems = (errorDetails = {}) => {
     return [
         ['unmatched_lines', errorDetails.unmatched_lines || []],
+        ['out_of_course_students', errorDetails.out_of_course_students || []],
         ['missing_students', flattenMissingStudents(errorDetails.missing_students)],
         ['incomplete_records', errorDetails.incomplete_records || []],
         ['format_errors', errorDetails.format_errors || []],
@@ -71,6 +73,16 @@ function ErrorItems({ type, items }) {
         return items.map((item, index) => (
             <p className="import-error-item" key={`${type}-${index}`}>
                 {item.student_name || 'Unknown student'}
+            </p>
+        ))
+    }
+
+    if (type === 'out_of_course_students') {
+        return items.map((item, index) => (
+            <p className="import-error-item" key={`${type}-${index}`}>
+                <strong>{item.student_name || item.extracted_name || 'Unknown student'}</strong>
+                {item.program && ` — ${item.program}`}
+                {item.year_level && ` Year ${item.year_level}`}
             </p>
         ))
     }
