@@ -171,44 +171,60 @@ function CoordinatorMonitoring() {
 
                     {!error && courses.length > 0 && (
                         <div className="monitoring-table-scroll" aria-busy={loading}>
-                            <table className="monitoring-table">
+                            <table
+                                className="monitoring-table"
+                                style={{ '--monitoring-status-width': `${60 / Math.max(1, weeks.length * gatheringTypes.length)}%` }}
+                            >
+                                <colgroup>
+                                    <col className="monitoring-program-column" />
+                                </colgroup>
+                                <colgroup>
+                                    <col className="monitoring-type-column" />
+                                </colgroup>
+                                {weeks.map((item) => (
+                                    <colgroup key={item.number}>
+                                        {gatheringTypes.map((type) => (
+                                            <col key={type} className="monitoring-status-column" />
+                                        ))}
+                                    </colgroup>
+                                ))}
+                                <colgroup>
+                                    <col className="monitoring-progress-column" />
+                                </colgroup>
+                                <colgroup>
+                                    <col className="monitoring-action-column" />
+                                </colgroup>
                                 <thead>
                                     <tr className="monitoring-table-heading">
-                                        <th className="monitoring-program-heading" rowSpan="2">Program</th>
+                                        <th className="monitoring-program-heading" scope="col">Program</th>
+                                        <th className="monitoring-type-heading" scope="col">Type</th>
                                         {weeks.map((item) => (
-                                            <th key={item.number} className="monitoring-week-heading" colSpan={gatheringTypes.length}>
-                                                <span>{item.label}</span>
+                                            <th key={item.number} className="monitoring-week-heading" scope="colgroup" colSpan={gatheringTypes.length}>
+                                                <span className="monitoring-week-title">{item.label}</span>
                                                 <small>{item.description}</small>
+                                                <span className="monitoring-week-gatherings">
+                                                    {gatheringTypes.map((type) => (
+                                                        <span key={type} title={{
+                                                            pm: 'Prayer Meeting',
+                                                            tg: 'Thanksgiving',
+                                                            ws: 'Worship Service',
+                                                        }[type]}>{GATHERING_LABELS[type]}</span>
+                                                    ))}
+                                                </span>
                                             </th>
                                         ))}
-                                        <th className="monitoring-progress-heading" rowSpan="2">Progress</th>
-                                        <th className="monitoring-action-heading" rowSpan="2">Action</th>
-                                    </tr>
-                                    <tr className="monitoring-gathering-heading">
-                                        {weeks.flatMap((item) => gatheringTypes.map((type) => (
-                                            <th
-                                                key={`${item.number}-${type}`}
-                                                className={type === gatheringTypes[0] ? 'monitoring-week-start' : ''}
-                                                title={{
-                                                pm: 'Prayer Meeting',
-                                                tg: 'Thanksgiving',
-                                                ws: 'Worship Service',
-                                            }[type]}>
-                                                {GATHERING_LABELS[type]}
-                                            </th>
-                                        )))}
+                                        <th className="monitoring-progress-heading" scope="col">Progress</th>
+                                        <th className="monitoring-action-heading" scope="col">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {orderedProgramGroups.map(([programCode, programCourses], index) => (
+                                    {orderedProgramGroups.map(([programCode, programCourses]) => (
                                         <Fragment key={programCode}>
-                                            {index > 0 && (
-                                                <tr className="monitoring-program-spacer" aria-hidden="true">
-                                                    <td colSpan={weeks.length * gatheringTypes.length + 3} />
-                                                </tr>
-                                            )}
+                                            <tr className="monitoring-program-spacer" aria-hidden="true">
+                                                <td colSpan={weeks.length * gatheringTypes.length + 4} />
+                                            </tr>
                                             <tr className={`monitoring-program-group ${collapsedPrograms.includes(programCode) ? 'collapsed' : ''}`}>
-                                                <th colSpan={weeks.length * gatheringTypes.length + 3}>
+                                                <th colSpan={weeks.length * gatheringTypes.length + 4}>
                                                     <button
                                                         type="button"
                                                         className="monitoring-program-toggle"
@@ -232,6 +248,11 @@ function CoordinatorMonitoring() {
                                                     ].filter(Boolean).join(' ')}
                                                 >
                                                     <td className="monitoring-course-name">{course.label}</td>
+                                                    <td className="monitoring-course-type">
+                                                        <span className="monitoring-course-type-pill" title={PROGRAM_TYPES[course.program.toUpperCase()] || course.program}>
+                                                            {PROGRAM_TYPES[course.program.toUpperCase()] || course.program}
+                                                        </span>
+                                                    </td>
                                                     {weeks.flatMap((item) => {
                                                         const courseWeek = course.weeks.find((entry) => entry.number === item.number)
                                                         return gatheringTypes.map((type) => {
@@ -239,11 +260,12 @@ function CoordinatorMonitoring() {
                                                             return (
                                                                 <td
                                                                     key={`${course.label}-${item.number}-${type}`}
-                                                                    className={`monitoring-status-cell ${type === gatheringTypes[0] ? 'monitoring-week-start' : ''}`}
+                                                                    className={`monitoring-status-cell ${type === gatheringTypes[gatheringTypes.length - 1] ? 'monitoring-week-end' : ''}`}
                                                                 >
                                                                     <span
                                                                         className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'}`}
-                                                                        aria-label={itemStatus?.status?.replace('_', ' ') || 'No report'}
+                                                                        role="img"
+                                                                        aria-label={`${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status?.replace('_', ' ') || 'No report'}`}
                                                                         title={itemStatus
                                                                             ? `${itemStatus.completed_students}/${itemStatus.total_students} students`
                                                                             : 'No report'}

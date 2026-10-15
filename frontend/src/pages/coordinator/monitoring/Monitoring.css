@@ -35,19 +35,41 @@
 .monitoring-table-scroll {
     box-sizing: border-box;
     width: 100%;
-    overflow: hidden;
-    border: 1px solid #cbd5e1;
-    border-radius: 9px;
-    padding: 12px;
+    overflow-x: auto;
+    border: 1px solid #ccd8e2;
+    border-radius: 12px;
+    padding: 12px 12px 0;
 }
 
 .monitoring-table {
     width: 100%;
-    min-width: 750px;
+    min-width: 820px;
     border-collapse: separate;
     border-spacing: 0;
+    table-layout: fixed;
     color: #172b4d;
-    font-size: 12px;
+    font-size: 11px;
+    font-family: var(--sans);
+}
+
+.monitoring-program-column {
+    width: 11%;
+}
+
+.monitoring-type-column {
+    width: 10%;
+}
+
+.monitoring-status-column {
+    width: var(--monitoring-status-width);
+}
+
+.monitoring-progress-column {
+    width: 10%;
+}
+
+.monitoring-action-column {
+    width: 9%;
 }
 
 .monitoring-status-legend {
@@ -93,58 +115,76 @@
 
 .monitoring-table th,
 .monitoring-table td {
-    border-right: 1px solid #e1e7ef;
-    border-bottom: 1px solid #e1e7ef;
-}
-
-.monitoring-table th:last-child,
-.monitoring-table td:last-child {
-    border-right: 0;
+    border-bottom: 1px solid #e5ebf0;
 }
 
 .monitoring-table-heading th {
-    height: 46px;
-    padding: 5px 6px;
-    background: #e8f4fc;
-    font-weight: 600;
+    height: 76px;
+    padding: 0;
+    border-top: 1px solid #bed0dc;
+    border-right: 1px solid #bed0dc;
+    border-bottom: 1px solid #bed0dc;
+    background: #e6f2fa;
+    font-size: 11px;
+    font-weight: 700;
     text-align: center;
 }
 
-.monitoring-table-heading .monitoring-week-heading {
-    border-left: 6px solid #ffffff;
-    border-radius: 6px 6px 0 0;
+.monitoring-table-heading th:first-child {
+    border-left: 1px solid #bed0dc;
+    border-radius: 8px 0 0 8px;
 }
 
-.monitoring-table-heading th span,
-.monitoring-table-heading th small {
+.monitoring-table-heading th:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+.monitoring-table-heading .monitoring-week-heading {
+    padding-top: 9px;
+}
+
+.monitoring-week-title,
+.monitoring-week-heading small {
     display: block;
 }
 
-.monitoring-table-heading th small {
-    margin-top: 4px;
-    color: #667085;
+.monitoring-week-heading small {
+    margin: 4px 3px 0;
+    color: #5d7187;
     font-size: 9px;
-    font-weight: 400;
+    font-weight: 500;
 }
 
-.monitoring-table-heading .monitoring-program-heading,
-.monitoring-table-heading .monitoring-progress-heading {
-    min-width: 105px;
+.monitoring-table-heading .monitoring-program-heading {
+    padding-left: 12px;
+    text-align: left;
 }
 
-.monitoring-table-heading .monitoring-action-heading {
-    min-width: 64px;
+.monitoring-table-heading .monitoring-type-heading {
+    padding-left: 10px;
+    text-align: left;
 }
 
-.monitoring-gathering-heading th {
-    min-width: 34px;
-    height: 22px;
-    background: #f7fbfe;
+.monitoring-week-gatherings {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 9px;
+    border-top: 1px solid #bed0dc;
+    background: #ffffff;
     font-size: 10px;
+    line-height: 23px;
 }
 
-.monitoring-week-start {
-    border-left: 6px solid #ffffff !important;
+.monitoring-week-gatherings span + span {
+    border-left: 1px solid #d4e2eb;
+}
+
+.monitoring-table .monitoring-status-cell {
+    border-right: 0;
+}
+
+.monitoring-table .monitoring-week-end {
+    border-right: 1px solid #d4e0e9;
 }
 
 .monitoring-program-group th {
@@ -152,9 +192,9 @@
     border: 1px solid #cbd5e1 !important;
     border-bottom: 0 !important;
     border-radius: 8px 8px 0 0;
-    background: #f0f8fd;
-    font-size: 12px;
-    font-weight: 600;
+    background: #eaf5fb;
+    font-size: 11px;
+    font-weight: 700;
     text-align: left;
 }
 
@@ -164,7 +204,7 @@
 }
 
 .monitoring-program-spacer td {
-    height: 8px;
+    height: 12px;
     padding: 0;
     border: 0;
     background: #ffffff;
@@ -176,10 +216,6 @@
 
 .monitoring-table tbody tr:not(.monitoring-program-group):not(.monitoring-program-spacer)> :last-child {
     border-right: 1px solid #cbd5e1;
-}
-
-.monitoring-course-first>* {
-    border-top: 1px solid #cbd5e1;
 }
 
 .monitoring-course-last>* {
@@ -199,7 +235,7 @@
     align-items: center;
     width: 100%;
     gap: 8px;
-    padding: 7px 10px;
+    padding: 9px 11px;
     border: 0;
     background: transparent;
     color: #172b4d;
@@ -228,11 +264,44 @@
 
 .monitoring-course-name {
     text-align: left;
-    padding: 7px 10px;
+    padding: 6px 11px;
+    border-right: 1px solid #e5ebf0;
+    font-weight: 500;
+}
+
+.monitoring-course-type {
+    padding: 4px 5px;
+    border-right: 1px solid #d4e0e9;
+    text-align: center;
+}
+
+.monitoring-course-type-pill {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: #e9f6fd;
+    color: #138dd1;
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.monitoring-course-type-pill::before {
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
+    border-radius: 50%;
+    background: #159cf0;
+    content: '';
 }
 
 .monitoring-status-cell {
-    padding: 4px 6px;
+    padding: 3px 2px;
     text-align: center;
 }
 
@@ -240,8 +309,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     overflow: hidden;
 }
@@ -261,15 +330,19 @@
 }
 
 .monitoring-progress-cell {
-    min-width: 76px;
-    padding: 4px 7px;
+    padding: 4px 8px;
+    border-right: 1px solid #d4e0e9;
+    text-align: center;
     white-space: nowrap;
 }
 
 .monitoring-progress-track {
-    height: 3px;
-    margin-top: 3px;
+    width: 100%;
+    height: 4px;
+    margin-top: 4px;
+    border-radius: 4px;
     background: #e4e7ec;
+    overflow: hidden;
 }
 
 .monitoring-progress-track span {
@@ -284,14 +357,16 @@
 }
 
 .monitoring-action-cell button {
-    padding: 1px 20px;
+    min-width: 52px;
+    padding: 4px 12px;
     border: 0;
     border-radius: 12px;
     background: #159cf0;
     color: #ffffff;
     cursor: pointer;
     font: inherit;
-    font-size: 11px;
+    font-size: 10px;
+    font-weight: 600;
 }
 
 .monitoring-action-cell button:hover {
