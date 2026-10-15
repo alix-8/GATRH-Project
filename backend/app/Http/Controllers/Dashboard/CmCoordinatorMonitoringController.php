@@ -20,6 +20,7 @@ class CmCoordinatorMonitoringController extends Controller
             'year' => ['nullable', 'integer', 'between:2000,2100'],
             'program_id' => ['nullable', 'exists:programs,id'],
             'week' => ['nullable', 'string', 'regex:/^(all|[1-5])$/'],
+            'program_code' => ['nullable', 'string', 'max:50'],
             'gathering_type' => ['nullable', 'in:all,pm,ws,tg'],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
