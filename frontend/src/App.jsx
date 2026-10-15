@@ -130,7 +130,7 @@ function ResponsiveApp() {
 
   useEffect(() => {
     const pageTitle = pageTitleByPath[location.pathname] || 'GATRH'
-    document.title = `${pageTitle} | GATRH`
+    document.title = `GATRH - ${pageTitle}`
   }, [location.pathname])
 
   useEffect(() => {
