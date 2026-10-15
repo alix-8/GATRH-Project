@@ -4,7 +4,7 @@ import {
     TotalStudentsIcon,
     RespondedIcon,
     NoResponseIcon,
-} from '../../../components/icons/AttendanceIcons'
+} from '../../../components/Icons/AttendanceIcons'
 import RecordApprovedIcon from '../../../assets/icons/RecordApprovedIcon.svg'
 import RecordCalendarIcon from '../../../assets/icons/RecordCalendarIcon.svg'
 import RecordClockIcon from '../../../assets/icons/RecordClockIcon.svg'

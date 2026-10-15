@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { request } from '../../../api/request'
 import './ReviewDrawer.css'
 import { headerTitle } from './header-title'
-import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../components/icons/AttendanceIcons'
-import { FilterIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../components/icons/Reusables'
+import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../components/Icons/AttendanceIcons'
+import { FilterIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../components/Icons/Reusables'
 import AttendancePagination from './AttendancePagination'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import SearchPill from '../../../components/search/SearchPill'
-import ConfirmOverrideModal from '../import/modals/ConfirmOverrideModal'
+import ConfirmOverrideModal from '../Import/modals/ConfirmOverrideModal'
 
 const PAGE_SIZE = 10
 
