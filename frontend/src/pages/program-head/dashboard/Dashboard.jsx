@@ -8,7 +8,6 @@ import ApprovedIcon from '../../../assets/icons/ApprovedIcon.svg'
 import NotificationIcon from '../../../assets/icons/notification-icon.svg'
 import TotalSubmissionsIcon from '../../../assets/icons/TotalSubmissionsIcon.svg'
 import SubmittedIcon from '../../../assets/icons/SubmittedIcon.svg'
-import ResubmittedIcon from '../../../assets/icons/ResubmittedIcon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import './Dashboard.css'
@@ -23,7 +22,6 @@ const metrics = [
 const activityIcons = {
     submitted: SubmittedIcon,
     approved: ApprovedIcon,
-    resubmitted: ResubmittedIcon,
 }
 
 function compactActivityTime(value = '') {
