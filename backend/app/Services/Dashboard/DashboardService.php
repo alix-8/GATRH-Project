@@ -513,9 +513,7 @@ class DashboardService
                         "you approved the record",
                         'approved',
                     ],
-                    default => $first->created_at->ne($first->updated_at)
-                        ? ["{$gathering} attendance resubmitted", $secretary, 'resubmitted']
-                        : ["{$gathering} Attendance submitted", $secretary, 'submitted'],
+                    default => ["{$gathering} Attendance submitted", $secretary, 'submitted'],
                 };
 
                 return [

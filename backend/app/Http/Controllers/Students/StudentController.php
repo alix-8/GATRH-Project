@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
 use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
@@ -27,52 +28,53 @@ class StudentController extends Controller
             ->orderBy('name')
             ->get();
 
-        $responses = collect();
-        $session = null;
-
-        $draft = AttendanceDraft::query()
+        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $weekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
+        $latestRecord = AttendanceRecord::query()
+            ->whereIn('student_id', $students->pluck('id'))
+            ->whereBetween('day', [$weekStart, $weekEnd])
+            ->orderByDesc('day')
+            ->orderByDesc('created_at')
+            ->first();
+        $drafts = AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->where('status', 'draft')
+            ->whereBetween('day', [$weekStart, $weekEnd])
             ->orderByDesc('day')
             ->orderByDesc('updated_at')
-            ->first();
+            ->get();
+        $latestDraft = $drafts->first();
+        $useDraft = $latestDraft && (! $latestRecord
+            || $latestDraft->day->gt($latestRecord->day)
+            || ($latestDraft->day->equalTo($latestRecord->day)
+                && $latestDraft->updated_at->gt($latestRecord->created_at)));
+        $sessionType = $useDraft ? $latestDraft->gathering_type : ($latestRecord->gathering_type ?? null);
+        $sessionDay = $useDraft ? $latestDraft->day : ($latestRecord->day ?? null);
+        $responses = collect();
 
-        if ($draft) {
-            $responses = collect($draft->parsed_data ?? [])
+        if ($useDraft) {
+            $responses = collect($latestDraft->parsed_data ?? [])
                 ->keyBy(fn (array $record) => $record['student_id'] ?? null);
-            $session = [
-                'source' => 'draft',
-                'gathering_type' => $draft->gathering_type,
-                'day' => optional($draft->day)->toDateString(),
-            ];
-        } else {
-            $latestRecord = AttendanceRecord::query()
+        } elseif ($latestRecord) {
+            $responses = AttendanceRecord::query()
                 ->whereIn('student_id', $students->pluck('id'))
-                ->orderByDesc('day')
-                ->orderByDesc('created_at')
-                ->first();
-
-            if ($latestRecord) {
-                $records = AttendanceRecord::query()
-                    ->whereIn('student_id', $students->pluck('id'))
-                    ->where('gathering_type', $latestRecord->gathering_type)
-                    ->whereDate('day', $latestRecord->day)
-                    ->get();
-
-                $responses = $records->keyBy('student_id');
-                $session = [
-                    'source' => 'submitted',
-                    'gathering_type' => $latestRecord->gathering_type,
-                    'day' => $latestRecord->day->toDateString(),
-                ];
-            }
+                ->where('gathering_type', $sessionType)
+                ->whereDate('day', $sessionDay)
+                ->get()
+                ->keyBy('student_id');
         }
+        $session = $sessionType ? [
+            'source' => $useDraft ? 'draft' : 'submitted',
+            'gathering_type' => $sessionType,
+            'day' => $sessionDay->toDateString(),
+        ] : null;
 
         return response()->json([
-            'students' => $students->map(function (Student $student) use ($responses, $draft, $session) {
+            'students' => $students->map(function (Student $student) use ($responses, $session, $useDraft) {
                 $record = $responses->get($student->id);
-                $hasResponded = $record && ($record['status'] ?? $record->status) === 'present';
-                $draftNoResponse = $draft && $record && ($record['status'] ?? null) === 'no_response' ? 1 : 0;
+                $status = $record ? ($record['status'] ?? $record->status) : null;
+                $hasResponded = $status === 'present';
+                $draftNoResponse = $useDraft && $status === 'no_response' ? 1 : 0;
 
                 return [
                     'id' => $student->id,
