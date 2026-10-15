@@ -458,7 +458,7 @@ function CoordinatorMonitoring() {
                                                     : undefined}>
                                                     {formatGatheringDate(entry)}
                                                 </span>
-                                                <span className="monitoring-detail-status-cell">
+                                                <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
                                                     <img
                                                         src={status === 'completed'
                                                             ? CompletedIcon

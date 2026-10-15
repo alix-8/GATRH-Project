@@ -466,23 +466,26 @@
 }
 
 .monitoring-detail-program-type {
-    display: inline-flex;
+    display: flex;
+    box-sizing: border-box;
     align-items: center;
     gap: 6px;
     margin-bottom: 6px;
-    margin-right: 220px;
     padding: 3px 10px;
     border-radius: 14px;
     background: var(--type-bg, #eaf6ff);
     color: var(--type-ink, #159cf0);
     font-size: 14px;
     font-weight: bold;
-    width: 42%;
+    width: max-content;
+    max-width: 100%;
+    white-space: nowrap;
 }
 
 .monitoring-detail-program-type::before {
     width: 18px;
     height: 18px;
+    flex: 0 0 18px;
     border-radius: 50%;
     background: var(--type-dot, #159cf0);
     content: '';
@@ -648,7 +651,7 @@
 .monitoring-week-detail-headings,
 .monitoring-week-detail-row {
     display: grid;
-    grid-template-columns: 1.15fr .9fr 1fr .55fr;
+    grid-template-columns: 1fr 1.05fr 1fr .55fr;
     align-items: center;
     gap: 4px;
     padding: 9px 8px;
@@ -680,6 +683,11 @@
     height: 18px;
     flex: 0 0 18px;
     object-fit: contain;
+}
+
+.monitoring-detail-status-cell--incomplete img {
+    border-radius: 50%;
+    background: #f8c43a;
 }
 
 .monitoring-incomplete-details {
