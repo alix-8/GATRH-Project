@@ -103,8 +103,7 @@ class ReminderController extends Controller
             : 0;
 
         $attendanceCount = $user->role === 'program_head' || $user->role === 'program_secretary'
-            ? $groups->filter(fn ($group) => !$group->contains('validation_status', 'rejected')
-                && !$group->every(fn ($record) => $record->validation_status === 'validated'))->count()
+            ? $groups->filter(fn ($group) => !$group->every(fn ($record) => $record->validation_status === 'validated'))->count()
             : $groups->count();
 
         return response()->json([
@@ -200,15 +199,15 @@ class ReminderController extends Controller
     public function storeGathering(Request $request)
     {
         $validated = $request->validate([
-            'gathering_type' => 'required|in:pm,ws,tg,special',
+            'gathering_type' => 'required|in:pm,ws,tg',
             'program'        => 'required|string',
             'year_level'     => 'required|integer',
-            'gathering_date' => 'nullable|date|required_if:gathering_type,special',
+            'gathering_date' => 'nullable|date|required_if:gathering_type',
         ]);
 
         $gatheringDate = $validated['gathering_date'] ?? $this->gatheringService->nextDate($validated['gathering_type']);
 
-        if ($validated['gathering_type'] !== 'special' && ! $this->gatheringService->isScheduledDay($validated['gathering_type'], Carbon::parse($gatheringDate))) {
+        if (! $this->gatheringService->isScheduledDay($validated['gathering_type'], Carbon::parse($gatheringDate))) {
             return response()->json([
                 'status'  => 'error',
                 'message' => sprintf('%s reminders can only be scheduled on %s.',

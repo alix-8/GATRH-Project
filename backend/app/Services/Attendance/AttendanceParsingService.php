@@ -10,7 +10,7 @@ use App\Support\GatheringCycle;
 class AttendanceParsingService
 {
     /**
-     * FOR SUBMIT: Converts raw time strings (e.g., "10:30 AM", "2:15 PM") into MySQL TIME format (HH:MM:SS).
+     * FOR SUBMIT: Converts raw time strings (e.g., "8AM", "10:30 AM", "2:15 PM") into MySQL TIME format (HH:MM:SS).
      */
     public function formatBatchTime(?string $batchTime): ?string
     {
@@ -18,7 +18,12 @@ class AttendanceParsingService
             return null;
         }
 
-        $timestamp = strtotime(trim($batchTime));
+        $batchTime = trim($batchTime);
+        if (preg_match('/^(\d{1,2})\s*(AM|PM)$/i', $batchTime, $matches)) {
+            $batchTime = $matches[1] . ':00 ' . strtoupper($matches[2]);
+        }
+
+        $timestamp = strtotime($batchTime);
 
         if ($timestamp === false) {
             return null;
@@ -41,7 +46,7 @@ class AttendanceParsingService
 
     /**
      * Validates that a batch/time string matches an expected time format
-     * (e.g. "8:30 AM", "08:30", "2:15 PM"). Returns true if valid or empty (optional field).
+     * (e.g. "8AM", "8:30 AM", "08:30", "2:15 PM"). Returns true if valid or empty (optional field).
      */
     private function isValidBatchFormat(?string $rawBatch): bool
     {
@@ -49,8 +54,12 @@ class AttendanceParsingService
             return true; // empty is allowed — it's optional
         }
 
-        // Accepts: "8:30 AM", "08:30 PM", "8:30", "08:30:00"
-        return (bool) preg_match('/^\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM|am|pm)?$/', trim($rawBatch));
+        // Accepts compact meridiem times as well as the existing colon-separated formats.
+        $time = trim($rawBatch);
+        return (bool) (
+            preg_match('/^(?:[1-9]|1[0-2])\s*(?:AM|PM)$/i', $time)
+            || preg_match('/^\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?$/i', $time)
+        );
     }
 
     /**
@@ -133,9 +142,9 @@ class AttendanceParsingService
             return ['count' => 0, 'template' => null];
         }
 
-        $pmLabel = GatheringCycle::windowLabel('pm');
-        $wsLabel = GatheringCycle::windowLabel('ws');
-        $tgLabel = GatheringCycle::windowLabel('tg');
+        $pmLabel = GatheringCycle::reportWeekWindowLabel('pm');
+        $wsLabel = GatheringCycle::reportWeekWindowLabel('ws');
+        $tgLabel = GatheringCycle::reportWeekWindowLabel('tg');
 
         $template = "--- GATRH ATTENDANCE FORM ---\n";
         $template .= "Gathering: WEEKLY REPORTING\n";
@@ -172,7 +181,6 @@ class AttendanceParsingService
             'pm', 'prayer meeting' => 'pm',
             'ws', 'worship service' => 'ws',
             'tg', 'thanksgiving' => 'tg',
-            'special', 'special gathering' => 'special',
             default => strtolower(trim($matches[1])),
         };
     }
@@ -222,6 +230,18 @@ class AttendanceParsingService
             ->where('year_level', $yearLevel)
             ->where('name', 'LIKE', "%{$studentName}%")
             ->first();
+    }
+
+    /** Finds a matching active student outside the secretary's assigned course and year. */
+    private function findMatchingStudentOutsideSection(string $program, int $yearLevel, string $studentName): ?Student
+    {
+        return Student::active()
+            ->where('name', 'LIKE', "%{$studentName}%")
+            ->where(function ($query) use ($program, $yearLevel) {
+                $query->where('program', '!=', $program)
+                    ->orWhere('year_level', '!=', $yearLevel);
+            })
+            ->first(['id', 'name', 'program', 'year_level']);
     }
 
     /**
@@ -297,7 +317,7 @@ class AttendanceParsingService
             $formatErrors[] = [
                 'field'  => 'batch',
                 'value'  => $parts['raw_batch'],
-                'reason' => 'Batch time must be in a valid time format, e.g. "8:30 AM".',
+                'reason' => 'Batch time must be in a valid time format, e.g. "8AM" or "8:30 AM".',
             ];
         }
 
@@ -327,8 +347,15 @@ class AttendanceParsingService
         $student = $this->findMatchingStudent($program, $yearLevel, $parts['student_name']);
 
         if (!$student) {
+            $outsideStudent = $this->findMatchingStudentOutsideSection($program, $yearLevel, $parts['student_name']);
             return [
                 'matched'        => false,
+                'out_of_course_data' => $outsideStudent ? [
+                    'extracted_name' => $parts['student_name'],
+                    'student_name' => $outsideStudent->name,
+                    'program' => $outsideStudent->program,
+                    'year_level' => $outsideStudent->year_level,
+                ] : null,
                 'unmatched_data' => $this->buildUnmatchedRecord(
                     $line,
                     $parts['student_name'],
@@ -404,6 +431,7 @@ class AttendanceParsingService
 
         $result = ['pm' => [], 'ws' => [], 'tg' => []];
         $unmatchedLines = [];
+        $outOfCourseStudents = [];
         $incompleteRecords = [];
         $formatErrorLines = [];
         $blankEntries = [];
@@ -413,10 +441,20 @@ class AttendanceParsingService
             $student = $this->findMatchingStudent($program, $yearLevel, $entry['name']);
 
             if (!$student) {
-                $unmatchedLines[] = [
-                    'raw_line'       => $entry['raw_line'],
-                    'extracted_name' => $entry['name'],
-                ];
+                $outsideStudent = $this->findMatchingStudentOutsideSection($program, $yearLevel, $entry['name']);
+                if ($outsideStudent) {
+                    $outOfCourseStudents[] = [
+                        'extracted_name' => $entry['name'],
+                        'student_name' => $outsideStudent->name,
+                        'program' => $outsideStudent->program,
+                        'year_level' => $outsideStudent->year_level,
+                    ];
+                } else {
+                    $unmatchedLines[] = [
+                        'raw_line'       => $entry['raw_line'],
+                        'extracted_name' => $entry['name'],
+                    ];
+                }
                 continue;
             }
 
@@ -467,7 +505,7 @@ class AttendanceParsingService
                     $timeErr = [
                         'field'  => 'time',
                         'value'  => $slot['time'],
-                        'reason' => 'Time must be in a valid format, e.g. "8:30 AM".',
+                        'reason' => 'Time must be in a valid format, e.g. "8AM" or "8:30 AM".',
                     ];
                     $formatErrorLines[] = [
                         'student_name'   => $student->name,
@@ -572,6 +610,7 @@ class AttendanceParsingService
         return [
             'records'                 => $result,
             'unmatched_lines'         => $unmatchedLines,
+            'out_of_course_students' => $outOfCourseStudents,
             'incomplete_records'      => $incompleteRecords,
             'format_errors'           => $formatErrorLines,
             'blank_entries'           => $blankEntries,
@@ -726,7 +765,6 @@ class AttendanceParsingService
             'pm' => ['prayer meeting', 'pm'],
             'ws' => ['worship service', 'ws'],
             'tg' => ['thanksgiving', 'tg'],
-            'special' => ['special gathering', 'special'],
         ];
 
         $lines = preg_split('/\r\n|\r|\n/', trim($rawText));

@@ -39,8 +39,6 @@ const getGatheringTypeFromText = text => {
         'worship service': 'ws',
         tg: 'tg',
         thanksgiving: 'tg',
-        special: 'special',
-        'special gathering': 'special',
     }[gathering] || gathering
 }
 
@@ -137,7 +135,7 @@ function Import({ onGoToAttendance = () => {} }) {
             return
         }
 
-        const parseErrorKeys = ['unmatched_lines', 'missing_students', 'incomplete_records', 'format_errors', 'all_no_response_warning']
+        const parseErrorKeys = ['unmatched_lines', 'out_of_course_students', 'missing_students', 'incomplete_records', 'format_errors', 'all_no_response_warning']
         const getStructuredParseErrors = payload => {
             const nestedErrors = payload?.errors && typeof payload.errors === 'object' ? payload.errors : {}
             const directErrors = parseErrorKeys.reduce((errors, key) => {
@@ -363,6 +361,7 @@ function Import({ onGoToAttendance = () => {} }) {
                 <ErrorModal
                     errorMessage={modalMessage}
                     errorDetails={parseErrors}
+                    attendanceLocked={parseErrors?.status === 'attendance_locked'}
                     onClose={() => setModal(null)}
                 />
             )}

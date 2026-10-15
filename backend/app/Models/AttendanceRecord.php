@@ -14,19 +14,20 @@ class AttendanceRecord extends Model
     protected $fillable = [
         'batch_id',
         'student_id',
-        'gathering_type',    // 'pm', 'ws', 'tg', 'special'
+        'gathering_type',    // 'pm', 'ws', 'tg'
         'day',               // date of gathering
         'batch',
         'venue',
         'status',            // 'present', 'no_response'
-        'validation_status', // 'unvalidated', 'approved'
+        'validation_status', // 'unvalidated', 'validated'
         'submitted_by',
         'validated_by',
-        'rejection_reason',
+        'approved_at',
     ];
 
     protected $casts = [
         'day' => 'date',
+        'approved_at' => 'datetime',
     ];
 
     // The Secretary who submitted this record
@@ -37,11 +38,6 @@ class AttendanceRecord extends Model
 
     // The Program Head or Coordinator who validated this record
     public function validator()
-    {
-        return $this->belongsTo(User::class, 'validated_by');
-    }
-
-    public function rejector()
     {
         return $this->belongsTo(User::class, 'validated_by');
     }

@@ -164,7 +164,6 @@ class StudentController extends Controller
             'pm' => 'Prayer Meeting',
             'ws' => 'Worship Service',
             'tg' => 'Thanksgiving',
-            'special' => 'Special Gathering',
             default => 'Gathering',
         };
     }

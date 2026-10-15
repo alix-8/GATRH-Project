@@ -16,7 +16,6 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 const STATUS_META = {
     validating: { label: 'Validating', dot: '#8c96a4' },
     pending: { label: 'Pending', dot: '#F2994A' },
-    rejected: { label: 'Rejected', dot: '#E52328' },
     approved: { label: 'Approved', dot: '#27AE60' },
 }
 
@@ -25,7 +24,6 @@ const GATHERING_OPTIONS = [
     { value: 'pm', label: 'Prayer Meeting' },
     { value: 'ws', label: 'Worship Service' },
     { value: 'tg', label: 'Thanksgiving' },
-    { value: 'special', label: 'Special' },
 ]
 
 const SORT_OPTIONS = [
@@ -134,8 +132,9 @@ function AttendanceTable() {
             const params = new URLSearchParams()
             if (gathering) params.set('gathering_type', gathering)
             if (selectedDate) params.set('date', toDateParam(selectedDate))
+            params.set('status', 'all')
             if (sortBy) params.set('sort_by', sortBy)
-            params.set('page', page)
+                params.set('page', page)
 
             const json = await request(`/attendance?${params.toString()}`, { signal })
 
@@ -348,7 +347,7 @@ function AttendanceTable() {
                             )}
                             <th>Course</th>
                             <th>Year</th>
-                            <th>Date</th>
+                            <th>Submission Date</th>
                             <th>Gathering</th>
                             <th>Time</th>
                             <th>Status</th>
@@ -385,7 +384,7 @@ function AttendanceTable() {
                                     )}
                                     <td>{record.course}</td>
                                     <td>{record.year}</td>
-                                    <td>{record.date}</td>
+                                    <td>{record.submission_date || record.date}</td>
                                     <td>{record.gathering}</td>
                                     <td>{record.time}</td>
                                     <td>

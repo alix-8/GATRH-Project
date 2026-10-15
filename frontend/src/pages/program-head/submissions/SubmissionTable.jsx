@@ -17,7 +17,6 @@ const GATHERINGS = [
     { value: 'pm', label: 'Prayer Meeting' },
     { value: 'ws', label: 'Worship Service' },
     { value: 'tg', label: 'Thanksgiving' },
-    { value: 'special', label: 'Special Gathering' },
 ]
 const YEARS = [
     { value: '', label: 'Year' },

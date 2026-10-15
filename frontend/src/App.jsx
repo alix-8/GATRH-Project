@@ -25,6 +25,32 @@ const landingByRole = {
   admin: '/admin/dashboard',
 }
 
+const pageTitleByPath = {
+  '/': 'Login',
+  '/forgot-password': 'Forgot Password',
+  '/reset-password': 'Reset Password',
+  '/dashboard': 'Dashboard',
+  '/students': 'Students',
+  '/import': 'Import',
+  '/attendance': 'Attendance',
+  '/reminders': 'Reminders',
+  '/profile': 'Profile',
+  '/program-head/dashboard': 'Dashboard',
+  '/program-head/submission': 'Submissions',
+  '/program-head/records': 'Records',
+  '/program-secretary/dashboard': 'Dashboard',
+  '/program-secretary/submission': 'Submissions',
+  '/program-secretary/records': 'Records',
+  '/chancellor/dashboard': 'Dashboard',
+  '/coordinator/monitoring': 'Monitoring',
+  '/admin/dashboard': 'Dashboard',
+  '/admin/user-roles': 'User Roles',
+  '/admin/students': 'Students',
+  '/admin/programs': 'Programs',
+  '/admin/settings': 'System Settings',
+  '/unauthorized': 'Access Not Configured',
+}
+
 function getSession() {
   try {
     const user = JSON.parse(localStorage.getItem('user') || 'null')
@@ -101,6 +127,11 @@ function AppRoutes() {
 function ResponsiveApp() {
   const [isCompactScreen, setIsCompactScreen] = useState(() => window.innerWidth <= 900)
   const location = useLocation()
+
+  useEffect(() => {
+    const pageTitle = pageTitleByPath[location.pathname] || 'GATRH'
+    document.title = `${pageTitle} | GATRH`
+  }, [location.pathname])
 
   useEffect(() => {
     const updateScreenSize = () => setIsCompactScreen(window.innerWidth <= 900)

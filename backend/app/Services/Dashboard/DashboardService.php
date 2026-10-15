@@ -431,7 +431,6 @@ class DashboardService
                     'status'         => $status,
                     'status_label'   => match ($status) {
                         'approved' => 'Approved',
-                        'rejected' => 'Rejected',
                         default    => 'Pending',
                     },
                     'action'         => 'View',
@@ -453,9 +452,6 @@ class DashboardService
 
     private function aggregateRecordStatus($group): string
     {
-        if ($group->contains('validation_status', 'rejected')) {
-            return 'rejected';
-        }
         if ($group->every(fn ($r) => in_array($r->validation_status, ['validated', 'approved']))) {
             return 'approved';
         }
@@ -516,11 +512,6 @@ class DashboardService
                         "{$gathering} attendance submitted",
                         "you approved the record",
                         'approved',
-                    ],
-                    'rejected' => [
-                        "{$gathering} Attendance rejected",
-                        $secretary,
-                        'rejected',
                     ],
                     default => $first->created_at->ne($first->updated_at)
                         ? ["{$gathering} attendance resubmitted", $secretary, 'resubmitted']

@@ -35,7 +35,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'raw_text'      => 'required|string',
-            'gathering_type'=> 'required|in:pm,ws,tg,special,week',
+            'gathering_type'=> 'required|in:pm,ws,tg,week',
             'cycle'         => 'nullable',
             'week_range'    => 'nullable',
         ]);
@@ -52,13 +52,18 @@ class AttendanceController extends Controller
             $start = $range['start']->toDateString();
             $end = $range['end']->toDateString();
 
-            $recordCount = AttendanceRecord::where('gathering_type', $type)
+            $recordQuery = AttendanceRecord::where('gathering_type', $type)
                 ->whereBetween('day', [$start, $end])
                 ->whereHas('student', function ($query) use ($user) {
                     $query->where('program', $user->program)
                         ->where('year_level', $user->year_level);
-                })
-                ->count();
+                });
+            $recordCount = (clone $recordQuery)->count();
+            $protectedRecordCount = $this->addProtectedAttendanceStatuses(clone $recordQuery)->count();
+
+            if ($protectedRecordCount > 0) {
+                return $this->protectedAttendanceResponse($type, $validated['gathering_type'] === 'week');
+            }
 
             $draftCount = AttendanceDraft::where('gathering_type', $type)
                 ->where('status', 'draft')
@@ -109,8 +114,8 @@ class AttendanceController extends Controller
   public function index(Request $request)
     {
         $validated = $request->validate([
-            'gathering_type' => 'nullable|in:pm,ws,tg,special',
-            'status'         => 'nullable|in:validating,pending,rejected,approved',
+            'gathering_type' => 'nullable|in:pm,ws,tg',
+            'status'         => 'nullable|in:all,validating,pending,approved',
             'date'           => 'nullable|date',
             'sort_by'        => 'nullable|in:day,status,gathering_type',
             'sort_dir'       => 'nullable|in:asc,desc',
@@ -130,7 +135,7 @@ class AttendanceController extends Controller
             ->where('status', 'draft');
 
         if (!empty($validated['date'])) {
-            $draftsQuery->whereDate('day', $validated['date']);
+            $draftsQuery->whereDate('updated_at', $validated['date']);
         }
 
         $drafts = $draftsQuery->get()->map(function ($draft) use ($program, $yearLevel) {
@@ -141,7 +146,9 @@ class AttendanceController extends Controller
                 'batch_id'       => null,
                 'course'         => $program,
                 'year'           => $yearLevel,
-                'date'    => optional($draft->created_at)->format('F j, Y'),
+                'date'    => optional($draft->day)->format('F j, Y'),
+                'submission_date' => optional($draft->updated_at)->format('F j, Y'),
+                'raw_submission_at' => $draft->updated_at,
                 'day_iso' => optional($draft->day)->toDateString(),
                 'raw_day' => $draft->day,
                 'gathering_type' => $draft->gathering_type,
@@ -151,7 +158,7 @@ class AttendanceController extends Controller
             ];
         })->filter(function ($row) use ($validated) {
             if (!empty($validated['gathering_type']) && $row['gathering_type'] !== $validated['gathering_type']) return false;
-            if (!empty($validated['status']) && $row['status'] !== $validated['status']) return false;
+            if (!empty($validated['status']) && $validated['status'] !== 'all' && $row['status'] !== $validated['status']) return false;
             return true;
         })->values();
 
@@ -165,7 +172,7 @@ class AttendanceController extends Controller
             $recordsQuery->where('gathering_type', $validated['gathering_type']);
         }
         if (!empty($validated['date'])) {
-            $recordsQuery->whereDate('day', $validated['date']);
+            $recordsQuery->whereDate('updated_at', $validated['date']);
         }
 
         $records = $recordsQuery->get()
@@ -182,8 +189,6 @@ class AttendanceController extends Controller
             })
             ->map(function ($group) use ($program, $yearLevel) {
                 $first = $group->first();
-                $createdAt = $group->min('created_at');
-
                 $dayCarbon = $first->day instanceof Carbon
                     ? $first->day
                     : Carbon::parse($first->day);
@@ -195,19 +200,20 @@ class AttendanceController extends Controller
                     'batch_id'         => $first->batch_id ?? null,
                     'course'           => $program,
                     'year'             => $yearLevel,
-                    'date'             => optional($createdAt)->format('F j, Y'),
+                    'date'             => $dayCarbon->format('F j, Y'),
+                    'submission_date'  => optional($group->max('updated_at'))->format('F j, Y'),
+                    'raw_submission_at' => $group->max('updated_at'),
                     'day_iso'          => $dayCarbon->toDateString(),
                     'raw_day'          => $dayCarbon,
                     'gathering_type'   => $first->gathering_type,
                     'gathering'        => $this->gatheringLabel($first->gathering_type),
-                    'time'             => optional($first->created_at)->format('g:i A'),
+                    'time'             => optional($group->max('updated_at'))->format('g:i A'),
                     'status'           => $this->aggregateStatus($group),
-                    'rejection_reason' => $first->rejection_reason,
                 ];
             })
             ->values();
 
-        if (!empty($validated['status'])) {
+        if (!empty($validated['status']) && $validated['status'] !== 'all') {
             $records = $records->filter(fn ($r) => $r['status'] === $validated['status'])->values();
         }
 
@@ -217,7 +223,7 @@ class AttendanceController extends Controller
                 fn ($row) => match ($sortBy) {
                     'status'         => $row['status'],
                     'gathering_type' => $row['gathering_type'],
-                    default          => $row['raw_day'],
+                    default          => $row['raw_submission_at'] ?? $row['raw_day'],
                 },
                 SORT_REGULAR,
                 $sortDir === 'desc'
@@ -260,7 +266,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'batch_id'       => 'nullable|string',
-            'gathering_type' => 'required_without:batch_id|in:pm,ws,tg,special',
+            'gathering_type' => 'required_without:batch_id|in:pm,ws,tg',
             'day'            => 'required_without:batch_id|date',
         ]);
 
@@ -315,7 +321,6 @@ class AttendanceController extends Controller
                     ]))),
                 ],
                 'validation_status' => $records->first()->validation_status,
-                'rejection_reason'  => $records->first()->rejection_reason,
                 'total_students'    => $students->count(),
                 'responded_count'   => $responded,
                 'no_response_count' => $students->count() - $responded,
@@ -326,9 +331,6 @@ class AttendanceController extends Controller
 
     private function aggregateStatus($group): string
     {
-        if ($group->contains('validation_status', 'rejected')) {
-            return 'rejected';
-        }
         if ($group->every(fn ($r) => $r->validation_status === 'validated')) {
             return 'approved';
         }
@@ -341,7 +343,6 @@ class AttendanceController extends Controller
             'pm'      => 'Prayer Meeting',
             'ws'      => 'Worship Service',
             'tg'      => 'Thanksgiving',
-            'special' => 'Special Gathering',
             default   => ucfirst($type),
         };
     }
@@ -351,9 +352,38 @@ class AttendanceController extends Controller
         return match ($validationStatus) {
             'unvalidated' => 'pending',
             'validated'   => 'approved',
-            'rejected'    => 'rejected',
             default       => $validationStatus,
         };
+    }
+
+    private function addProtectedAttendanceStatuses($query)
+    {
+        return $query->where(function ($statusQuery) {
+            $statusQuery->whereNull('validation_status')
+                ->orWhereIn('validation_status', ['unvalidated', 'validated']);
+        });
+    }
+
+    private function isAttendanceProtected(AttendanceRecord $record): bool
+    {
+        return $record->validation_status === null
+            || in_array($record->validation_status, ['unvalidated', 'validated'], true);
+    }
+
+    private function protectedAttendanceResponse(?string $type = null, bool $weeklyImport = false)
+    {
+        $label = $type ? $this->gatheringLabel($type) : null;
+        $message = $label
+            ? "{$label} attendance has already been submitted for this week and cannot be overridden or edited."
+                . ($weeklyImport ? ' Please select an individual gathering to continue.' : '')
+            : 'This attendance has already been submitted and cannot be overridden or edited.';
+
+        return response()->json([
+            'status' => 'attendance_locked',
+            'message' => $message,
+            'gathering_type' => $type,
+            'gathering_label' => $label,
+        ], 409);
     }
 
     /**
@@ -363,7 +393,7 @@ class AttendanceController extends Controller
     {   
         //Weekly attendance
         $request->validate([
-            'gathering_type' => 'nullable|string|in:pm,ws,tg,special,week',
+            'gathering_type' => 'nullable|string|in:pm,ws,tg,week',
         ]);
 
         $user = $request->user();
@@ -438,7 +468,7 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'raw_text'       => 'required|string',
-            'gathering_type' => 'nullable|string|in:pm,ws,tg,special',
+            'gathering_type' => 'nullable|string|in:pm,ws,tg',
             'gathering_id'   => 'nullable|exists:gatherings,id',
             'draft_id'       => 'nullable|exists:attendance_drafts,id',
             'confirm_blank'  => 'nullable|boolean',
@@ -476,6 +506,7 @@ class AttendanceController extends Controller
         $lines = explode("\n", trim($request->raw_text));
         $parsedSubmissions = [];
         $unmatchedLines = [];
+        $outOfCourseStudents = [];
         $incompleteRecords = [];
         $formatErrorLines = [];
         $hasAnyAttendanceDetail = false;
@@ -537,7 +568,11 @@ class AttendanceController extends Controller
                     ];
                 }
             } elseif ($result['unmatched_data']) {
-                $unmatchedLines[] = $result['unmatched_data'];
+                if (!empty($result['out_of_course_data'])) {
+                    $outOfCourseStudents[] = $result['out_of_course_data'];
+                } else {
+                    $unmatchedLines[] = $result['unmatched_data'];
+                }
             }
         }
 
@@ -556,13 +591,14 @@ class AttendanceController extends Controller
             );
 
         $allNoResponseWarning = $allStudentsNoResponse
-            ? 'Are you sure the data is correct? You cannot pass a completely blank record.'
+            ? 'Are you sure the data is correct? This is a completely blank record.'
             : null;
 
         $confirmBlank = (bool) $request->boolean('confirm_blank');
         $hasHardErrors = !empty($formatErrorLines)
             || !empty($incompleteRecords)
             || !empty($unmatchedLines)
+            || !empty($outOfCourseStudents)
             || !empty($missingStudents);
 
         $isOverride = (bool) $request->boolean('override');
@@ -570,7 +606,7 @@ class AttendanceController extends Controller
         $startStr = $range['start']->toDateString();
         $endStr = $range['end']->toDateString();
 
-        $existingRecordsCount = AttendanceRecord::where('gathering_type', $metadata['gathering_type'])
+        $existingRecordsQuery = AttendanceRecord::where('gathering_type', $metadata['gathering_type'])
             ->whereHas('student', function ($query) use ($metadata, $program, $yearLevel) {
                 $query->where('program', $metadata['program'] ?? $program)
                     ->where('year_level', $metadata['year_level'] ?? $yearLevel);
@@ -582,8 +618,13 @@ class AttendanceController extends Controller
                 } else {
                     $q->whereBetween('day', [$startStr, $endStr]);
                 }
-            })
-            ->count();
+            });
+        $existingRecordsCount = (clone $existingRecordsQuery)->count();
+        $protectedRecordsCount = $this->addProtectedAttendanceStatuses(clone $existingRecordsQuery)->count();
+
+        if ($protectedRecordsCount > 0) {
+            return $this->protectedAttendanceResponse($metadata['gathering_type']);
+        }
         $existingDraftsCount = AttendanceDraft::where('gathering_type', $metadata['gathering_type'])
             ->where('status', 'draft')
             ->when($request->draft_id, fn ($query) => $query->where('id', '!=', $request->draft_id))
@@ -618,6 +659,7 @@ class AttendanceController extends Controller
                 'message'                 => 'Attendance text contains errors. Please correct them before saving the draft.',
                 'metadata'                => $metadata,
                 'unmatched_lines'         => $unmatchedLines,
+                'out_of_course_students' => $outOfCourseStudents,
                 'missing_students'        => $missingStudents,
                 'incomplete_records'      => $incompleteRecords,
                 'format_errors'           => $formatErrorLines,
@@ -662,6 +704,7 @@ class AttendanceController extends Controller
             'parsed_data'    => $sectionData['records'],
             'unparsed_data'  => $unmatchedLines,
             'unmatched_lines'=> $unmatchedLines,
+            'out_of_course_students' => $outOfCourseStudents,
             'incomplete_records' => $incompleteRecords,
             'format_errors'  => $formatErrorLines,
             'total_detected' => $sectionData['total_students'],
@@ -690,6 +733,7 @@ class AttendanceController extends Controller
                 'format_error_count'  => count($formatErrorLines),
             ],
             'unmatched_lines'    => $unmatchedLines,
+            'out_of_course_students' => $outOfCourseStudents,
             'missing_students'   => $missingStudents,
             'incomplete_records' => $incompleteRecords,
             'format_errors'      => $formatErrorLines,
@@ -717,7 +761,7 @@ class AttendanceController extends Controller
         $confirmBlank = (bool) $request->boolean('confirm_blank');
         $isOverride = (bool) $request->boolean('override');
 
-        $hasHardErrors = !empty($parsed['unmatched_lines']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']);
+        $hasHardErrors = !empty($parsed['unmatched_lines']) || !empty($parsed['out_of_course_students']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']);
         $hasSoftWarnings = !empty($parsed['blank_entries']) || !empty($parsed['all_no_response_warning']);
 
         // Check for existing submissions in this week range FIRST
@@ -735,13 +779,18 @@ class AttendanceController extends Controller
                 $firstRange = $range;
             }
 
-            $existingRecords = AttendanceRecord::where('gathering_type', $type)
+            $existingRecordsQuery = AttendanceRecord::where('gathering_type', $type)
                 ->whereHas('student', function ($query) use ($user) {
                     $query->where('program', $user->program)
                         ->where('year_level', $user->year_level);
                 })
-                ->whereBetween('day', [$startStr, $endStr])
-                ->count();
+                ->whereBetween('day', [$startStr, $endStr]);
+            $existingRecords = (clone $existingRecordsQuery)->count();
+            $protectedRecords = $this->addProtectedAttendanceStatuses(clone $existingRecordsQuery)->count();
+
+            if ($protectedRecords > 0) {
+                return $this->protectedAttendanceResponse($type, true);
+            }
             $existingDrafts = AttendanceDraft::where('gathering_type', $type)
                 ->where('status', 'draft')
                 ->whereBetween('day', [$startStr, $endStr])
@@ -780,6 +829,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'message'                 => 'Weekly attendance text contains errors. Please correct them before saving the draft.',
                 'unmatched_lines'         => $parsed['unmatched_lines'],
+                'out_of_course_students' => $parsed['out_of_course_students'] ?? [],
                 'incomplete_records'      => $parsed['incomplete_records'],
                 'format_errors'           => $parsed['format_errors'],
                 'blank_entries'           => $parsed['blank_entries'] ?? [],
@@ -793,6 +843,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'message'                 => 'Some students have blank attendance fields. Confirm to mark them as no response and continue.',
                 'unmatched_lines'         => [],
+                'out_of_course_students' => [],
                 'incomplete_records'      => [],
                 'format_errors'           => [],
                 'blank_entries'           => $parsed['blank_entries'] ?? [],
@@ -840,6 +891,9 @@ class AttendanceController extends Controller
             $sectionData = $this->parsingService->buildFullSectionRecords(
                 strtoupper($user->program), $user->year_level, $submissions, $day, $type
             );
+            $presentCount = collect($sectionData['records'])
+                ->where('status', 'present')
+                ->count();
 
             $draft = $this->parsingService->saveDraft([
                 'gathering_type' => $type,
@@ -847,13 +901,14 @@ class AttendanceController extends Controller
                 'raw_text'       => $request->raw_text,
                 'parsed_data'    => $sectionData['records'],
                 'total_detected' => $sectionData['total_students'],
-                'matched_count'  => count($submissions),
+                'matched_count'  => $presentCount,
             ], $user->id);
 
             $drafts[$type] = $draft->id;
             $summary[$type] = [
                 'total_students' => $sectionData['total_students'],
-                'present_count'  => count($submissions),
+                'present_count'  => $presentCount,
+                'no_response_count' => $sectionData['total_students'] - $presentCount,
             ];
         }
 
@@ -884,7 +939,7 @@ class AttendanceController extends Controller
             'draft_id'                  => 'nullable|exists:attendance_drafts,id',
             'records'                  => 'required|array|min:1',
             'records.*.student_id'     => 'required|exists:students,id',
-            'records.*.gathering_type' => 'required|in:pm,ws,tg,special',
+            'records.*.gathering_type' => 'required|in:pm,ws,tg',
             'records.*.day'            => 'required|date',
             'records.*.status'         => 'required|in:present,no_response,excused',
             'records.*.batch'          => 'nullable|string',
@@ -959,6 +1014,17 @@ class AttendanceController extends Controller
             }
         }
 
+        if ($isOverride && collect($recordsToProcess)->contains(function (array $item): bool {
+            return $item['existing'] instanceof AttendanceRecord
+                && $this->isAttendanceProtected($item['existing']);
+        })) {
+            $protectedType = collect($recordsToProcess)->first(function (array $item): bool {
+                return $item['existing'] instanceof AttendanceRecord
+                    && $this->isAttendanceProtected($item['existing']);
+            })['gathering_type'] ?? null;
+            return $this->protectedAttendanceResponse($protectedType, $request->input('gathering_type') === 'week');
+        }
+
         if (empty($duplicateRecords) && !$isOverride) {
             foreach ($gatheringTypes as $type) {
                 $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->input('raw_text'));
@@ -1018,7 +1084,8 @@ class AttendanceController extends Controller
         }
 
         // --- Atomic Bulk Insert / Update within DB Transaction ---
-        $savedRecords = DB::transaction(function () use ($recordsToProcess, $submittedBy, $validated, $request, $isOverride) {
+        try {
+            $savedRecords = DB::transaction(function () use ($recordsToProcess, $submittedBy, $validated, $request, $isOverride) {
             $records = [];
             $overriddenCount = 0;
             $createdCount = 0;
@@ -1030,6 +1097,14 @@ class AttendanceController extends Controller
                 $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
 
                 if ($existing && $isOverride) {
+                    $existing = AttendanceRecord::whereKey($existing->getKey())
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$existing || $this->isAttendanceProtected($existing)) {
+                        throw new \DomainException('Attendance is pending or validated.');
+                    }
+
                     $existing->update([
                         'batch_id'          => $batchId,
                         'day'               => $recordData['day'],
@@ -1091,7 +1166,14 @@ class AttendanceController extends Controller
                 'created_count'    => $createdCount,
                 'skipped_count'    => 0,
             ];
-        });
+            });
+        } catch (\DomainException $exception) {
+            $protectedType = collect($recordsToProcess)->first(function (array $item): bool {
+                return $item['existing'] instanceof AttendanceRecord
+                    && $this->isAttendanceProtected($item['existing']);
+            })['gathering_type'] ?? null;
+            return $this->protectedAttendanceResponse($protectedType, $request->input('gathering_type') === 'week');
+        }
 
         $recordCount = count($savedRecords['records']);
         $gatherings = collect($savedRecords['records'])
@@ -1199,11 +1281,10 @@ class AttendanceController extends Controller
                 $statusQuery->whereNull('validation_status')->orWhere('validation_status', 'unvalidated');
             });
 
-        $updatedCount = $query->update([
+        $updatedCount = $query->toBase()->update([
             'validation_status' => 'validated',
-            'rejection_reason'  => null, // clear any stale reason if this was previously rejected
             'validated_by'      => $request->user()->id,
-            'updated_at'        => now(),
+            'approved_at'       => now(),
         ]);
 
         if ($updatedCount === 0) {

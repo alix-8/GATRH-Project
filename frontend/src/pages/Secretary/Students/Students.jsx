@@ -409,12 +409,12 @@ function Students() {
                             <div className="overview-filter-container">
                                 <button type="button" className="overview-filter-control" aria-expanded={overviewOpenFilter === 'gathering'} onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'gathering' ? null : 'gathering')}>
                                     <img src={ResponseIcon} alt="" />
-                                    <span>{overviewGathering ? { pm: 'Prayer Meeting', ws: 'Worship Service', tg: 'Thanksgiving', special: 'Special Gathering' }[overviewGathering] : 'Gathering'}</span>
+                                    <span>{overviewGathering ? { pm: 'Prayer Meeting', ws: 'Worship Service', tg: 'Thanksgiving' }[overviewGathering] : 'Gathering'}</span>
                                     <img className="overview-dropdown-icon" src={DropdownIcon} alt="" />
                                 </button>
                                 {overviewOpenFilter === 'gathering' && <ul className="overview-filter-menu" role="listbox">
                                     <li role="option" className={`overview-filter-option ${!overviewGathering ? 'selected' : ''}`} aria-selected={!overviewGathering} onClick={(event) => { event.stopPropagation(); setOverviewGathering(''); setOverviewOpenFilter(null) }}>Gathering</li>
-                                    {[['pm', 'Prayer Meeting'], ['ws', 'Worship Service'], ['tg', 'Thanksgiving'], ['special', 'Special Gathering']].map(([value, label]) => <li role="option" className={`overview-filter-option ${overviewGathering === value ? 'selected' : ''}`} aria-selected={overviewGathering === value} key={value} onClick={(event) => { event.stopPropagation(); setOverviewGathering(value); setOverviewOpenFilter(null) }}>{label}</li>)}
+                                    {[['pm', 'Prayer Meeting'], ['ws', 'Worship Service'], ['tg', 'Thanksgiving']].map(([value, label]) => <li role="option" className={`overview-filter-option ${overviewGathering === value ? 'selected' : ''}`} aria-selected={overviewGathering === value} key={value} onClick={(event) => { event.stopPropagation(); setOverviewGathering(value); setOverviewOpenFilter(null) }}>{label}</li>)}
                                 </ul>}
                             </div>
                             <div className="overview-filter-container">

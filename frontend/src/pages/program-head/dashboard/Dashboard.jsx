@@ -5,7 +5,6 @@ import Header from '../../../components/layout/Header'
 import { request } from '../../../api/request'
 import PendingReviewIcon from '../../../assets/icons/PendingReviewIcon.svg'
 import ApprovedIcon from '../../../assets/icons/ApprovedIcon.svg'
-import RejectedIcon from '../../../assets/icons/RejectedIcon.svg'
 import NotificationIcon from '../../../assets/icons/notification-icon.svg'
 import TotalSubmissionsIcon from '../../../assets/icons/TotalSubmissionsIcon.svg'
 import SubmittedIcon from '../../../assets/icons/SubmittedIcon.svg'
@@ -24,7 +23,6 @@ const metrics = [
 const activityIcons = {
     submitted: SubmittedIcon,
     approved: ApprovedIcon,
-    rejected: RejectedIcon,
     resubmitted: ResubmittedIcon,
 }
 

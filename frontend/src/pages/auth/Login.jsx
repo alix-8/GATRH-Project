@@ -22,8 +22,19 @@ function Login({ initialEmail = '' }) {
     const [remember, setRemember] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [retryAfter, setRetryAfter] = useState(0)
     const [error, setError] = useState('')
     const [errorType, setErrorType] = useState('error')
+
+    useEffect(() => {
+        if (retryAfter <= 0) return
+
+        const timer = window.setTimeout(() => {
+            setRetryAfter((seconds) => Math.max(0, seconds - 1))
+        }, 1000)
+
+        return () => window.clearTimeout(timer)
+    }, [retryAfter])
 
     useEffect(() => {
         if (location.state?.authMessage) {
@@ -56,6 +67,11 @@ function Login({ initialEmail = '' }) {
             const data = await response.json().catch(() => ({}))
 
             if (!response.ok) {
+                if (response.status === 429) {
+                    setRetryAfter(Math.max(0, Number(data.retry_after) || 60))
+                    throw new Error(data.message || 'Too many failed login attempts. Please try again later.')
+                }
+
                 if (response.status === 401) {
                     throw new Error('Invalid email or password.')
                 }
@@ -216,10 +232,11 @@ function Login({ initialEmail = '' }) {
                     <div className="form-actions">
                         <button
                             className="button login-button"
-                            type="submit"
+                            type={retryAfter > 0 ? 'button' : 'submit'}
+                            onClick={retryAfter > 0 ? () => navigate(-1) : undefined}
                             disabled={loading}
                         >
-                            {loading ? 'Logging in...' : 'Log In'}
+                            {loading ? 'Logging in...' : retryAfter > 0 ? 'Go Back' : 'Log In'}
                         </button>
                     </div>
                 </form>

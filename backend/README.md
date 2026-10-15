@@ -72,7 +72,7 @@ The following are the functions declared inside the controllers. This will be he
 | `store` | Creates a new reminder from validated input |Reminder Page |
 | `show` | Displays a single reminder (with countdown) if it belongs to the requesting user | Reminder Page|
 | `update` | Updates an existing reminder after verifying ownership |Reminder Page |
-| `storeGathering` | Creates a reminder specifically for a gathering event (PM, WS, TG, special) | Reminder Page|
+| `storeGathering` | Creates a reminder specifically for a gathering event (PM, WS, TG) | Reminder Page|
 | `gatheringLabel` *(private)* | Maps a gathering type code to a human-readable label |Reminder Page |
 | `markCompleted` | Marks a reminder as completed |Reminder Page |
 

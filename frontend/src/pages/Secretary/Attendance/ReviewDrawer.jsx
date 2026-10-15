@@ -117,9 +117,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const footer = (() => {
         switch (record.status) {
             case 'approved':
-                return <div className="status-pill status-pill-approved">✓ Recorded</div>
-            case 'rejected':
-                return <div className="status-pill status-pill-rejected">✕ Rejected</div>
+                return <div className="status-pill status-pill-approved">✓ Approved</div>
             case 'pending':
                 return <div className="status-pill status-pill-pending">✓ Submitted</div>
             default:
@@ -131,8 +129,6 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         }
     })()
 
-    const rejectionNote =
-    draft?.rejection_reason || record?.rejection_reason
 
     return (
         <div className="review-drawer-backdrop" onClick={onClose}>
@@ -279,16 +275,6 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                 meta={{ current_page: page, last_page: pageCount }}
                                 goToPage={setPage}
                             />
-
-                            {record.status === 'rejected' && (
-                                <section className="program-head-note" aria-labelledby="program-head-note-title">
-                                    <h3 id="program-head-note-title">Program Head Note</h3>
-
-                                    <div className="program-head-note-content">
-                                        {rejectionNote || 'No reason was provided for this rejected submission.'}
-                                    </div>
-                                </section>
-                            )}
 
                         </>
                     )}

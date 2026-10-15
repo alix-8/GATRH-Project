@@ -255,4 +255,28 @@ class GatheringCycle
 
         return $start->format('F j') . '-' . $end->format('F j');
     }
+
+    /** Returns the gathering's scheduled window in the current calendar week. */
+    public static function reportWeekWindowLabel(string $gatheringType): string
+    {
+        $weekStart = Carbon::today()->startOfWeek(Carbon::MONDAY);
+        $offset = match (strtolower($gatheringType)) {
+            'pm' => 2,
+            'ws', 'tg' => 5,
+            default => 0,
+        };
+        $windowDays = self::WINDOW_DAYS[strtolower($gatheringType)] ?? 1;
+        $start = $weekStart->copy()->addDays($offset);
+        $end = $start->copy()->addDays($windowDays - 1);
+
+        if ($start->isSameDay($end)) {
+            return $start->format('F j');
+        }
+
+        if ($start->month === $end->month) {
+            return $start->format('F j') . '-' . $end->format('j');
+        }
+
+        return $start->format('F j') . '-' . $end->format('F j');
+    }
 }

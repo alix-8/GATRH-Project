@@ -10,6 +10,7 @@ const WarningIcon = () => (
 
 const errorLabels = {
     unmatched_lines: ['Unmatched Lines', 'Student names could not be matched'],
+    out_of_course_students: ['Students Not in Your Course', 'These students belong to another program or year level'],
     missing_students: ['Missing Students', 'Students were not included in the attendance text'],
     incomplete_records: ['Incomplete Records', 'Required attendance information is missing'],
     format_errors: ['Format Errors', 'Attendance lines contain invalid formatting'],
@@ -20,6 +21,7 @@ const errorLabels = {
 const getErrorItems = (errorDetails = {}) => {
     return [
         ['unmatched_lines', errorDetails.unmatched_lines || []],
+        ['out_of_course_students', errorDetails.out_of_course_students || []],
         ['missing_students', flattenMissingStudents(errorDetails.missing_students)],
         ['incomplete_records', errorDetails.incomplete_records || []],
         ['format_errors', errorDetails.format_errors || []],
@@ -75,6 +77,16 @@ function ErrorItems({ type, items }) {
         ))
     }
 
+    if (type === 'out_of_course_students') {
+        return items.map((item, index) => (
+            <p className="import-error-item" key={`${type}-${index}`}>
+                <strong>{item.student_name || item.extracted_name || 'Unknown student'}</strong>
+                {item.program && ` — ${item.program}`}
+                {item.year_level && ` Year ${item.year_level}`}
+            </p>
+        ))
+    }
+
     if (type === 'format_errors') {
         return items.flatMap((item, itemIndex) => (
             (item.errors || []).map((error, errorIndex) => {
@@ -112,7 +124,7 @@ function ErrorItems({ type, items }) {
     ))
 }
 
-function ErrorModal({ errorMessage, errorDetails, onClose }) {
+function ErrorModal({ errorMessage, errorDetails, attendanceLocked = false, onClose }) {
     const [expandedError, setExpandedError] = useState(null)
     const errorItems = getErrorItems(errorDetails || {})
 
@@ -124,9 +136,11 @@ function ErrorModal({ errorMessage, errorDetails, onClose }) {
                     <WarningIcon />
                 </div>
                 <h2 className="import-modal-title">Import Failed</h2>
-                <p className="import-modal-subtext">
-                    The attendance text could not be imported. Fix the issue below and try again.
-                </p>
+                {!attendanceLocked && (
+                    <p className="import-modal-subtext">
+                        The attendance text could not be imported. Fix the issue below and try again.
+                    </p>
+                )}
 
                 {errorItems.length > 0 && (
                     <div className="import-error-details">
@@ -170,9 +184,11 @@ function ErrorModal({ errorMessage, errorDetails, onClose }) {
                     <button className="import-clear-button" type="button" onClick={onClose}>
                         Close
                     </button>
-                    <button className="import-primary-button" type="button" onClick={onClose}>
-                        Try again
-                    </button>
+                    {!attendanceLocked && (
+                        <button className="import-primary-button" type="button" onClick={onClose}>
+                            Try again
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

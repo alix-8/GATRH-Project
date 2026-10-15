@@ -9,8 +9,6 @@ export const headerTitle = (status) => {
             return 'Pending Submission';
         case 'approved':
             return 'Submission Approved';
-        case 'rejected':
-            return 'Submission Rejected';
         default:
             return 'Review Submission';
     }
