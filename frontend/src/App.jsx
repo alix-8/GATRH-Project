@@ -1,20 +1,20 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import Login from './pages/_Login/Login'
-import { ForgotPassword, ResetPassword } from './pages/_Login/PasswordReset'
-import Dashboard from './pages/Secretary/Dashboard/SecDashboard'
-import Students from './pages/Secretary/Students/Students'
-import Import from './pages/Secretary/Import/Import'
-import Attendance from './pages/Secretary/Attendance/Attendance'
-import Reminders from './pages/_Reminders/Reminders'
-import ProgramHeadDashboard from './pages/Program Head/Dashboard/ProgramHeadDashboard'
-import Sidebar from './components/Sidebar/Sidebar'
-import Profile from './pages/_Profile/Profile'
-import ProgramHeadSubmissions from './pages/Program Head/Submission/ProgramHeadSubmissions'
-import ProgramHeadRecords from './pages/Program Head/Records/ProgramHeadRecords'
-import AdminDashboard from './pages/Admin/Dashboard/AdminDashboard'
-import ChancellorDashboard from './pages/Chancellor/Dashboard/ChancellorDashboard'
-import CoordinatorMonitoring from './pages/Coordinator/Monitoring/CoordinatorMonitoring'
+import Login from './pages/auth/Login'
+import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset'
+import Dashboard from './pages/secretary/dashboard/Dashboard'
+import Students from './pages/secretary/students/Students'
+import Import from './pages/secretary/import/Import'
+import Attendance from './pages/secretary/attendance/Attendance'
+import Reminders from './pages/reminders/Reminders'
+import ProgramHeadDashboard from './pages/program-head/dashboard/Dashboard'
+import Sidebar from './components/layout/Sidebar'
+import Profile from './pages/profile/Profile'
+import ProgramHeadSubmissions from './pages/program-head/submissions/Submissions'
+import ProgramHeadRecords from './pages/program-head/records/Records'
+import AdminDashboard from './pages/admin/dashboard/Dashboard'
+import ChancellorDashboard from './pages/chancellor/dashboard/Dashboard'
+import CoordinatorMonitoring from './pages/coordinator/monitoring/Monitoring'
 
 const landingByRole = {
   secretary: '/dashboard',
@@ -130,7 +130,7 @@ function ResponsiveApp() {
 
   useEffect(() => {
     const pageTitle = pageTitleByPath[location.pathname] || 'GATRH'
-    document.title = `${pageTitle} | GATRH`
+    document.title = `GATRH - ${pageTitle}`
   }, [location.pathname])
 
   useEffect(() => {

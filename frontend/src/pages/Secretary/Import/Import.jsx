@@ -5,20 +5,20 @@ import { useLocation } from 'react-router-dom'
 import { request } from '../../../api/request'
 
 //Reusables
-import Sidebar from '../../../components/Sidebar/Sidebar'
-import Header from '../../../components/Header/Header'
-import GenerateTemplate from './ImportComponents/modals/GenerateTemplate'
+import Sidebar from '../../../components/layout/Sidebar'
+import Header from '../../../components/layout/Header'
+import GenerateTemplate from './modals/GenerateTemplate'
 
 // Modals
-import ConfirmBlankModal from './ImportComponents/modals/ConfirmBlankModal'
-import ConfirmOverrideModal from './ImportComponents/modals/ConfirmOverrideModal'
-import ErrorModal from './ImportComponents/modals/ErrorModal'
-import SuccessModal from './ImportComponents/modals/SuccessModal'
+import ConfirmBlankModal from './modals/ConfirmBlankModal'
+import ConfirmOverrideModal from './modals/ConfirmOverrideModal'
+import ErrorModal from './modals/ErrorModal'
+import SuccessModal from './modals/SuccessModal'
 
 //Panels
-import ImportAttendancePanel from './ImportComponents/panels/ImportAttendancePanel'
-import PreviewImportPanel from './ImportComponents/panels/PreviewImportPanel'
-import PreviewIndividualPanel from './ImportComponents/panels/PreviewIndividualPanel'
+import ImportAttendancePanel from './panels/ImportAttendancePanel'
+import PreviewImportPanel from './panels/PreviewImportPanel'
+import PreviewIndividualPanel from './panels/PreviewIndividualPanel'
 import './Import.css'
 
 const CheckIcon = () => (
