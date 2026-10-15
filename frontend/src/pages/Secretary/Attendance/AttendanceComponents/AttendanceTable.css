@@ -126,7 +126,6 @@
 }
 
 .row-pending    { background: #fdf6e3; }
-.row-rejected   { background: #fdecec; }
 .row-approved   { background: #edf9f0; }
 .row-validating { background: #ffffff; }
 

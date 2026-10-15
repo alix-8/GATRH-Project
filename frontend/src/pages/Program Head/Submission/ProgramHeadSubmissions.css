@@ -205,10 +205,6 @@
     background: #22a447;
 }
 
-.ph-submission-status.rejected i {
-    background: #f91a1a;
-}
-
 .ph-submission-review {
     display: inline-flex;
     min-width: 64px;

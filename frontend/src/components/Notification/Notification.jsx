@@ -46,12 +46,8 @@ const ATTENDANCE_STATUS = {
         title: 'Attendance needs review',
         tone: 'needs-attention',
     },
-    rejected: {
-        title: 'Submission Rejected',
-        tone: 'needs-attention',
-    },
     approved: {
-        title: 'Prayer Meeting Approved',
+        title: 'Attendance approved',
         tone: 'read',
     },
 }
@@ -116,7 +112,7 @@ function Notification() {
                     })
 
                 const attendanceItems = (attendanceData.data ?? [])
-                    .filter(record => ['validating', 'pending', 'rejected', 'approved'].includes(record.status))
+                    .filter(record => ['validating', 'pending', 'approved'].includes(record.status))
                     .map(record => {
                         const meta = ATTENDANCE_STATUS[record.status] ?? ATTENDANCE_STATUS.pending
 

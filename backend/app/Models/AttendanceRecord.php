@@ -19,11 +19,10 @@ class AttendanceRecord extends Model
         'batch',
         'venue',
         'status',            // 'present', 'no_response'
-        'validation_status', // 'unvalidated', 'approved'
+        'validation_status', // 'unvalidated', 'validated'
         'submitted_by',
         'validated_by',
         'approved_at',
-        'rejection_reason',
     ];
 
     protected $casts = [
@@ -39,11 +38,6 @@ class AttendanceRecord extends Model
 
     // The Program Head or Coordinator who validated this record
     public function validator()
-    {
-        return $this->belongsTo(User::class, 'validated_by');
-    }
-
-    public function rejector()
     {
         return $this->belongsTo(User::class, 'validated_by');
     }

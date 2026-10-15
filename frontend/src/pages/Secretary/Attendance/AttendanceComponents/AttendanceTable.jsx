@@ -16,7 +16,6 @@ import LoadingCircle from '../../../../components/Loading/LoadingCircle'
 const STATUS_META = {
     validating: { label: 'Validating', dot: '#8c96a4' },
     pending: { label: 'Pending', dot: '#F2994A' },
-    rejected: { label: 'Rejected', dot: '#E52328' },
     approved: { label: 'Approved', dot: '#27AE60' },
 }
 

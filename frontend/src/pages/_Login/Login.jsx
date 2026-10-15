@@ -232,10 +232,11 @@ function Login({ initialEmail = '' }) {
                     <div className="form-actions">
                         <button
                             className="button login-button"
-                            type="submit"
-                            disabled={loading || retryAfter > 0}
+                            type={retryAfter > 0 ? 'button' : 'submit'}
+                            onClick={retryAfter > 0 ? () => navigate(-1) : undefined}
+                            disabled={loading}
                         >
-                            {loading ? 'Logging in...' : 'Log In'}
+                            {loading ? 'Logging in...' : retryAfter > 0 ? 'Go Back' : 'Log In'}
                         </button>
                     </div>
                 </form>
