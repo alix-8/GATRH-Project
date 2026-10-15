@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import CalendarIcon from '../../assets/icons/calendar-icon.svg'
 import DropdownIcon from '../../assets/icons/drop-down-icon.svg'
-import Calendar from '../calendar/Calendar'
+import Calendar from '../Calendar/Calendar'
 import './FilterDropdown.css'
 
 function fromDateValue(value) {

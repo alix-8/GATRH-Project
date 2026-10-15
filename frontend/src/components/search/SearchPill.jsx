@@ -1,4 +1,4 @@
-import { SearchIcon } from '../icons/Reusables'
+import { SearchIcon } from '../Icons/Reusables'
 import './SearchPill.css'
 
 export default function SearchPill({ value, onChange, placeholder = 'Search…', ariaLabel, className = '' }) {

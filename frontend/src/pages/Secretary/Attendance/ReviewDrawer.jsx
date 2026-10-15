@@ -8,7 +8,7 @@ import AttendancePagination from './AttendancePagination'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import SearchPill from '../../../components/search/SearchPill'
-import ConfirmOverrideModal from '../import/modals/ConfirmOverrideModal'
+import ConfirmOverrideModal from '../Import/modals/ConfirmOverrideModal'
 
 const PAGE_SIZE = 10
 
