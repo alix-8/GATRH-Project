@@ -5,8 +5,8 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import CompletedIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
-import CalendarIcon from '../../../assets/icons/calendar-icon.svg'
-import ProfileIcon from '../../../assets/icons/profile-icon.svg'
+import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg'
+import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
 import './Monitoring.css'
 
@@ -45,6 +45,10 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
     if (!value) return '—'
     const [year, month, day] = value.slice(0, 10).split('-').map(Number)
     return new Date(year, month - 1, day).toLocaleDateString('en-US', options)
+}
+
+function formatGatheringDate(entry) {
+    return formatDate(entry?.date, { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 function CoordinatorMonitoring() {
@@ -354,11 +358,13 @@ function CoordinatorMonitoring() {
                     >
                         <header className="monitoring-detail-header">
                             <div className="monitoring-detail-heading">
-                                <span className="monitoring-detail-program-type">
+                                <span className={`monitoring-detail-program-type monitoring-course-type-pill--${activeCourse.program.toLowerCase()}`}>
                                     {PROGRAM_TYPES[activeCourse.program.toUpperCase()] || activeCourse.program}
                                 </span>
                                 <h2 id="monitoring-detail-title">{activeCourse.label}</h2>
-                                <p>{PROGRAM_DISPLAY_NAMES[activeCourse.program.toUpperCase()] || activeCourse.program} {activeCourse.year_level}</p>
+                                <p>{currentDetails?.course?.program_name && currentDetails.course.program_name !== activeCourse.program
+                                    ? currentDetails.course.program_name
+                                    : PROGRAM_DISPLAY_NAMES[activeCourse.program.toUpperCase()] || activeCourse.program} {activeCourse.year_level}</p>
                             </div>
                         </header>
 
@@ -383,7 +389,10 @@ function CoordinatorMonitoring() {
 
                                 <div className="monitoring-approval-card">
                                     <div>
-                                        <img src={CalendarIcon} alt="" />
+                                        <svg className="monitoring-calendar-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M18.5 5.5H5.5C4.4 5.5 3.5 6.4 3.5 7.5V18C3.5 19.1 4.4 20 5.5 20H18.5C19.6 20 20.5 19.1 20.5 18V7.5C20.5 6.4 19.6 5.5 18.5 5.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M8 4V7M16 4V7M3.5 9.5H20.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
                                         <span>
                                             <small>Approved on</small>
                                             <strong>{currentDetails.approval.approved_on
@@ -399,10 +408,10 @@ function CoordinatorMonitoring() {
                                         </span>
                                     </div>
                                     <div>
-                                        <img src={ProfileIcon} alt="" />
+                                        <img className="monitoring-program-head-icon" src={ProgramHeadIcon} alt="" />
                                         <span>
                                             <small>Program head</small>
-                                            <strong>{currentDetails.approval.program_head || '—'}</strong>
+                                            <strong>{currentDetails.approval.program_head || ''}</strong>
                                         </span>
                                     </div>
                                 </div>
@@ -444,7 +453,11 @@ function CoordinatorMonitoring() {
                                         return (
                                             <div className="monitoring-week-detail-row" key={gatheringItem.type}>
                                                 <span>{gatheringItem.label}</span>
-                                                <span>{entry ? formatDate(entry.date) : '—'}</span>
+                                                <span title={entry?.dates?.length > 1
+                                                    ? entry.dates.map((date) => formatDate(date, { month: 'long', day: 'numeric', year: 'numeric' })).join(', ')
+                                                    : undefined}>
+                                                    {formatGatheringDate(entry)}
+                                                </span>
                                                 <span className="monitoring-detail-status-cell">
                                                     <img
                                                         src={status === 'completed'
@@ -466,17 +479,22 @@ function CoordinatorMonitoring() {
                                     })}
 
                                     <div className="monitoring-incomplete-details">
-                                        <h4>Incomplete Entry Details</h4>
+                                        <h4>
+                                            <span className="monitoring-incomplete-icon" aria-hidden="true">
+                                                <img src={IncompleteEntryIcon} alt="" />
+                                            </span>
+                                            Incomplete Entry Details
+                                        </h4>
                                         {currentDetails.incomplete_entries.length === 0
                                             ? <p>No incomplete entries for this week.</p>
                                             : currentDetails.incomplete_entries.map((entry) => {
-                                                const entryKey = `${entry.gathering_type}-${entry.date}`
+                                                const entryKey = entry.gathering_type
                                                 const isOpen = activeIncompleteEntry === entryKey
                                                 return (
                                                     <article key={entryKey}>
                                                         <div>
-                                                            <strong>{entry.gathering} - {formatDate(entry.date)}</strong>
-                                                            <small>{entry.missing_students.length} students did not submit attendance</small>
+                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
+                                                            <small>+{entry.missing_students.length} students did not submit attendance</small>
                                                         </div>
                                                         <button
                                                             type="button"
@@ -484,6 +502,9 @@ function CoordinatorMonitoring() {
                                                             onClick={() => setActiveIncompleteEntry(isOpen ? null : entryKey)}
                                                         >
                                                             {isOpen ? 'Hide' : 'View'}
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
                                                         </button>
                                                         {isOpen && (
                                                             <ul>
