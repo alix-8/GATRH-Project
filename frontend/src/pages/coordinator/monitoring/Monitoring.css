@@ -5,8 +5,11 @@
 }
 
 .coordinator-dashboard-main {
+    display: flex;
     min-width: 0;
+    min-height: 100vh;
     flex: 1;
+    flex-direction: column;
     background: #ffffff;
 }
 
@@ -22,6 +25,13 @@
     padding: 16px 20px 24px;
 }
 
+.monitoring-content--loading {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+}
+
 .monitoring-message {
     margin: 18px 0;
     color: #667085;
@@ -30,6 +40,10 @@
 
 .monitoring-error {
     color: #b42318;
+}
+
+.monitoring-loading {
+    width: 100%;
 }
 
 .monitoring-table-scroll {

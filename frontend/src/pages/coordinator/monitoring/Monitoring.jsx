@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
+import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import CompletedIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
@@ -162,9 +163,16 @@ function CoordinatorMonitoring() {
                     className="coordinator-dashboard-header"
                 />
 
-                <section className="monitoring-content" aria-label="Coordinator monitoring">
+                <section
+                    className={`monitoring-content ${!error && loading ? 'monitoring-content--loading' : ''}`}
+                    aria-label="Coordinator monitoring"
+                >
                     {error && <p className="monitoring-message monitoring-error" role="alert">{error}</p>}
-                    {!error && loading && <p className="monitoring-message" role="status">Loading monitoring data...</p>}
+                    {!error && loading && (
+                        <div className="monitoring-loading">
+                            <LoadingCircle label="Loading monitoring data…" size={28} />
+                        </div>
+                    )}
                     {!error && !loading && courses.length === 0 && (
                         <p className="monitoring-message">No program attendance data is available.</p>
                     )}
