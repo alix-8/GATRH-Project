@@ -42,7 +42,10 @@ Artisan::command('inspire', function () {
     // Reset escalation counts to the current week's PM, WS, and TG responses.
     Schedule::call(function () {
         app(WeeklyEscalationService::class)->syncAll();
-    })->weeklyOn(Carbon::MONDAY, '00:01')->withoutOverlapping();
+    })
+        ->name('weekly-escalation-refresh')
+        ->weeklyOn(Carbon::MONDAY, '00:01')
+        ->withoutOverlapping();
 
     //delete expired gathering and submission reminders
     Schedule::command('reminders:delete-expired')
