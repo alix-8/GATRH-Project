@@ -15,6 +15,11 @@ import './Students.css'
 const SORT_OPTIONS = ['Sort by', 'Ascending', 'Descending']
 const RESPONSE_OPTIONS = ['Response', 'Responded', 'No Response']
 const LEVEL_OPTIONS = ['Escalation', 'Level 1', 'Level 2', 'Level 3']
+const WEEKLY_GATHERING_TYPES = [
+    { type: 'pm', abbreviation: 'PM', label: 'Prayer Meeting' },
+    { type: 'ws', abbreviation: 'WS', label: 'Worship Service' },
+    { type: 'tg', abbreviation: 'TG', label: 'Thanksgiving' },
+]
 
 function Students() {
     const [students, setStudents] = useState([])
@@ -151,6 +156,9 @@ function Students() {
         .filter((record) => !overviewGathering || record.gathering_type === overviewGathering)
         .filter((record) => !overviewDate || record.date === overviewDate)
         .filter((record) => !overviewStatus || record.status === overviewStatus)
+    const overviewWeeklyStatus = Object.fromEntries(
+        (overview?.summary?.this_week || []).map((gathering) => [gathering.type, gathering.status])
+    )
 
     return (
         
@@ -380,10 +388,10 @@ function Students() {
                             <div className="overview-stat-card overview-stat-card-weekly">
                                 <strong>This week</strong>
                                 <div className="overview-week-gatherings">
-                                    {(overview.summary?.this_week || []).map((gathering) => (
-                                        <span key={gathering.type} aria-label={`${gathering.label}: ${gathering.status === 'present' ? 'Present' : 'No response'}`}>
-                                            <small>{gathering.label}</small>
-                                            <i className={gathering.status === 'present' ? 'present' : ''} />
+                                    {WEEKLY_GATHERING_TYPES.map(({ type, abbreviation, label }) => (
+                                        <span key={type} aria-label={`${label}: ${overviewWeeklyStatus[type] === 'present' ? 'Responded' : 'No response recorded'}`}>
+                                            <small>{abbreviation}</small>
+                                            <i className={overviewWeeklyStatus[type] === 'present' ? 'present' : ''} />
                                         </span>
                                     ))}
                                 </div>
