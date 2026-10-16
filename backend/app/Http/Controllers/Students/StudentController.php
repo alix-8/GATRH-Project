@@ -8,6 +8,7 @@ use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
 use App\Models\GatheringSchedule;
 use App\Models\Student;
+use App\Services\Escalations\WeeklyEscalationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -28,6 +29,8 @@ class StudentController extends Controller
             ->with('escalation')
             ->orderBy('name')
             ->get();
+        $weeklyEscalationCounts = app(WeeklyEscalationService::class)
+            ->countsForStudents($students->pluck('id'));
 
         $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
         $weekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
@@ -71,11 +74,10 @@ class StudentController extends Controller
         ] : null;
 
         return response()->json([
-            'students' => $students->map(function (Student $student) use ($responses, $session, $useDraft) {
+            'students' => $students->map(function (Student $student) use ($responses, $session, $weeklyEscalationCounts) {
                 $record = $responses->get($student->id);
                 $status = $record ? ($record['status'] ?? $record->status) : null;
                 $hasResponded = $status === 'present';
-                $draftNoResponse = $useDraft && $status === 'no_response' ? 1 : 0;
 
                 return [
                     'id' => $student->id,
@@ -84,7 +86,7 @@ class StudentController extends Controller
                     'year_level' => $student->year_level,
                     'response' => $session ? ($hasResponded ? 'Responded' : 'No Response') : null,
                     'escalation_level' => $student->escalation->escalation_level ?? 'None',
-                    'no_response_count' => ($student->escalation->no_response_count ?? 0) + $draftNoResponse,
+                    'no_response_count' => min(3, $weeklyEscalationCounts->get($student->id, 0)),
                 ];
             })->values(),
             'session' => $session,
@@ -139,6 +141,9 @@ class StudentController extends Controller
         }
 
         $history = $history->sortByDesc('date')->values();
+        $weeklyEscalationCount = app(WeeklyEscalationService::class)
+            ->countsForStudents([$student->id])
+            ->get($student->id, 0);
         $monthStart = Carbon::now()->startOfMonth();
         $monthEnd = Carbon::now()->endOfMonth();
         $thisMonth = $student->attendanceRecords()
@@ -153,14 +158,14 @@ class StudentController extends Controller
                 'name' => $student->name,
                 'program' => $student->program,
                 'year_level' => $student->year_level,
-                'no_response_count' => $student->escalation->no_response_count ?? 0,
+                'no_response_count' => $weeklyEscalationCount,
             ],
             'month' => $monthStart->format('F Y'),
             'summary' => [
                 'this_month' => $thisMonth,
                 'this_month_total' => $thisMonthTotal,
                 'attendance_count' => $history->count(),
-                'escalation_count' => $student->escalation->no_response_count ?? 0,
+                'escalation_count' => $weeklyEscalationCount,
             ],
             'history' => $history,
         ]);
