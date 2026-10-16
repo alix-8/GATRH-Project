@@ -430,13 +430,14 @@ function Students() {
                             <div className="overview-filter-container">
                                 <button type="button" className="overview-filter-control" aria-expanded={overviewOpenFilter === 'status'} onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'status' ? null : 'status')}>
                                     <img src={LevelIcon} alt="" />
-                                    <span>{overviewStatus === 'present' ? 'Present' : overviewStatus === 'no_response' ? 'No Response' : 'Status'}</span>
+                                    <span>{overviewStatus === 'present' ? 'Present' : overviewStatus === 'no_response' ? 'No Response' : overviewStatus === 'excused' ? 'Excused' : 'Status'}</span>
                                     <img className="overview-dropdown-icon" src={DropdownIcon} alt="" />
                                 </button>
                                 {overviewOpenFilter === 'status' && <ul className="overview-filter-menu" role="listbox">
                                     <li role="option" className={`overview-filter-option ${!overviewStatus ? 'selected' : ''}`} aria-selected={!overviewStatus} onClick={(event) => { event.stopPropagation(); setOverviewStatus(''); setOverviewOpenFilter(null) }}>Status</li>
                                     <li role="option" className={`overview-filter-option ${overviewStatus === 'present' ? 'selected' : ''}`} aria-selected={overviewStatus === 'present'} onClick={(event) => { event.stopPropagation(); setOverviewStatus('present'); setOverviewOpenFilter(null) }}>Present</li>
                                     <li role="option" className={`overview-filter-option ${overviewStatus === 'no_response' ? 'selected' : ''}`} aria-selected={overviewStatus === 'no_response'} onClick={(event) => { event.stopPropagation(); setOverviewStatus('no_response'); setOverviewOpenFilter(null) }}>No Response</li>
+                                    <li role="option" className={`overview-filter-option ${overviewStatus === 'excused' ? 'selected' : ''}`} aria-selected={overviewStatus === 'excused'} onClick={(event) => { event.stopPropagation(); setOverviewStatus('excused'); setOverviewOpenFilter(null) }}>Excused</li>
                                 </ul>}
                             </div>
                         </div>
@@ -451,7 +452,7 @@ function Students() {
                             {!overviewLoading && !overviewError && overviewHistory.length === 0 && <p className="overview-state">No attendance records yet.</p>}
                             {!overviewLoading && !overviewError && overviewHistory.length > 0 && (
                                 <table><thead><tr><th>Gathering</th><th>Time</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
-                                    <tbody>{overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{record.time}</td><td>{formatOverviewDate(record.date)}</td><td>{record.location}</td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : 'No Response'}</span></td></tr>)}</tbody></table>
+                                    <tbody>{overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{record.time}</td><td>{formatOverviewDate(record.date)}</td><td>{record.location}</td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : record.status === 'excused' ? 'Excused' : 'No Response'}</span></td></tr>)}</tbody></table>
                             )}
                         </div>
                     </aside>

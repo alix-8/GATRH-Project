@@ -743,6 +743,10 @@
     color: #159b48;
 }
 
+.overview-status.excused {
+    color: #6b778c;
+}
+
 .overview-status::before {
     content: '●';
     font-size: 18px;

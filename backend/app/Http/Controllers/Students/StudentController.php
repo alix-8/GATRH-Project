@@ -34,12 +34,14 @@ class StudentController extends Controller
 
         $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
         $weekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
-        $latestRecord = AttendanceRecord::query()
+        $recordsByStudent = AttendanceRecord::query()
             ->whereIn('student_id', $students->pluck('id'))
             ->whereBetween('day', [$weekStart, $weekEnd])
-            ->orderByDesc('day')
             ->orderByDesc('created_at')
-            ->first();
+            ->orderByDesc('day')
+            ->get()
+            ->groupBy('student_id')
+            ->map(fn ($records) => $records->first());
         $drafts = AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->where('status', 'draft')
@@ -47,31 +49,36 @@ class StudentController extends Controller
             ->orderByDesc('day')
             ->orderByDesc('updated_at')
             ->get();
-        $latestDraft = $drafts->first();
-        $useDraft = $latestDraft && (! $latestRecord
-            || $latestDraft->day->gt($latestRecord->day)
-            || ($latestDraft->day->equalTo($latestRecord->day)
-                && $latestDraft->updated_at->gt($latestRecord->created_at)));
-        $sessionType = $useDraft ? $latestDraft->gathering_type : ($latestRecord->gathering_type ?? null);
-        $sessionDay = $useDraft ? $latestDraft->day : ($latestRecord->day ?? null);
         $responses = collect();
 
-        if ($useDraft) {
-            $responses = collect($latestDraft->parsed_data ?? [])
-                ->keyBy(fn (array $record) => $record['student_id'] ?? null);
-        } elseif ($latestRecord) {
-            $responses = AttendanceRecord::query()
-                ->whereIn('student_id', $students->pluck('id'))
-                ->where('gathering_type', $sessionType)
-                ->whereDate('day', $sessionDay)
-                ->get()
-                ->keyBy('student_id');
+        foreach ($students as $student) {
+            $latestRecord = $recordsByStudent->get($student->id);
+            $latestDraft = null;
+
+            foreach ($drafts as $draft) {
+                $draftRecord = collect($draft->parsed_data ?? [])
+                    ->first(fn (array $record) => (int) ($record['student_id'] ?? 0) === $student->id);
+
+                if ($draftRecord) {
+                    $latestDraft = [$draft, $draftRecord];
+                    break;
+                }
+            }
+
+            $draftIsNewer = $latestDraft && (! $latestRecord
+                || $latestDraft[0]->day->gt($latestRecord->day)
+                || ($latestDraft[0]->day->equalTo($latestRecord->day)
+                    && $latestDraft[0]->updated_at->gt($latestRecord->created_at)));
+
+            if ($draftIsNewer) {
+                $responses->put($student->id, $latestDraft[1]);
+            } elseif ($latestRecord) {
+                $responses->put($student->id, $latestRecord);
+            }
         }
-        $session = $sessionType ? [
-            'source' => $useDraft ? 'draft' : 'submitted',
-            'gathering_type' => $sessionType,
-            'day' => $sessionDay->toDateString(),
-        ] : null;
+        $session = $recordsByStudent->isNotEmpty() || $drafts->isNotEmpty()
+            ? ['source' => 'weekly']
+            : null;
 
         return response()->json([
             'students' => $students->map(function (Student $student) use ($responses, $session, $weeklyEscalationCounts) {
@@ -141,9 +148,16 @@ class StudentController extends Controller
         }
 
         $history = $history->sortByDesc('date')->values();
-        $weeklyEscalationCount = app(WeeklyEscalationService::class)
-            ->countsForStudents([$student->id])
-            ->get($student->id, 0);
+        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $weekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
+        $weeklyEscalationCount = min(3, $history
+            ->filter(fn (array $record) => str_starts_with($record['id'] ?? '', 'record-')
+                && ($record['date'] ?? '') >= $weekStart
+                && ($record['date'] ?? '') <= $weekEnd
+                && ($record['status'] ?? null) === 'no_response')
+            ->pluck('gathering_type')
+            ->unique()
+            ->count());
         $monthStart = Carbon::now()->startOfMonth();
         $monthEnd = Carbon::now()->endOfMonth();
         $thisMonth = $student->attendanceRecords()

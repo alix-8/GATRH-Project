@@ -23,14 +23,10 @@ class WeeklyEscalationService
             ->whereIn('student_id', $ids)
             ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
             ->whereBetween('day', [$start, $end])
-            ->orderByDesc('day')
-            ->orderByDesc('created_at')
+            ->where('status', 'no_response')
             ->get()
             ->groupBy('student_id')
-            ->map(fn (Collection $records) => $records
-                ->groupBy('gathering_type')
-                ->filter(fn (Collection $gatheringRecords) => $gatheringRecords->first()->status === 'no_response')
-                ->count());
+            ->map(fn (Collection $records) => min(3, $records->pluck('gathering_type')->unique()->count()));
     }
 
     public function syncStudent(int $studentId): void
