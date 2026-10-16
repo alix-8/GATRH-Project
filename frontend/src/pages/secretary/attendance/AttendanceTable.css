@@ -142,6 +142,8 @@
 }
 
 .action-btn {
+    width: 76px;
+    box-sizing: border-box;
     padding: 6px 14px;
     border-radius: 8px;
     border: none;
