@@ -420,7 +420,6 @@
     gap: 12px;
     box-sizing: border-box;
     width: 390px;
-    max-width: calc(100vw - 32px);
     padding: 18px;
     border-radius: 8px;
     background: #ffffff;
@@ -433,6 +432,18 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
+}
+
+.reminder-modal-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reminder-modal-pencil {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
 }
 
 .reminder-modal h2 {
@@ -502,39 +513,17 @@
 
 .reminder-modal textarea {
     min-height: 74px;
+    padding-bottom: 22px;
 }
 
-@media (max-width: 900px) {
-    .reminders-cards,
-    .reminders-cards-program_head,
-    .reminders-cards-cm_coordinator,
-    .reminders-cards-secretary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-}
-
-@media (max-width: 560px) {
-    .reminders-cards,
-    .reminders-cards-program_head,
-    .reminders-cards-cm_coordinator {
-        grid-template-columns: minmax(0, 1fr);
-        padding: 10px;
-    }
-
-    .reminders-cards-program_head,
-    .reminders-cards-cm_coordinator,
-    .reminders-cards-chancellor,
-    .reminders-cards-secretary {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .reminders-cards,
-    .reminders-task-panel {
-        width: calc(100% - 20px);
-    }
-
-    .reminders-task-panel { padding: 14px; }
+.reminder-note-count {
+    position: absolute;
+    right: 11px;
+    bottom: 8px;
+    color: #8c96a4;
+    font-size: 9px;
+    font-weight: 400;
+    line-height: 1;
 }
 
 .reminder-modal-error {
@@ -836,6 +825,16 @@
     border: 0;
     background: #1da1f2;
     color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.modal-save img {
+    width: 14px;
+    height: 14px;
+    filter: brightness(0) invert(1);
 }
 
 .reminder-delete-overlay {

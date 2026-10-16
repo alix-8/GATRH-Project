@@ -12,6 +12,7 @@ import CalendarIcon from '../../assets/icons/calendar-icon.svg'
 import GatheringIcon from '../../assets/icons/gathering-icon.svg'
 import MyReminderIcon from '../../assets/icons/my-reminder-icon.svg'
 import EditIcon from '../../assets/icons/edit-icon.svg'
+import AddReminderIcon from '../../assets/icons/add-reminder-icon.svg'
 import DeleteIcon from '../../assets/icons/delete-icon.svg'
 import { request } from '../../api/request'
 import Calendar from '../../components/Calendar/Calendar'
@@ -47,6 +48,7 @@ const EMPTY_FORM = {
     date: null,
     time: '',
 }
+const NOTES_LIMIT = 100
 
 const ATTENDANCE_TASK_STATUS = {
     validating: {
@@ -796,9 +798,12 @@ function Reminders() {
                 <div className="reminder-modal-backdrop">
                     <form className="reminder-modal" noValidate onSubmit={handleSubmitReminder}>
                         <div className="reminder-modal-header">
-                            <div>
-                                <h2>{editingReminder ? 'Edit Reminder' : 'Add Reminder'}</h2>
-                                <p>{editingReminder ? 'Update your reminder details.' : 'Create a reminder for upcoming task.'}</p>
+                            <div className="reminder-modal-heading">
+                                <img className="reminder-modal-pencil" src={AddReminderIcon} alt="" aria-hidden="true" />
+                                <div>
+                                    <h2>{editingReminder ? 'Edit Reminder' : 'Add Reminder'}</h2>
+                                    <p>{editingReminder ? 'Update your reminder details.' : 'Create a reminder for upcoming task.'}</p>
+                                </div>
                             </div>
                             <button type="button" className="reminder-modal-close" onClick={handleCloseModal} aria-label="Close">
                                 ×
@@ -915,11 +920,12 @@ function Reminders() {
                             <span>Notes(optional)</span>
                             <textarea
                                 value={formData.description}
-                                maxLength={50}
+                                maxLength={NOTES_LIMIT}
                                 onChange={event => setFormData(prev => ({ ...prev, description: event.target.value }))}
                                 placeholder="Add additional details..."
                                 rows="3"
                             />
+                            <small className="reminder-note-count" aria-live="polite">{formData.description.length}/{NOTES_LIMIT}</small>
                         </label>
                         {error && <p className="reminder-modal-error" role="alert">{error}</p>}
                         <div className="reminder-modal-actions">
@@ -927,6 +933,7 @@ function Reminders() {
                                 Cancel
                             </button>
                             <button type="submit" className="modal-save" disabled={saving}>
+                                <img src={AddReminderIcon} alt="" aria-hidden="true" />
                                 {saving ? 'Saving...' : editingReminder ? 'Save Changes' : 'Save Reminder'}
                             </button>
                         </div>
