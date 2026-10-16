@@ -107,7 +107,10 @@
 .attendance-table thead tr {
     background: #172B4D;
     color: #ffffff;
-    text-align: left;
+}
+
+.attendance-table thead th {
+    text-align: center;
 }
 
 .attendance-table th,
