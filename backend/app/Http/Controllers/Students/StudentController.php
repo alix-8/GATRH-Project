@@ -153,10 +153,25 @@ class StudentController extends Controller
             ->get($student->id, 0);
         $monthStart = Carbon::now()->startOfMonth();
         $monthEnd = Carbon::now()->endOfMonth();
-        $thisMonth = $student->attendanceRecords()
-            ->whereBetween('day', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->where('status', 'present')
-            ->count();
+        $monthEntries = $this->attendanceEntriesForPeriod($student, $monthStart, $monthEnd);
+        $thisMonth = collect($monthEntries)->where('status', 'present')->count();
+        $weekEntries = $this->attendanceEntriesForPeriod(
+            $student,
+            Carbon::now()->startOfWeek(Carbon::MONDAY),
+            Carbon::now()->endOfWeek(Carbon::SUNDAY)
+        );
+        $thisWeek = collect(['pm', 'ws', 'tg'])->map(function (string $type) use ($weekEntries) {
+            $entry = collect($weekEntries)
+                ->where('gathering_type', $type)
+                ->sortByDesc('date')
+                ->first();
+
+            return $entry ? [
+                'type' => $type,
+                'label' => $this->gatheringLabel($type),
+                'status' => $entry['status'],
+            ] : null;
+        })->filter()->values();
         $thisMonthTotal = $this->scheduledGatheringCount($monthStart, $monthEnd);
 
         return response()->json([
@@ -171,6 +186,7 @@ class StudentController extends Controller
             'summary' => [
                 'this_month' => $thisMonth,
                 'this_month_total' => $thisMonthTotal,
+                'this_week' => $thisWeek,
                 'attendance_count' => $history->count(),
                 'escalation_count' => $weeklyEscalationCount,
             ],
@@ -209,5 +225,58 @@ class StudentController extends Controller
         }
 
         return $total;
+    }
+
+    private function attendanceEntriesForPeriod(Student $student, Carbon $start, Carbon $end): array
+    {
+        $startDate = $start->toDateString();
+        $endDate = $end->toDateString();
+        $entries = [];
+
+        $student->attendanceRecords()
+            ->whereBetween('day', [$startDate, $endDate])
+            ->orderByDesc('created_at')
+            ->get(['gathering_type', 'day', 'status'])
+            ->each(function (AttendanceRecord $record) use (&$entries) {
+                $date = $record->day->toDateString();
+                $entries[$record->gathering_type . '|' . $date] = [
+                    'gathering_type' => $record->gathering_type,
+                    'date' => $date,
+                    'status' => $record->status,
+                ];
+            });
+
+        $draftEntries = [];
+        AttendanceDraft::query()
+            ->where('status', 'draft')
+            ->whereBetween('day', [$startDate, $endDate])
+            ->orderByDesc('updated_at')
+            ->get(['gathering_type', 'day', 'parsed_data'])
+            ->each(function (AttendanceDraft $draft) use ($student, &$entries, &$draftEntries, $startDate, $endDate) {
+                foreach ($draft->parsed_data ?? [] as $record) {
+                    if ((int) ($record['student_id'] ?? 0) !== $student->id) {
+                        continue;
+                    }
+
+                    $date = $record['day'] ?? optional($draft->day)->toDateString();
+                    if (! $date || $date < $startDate || $date > $endDate) {
+                        continue;
+                    }
+
+                    $type = $draft->gathering_type;
+                    $key = $type . '|' . $date;
+                    if (isset($draftEntries[$key])) {
+                        continue;
+                    }
+                    $draftEntries[$key] = true;
+                    $entries[$key] = [
+                        'gathering_type' => $type,
+                        'date' => $date,
+                        'status' => $record['status'] ?? 'no_response',
+                    ];
+                }
+            });
+
+        return array_values($entries);
     }
 }

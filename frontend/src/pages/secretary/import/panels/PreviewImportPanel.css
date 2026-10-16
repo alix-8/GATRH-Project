@@ -33,6 +33,12 @@
     background: #fff4f4;
 }
 
+.import-preview-empty {
+    color: #718096;
+    font-size: 0.8rem;
+    padding: 14px 16px;
+}
+
 .preview-card-name {
     font-size: 0.8rem;
     font-weight: 600;

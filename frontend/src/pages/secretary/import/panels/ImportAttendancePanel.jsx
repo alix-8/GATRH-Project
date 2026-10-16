@@ -11,6 +11,7 @@ function ImportAttendancePanel({
     onClear,
     onProcess,
     preview = null,
+    previewRowCount = 0,
     isPreviewing = false,
     onGeneratePreview = () => {},
     onBackToEdit = () => {},
@@ -84,7 +85,7 @@ function ImportAttendancePanel({
                         className="import-primary-button import-process-btn"
                         type="button"
                         onClick={onProcess}
-                        disabled={isGenerating || isProcessing || !isPreviewing}
+                        disabled={isGenerating || isProcessing || !isPreviewing || previewRowCount < 1}
                     >
                         {isProcessing ? 'Processing...' : 'Process Attendance'}
                     </button>

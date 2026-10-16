@@ -65,6 +65,7 @@ function Import({ onGoToAttendance = () => {} }) {
     const [parseErrors, setParseErrors] = useState(null)
     const [previewText, setPreviewText] = useState('')
     const [previewCount, setPreviewCount] = useState(0)
+    const [previewRowCount, setPreviewRowCount] = useState(0)
     const [templateError, setTemplateError] = useState('')
 
     const updateField = event => {
@@ -205,6 +206,7 @@ function Import({ onGoToAttendance = () => {} }) {
             return
         }
         setFieldWarning(null)
+        setPreviewRowCount(0)
 
         setIsProcessing(true)
         try {
@@ -235,6 +237,7 @@ function Import({ onGoToAttendance = () => {} }) {
 
     const handleBackToEdit = () => {
         setIsPreviewing(false)
+        setPreviewRowCount(0)
         setOverridePending(false)
     }
 
@@ -269,6 +272,7 @@ function Import({ onGoToAttendance = () => {} }) {
         setResult(null)
         setFieldWarning(null)
         setIsPreviewing(false)
+        setPreviewRowCount(0)
         setConfirmBlankPending(false)
         setOverridePending(false)
         setDuplicateData(null)
@@ -297,13 +301,14 @@ function Import({ onGoToAttendance = () => {} }) {
                     onClear={clearForm}
                     onProcess={processAttendance}
                     isPreviewing={isPreviewing}
+                    previewRowCount={previewRowCount}
                     onGeneratePreview={handleGeneratePreview}
                     onBackToEdit={handleBackToEdit}
                     preview={
                         isPreviewing
                             ? (isWeekMode
-                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
-                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
+                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} onRowsParsed={setPreviewRowCount} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
+                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} onRowsParsed={setPreviewRowCount} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
                             )
                             : null
                     }
