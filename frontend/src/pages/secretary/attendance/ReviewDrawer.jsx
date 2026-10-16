@@ -3,14 +3,11 @@ import { request } from '../../../api/request'
 import './ReviewDrawer.css'
 import { headerTitle } from './header-title'
 import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../components/Icons/AttendanceIcons'
-import { FilterIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../components/Icons/Reusables'
-import AttendancePagination from './AttendancePagination'
+import { FilterIcon, ChevronDownIcon } from '../../../components/Icons/Reusables'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import SearchPill from '../../../components/search/SearchPill'
 import ConfirmOverrideModal from '../import/modals/ConfirmOverrideModal'
-
-const PAGE_SIZE = 10
 
 export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [draft, setDraft] = useState(null)
@@ -22,7 +19,6 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     //for status filter
     const [statusFilter, setStatusFilter] = useState('all')
     const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
-    const [page, setPage] = useState(1)
 
     useEffect(() => {
         if (!isOpen || !record) return
@@ -63,9 +59,6 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             return matchesSearch && matchesStatus
         })
     }, [draft, search, statusFilter])
-
-    const pageCount = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE))
-    const pageStudents = filteredStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
     const handleSubmit = async (opts = {}) => {
         if (!draft) return
@@ -132,7 +125,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
 
     return (
         <div className="review-drawer-backdrop" onClick={onClose}>
-            <div className="review-drawer-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="review-drawer-panel" role="dialog" aria-modal="true" aria-label="Attendance record details" onClick={(e) => e.stopPropagation()}>
                 <div className="drawer-scroll">
                     <div className="drawer-header">
                         <h2>{headerTitle(record?.status)}</h2>
@@ -220,7 +213,6 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                                         }`}
                                                         onClick={() => {
                                                             setStatusFilter(option.value)
-                                                            setPage(1)
                                                             setIsStatusMenuOpen(false)
                                                         }}
                                                     >
@@ -235,7 +227,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                         ariaLabel="Search students"
                                         placeholder="Search Student.."
                                         value={search}
-                                        onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                                        onChange={(e) => setSearch(e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -251,13 +243,13 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                             <th>Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="drawer-table">
-                                        {pageStudents.map((s, i) => (
+                                    <tbody>
+                                        {filteredStudents.map((s, i) => (
                                             <tr key={s.student_id ?? i}>
-                                                <td>{s.student_name}</td>
-                                                <td>{s.batch || '—'}</td>
-                                                <td>{s.day || draft.day_iso || '—'}</td>
-                                                 <td>{s.venue || '—'}</td>
+                                                <td title={s.student_name}>{s.student_name}</td>
+                                                <td title={s.batch || '—'}>{s.batch || '—'}</td>
+                                                <td title={s.day || draft.day_iso || '—'}>{s.day || draft.day_iso || '—'}</td>
+                                                <td title={s.venue || '—'}>{s.venue || '—'}</td>
                                                 <td>
                                                     <span className={`status-indicator status-${s.status === 'present' ? 'present' : 'no-response'}`}>
                                                         <span className="dot" /> {s.status === 'present' ? 'Present' : 'No response'}
@@ -265,17 +257,12 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                                 </td>
                                             </tr>
                                         ))}
+                                        {filteredStudents.length === 0 && (
+                                            <tr><td colSpan="5" className="drawer-table-empty">No students match these filters.</td></tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
-
-                            
-                            <AttendancePagination
-                                page={page}
-                                meta={{ current_page: page, last_page: pageCount }}
-                                goToPage={setPage}
-                            />
-
                         </>
                     )}
                 </div>
