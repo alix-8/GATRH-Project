@@ -62,7 +62,7 @@ const ATTENDANCE_TASK_STATUS = {
     approved: {
         label: 'Attendance record recorded',
         tone: 'completed',
-        action: 'View',
+        action: 'view',
     },
 }
 
@@ -182,9 +182,9 @@ function Reminders() {
         completed: 0,
     })
     const [reminders, setReminders] = useState([])
+    const [escalations, setEscalations] = useState([])
     const [attendanceTasks, setAttendanceTasks] = useState([])
     const [attendanceEntries, setAttendanceEntries] = useState([])
-    const [activeReminder, setActiveReminder] = useState(null)
     const [highlightedReminderId, setHighlightedReminderId] = useState(null)
     const [activeFilter, setActiveFilter] = useState('all')
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
@@ -197,8 +197,12 @@ function Reminders() {
     const [saving, setSaving] = useState(false)
     const [deletingReminder, setDeletingReminder] = useState(null)
     const [deleting, setDeleting] = useState(false)
+    const [escalationReport, setEscalationReport] = useState(null)
     const timeInputRef = useRef(null)
+    const escalationReportControllerRef = useRef(null)
     const navigate = useNavigate()
+
+    useEffect(() => () => escalationReportControllerRef.current?.abort(), [])
 
     useEffect(() => {
         const token = localStorage.getItem('auth_token')
@@ -230,6 +234,7 @@ function Reminders() {
                 ])
 
                 const nextReminders = remindersData.data ?? []
+                const nextEscalations = role === 'cm_coordinator' ? remindersData.escalations ?? [] : []
                 const attendanceRows = attendanceData?.data ?? []
                 const programHeadSubmissions = programHeadSubmissionData?.submissions ?? []
                 const nextAttendanceTasks = role === 'program_head' || role === 'program_secretary'
@@ -268,6 +273,7 @@ function Reminders() {
                         })
 
                 setReminders(nextReminders)
+                setEscalations(nextEscalations)
                 setAttendanceEntries(attendanceRows)
                 setAttendanceTasks(nextAttendanceTasks)
                 if (roleSummaryData || role === 'cm_coordinator') {
@@ -293,6 +299,7 @@ function Reminders() {
                 if (err.name !== 'AbortError') {
                     setError(err.message || 'Unable to load reminders.')
                     setReminders([])
+                    setEscalations([])
                     setAttendanceTasks([])
                     setAttendanceEntries([])
                     setSummary({
@@ -315,17 +322,20 @@ function Reminders() {
 
     useEffect(() => {
         const targetReminderId = location.state?.highlightReminderId
-        if (targetReminderId == null || loading) return
+        const targetEscalationId = location.state?.highlightEscalationId
+        if ((targetReminderId == null && targetEscalationId == null) || loading) return
 
         const targetReminder = reminders.find(reminder => String(reminder.id) === String(targetReminderId))
-        if (targetReminder) {
-            setActiveReminder(null)
-            setHighlightedReminderId(String(targetReminder.id))
+        const targetEscalation = escalations.find(escalation => String(escalation.id) === String(targetEscalationId))
+        if (targetReminder || targetEscalation) {
+            setHighlightedReminderId(targetEscalation
+                ? `escalation-${targetEscalation.id}`
+                : String(targetReminder.id))
             setActiveFilter('all')
         }
 
         navigate(location.pathname, { replace: true, state: null })
-    }, [location.pathname, location.state, loading, reminders, navigate])
+    }, [location.pathname, location.state, loading, reminders, escalations, navigate])
 
     useEffect(() => {
         if (!highlightedReminderId || loading) return
@@ -416,12 +426,26 @@ function Reminders() {
             }
         })
 
-    const allItems = [...reminderItems, ...attendanceTasks]
+    const escalationItems = escalations.map(escalation => ({
+        id: `escalation-${escalation.id}`,
+        reminderId: `escalation-${escalation.id}`,
+        type: 'escalation',
+        icon: EscalationsIcon,
+        title: 'Student Requires Attention',
+        description: escalation.description,
+        sourceEscalation: escalation,
+        status: 'escalation',
+        statusLabel: 'Escalation Report',
+        tone: 'escalation',
+        action: 'View',
+    }))
+
+    const allItems = [...reminderItems, ...escalationItems, ...attendanceTasks]
     const visibleItems = allItems.filter(item => {
         if (activeFilter === 'all') return true
         if (activeFilter === 'today') return item.type === 'gathering' && item.isToday
         if (activeFilter === 'mine') return item.type === 'custom'
-        if (activeFilter === 'needs_action') return item.type === 'attendance' && item.status === 'needs_action'
+        if (activeFilter === 'needs_action') return item.type !== 'escalation' && item.status === 'needs_action'
         if (activeFilter === 'completed') return item.type === 'attendance' && item.status === 'completed'
         return true
     })
@@ -450,6 +474,29 @@ function Reminders() {
         setFormData(EMPTY_FORM)
         setError('')
         setIsAddOpen(false)
+    }
+
+    const closeEscalationReport = () => {
+        escalationReportControllerRef.current?.abort()
+        setEscalationReport(null)
+    }
+
+    const openEscalationReport = async (escalation) => {
+        escalationReportControllerRef.current?.abort()
+        const controller = new AbortController()
+        escalationReportControllerRef.current = controller
+        setEscalationReport({ escalation, loading: true, details: null, error: '' })
+
+        try {
+            const details = await request(`/students/${escalation.student_id}/overview`, { signal: controller.signal })
+            if (!controller.signal.aborted) {
+                setEscalationReport({ escalation, loading: false, details, error: '' })
+            }
+        } catch (err) {
+            if (!controller.signal.aborted) {
+                setEscalationReport({ escalation, loading: false, details: null, error: err.message || 'Unable to load student details.' })
+            }
+        }
     }
 
     const handleEditReminder = (reminder) => {
@@ -635,7 +682,7 @@ function Reminders() {
                                 key={item.id}
                             >
                                 <div className="task-main">
-                                    <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : 'attendance-task'}`} aria-hidden="true">
+                                    <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : item.type === 'escalation' ? 'escalation-icon' : 'attendance-task'}`} aria-hidden="true">
                                         <img
                                             className="task-icon"
                                             src={item.icon ?? NotificationIcon}
@@ -645,7 +692,16 @@ function Reminders() {
 
                                     <div className="task-copy">
                                         <h3>{item.title}</h3>
-                                        <p>{item.description || 'No details added'}</p>
+                                        {item.type === 'escalation' ? (
+                                            <p>
+                                                <span className="escalation-student">
+                                                    {item.sourceEscalation.program}-{item.sourceEscalation.year_level} {item.sourceEscalation.student_name}
+                                                </span>{' '}
+                                                has reached <span className="escalation-level">Escalation level 3</span> and requires a follow up.
+                                            </p>
+                                        ) : (
+                                            <p>{item.description || 'No details added'}</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -665,7 +721,9 @@ function Reminders() {
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                if (item.action === 'Add attendance') {
+                                                if (item.type === 'escalation') {
+                                                    openEscalationReport(item.sourceEscalation)
+                                                } else if (item.action === 'Add attendance') {
                                                     navigate('/import', {
                                                         state: {
                                                             gathering_type: item.sourceReminder.gathering_type,
@@ -692,6 +750,45 @@ function Reminders() {
                     </div>
                 </section>
             </main>
+
+            {escalationReport && (
+                <div className="escalation-report-backdrop" onMouseDown={event => {
+                    if (event.target === event.currentTarget) closeEscalationReport()
+                }}>
+                    <section className="escalation-report-modal" role="dialog" aria-modal="true" aria-labelledby="escalation-report-title">
+                        <div className="escalation-report-header">
+                            <div>
+                                <h2 id="escalation-report-title">Escalation Report</h2>
+                                <p>{escalationReport.escalation.program}-{escalationReport.escalation.year_level} · {escalationReport.escalation.student_name}</p>
+                            </div>
+                            <button type="button" onClick={closeEscalationReport} aria-label="Close escalation report">×</button>
+                        </div>
+                        <p className="escalation-report-message">{escalationReport.escalation.description}</p>
+                        {escalationReport.loading && <p className="escalation-report-state"><LoadingCircle label="Loading attendance history…" /></p>}
+                        {escalationReport.error && <p className="escalation-report-state escalation-report-error" role="alert">{escalationReport.error}</p>}
+                        {escalationReport.details && (
+                            <>
+                                <p className="escalation-report-count">
+                                    <strong>{escalationReport.details.student.no_response_count}</strong> no-response records
+                                </p>
+                                <h3>Attendance history</h3>
+                                {(escalationReport.details.history ?? []).length === 0 ? (
+                                    <p className="escalation-report-state">No attendance records are available.</p>
+                                ) : (
+                                    <ul className="escalation-report-history">
+                                        {escalationReport.details.history.map(record => (
+                                            <li key={record.id}>
+                                                <span>{record.gathering} · {record.date}</span>
+                                                <strong>{record.status.replaceAll('_', ' ')}</strong>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </>
+                        )}
+                    </section>
+                </div>
+            )}
 
             {isAddOpen && (
                 <div className="reminder-modal-backdrop">

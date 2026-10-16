@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import CalendarIcon from '../../assets/icons/calendar-icon.svg'
 import NotificationIcon from '../../assets/icons/notification-icon.svg'
 import MyReminderIcon from '../../assets/icons/my-reminder-icon.svg'
+import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
 import { request } from '../../api/request'
 import './Notification.css'
 
@@ -82,6 +83,13 @@ function Notification() {
 
         if (!token) return
 
+        let isCoordinator = false
+        try {
+            isCoordinator = JSON.parse(localStorage.getItem('user') || 'null')?.role === 'cm_coordinator'
+        } catch {
+            // A missing or stale cached user should not prevent reminders loading.
+        }
+
         fetchControllerRef.current?.abort()
 
         const controller = new AbortController()
@@ -90,8 +98,20 @@ function Notification() {
         try {
                 const [remindersData, attendanceData] = await Promise.all([
                     request('/reminders', { signal: controller.signal }),
-                    request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal }),
+                    isCoordinator
+                        ? Promise.resolve({ data: [] })
+                        : request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal }),
                 ])
+
+                const escalationItems = (remindersData.escalations ?? []).map(escalation => ({
+                    id: `escalation-${escalation.id}`,
+                    iconType: 'escalation',
+                    title: 'Student Requires Attention',
+                    subtext: escalation.description,
+                    tone: 'needs-attention',
+                    target: '/reminders',
+                    targetState: { highlightEscalationId: escalation.id },
+                }))
 
                 const reminderItems = (remindersData.data ?? [])
                     .filter(reminder => reminder.status !== 'completed' && reminder.reminder_type !== 'submission_countdown')
@@ -128,7 +148,7 @@ function Notification() {
                         }
                     })
 
-                setItems([...reminderItems, ...attendanceItems].slice(0, 8))
+                setItems([...escalationItems, ...reminderItems, ...attendanceItems].slice(0, 8))
         } catch {
             // Aborted or failed refresh: keep whatever items are already shown.
         }
@@ -159,11 +179,12 @@ function Notification() {
         calendar: CalendarIcon,
         attendance: NotificationIcon,
         'my-reminder': MyReminderIcon,
+        escalation: EscalationsIcon,
     }
 
-    const openTarget = (target) => {
+    const openTarget = (target, state = null) => {
         setIsOpen(false)
-        navigate(target)
+        navigate(target, { state })
     }
 
     return (
@@ -192,9 +213,9 @@ function Notification() {
                         ) : items.map(item => (
                             <button
                                 type="button"
-                                className={`notification-item ${item.tone}`}
+                                className={`notification-item ${item.tone} ${item.iconType === 'escalation' ? 'escalation' : ''}`}
                                 key={item.id}
-                                onClick={() => openTarget(item.target)}
+                                onClick={() => openTarget(item.target, item.targetState)}
                             >
                                 <span className={`notification-item-icon ${item.iconType}`} aria-hidden="true">
                                     <img src={iconMap[item.iconType]} alt="" />
