@@ -33,7 +33,8 @@ class ReminderController extends Controller
 
     public function index(Request $request)
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
 
         // Catch up for this secretary if the scheduled task ran while the
         // Render instance was asleep or was restarting.
@@ -73,15 +74,51 @@ class ReminderController extends Controller
             $reminder->countdown_text = $countdowns[$reminder->id] ?? null;
         });
 
+        // Keep each role's alerts aligned with its escalation level and student scope.
+        $alertLevel = match ($user->role) {
+            'secretary' => 'Level 1',
+            'program_head' => 'Level 2',
+            'cm_coordinator' => 'Level 3',
+            default => null,
+        };
+
+        $visibleEscalations = $alertLevel
+            ? Escalation::query()
+                ->visibleTo($user)
+                ->where('escalation_level', $alertLevel)
+                ->with('student')
+                ->orderByDesc('no_response_count')
+                ->get()
+            : collect();
+
+        $escalationAlerts = $visibleEscalations->map(function (Escalation $escalation) {
+            $student = $escalation->student;
+            $programYear = strtoupper(trim($student->program)) . '-' . trim((string) $student->year_level);
+            $level = strtolower($escalation->escalation_level);
+
+            return [
+                'id' => $escalation->id,
+                'student_id' => $student->id,
+                'student_name' => $student->name,
+                'program' => $student->program,
+                'year_level' => $student->year_level,
+                'escalation_level' => $escalation->escalation_level,
+                'description' => "{$programYear} {$student->name} has reached Escalation {$level} and requires a follow up.",
+            ];
+        })->values();
+
         return response()->json([
             'status'  => 'success',
             'summary' => [
                 'upcoming'     => $request->user()->reminders()->where('status', 'upcoming')->count(),
                 'needs_action' => $request->user()->reminders()->where('status', 'needs_action')->count(),
                 'completed'    => $request->user()->reminders()->where('status', 'completed')->count(),
-                'escalation_count' => Escalation::query()->visibleTo($request->user())->count(),
+                'escalation_count' => $alertLevel
+                    ? $escalationAlerts->count()
+                    : Escalation::query()->visibleTo($user)->count(),
             ],
             'data' => $reminders,
+            'escalations' => $escalationAlerts,
         ]); 
     }
 
