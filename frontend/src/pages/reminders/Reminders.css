@@ -22,12 +22,17 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     box-sizing: border-box;
     width: calc(82% + 48px);
+    height: 27%;
     margin-inline: auto;
     padding: 14px 0 12px;
     gap: 12px;
 }
 
 .reminders-cards-program_head {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.reminders-cards-cm_coordinator {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
@@ -79,6 +84,10 @@
 
 .needs-action-icon-wrap {
     background-color: #F2C94C;
+}
+
+.escalation-icon-wrap {
+    background-color: #ff3347;
 }
 
 .completed-icon-wrap {
@@ -442,7 +451,8 @@
 
 @media (max-width: 900px) {
     .reminders-cards,
-    .reminders-cards-program_head {
+    .reminders-cards-program_head,
+    .reminders-cards-cm_coordinator {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -450,12 +460,14 @@
 
 @media (max-width: 560px) {
     .reminders-cards,
-    .reminders-cards-program_head {
+    .reminders-cards-program_head,
+    .reminders-cards-cm_coordinator {
         grid-template-columns: minmax(0, 1fr);
         padding: 10px;
     }
 
     .reminders-cards-program_head,
+    .reminders-cards-cm_coordinator,
     .reminders-cards-chancellor,
     .reminders-cards-secretary {
         grid-template-columns: minmax(0, 1fr);
