@@ -75,4 +75,26 @@ class AdminStudentController extends Controller
             'student' => $updatedStudent,
         ]);
     }
+
+    public function rolloverSchoolYear(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'school_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
+        ]);
+
+        [$startYear, $endYear] = array_map('intval', explode('-', $validated['school_year']));
+        if ($endYear !== $startYear + 1) {
+            return response()->json([
+                'message' => 'The school year must use consecutive years, such as 2026-2027.',
+                'errors' => ['school_year' => ['The school year must use consecutive years.']],
+            ], 422);
+        }
+
+        $result = $this->studentService->rolloverSchoolYear(
+            $validated['school_year'],
+            $request->user(),
+        );
+
+        return response()->json($result);
+    }
 }

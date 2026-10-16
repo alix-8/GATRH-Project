@@ -85,6 +85,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::post('/admin/students', [AdminStudentController::class, 'store']);
         Route::get('/admin/students/{student}', [AdminStudentController::class, 'show']);
         Route::patch('/admin/students/{student}', [AdminStudentController::class, 'update']);
+        Route::post('/admin/students/school-year-rollover', [AdminStudentController::class, 'rolloverSchoolYear']);
     });
 
     /* Secretary */
