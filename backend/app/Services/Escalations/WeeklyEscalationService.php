@@ -3,6 +3,7 @@
 namespace App\Services\Escalations;
 
 use App\Models\AttendanceRecord;
+use App\Models\AttendanceDraft;
 use App\Models\Escalation;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -19,14 +20,37 @@ class WeeklyEscalationService
         $start = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
         $end = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
 
-        return AttendanceRecord::query()
+        $noResponseGatherings = AttendanceRecord::query()
             ->whereIn('student_id', $ids)
             ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
             ->whereBetween('day', [$start, $end])
             ->where('status', 'no_response')
-            ->get()
-            ->groupBy('student_id')
-            ->map(fn (Collection $records) => min(3, $records->pluck('gathering_type')->unique()->count()));
+            ->get(['student_id', 'gathering_type'])
+            ->map(fn (AttendanceRecord $record) => $record->student_id . ':' . $record->gathering_type)
+            ->all();
+
+        AttendanceDraft::query()
+            ->where('status', 'draft')
+            ->whereBetween('day', [$start, $end])
+            ->get(['gathering_type', 'parsed_data'])
+            ->each(function (AttendanceDraft $draft) use (&$noResponseGatherings, $ids) {
+                foreach ($draft->parsed_data ?? [] as $record) {
+                    $studentId = (int) ($record['student_id'] ?? 0);
+                    $type = $draft->gathering_type;
+
+                    if ($studentId && $ids->contains($studentId)
+                        && in_array($type, ['pm', 'ws', 'tg'], true)
+                        && ($record['status'] ?? 'no_response') === 'no_response') {
+                        $noResponseGatherings[] = $studentId . ':' . $type;
+                    }
+                }
+            });
+
+        return collect($noResponseGatherings)
+            ->unique()
+            ->map(fn (string $key) => explode(':', $key, 2))
+            ->groupBy(fn (array $key) => $key[0])
+            ->map(fn (Collection $gatherings) => min(3, $gatherings->pluck(1)->unique()->count()));
     }
 
     public function syncStudent(int $studentId): void
@@ -45,10 +69,29 @@ class WeeklyEscalationService
         );
     }
 
+    public function syncDraft(AttendanceDraft $draft, ?array $previousData = null): void
+    {
+        $studentIds = collect($previousData ?? [])
+            ->merge($draft->parsed_data ?? [])
+            ->pluck('student_id')
+            ->filter()
+            ->unique();
+
+        foreach ($studentIds as $studentId) {
+            $this->syncStudent((int) $studentId);
+        }
+    }
+
     public function syncAll(): int
     {
+        $start = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $end = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
         $studentIds = Escalation::query()->pluck('student_id')
             ->merge(AttendanceRecord::query()->distinct()->pluck('student_id'))
+            ->merge(AttendanceDraft::query()->where('status', 'draft')
+                ->whereBetween('day', [$start, $end])
+                ->get(['parsed_data'])
+                ->flatMap(fn (AttendanceDraft $draft) => collect($draft->parsed_data ?? [])->pluck('student_id')))
             ->unique();
 
         foreach ($studentIds as $studentId) {

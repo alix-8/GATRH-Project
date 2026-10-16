@@ -129,6 +129,13 @@ class CmCoordinatorMonitoringService
 
         $programCode = strtoupper(trim($programCode));
         $program = Program::query()->whereRaw('UPPER(TRIM(code)) = ?', [$programCode])->first();
+        $programHeadNames = $program
+            ? $program->programHeads()
+                ->where('users.is_active', true)
+                ->orderBy('users.name')
+                ->pluck('users.name')
+                ->implode(', ')
+            : null;
         $maximumYearLevel = $programCode === 'ACT' ? 2 : 4;
 
         if ($yearLevel < 1 || $yearLevel > $maximumYearLevel) {
@@ -145,8 +152,9 @@ class CmCoordinatorMonitoringService
             return null;
         }
 
+        $weeks = $this->getWeeks($month);
         $selectedWeek = (int) ($filters['week'] ?? 1);
-        $week = $this->getWeeks($month)->firstWhere('number', $selectedWeek);
+        $week = $weeks->firstWhere('number', $selectedWeek);
 
         if (! $week) {
             return null;
@@ -165,10 +173,21 @@ class CmCoordinatorMonitoringService
             && $record->day->toDateString() <= $week['end']
         );
 
-        $entries = $weekRecords
-            ->groupBy(fn (AttendanceRecord $record) => $record->gathering_type . '|' . $record->day->toDateString())
-            ->map(function ($eventRecords, string $eventKey) use ($roster) {
-                [$type, $date] = explode('|', $eventKey, 2);
+        $studentIds = $roster->pluck('id')->all();
+        $entries = collect(self::GATHERING_TYPES)
+            ->map(function (string $type) use ($weekRecords, $roster, $studentIds) {
+                $eventRecords = $weekRecords->where('gathering_type', $type);
+                if ($eventRecords->isEmpty()) {
+                    return null;
+                }
+
+                $summary = $this->getGatheringSummary($weekRecords, $studentIds, $type);
+                $dates = $eventRecords->pluck('day')
+                    ->map(fn (Carbon $day) => $day->toDateString())
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->all();
                 $recordedStudentIds = $eventRecords->pluck('student_id')->unique();
                 $missingStudents = $roster
                     ->reject(fn (Student $student) => $recordedStudentIds->contains($student->id))
@@ -188,31 +207,38 @@ class CmCoordinatorMonitoringService
                 return [
                     'gathering_type' => $type,
                     'gathering' => self::GATHERING_LABELS[$type] ?? ucfirst($type),
-                    'date' => $date,
-                    'status' => $missingStudents->isEmpty() ? 'completed' : 'incomplete',
+                    'date' => $dates[0],
+                    'dates' => $dates,
+                    'status' => $summary['status'],
                     'approval_status' => $allValidated ? 'approved' : 'pending',
                     'approved_on' => $allValidated ? $latestApproval?->updated_at?->toIso8601String() : null,
                     'program_head' => $allValidated
                         ? $latestApproval?->validator?->name
                         : null,
-                    'recorded_students' => $recordedStudentIds->count(),
-                    'total_students' => $roster->count(),
-                    'remarks' => $recordedStudentIds->count() . '/' . $roster->count(),
+                    'recorded_students' => $summary['completed_students'],
+                    'total_students' => $summary['total_students'],
+                    'remarks' => $summary['completed_students'] . '/' . $summary['total_students'],
                     'missing_students' => $missingStudents,
                 ];
             })
+            ->filter()
             ->sortBy(fn (array $entry) => $entry['date'] . '|' . $entry['gathering_type'])
             ->values();
-
         $latestApproval = $records
             ->filter(fn (AttendanceRecord $record) => in_array($record->validation_status, ['validated', 'approved'], true))
             ->sortByDesc('updated_at')
             ->first();
-        $completedEvents = $records
-            ->groupBy(fn (AttendanceRecord $record) => $record->gathering_type . '|' . $record->day->toDateString())
-            ->filter(fn ($eventRecords) => $eventRecords->pluck('student_id')->unique()->count() >= $roster->count())
-            ->count();
-        $monthlyEventTotal = $this->getWeeks($month)->count() * count(self::GATHERING_TYPES);
+        $completedEvents = $weeks->sum(function (array $monthWeek) use ($records, $studentIds) {
+            $recordsForWeek = $records->filter(fn (AttendanceRecord $record) =>
+                $record->day->toDateString() >= $monthWeek['start']
+                && $record->day->toDateString() <= $monthWeek['end']
+            );
+
+            return collect(self::GATHERING_TYPES)
+                ->filter(fn (string $type) => $this->getGatheringSummary($recordsForWeek, $studentIds, $type)['status'] === 'completed')
+                ->count();
+        });
+        $monthlyEventTotal = $weeks->count() * count(self::GATHERING_TYPES);
 
         return [
             'course' => [
@@ -234,13 +260,11 @@ class CmCoordinatorMonitoringService
             ],
             'approval' => [
                 'approved_on' => $latestApproval?->updated_at?->toIso8601String(),
-                'program_head' => $latestApproval?->validator?->name,
+                'program_head' => $programHeadNames ?: null,
             ],
             'week' => $week,
             'week_details' => $entries,
-            'incomplete_entries' => $entries
-                ->where('status', 'incomplete')
-                ->values(),
+            'incomplete_entries' => $entries->where('status', 'incomplete')->values(),
         ];
     }
 
@@ -309,23 +333,9 @@ class CmCoordinatorMonitoringService
                 );
 
                 $gatherings = collect(self::GATHERING_TYPES)->map(function (string $type) use ($recordsForWeek, $studentIds) {
-                    $submittedStudentCount = $recordsForWeek
-                        ->where('gathering_type', $type)
-                        ->pluck('student_id')
-                        ->unique()
-                        ->count();
-
-                    $status = match (true) {
-                        $submittedStudentCount === 0 => 'no_report',
-                        $submittedStudentCount >= count($studentIds) => 'completed',
-                        default => 'incomplete',
-                    };
-
                     return [
                         'type' => $type,
-                        'status' => $status,
-                        'completed_students' => min($submittedStudentCount, count($studentIds)),
-                        'total_students' => count($studentIds),
+                        ...$this->getGatheringSummary($recordsForWeek, $studentIds, $type),
                     ];
                 })->values();
 
@@ -362,6 +372,26 @@ class CmCoordinatorMonitoringService
                 'weeks' => $weeklyData->values()->all(),
             ];
         })->map(fn ($course) => (array) $course)->values();
+    }
+
+    private function getGatheringSummary(Collection $weekRecords, array $studentIds, string $type): array
+    {
+        $submittedStudentCount = $weekRecords
+            ->where('gathering_type', $type)
+            ->pluck('student_id')
+            ->unique()
+            ->count();
+        $totalStudents = count($studentIds);
+
+        return [
+            'status' => match (true) {
+                $submittedStudentCount === 0 => 'no_report',
+                $submittedStudentCount >= $totalStudents => 'completed',
+                default => 'incomplete',
+            },
+            'completed_students' => min($submittedStudentCount, $totalStudents),
+            'total_students' => $totalStudents,
+        ];
     }
 
     private function getWeeks(Carbon $month): Collection
