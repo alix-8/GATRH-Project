@@ -612,6 +612,8 @@ function Reminders() {
         }
     }
 
+    const showReminderList = !loading && (!error || isAddOpen)
+
     return (
         <div className="reminders">
             <Sidebar />
@@ -672,10 +674,10 @@ function Reminders() {
                     <div className="reminders-task-list">
                         {loading && <p className="reminders-state"><LoadingCircle label="Loading reminders…" /></p>}
                         {!isAddOpen && !loading && error && <p className="reminders-state reminders-state-error">{error}</p>}
-                        {!isAddOpen && !loading && !error && visibleItems.length === 0 && (
+                        {showReminderList && visibleItems.length === 0 && (
                             <p className="reminders-state">No reminders found.</p>
                         )}
-                        {!isAddOpen && !loading && !error && visibleItems.map(item => (
+                        {showReminderList && visibleItems.map(item => (
                             <article
                                 id={item.reminderId ? `reminder-item-${item.reminderId}` : undefined}
                                 className={`reminders-task-item ${item.tone} ${String(item.reminderId) === highlightedReminderId ? 'reminders-task-item-highlighted' : ''}`}
