@@ -4,6 +4,7 @@ import Sidebar from '../../components/layout/Sidebar'
 import Header from '../../components/layout/Header'
 import RemindersIcon from '../../assets/icons/reminders-icon.svg'
 import NeedsActionIcon from '../../assets/needs-action.png'
+import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
 import CompletedIcon from '../../assets/icons/completed-icon.svg'
 import DropDownIcon from '../../assets/icons/drop-down-icon.svg'
 import NotificationIcon from '../../assets/icons/notification-icon.svg'
@@ -269,11 +270,20 @@ function Reminders() {
                 setReminders(nextReminders)
                 setAttendanceEntries(attendanceRows)
                 setAttendanceTasks(nextAttendanceTasks)
-                if (roleSummaryData) setRoleSummary(roleSummaryData)
+                if (roleSummaryData || role === 'cm_coordinator') {
+                    setRoleSummary({
+                        attendance_count: roleSummaryData?.attendance_count ?? 0,
+                        escalation_count: role === 'cm_coordinator'
+                            ? remindersData.summary?.escalation_count ?? roleSummaryData?.escalation_count ?? 0
+                            : roleSummaryData?.escalation_count ?? 0,
+                    })
+                }
                 setSummary({
                     upcoming: remindersData.summary?.upcoming ?? nextReminders.filter(item => item.status === 'upcoming').length,
                     needs_action: role === 'program_head'
                         ? (programHeadSubmissionData?.pendingCount ?? nextAttendanceTasks.length)
+                        : role === 'cm_coordinator'
+                            ? remindersData.summary?.needs_action ?? nextReminders.filter(item => item.status === 'needs_action').length
                         : nextAttendanceTasks.filter(item => item.status === 'needs_action').length,
                     completed: remindersData.summary?.completed
                         ?? nextReminders.filter(item => item.status === 'completed').length
@@ -332,11 +342,13 @@ function Reminders() {
     const upcomingCard = { title: 'Upcoming', value: summary.upcoming, description: 'Scheduled activities', icon: RemindersIcon, className: 'upcoming' }
     const escalationCard = { title: 'Escalations', value: roleSummary.escalation_count, description: 'Students requiring intervention', icon: NotificationIcon, className: 'needs-action' }
     const needsActionCard = { title: 'Needs Action', value: summary.needs_action, description: 'Attendance awaiting your review', icon: NeedsActionIcon, className: 'needs-action' }
+    const coordinatorEscalationCard = { ...escalationCard, title: 'Escalation', description: 'Students that needs attention', icon: EscalationsIcon, className: 'escalation' }
+    const coordinatorNeedsActionCard = { ...needsActionCard, description: 'Tasks requiring attention' }
     const completedCard = { title: 'Completed', value: summary.completed, description: 'Completed reminders', icon: CompletedIcon, className: 'completed' }
     const reminderCards = role === 'chancellor'
         ? [upcomingCard, escalationCard, completedCard]
         : role === 'cm_coordinator'
-            ? [upcomingCard, escalationCard, completedCard]
+            ? [upcomingCard, coordinatorEscalationCard, coordinatorNeedsActionCard, completedCard]
         : role === 'program_head'
             ? [upcomingCard, escalationCard, needsActionCard, completedCard]
             : role === 'secretary'
