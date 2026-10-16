@@ -1,11 +1,12 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
+import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import CompletedIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
-import CalendarIcon from '../../../assets/icons/calendar-icon.svg'
-import ProfileIcon from '../../../assets/icons/profile-icon.svg'
+import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg'
+import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
 import './Monitoring.css'
 
@@ -29,7 +30,7 @@ const PROGRAM_TYPES = {
     ACT: 'Computer Technology',
     BAB: 'Broadcasting',
     BSA: 'Accountancy',
-    BSAIS: 'Accounting Information Systems',
+    BSAIS: 'Accountancy Information System',
     BSIS: 'Information Systems',
     BSSW: 'Social Work',
 }
@@ -44,6 +45,10 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
     if (!value) return '—'
     const [year, month, day] = value.slice(0, 10).split('-').map(Number)
     return new Date(year, month - 1, day).toLocaleDateString('en-US', options)
+}
+
+function formatGatheringDate(entry) {
+    return formatDate(entry?.date, { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 function CoordinatorMonitoring() {
@@ -162,53 +167,76 @@ function CoordinatorMonitoring() {
                     className="coordinator-dashboard-header"
                 />
 
-                <section className="monitoring-content" aria-label="Coordinator monitoring">
+                <section
+                    className={`monitoring-content ${!error && loading ? 'monitoring-content--loading' : ''}`}
+                    aria-label="Coordinator monitoring"
+                >
                     {error && <p className="monitoring-message monitoring-error" role="alert">{error}</p>}
-                    {!error && loading && <p className="monitoring-message" role="status">Loading monitoring data...</p>}
+                    {!error && loading && (
+                        <div className="monitoring-loading">
+                            <LoadingCircle label="Loading monitoring data…" size={28} />
+                        </div>
+                    )}
                     {!error && !loading && courses.length === 0 && (
                         <p className="monitoring-message">No program attendance data is available.</p>
                     )}
 
                     {!error && courses.length > 0 && (
                         <div className="monitoring-table-scroll" aria-busy={loading}>
-                            <table className="monitoring-table">
+                            <table
+                                className="monitoring-table"
+                                style={{ '--monitoring-status-width': `${54 / Math.max(1, weeks.length * gatheringTypes.length)}%` }}
+                            >
+                                <colgroup>
+                                    <col className="monitoring-program-column" />
+                                </colgroup>
+                                <colgroup>
+                                    <col className="monitoring-type-column" />
+                                </colgroup>
+                                {weeks.map((item) => (
+                                    <colgroup key={item.number}>
+                                        {gatheringTypes.map((type) => (
+                                            <col key={type} className="monitoring-status-column" />
+                                        ))}
+                                    </colgroup>
+                                ))}
+                                <colgroup>
+                                    <col className="monitoring-progress-column" />
+                                </colgroup>
+                                <colgroup>
+                                    <col className="monitoring-action-column" />
+                                </colgroup>
                                 <thead>
                                     <tr className="monitoring-table-heading">
-                                        <th className="monitoring-program-heading" rowSpan="2">Program</th>
+                                        <th className="monitoring-program-heading" scope="col">Program</th>
+                                        <th className="monitoring-type-heading" scope="col">Type</th>
                                         {weeks.map((item) => (
-                                            <th key={item.number} className="monitoring-week-heading" colSpan={gatheringTypes.length}>
-                                                <span>{item.label}</span>
+                                            <th key={item.number} className="monitoring-week-heading" scope="colgroup" colSpan={gatheringTypes.length}>
+                                                <span className="monitoring-week-title">{item.label}</span>
                                                 <small>{item.description}</small>
+                                                <span className="monitoring-week-gatherings">
+                                                    {gatheringTypes.map((type) => (
+                                                        <span key={type} title={{
+                                                            pm: 'Prayer Meeting',
+                                                            tg: 'Thanksgiving',
+                                                            ws: 'Worship Service',
+                                                        }[type]}>{GATHERING_LABELS[type]}</span>
+                                                    ))}
+                                                </span>
                                             </th>
                                         ))}
-                                        <th className="monitoring-progress-heading" rowSpan="2">Progress</th>
-                                        <th className="monitoring-action-heading" rowSpan="2">Action</th>
-                                    </tr>
-                                    <tr className="monitoring-gathering-heading">
-                                        {weeks.flatMap((item) => gatheringTypes.map((type) => (
-                                            <th
-                                                key={`${item.number}-${type}`}
-                                                className={type === gatheringTypes[0] ? 'monitoring-week-start' : ''}
-                                                title={{
-                                                pm: 'Prayer Meeting',
-                                                tg: 'Thanksgiving',
-                                                ws: 'Worship Service',
-                                            }[type]}>
-                                                {GATHERING_LABELS[type]}
-                                            </th>
-                                        )))}
+                                        <th className="monitoring-progress-heading" scope="col">Progress</th>
+                                        <th className="monitoring-action-heading" scope="col">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {orderedProgramGroups.map(([programCode, programCourses], index) => (
+                                    {orderedProgramGroups.map(([programCode, programCourses]) => (
                                         <Fragment key={programCode}>
-                                            {index > 0 && (
-                                                <tr className="monitoring-program-spacer" aria-hidden="true">
-                                                    <td colSpan={weeks.length * gatheringTypes.length + 3} />
-                                                </tr>
-                                            )}
+                                            <tr className="monitoring-program-spacer" aria-hidden="true">
+                                                <td colSpan={weeks.length * gatheringTypes.length + 4} />
+                                            </tr>
                                             <tr className={`monitoring-program-group ${collapsedPrograms.includes(programCode) ? 'collapsed' : ''}`}>
-                                                <th colSpan={weeks.length * gatheringTypes.length + 3}>
+                                                <th colSpan={weeks.length * gatheringTypes.length + 4}>
                                                     <button
                                                         type="button"
                                                         className="monitoring-program-toggle"
@@ -232,6 +260,14 @@ function CoordinatorMonitoring() {
                                                     ].filter(Boolean).join(' ')}
                                                 >
                                                     <td className="monitoring-course-name">{course.label}</td>
+                                                    <td className="monitoring-course-type">
+                                                        <span
+                                                            className={`monitoring-course-type-pill monitoring-course-type-pill--${course.program.toLowerCase()}`}
+                                                            title={PROGRAM_TYPES[course.program.toUpperCase()] || course.program}
+                                                        >
+                                                            {PROGRAM_TYPES[course.program.toUpperCase()] || course.program}
+                                                        </span>
+                                                    </td>
                                                     {weeks.flatMap((item) => {
                                                         const courseWeek = course.weeks.find((entry) => entry.number === item.number)
                                                         return gatheringTypes.map((type) => {
@@ -239,11 +275,12 @@ function CoordinatorMonitoring() {
                                                             return (
                                                                 <td
                                                                     key={`${course.label}-${item.number}-${type}`}
-                                                                    className={`monitoring-status-cell ${type === gatheringTypes[0] ? 'monitoring-week-start' : ''}`}
+                                                                    className={`monitoring-status-cell ${type === gatheringTypes[gatheringTypes.length - 1] ? 'monitoring-week-end' : ''}`}
                                                                 >
                                                                     <span
                                                                         className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'}`}
-                                                                        aria-label={itemStatus?.status?.replace('_', ' ') || 'No report'}
+                                                                        role="img"
+                                                                        aria-label={`${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status?.replace('_', ' ') || 'No report'}`}
                                                                         title={itemStatus
                                                                             ? `${itemStatus.completed_students}/${itemStatus.total_students} students`
                                                                             : 'No report'}
@@ -273,6 +310,9 @@ function CoordinatorMonitoring() {
                                                             onClick={() => openCourseDetails(course)}
                                                         >
                                                             View
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -318,11 +358,13 @@ function CoordinatorMonitoring() {
                     >
                         <header className="monitoring-detail-header">
                             <div className="monitoring-detail-heading">
-                                <span className="monitoring-detail-program-type">
+                                <span className={`monitoring-detail-program-type monitoring-course-type-pill--${activeCourse.program.toLowerCase()}`}>
                                     {PROGRAM_TYPES[activeCourse.program.toUpperCase()] || activeCourse.program}
                                 </span>
                                 <h2 id="monitoring-detail-title">{activeCourse.label}</h2>
-                                <p>{PROGRAM_DISPLAY_NAMES[activeCourse.program.toUpperCase()] || activeCourse.program} {activeCourse.year_level}</p>
+                                <p>{currentDetails?.course?.program_name && currentDetails.course.program_name !== activeCourse.program
+                                    ? currentDetails.course.program_name
+                                    : PROGRAM_DISPLAY_NAMES[activeCourse.program.toUpperCase()] || activeCourse.program} {activeCourse.year_level}</p>
                             </div>
                         </header>
 
@@ -347,7 +389,10 @@ function CoordinatorMonitoring() {
 
                                 <div className="monitoring-approval-card">
                                     <div>
-                                        <img src={CalendarIcon} alt="" />
+                                        <svg className="monitoring-calendar-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M18.5 5.5H5.5C4.4 5.5 3.5 6.4 3.5 7.5V18C3.5 19.1 4.4 20 5.5 20H18.5C19.6 20 20.5 19.1 20.5 18V7.5C20.5 6.4 19.6 5.5 18.5 5.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M8 4V7M16 4V7M3.5 9.5H20.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
                                         <span>
                                             <small>Approved on</small>
                                             <strong>{currentDetails.approval.approved_on
@@ -363,10 +408,10 @@ function CoordinatorMonitoring() {
                                         </span>
                                     </div>
                                     <div>
-                                        <img src={ProfileIcon} alt="" />
+                                        <img className="monitoring-program-head-icon" src={ProgramHeadIcon} alt="" />
                                         <span>
                                             <small>Program head</small>
-                                            <strong>{currentDetails.approval.program_head || '—'}</strong>
+                                            <strong>{currentDetails.approval.program_head || ''}</strong>
                                         </span>
                                     </div>
                                 </div>
@@ -408,8 +453,12 @@ function CoordinatorMonitoring() {
                                         return (
                                             <div className="monitoring-week-detail-row" key={gatheringItem.type}>
                                                 <span>{gatheringItem.label}</span>
-                                                <span>{entry ? formatDate(entry.date) : '—'}</span>
-                                                <span className="monitoring-detail-status-cell">
+                                                <span title={entry?.dates?.length > 1
+                                                    ? entry.dates.map((date) => formatDate(date, { month: 'long', day: 'numeric', year: 'numeric' })).join(', ')
+                                                    : undefined}>
+                                                    {formatGatheringDate(entry)}
+                                                </span>
+                                                <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
                                                     <img
                                                         src={status === 'completed'
                                                             ? CompletedIcon
@@ -430,17 +479,22 @@ function CoordinatorMonitoring() {
                                     })}
 
                                     <div className="monitoring-incomplete-details">
-                                        <h4>Incomplete Entry Details</h4>
+                                        <h4>
+                                            <span className="monitoring-incomplete-icon" aria-hidden="true">
+                                                <img src={IncompleteEntryIcon} alt="" />
+                                            </span>
+                                            Incomplete Entry Details
+                                        </h4>
                                         {currentDetails.incomplete_entries.length === 0
                                             ? <p>No incomplete entries for this week.</p>
                                             : currentDetails.incomplete_entries.map((entry) => {
-                                                const entryKey = `${entry.gathering_type}-${entry.date}`
+                                                const entryKey = entry.gathering_type
                                                 const isOpen = activeIncompleteEntry === entryKey
                                                 return (
                                                     <article key={entryKey}>
                                                         <div>
-                                                            <strong>{entry.gathering} - {formatDate(entry.date)}</strong>
-                                                            <small>{entry.missing_students.length} students did not submit attendance</small>
+                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
+                                                            <small>+{entry.missing_students.length} students did not submit attendance</small>
                                                         </div>
                                                         <button
                                                             type="button"
@@ -448,6 +502,9 @@ function CoordinatorMonitoring() {
                                                             onClick={() => setActiveIncompleteEntry(isOpen ? null : entryKey)}
                                                         >
                                                             {isOpen ? 'Hide' : 'View'}
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
                                                         </button>
                                                         {isOpen && (
                                                             <ul>
