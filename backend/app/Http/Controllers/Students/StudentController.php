@@ -148,16 +148,9 @@ class StudentController extends Controller
         }
 
         $history = $history->sortByDesc('date')->values();
-        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $weekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
-        $weeklyEscalationCount = min(3, $history
-            ->filter(fn (array $record) => str_starts_with($record['id'] ?? '', 'record-')
-                && ($record['date'] ?? '') >= $weekStart
-                && ($record['date'] ?? '') <= $weekEnd
-                && ($record['status'] ?? null) === 'no_response')
-            ->pluck('gathering_type')
-            ->unique()
-            ->count());
+        $weeklyEscalationCount = app(WeeklyEscalationService::class)
+            ->countsForStudents([$student->id])
+            ->get($student->id, 0);
         $monthStart = Carbon::now()->startOfMonth();
         $monthEnd = Carbon::now()->endOfMonth();
         $thisMonth = $student->attendanceRecords()
