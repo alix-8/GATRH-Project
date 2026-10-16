@@ -4,6 +4,28 @@ import './PreviewImportPanel.css'
 const SLOT_RE = /^(PM|WS|TG)[:\s]\s*(.*)$/i
 const ENTRY_RE = /^(\d+)[.)]\s*(.+)$/
 const SKIP_RE = /^(gathering|prayer meeting|worship service|thanksgiving)\s*[:\-]/i
+const NAME_RE = /^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N}'’.,()& -]*$/u
+
+function isUnnumberedStudentName(line) {
+    return Boolean(line)
+        && !ENTRY_RE.test(line)
+        && !SKIP_RE.test(line)
+        && !line.includes('|')
+        && !line.includes(':')
+        && !line.includes('---')
+        && !line.includes('[')
+        && NAME_RE.test(line)
+}
+
+function emptyStudent(number, name) {
+    return {
+        number,
+        name,
+        pm: { day: '', time: '', venue: '' },
+        ws: { day: '', time: '', venue: '' },
+        tg: { day: '', time: '', venue: '' },
+    }
+}
 
 function parseSlotLine(line) {
     const parts = line.split('|').map((p) => p.trim())
@@ -28,20 +50,28 @@ function parseStudents(rawText) {
         const entryMatch = line.match(ENTRY_RE)
         if (entryMatch) {
             if (current) students.push(current)
-            current = { number: entryMatch[1], name: entryMatch[2].trim(), pm: { day: '', time: '', venue: '' }, ws: { day: '', time: '', venue: '' }, tg: { day: '', time: '', venue: '' } }
+            current = emptyStudent(entryMatch[1], entryMatch[2].trim())
             slotType = null
             continue
         }
 
-        if (!current) continue
-
         const slotMatch = line.match(SLOT_RE)
         if (slotMatch) {
+            if (!current) continue
             slotType = slotMatch[1].toLowerCase()
             const rest = slotMatch[2].trim()
             if (rest) current[slotType] = parseSlotLine(rest)
             continue
         }
+
+        if (isUnnumberedStudentName(line)) {
+            if (current) students.push(current)
+            current = emptyStudent(String(students.length + 1), line)
+            slotType = null
+            continue
+        }
+
+        if (!current) continue
 
         if (slotType) {
             current[slotType] = parseSlotLine(line)
@@ -61,7 +91,7 @@ function serializeStudents(students) {
 
 function preserveHeader(rawText, serializedStudents) {
     const lines = (rawText || '').split(/\r\n|\r|\n/)
-    const firstStudentLine = lines.findIndex((line) => ENTRY_RE.test(line.trim()))
+    const firstStudentLine = lines.findIndex((line) => ENTRY_RE.test(line.trim()) || isUnnumberedStudentName(line.trim()))
     const header = firstStudentLine > 0 ? lines.slice(0, firstStudentLine).join('\n').trimEnd() : ''
     return header ? `${header}\n\n${serializedStudents}` : serializedStudents
 }
@@ -79,12 +109,14 @@ function isIncomplete(studentName, slotType, errors) {
     return errors.incomplete_records?.some((r) => r.student_name === studentName && r.gathering_type === slotType)
 }
 
-export default function PreviewImportPanel({ rawText, onChange, errors }) {
+export default function PreviewImportPanel({ rawText, onChange, errors, onRowsParsed }) {
     const [students, setStudents] = useState([])
 
     useEffect(() => {
-        setStudents(parseStudents(rawText || ''))
-    }, [rawText])
+        const parsedStudents = parseStudents(rawText || '')
+        setStudents(parsedStudents)
+        onRowsParsed?.(parsedStudents.length)
+    }, [rawText, onRowsParsed])
 
     if (!rawText?.trim()) {
         return <div className="import-preview-placeholder" />
@@ -134,6 +166,9 @@ export default function PreviewImportPanel({ rawText, onChange, errors }) {
                     </div>
                 )
             })}
+            {students.length === 0 && (
+                <p className="import-preview-empty">No student rows found. Check the student names and attendance format.</p>
+            )}
         </div>
     )
 }

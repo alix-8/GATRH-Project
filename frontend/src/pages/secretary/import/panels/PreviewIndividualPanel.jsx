@@ -47,12 +47,14 @@ function preserveHeader(rawText, serializedStudents) {
 
 const TIME_RE = /^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}\s*(?:AM|PM)?)$/i
 
-export default function PreviewIndividualPanel({ rawText, onChange, errors, gatheringType }) {
+export default function PreviewIndividualPanel({ rawText, onChange, errors, gatheringType, onRowsParsed }) {
     const [students, setStudents] = useState([])
 
     useEffect(() => {
-        setStudents(parseStudents(rawText || ''))
-    }, [rawText])
+        const parsedStudents = parseStudents(rawText || '')
+        setStudents(parsedStudents)
+        onRowsParsed?.(parsedStudents.length)
+    }, [rawText, onRowsParsed])
 
     if (!rawText?.trim()) {
         return <div className="import-preview-placeholder" />
@@ -122,6 +124,11 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                     </div>
                 )
             })}
+            {students.length === 0 && (
+                <p className="import-preview-empty" role="alert">
+                    No student rows found. Include numbered student entries, for example: 1. Student Name | Time | Venue | Day.
+                </p>
+            )}
         </div>
     )
 }

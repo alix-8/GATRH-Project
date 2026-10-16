@@ -413,6 +413,13 @@ class AttendanceParsingService
                 continue;
             }
 
+            if ($this->isUnnumberedStudentNameLine($line)) {
+                if ($current) $students[] = $current;
+                $current = ['name' => $line, 'raw_line' => $line, 'slots' => ['pm' => null, 'ws' => null, 'tg' => null]];
+                $slotType = null;
+                continue;
+            }
+
             if (!$current) continue;
 
             if (preg_match('/^(PM|WS|TG)[:\s]\s*(.*)$/i', $line, $m)) {
@@ -629,6 +636,20 @@ class AttendanceParsingService
             'time'  => $clean($parts[1] ?? ''),
             'venue' => $clean(implode(' | ', array_slice($parts, 2))),
         ];
+    }
+
+    private function isUnnumberedStudentNameLine(string $line): bool
+    {
+        if ($line === ''
+            || str_contains($line, '|')
+            || str_contains($line, ':')
+            || str_contains($line, '---')
+            || str_contains($line, '[')
+            || preg_match('/^(gathering|prayer meeting|worship service|thanksgiving|format|program|year|attendance|cycle|week range|date)\s*[:\-]/i', $line)) {
+            return false;
+        }
+
+        return preg_match('/^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N}\'’.,()& -]*$/u', $line) === 1;
     }
 
     public function resolveDateForWeekday(string $gatheringType, ?string $dayName, $cycle = null): ?string
