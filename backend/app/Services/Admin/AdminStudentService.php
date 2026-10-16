@@ -52,6 +52,14 @@ class AdminStudentService
         });
     }
 
+    public function deactivate(Student $student): void
+    {
+        DB::transaction(function () use ($student): void {
+            $student->is_active = false;
+            $student->save();
+        });
+    }
+
     public function rolloverSchoolYear(string $schoolYear, User $actor): array
     {
         return DB::transaction(function () use ($schoolYear, $actor): array {

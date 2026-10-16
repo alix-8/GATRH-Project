@@ -76,6 +76,15 @@ class AdminStudentController extends Controller
         ]);
     }
 
+    public function destroy(Student $student): JsonResponse
+    {
+        $this->studentService->deactivate($student);
+
+        return response()->json([
+            'message' => 'Student marked as inactive successfully.',
+        ]);
+    }
+
     public function rolloverSchoolYear(Request $request): JsonResponse
     {
         $validated = $request->validate([
