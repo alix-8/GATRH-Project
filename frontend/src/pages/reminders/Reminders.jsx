@@ -222,7 +222,7 @@ function Reminders() {
                     role === 'secretary'
                         ? request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal })
                         : Promise.resolve(null),
-                    ['secretary', 'program_head', 'chancellor', 'cm_coordinator'].includes(role)
+                    ['program_head', 'chancellor', 'cm_coordinator'].includes(role)
                         ? request('/reminders/role-summary', { signal: controller.signal }).catch(error => {
                             if (error.name === 'AbortError') throw error
                             return null
@@ -234,7 +234,7 @@ function Reminders() {
                 ])
 
                 const nextReminders = remindersData.data ?? []
-                const nextEscalations = role === 'cm_coordinator' ? remindersData.escalations ?? [] : []
+                const nextEscalations = ['secretary', 'cm_coordinator'].includes(role) ? remindersData.escalations ?? [] : []
                 const attendanceRows = attendanceData?.data ?? []
                 const programHeadSubmissions = programHeadSubmissionData?.submissions ?? []
                 const nextAttendanceTasks = role === 'program_head' || role === 'program_secretary'
@@ -276,10 +276,10 @@ function Reminders() {
                 setEscalations(nextEscalations)
                 setAttendanceEntries(attendanceRows)
                 setAttendanceTasks(nextAttendanceTasks)
-                if (roleSummaryData || role === 'cm_coordinator') {
+                if (roleSummaryData || role === 'cm_coordinator' || role === 'secretary') {
                     setRoleSummary({
                         attendance_count: roleSummaryData?.attendance_count ?? 0,
-                        escalation_count: role === 'cm_coordinator'
+                        escalation_count: role === 'cm_coordinator' || role === 'secretary'
                             ? remindersData.summary?.escalation_count ?? roleSummaryData?.escalation_count ?? 0
                             : roleSummaryData?.escalation_count ?? 0,
                     })
@@ -352,17 +352,17 @@ function Reminders() {
     const upcomingCard = { title: 'Upcoming', value: summary.upcoming, description: 'Scheduled activities', icon: RemindersIcon, className: 'upcoming' }
     const escalationCard = { title: 'Escalations', value: roleSummary.escalation_count, description: 'Students requiring intervention', icon: NotificationIcon, className: 'needs-action' }
     const needsActionCard = { title: 'Needs Action', value: summary.needs_action, description: 'Attendance awaiting your review', icon: NeedsActionIcon, className: 'needs-action' }
-    const coordinatorEscalationCard = { ...escalationCard, title: 'Escalation', description: 'Students that needs attention', icon: EscalationsIcon, className: 'escalation' }
+    const roleEscalationCard = { ...escalationCard, title: 'Escalation', description: 'Students that need attention', icon: EscalationsIcon, className: 'escalation' }
     const coordinatorNeedsActionCard = { ...needsActionCard, description: 'Tasks requiring attention' }
     const completedCard = { title: 'Completed', value: summary.completed, description: 'Completed reminders', icon: CompletedIcon, className: 'completed' }
     const reminderCards = role === 'chancellor'
         ? [upcomingCard, escalationCard, completedCard]
         : role === 'cm_coordinator'
-            ? [upcomingCard, coordinatorEscalationCard, coordinatorNeedsActionCard, completedCard]
+            ? [upcomingCard, roleEscalationCard, coordinatorNeedsActionCard, completedCard]
         : role === 'program_head'
             ? [upcomingCard, escalationCard, needsActionCard, completedCard]
             : role === 'secretary'
-                ? [upcomingCard, needsActionCard, completedCard]
+                ? [upcomingCard, roleEscalationCard, needsActionCard, completedCard]
             : [upcomingCard, needsActionCard, completedCard]
 
     const now = new Date()
@@ -697,7 +697,7 @@ function Reminders() {
                                                 <span className="escalation-student">
                                                     {item.sourceEscalation.program}-{item.sourceEscalation.year_level} {item.sourceEscalation.student_name}
                                                 </span>{' '}
-                                                has reached <span className="escalation-level">Escalation level 3</span> and requires a follow up.
+                                                has reached <span className="escalation-level">Escalation {item.sourceEscalation.escalation_level.toLowerCase()}</span> and requires a follow up.
                                             </p>
                                         ) : (
                                             <p>{item.description || 'No details added'}</p>

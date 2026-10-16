@@ -41,7 +41,7 @@
 }
 
 .reminders-cards-secretary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .reminders-card {
@@ -507,7 +507,8 @@
 @media (max-width: 900px) {
     .reminders-cards,
     .reminders-cards-program_head,
-    .reminders-cards-cm_coordinator {
+    .reminders-cards-cm_coordinator,
+    .reminders-cards-secretary {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 

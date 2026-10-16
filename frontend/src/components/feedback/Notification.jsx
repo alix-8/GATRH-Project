@@ -100,7 +100,11 @@ function Notification() {
                     request('/reminders', { signal: controller.signal }),
                     isCoordinator
                         ? Promise.resolve({ data: [] })
-                        : request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal }),
+                        : request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal })
+                            .catch(error => {
+                                if (error.name === 'AbortError') throw error
+                                return { data: [] }
+                            }),
                 ])
 
                 const escalationItems = (remindersData.escalations ?? []).map(escalation => ({
