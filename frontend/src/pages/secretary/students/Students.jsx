@@ -108,7 +108,7 @@ function Students() {
         .filter((student) => !selectedResponse || student.response === selectedResponse)
         .filter((student) => {
             if (!selectedLevel) return true
-            const bars = student.response === 'Responded' ? 0 : Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
+            const bars = Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
             return bars === Number(selectedLevel.replace('Level ', ''))
         })
         .filter((student) => student.name.toLowerCase().includes(searchQuery.trim().toLowerCase()))
@@ -124,7 +124,6 @@ function Students() {
     const responseRate = students.length ? Math.round((respondedCount / students.length) * 100) : 0
     const noResponseRate = students.length ? Math.round((noResponseCount / students.length) * 100) : 0
     const escalationBars = (student) => {
-        if (student.response === 'Responded') return 0
         return Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
     }
     const formatOverviewDate = (date) => date ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${date}T00:00:00`)) : '—'

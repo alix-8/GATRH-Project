@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
+use App\Models\GatheringSchedule;
 use App\Models\Student;
+use App\Services\Escalations\WeeklyEscalationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -27,6 +29,8 @@ class StudentController extends Controller
             ->with('escalation')
             ->orderBy('name')
             ->get();
+        $weeklyEscalationCounts = app(WeeklyEscalationService::class)
+            ->countsForStudents($students->pluck('id'));
 
         $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
         $weekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
@@ -70,11 +74,10 @@ class StudentController extends Controller
         ] : null;
 
         return response()->json([
-            'students' => $students->map(function (Student $student) use ($responses, $session, $useDraft) {
+            'students' => $students->map(function (Student $student) use ($responses, $session, $weeklyEscalationCounts) {
                 $record = $responses->get($student->id);
                 $status = $record ? ($record['status'] ?? $record->status) : null;
                 $hasResponded = $status === 'present';
-                $draftNoResponse = $useDraft && $status === 'no_response' ? 1 : 0;
 
                 return [
                     'id' => $student->id,
@@ -83,7 +86,7 @@ class StudentController extends Controller
                     'year_level' => $student->year_level,
                     'response' => $session ? ($hasResponded ? 'Responded' : 'No Response') : null,
                     'escalation_level' => $student->escalation->escalation_level ?? 'None',
-                    'no_response_count' => ($student->escalation->no_response_count ?? 0) + $draftNoResponse,
+                    'no_response_count' => min(3, $weeklyEscalationCounts->get($student->id, 0)),
                 ];
             })->values(),
             'session' => $session,
@@ -138,9 +141,16 @@ class StudentController extends Controller
         }
 
         $history = $history->sortByDesc('date')->values();
-        $referenceDate = $history->first()['date'] ?? now()->toDateString();
-        $monthPrefix = substr($referenceDate, 0, 7);
-        $thisMonth = $history->filter(fn (array $record) => str_starts_with($record['date'] ?? '', $monthPrefix))->count();
+        $weeklyEscalationCount = app(WeeklyEscalationService::class)
+            ->countsForStudents([$student->id])
+            ->get($student->id, 0);
+        $monthStart = Carbon::now()->startOfMonth();
+        $monthEnd = Carbon::now()->endOfMonth();
+        $thisMonth = $student->attendanceRecords()
+            ->whereBetween('day', [$monthStart->toDateString(), $monthEnd->toDateString()])
+            ->where('status', 'present')
+            ->count();
+        $thisMonthTotal = $this->scheduledGatheringCount($monthStart, $monthEnd);
 
         return response()->json([
             'student' => [
@@ -148,13 +158,14 @@ class StudentController extends Controller
                 'name' => $student->name,
                 'program' => $student->program,
                 'year_level' => $student->year_level,
-                'no_response_count' => $student->escalation->no_response_count ?? 0,
+                'no_response_count' => $weeklyEscalationCount,
             ],
-            'month' => date('F Y', strtotime($referenceDate)),
+            'month' => $monthStart->format('F Y'),
             'summary' => [
                 'this_month' => $thisMonth,
+                'this_month_total' => $thisMonthTotal,
                 'attendance_count' => $history->count(),
-                'escalation_count' => $student->escalation->no_response_count ?? 0,
+                'escalation_count' => $weeklyEscalationCount,
             ],
             'history' => $history,
         ]);
@@ -168,5 +179,28 @@ class StudentController extends Controller
             'tg' => 'Thanksgiving',
             default => 'Gathering',
         };
+    }
+
+    private function scheduledGatheringCount(Carbon $monthStart, Carbon $monthEnd): int
+    {
+        $schedules = GatheringSchedule::query()->get()->keyBy('gathering_type');
+        $total = 0;
+
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            $scheduledDays = collect($schedules->get($type)?->days ?? [])
+                ->map(fn ($day) => strtolower((string) $day))
+                ->all();
+            $scheduledWeeks = [];
+
+            for ($date = $monthStart->copy(); $date->lte($monthEnd); $date->addDay()) {
+                if (in_array(strtolower($date->format('l')), $scheduledDays, true)) {
+                    $scheduledWeeks[$date->isoWeekYear . '-' . $date->isoWeek()] = true;
+                }
+            }
+
+            $total += count($scheduledWeeks);
+        }
+
+        return $total;
     }
 }
