@@ -157,7 +157,7 @@ class ReminderController extends Controller
     {
         $validated = $request->validate([
             'title'       => 'required|string|max:20',
-            'description' => 'nullable|string|max:50',
+            'description' => 'nullable|string|max:100',
             'due_date'    => 'required|date|after_or_equal:today',
             'status'      => 'nullable|in:upcoming,needs_action,completed',
         ]);
@@ -216,7 +216,7 @@ class ReminderController extends Controller
 
         $validated = $request->validate([
             'title'       => 'sometimes|required|string|max:20',
-            'description' => 'nullable|string|max:50',
+            'description' => 'nullable|string|max:100',
             'due_date'    => 'sometimes|required|date|after_or_equal:today',
             'status'      => 'sometimes|required|in:upcoming,needs_action,completed',
         ]);
