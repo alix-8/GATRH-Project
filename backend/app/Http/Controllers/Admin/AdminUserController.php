@@ -64,10 +64,16 @@ class AdminUserController extends Controller
 
         $created = $this->userService->create($validated);
 
+        if (! $created['temporary_password_email_sent']) {
+            return response()->json([
+                'message' => 'The account could not be created because the temporary password email could not be sent. Please try again.',
+            ], 503);
+        }
+
         return response()->json([
-            'message' => 'User account created successfully.',
+            'message' => 'User account created successfully. A temporary password was emailed to the user.',
             'user' => $created['user'],
-            'generated_password' => $created['generated_password'],
+            'temporary_password_email_sent' => $created['temporary_password_email_sent'],
         ], 201);
     }
 

@@ -6,6 +6,7 @@ use App\Models\Program;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class AdminUserService
@@ -33,13 +34,13 @@ class AdminUserService
 
     public function create(array $data): array
     {
-        $generatedPassword = $this->generatePassword();
+        $temporaryPassword = $this->generateTemporaryPassword();
 
-        $user = DB::transaction(function () use ($data, $generatedPassword) {
+        $user = DB::transaction(function () use ($data, $temporaryPassword) {
             $programIds = $this->resolveProgramIds($data);
             $data['program'] = $this->resolvePrimaryProgram($data, $programIds);
             unset($data['program_ids']);
-            $data['password'] = $generatedPassword;
+            $data['password'] = $temporaryPassword;
 
             $user = User::query()->create($data);
             $user->programs()->sync($programIds);
@@ -47,9 +48,31 @@ class AdminUserService
             return $user->load('programs:id,code,name');
         });
 
+        try {
+            Mail::send([
+                'html' => 'emails.temporary-password',
+                'text' => 'emails.temporary-password-text',
+            ], [
+                'name' => $user->name,
+                'temporaryPassword' => $temporaryPassword,
+                'appUrl' => rtrim(config('app.frontend_url'), '/'),
+            ], function ($message) use ($user): void {
+                $message->to($user->email)->subject('Your temporary GATRH account password');
+            });
+        } catch (\Throwable $exception) {
+            $user->programs()->detach();
+            $user->delete();
+            report($exception);
+
+            return [
+                'user' => null,
+                'temporary_password_email_sent' => false,
+            ];
+        }
+
         return [
             'user' => $user,
-            'generated_password' => $generatedPassword,
+            'temporary_password_email_sent' => true,
         ];
     }
 
@@ -189,7 +212,7 @@ class AdminUserService
         }
     }
 
-    private function generatePassword(): string
+    private function generateTemporaryPassword(): string
     {
         $characterGroups = [
             'abcdefghijkmnopqrstuvwxyz',
@@ -218,4 +241,5 @@ class AdminUserService
 
         return implode('', $characters);
     }
+
 }
