@@ -166,12 +166,12 @@ class StudentController extends Controller
                 ->sortByDesc('date')
                 ->first();
 
-            return $entry ? [
+            return  [
                 'type' => $type,
                 'label' => $this->gatheringLabel($type),
-                'status' => $entry['status'],
-            ] : null;
-        })->filter()->values();
+                'status' => $entry['status'] ?? null,
+            ];
+        })->values();
         $thisMonthTotal = $this->scheduledGatheringCount($monthStart, $monthEnd);
 
         return response()->json([
