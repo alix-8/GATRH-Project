@@ -5,7 +5,7 @@ import Header from '../../../components/layout/Header'
 import { request } from '../../../api/request'
 import PendingReviewIcon from '../../../assets/icons/PendingReviewIcon.svg'
 import ApprovedIcon from '../../../assets/icons/ApprovedIcon.svg'
-import NotificationIcon from '../../../assets/icons/notification-icon.svg'
+import EscalationsIcon from '../../../assets/icons/escalations-icon.svg'
 import TotalSubmissionsIcon from '../../../assets/icons/TotalSubmissionsIcon.svg'
 import SubmittedIcon from '../../../assets/icons/SubmittedIcon.svg'
 import ResubmittedIcon from '../../../assets/icons/ResubmittedIcon.svg'
@@ -16,7 +16,7 @@ import './Dashboard.css'
 const metrics = [
     { key: 'pending_review', label: 'Pending Review', detail: 'Awaiting your review', icon: PendingReviewIcon },
     { key: 'approved', label: 'Approved', detail: 'Successfully reviewed', icon: ApprovedIcon },
-    { key: 'escalation_count', label: 'Escalations', detail: 'Students requiring intervention', icon: NotificationIcon },
+    { key: 'escalation_count', label: 'Escalations', detail: 'Students requiring intervention', icon: EscalationsIcon },
     { key: 'total_submissions', label: 'Total Submissions', detail: 'All submitted records', icon: TotalSubmissionsIcon },
 ]
 
@@ -73,7 +73,7 @@ function ProgramHeadDashboard() {
                     <section className="ph-metrics" aria-label="Submission summary">
                         {metrics.map((metric) => (
                             <article className="ph-metric-card" key={metric.key}>
-                                <img className="ph-metric-icon" src={metric.icon} alt="" aria-hidden="true" />
+                                <img className={`ph-metric-icon${metric.key === 'escalation_count' ? ' ph-metric-escalation-icon' : ''}`} src={metric.icon} alt="" aria-hidden="true" />
                                 <div className="ph-metric-copy">
                                     <strong>{loading ? '—' : (summary[metric.key] ?? 0)}</strong>
                                     <span>{metric.label}</span>

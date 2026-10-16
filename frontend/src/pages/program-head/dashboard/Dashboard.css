@@ -57,6 +57,13 @@
     object-fit: contain;
 }
 
+.ph-metric-escalation-icon {
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 50%;
+    background: #ff3347;
+}
+
 .ph-metric-copy {
     display: flex;
     min-width: 0;

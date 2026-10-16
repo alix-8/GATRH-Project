@@ -108,7 +108,7 @@ function Students() {
         .filter((student) => !selectedResponse || student.response === selectedResponse)
         .filter((student) => {
             if (!selectedLevel) return true
-            const bars = student.response === 'Responded' ? 0 : Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
+            const bars = Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
             return bars === Number(selectedLevel.replace('Level ', ''))
         })
         .filter((student) => student.name.toLowerCase().includes(searchQuery.trim().toLowerCase()))
@@ -124,7 +124,6 @@ function Students() {
     const responseRate = students.length ? Math.round((respondedCount / students.length) * 100) : 0
     const noResponseRate = students.length ? Math.round((noResponseCount / students.length) * 100) : 0
     const escalationBars = (student) => {
-        if (student.response === 'Responded') return 0
         return Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
     }
     const formatOverviewDate = (date) => date ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${date}T00:00:00`)) : '—'
@@ -304,7 +303,7 @@ function Students() {
 
                     <div className="stat-card stat-card-responded">
                         <div className="stat-card-header">
-                            <h4 className="stat-card-title">This Week Respondents</h4>
+                            <h4 className="stat-card-title">Latest Respondents</h4>
                             <p className="stat-card-subtitle">{loading ? '—' : `${responseRate}% response rate`}</p>
                         </div>
                         <h2 className="stat-card-value">{loading ? '—' : respondedCount}<span className="stat-card-slash">/{loading ? '—' : students.length}</span></h2>
@@ -327,7 +326,7 @@ function Students() {
                         <table className="students-table">
                             <thead>
                                 <tr>
-                                    <th>Name</th><th>Year</th><th>Program</th><th>This Week's Response</th><th>Escalation</th><th>Action</th>
+                                    <th>Name</th><th>Year</th><th>Program</th><th>Latest Response</th><th>Escalation</th><th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -340,7 +339,7 @@ function Students() {
                                         <td>{student.program}</td>
                                         <td>
                                             {student.response && (
-                                                <span className={`response-badge ${student.response === 'Responded' ? 'responded' : 'no-response'}`}>{student.response}</span>
+                                                <span className={`response-badge ${student.response === 'Responded' ? 'responded' : 'no-response'}`} title={student.response_date ? `Response dated ${formatOverviewDate(student.response_date)}` : undefined}>{student.response}</span>
                                             )}
                                         </td>
                                         <td>

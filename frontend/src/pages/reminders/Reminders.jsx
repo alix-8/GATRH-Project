@@ -234,7 +234,7 @@ function Reminders() {
                 ])
 
                 const nextReminders = remindersData.data ?? []
-                const nextEscalations = ['secretary', 'cm_coordinator'].includes(role) ? remindersData.escalations ?? [] : []
+                const nextEscalations = ['secretary', 'program_head', 'cm_coordinator'].includes(role) ? remindersData.escalations ?? [] : []
                 const attendanceRows = attendanceData?.data ?? []
                 const programHeadSubmissions = programHeadSubmissionData?.submissions ?? []
                 const nextAttendanceTasks = role === 'program_head' || role === 'program_secretary'
@@ -276,10 +276,10 @@ function Reminders() {
                 setEscalations(nextEscalations)
                 setAttendanceEntries(attendanceRows)
                 setAttendanceTasks(nextAttendanceTasks)
-                if (roleSummaryData || role === 'cm_coordinator' || role === 'secretary') {
+                if (roleSummaryData || ['secretary', 'program_head', 'cm_coordinator'].includes(role)) {
                     setRoleSummary({
                         attendance_count: roleSummaryData?.attendance_count ?? 0,
-                        escalation_count: role === 'cm_coordinator' || role === 'secretary'
+                        escalation_count: ['secretary', 'program_head', 'cm_coordinator'].includes(role)
                             ? remindersData.summary?.escalation_count ?? roleSummaryData?.escalation_count ?? 0
                             : roleSummaryData?.escalation_count ?? 0,
                     })
@@ -350,7 +350,7 @@ function Reminders() {
     }, [highlightedReminderId, loading, activeFilter])
 
     const upcomingCard = { title: 'Upcoming', value: summary.upcoming, description: 'Scheduled activities', icon: RemindersIcon, className: 'upcoming' }
-    const escalationCard = { title: 'Escalations', value: roleSummary.escalation_count, description: 'Students requiring intervention', icon: NotificationIcon, className: 'needs-action' }
+    const escalationCard = { title: 'Escalations', value: roleSummary.escalation_count, description: 'Students requiring intervention', icon: EscalationsIcon, className: 'escalation' }
     const needsActionCard = { title: 'Needs Action', value: summary.needs_action, description: 'Attendance awaiting your review', icon: NeedsActionIcon, className: 'needs-action' }
     const roleEscalationCard = { ...escalationCard, title: 'Escalation', description: 'Students that need attention', icon: EscalationsIcon, className: 'escalation' }
     const coordinatorNeedsActionCard = { ...needsActionCard, description: 'Tasks requiring attention' }
