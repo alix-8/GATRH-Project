@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
+use App\Models\GatheringSchedule;
 use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -138,9 +139,13 @@ class StudentController extends Controller
         }
 
         $history = $history->sortByDesc('date')->values();
-        $referenceDate = $history->first()['date'] ?? now()->toDateString();
-        $monthPrefix = substr($referenceDate, 0, 7);
-        $thisMonth = $history->filter(fn (array $record) => str_starts_with($record['date'] ?? '', $monthPrefix))->count();
+        $monthStart = Carbon::now()->startOfMonth();
+        $monthEnd = Carbon::now()->endOfMonth();
+        $thisMonth = $student->attendanceRecords()
+            ->whereBetween('day', [$monthStart->toDateString(), $monthEnd->toDateString()])
+            ->where('status', 'present')
+            ->count();
+        $thisMonthTotal = $this->scheduledGatheringCount($monthStart, $monthEnd);
 
         return response()->json([
             'student' => [
@@ -150,9 +155,10 @@ class StudentController extends Controller
                 'year_level' => $student->year_level,
                 'no_response_count' => $student->escalation->no_response_count ?? 0,
             ],
-            'month' => date('F Y', strtotime($referenceDate)),
+            'month' => $monthStart->format('F Y'),
             'summary' => [
                 'this_month' => $thisMonth,
+                'this_month_total' => $thisMonthTotal,
                 'attendance_count' => $history->count(),
                 'escalation_count' => $student->escalation->no_response_count ?? 0,
             ],
@@ -168,5 +174,28 @@ class StudentController extends Controller
             'tg' => 'Thanksgiving',
             default => 'Gathering',
         };
+    }
+
+    private function scheduledGatheringCount(Carbon $monthStart, Carbon $monthEnd): int
+    {
+        $schedules = GatheringSchedule::query()->get()->keyBy('gathering_type');
+        $total = 0;
+
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            $scheduledDays = collect($schedules->get($type)?->days ?? [])
+                ->map(fn ($day) => strtolower((string) $day))
+                ->all();
+            $scheduledWeeks = [];
+
+            for ($date = $monthStart->copy(); $date->lte($monthEnd); $date->addDay()) {
+                if (in_array(strtolower($date->format('l')), $scheduledDays, true)) {
+                    $scheduledWeeks[$date->isoWeekYear . '-' . $date->isoWeek()] = true;
+                }
+            }
+
+            $total += count($scheduledWeeks);
+        }
+
+        return $total;
     }
 }
