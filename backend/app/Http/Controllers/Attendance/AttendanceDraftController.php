@@ -89,7 +89,7 @@ class AttendanceDraftController extends Controller
                 ],
                 'submitted_by'       => [
                     'name' => $request->user()->name,
-                    'role' => trim(strtoupper($request->user()->program) . ' ' . $request->user()->year_level . 'rd Year · Spiritual Secretary'),
+                    'role' => trim(strtoupper($request->user()->program) . ' ' . $this->ordinalYear($request->user()->year_level) . ' · Spiritual Secretary'),
                 ],
                 'total_students'     => $total,
                 'responded_count'    => $responded,
@@ -108,6 +108,24 @@ class AttendanceDraftController extends Controller
                 ] : null,
             ],
         ], 200);
+    }
+
+    private function ordinalYear($yearLevel): string
+    {
+        if (! is_numeric($yearLevel) || (int) $yearLevel < 1) {
+            return '';
+        }
+
+        $year = (int) $yearLevel;
+        $suffix = match (true) {
+            $year % 100 >= 11 && $year % 100 <= 13 => 'th',
+            $year % 10 === 1 => 'st',
+            $year % 10 === 2 => 'nd',
+            $year % 10 === 3 => 'rd',
+            default => 'th',
+        };
+
+        return "{$year}{$suffix} Year";
     }
 
     /**
