@@ -267,6 +267,13 @@ class DashboardService
             ->groupBy('gathering_type', 'status')
             ->get();
 
+        $draftsByType = AttendanceDraft::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['draft', 'pending'])
+            ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
+            ->get()
+            ->groupBy('gathering_type');
+
         $categories = ['pm', 'ws', 'tg'];
         $chartData = [];
 
@@ -276,14 +283,7 @@ class DashboardService
 
             // Unsubmitted drafts are part of the secretary's attendance overview too.
             // parsed_data stores the same per-student status values as saved records.
-            $drafts = AttendanceDraft::query()
-                ->where('user_id', $user->id)
-                ->whereIn('status', ['draft', 'pending'])
-                ->where('gathering_type', $cat)
-                ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
-                ->get();
-
-            foreach ($drafts as $draft) {
+            foreach ($draftsByType->get($cat, collect()) as $draft) {
                 $entries = collect($draft->parsed_data ?? []);
                 $presentCount += $entries->where('status', 'present')->count();
                 $absentCount += $entries->where('status', 'no_response')->count();
@@ -465,17 +465,36 @@ class DashboardService
         $monthEnd = $month->copy()->endOfMonth()->toDateString();
         $totalManagedStudents = Student::query()->accessibleTo($user)->count();
 
-        $records = AttendanceRecord::query()
-            ->select('gathering_type', DB::raw("COUNT(DISTINCT CASE WHEN status = 'present' THEN student_id END) as present_count"))
+        $recordStudentIds = AttendanceRecord::query()
+            ->select('gathering_type', 'student_id')
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
+            ->where('status', 'present')
             ->whereBetween('day', [$monthStart, $monthEnd])
-            ->groupBy('gathering_type')
             ->get()
-            ->keyBy('gathering_type');
+            ->groupBy('gathering_type')
+            ->map(fn ($group) => $group->pluck('student_id')->unique());
+
+        $draftStudentIds = AttendanceDraft::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['draft', 'pending'])
+            ->whereBetween('day', [$monthStart, $monthEnd])
+            ->get()
+            ->flatMap(fn (AttendanceDraft $draft) => collect($draft->parsed_data ?? [])
+                ->filter(fn (array $entry) => ($entry['status'] ?? null) === 'present'
+                    && ! empty($entry['student_id']))
+                ->map(fn (array $entry) => [
+                    'gathering_type' => $entry['gathering_type'] ?? $draft->gathering_type,
+                    'student_id' => (int) $entry['student_id'],
+                ]))
+            ->groupBy('gathering_type')
+            ->map(fn ($group) => $group->pluck('student_id')->unique());
 
         return collect(['pm', 'ws', 'tg'])
-            ->map(function ($type) use ($records, $totalManagedStudents) {
-                $presentCount = (int) ($records->get($type)?->present_count ?? 0);
+            ->map(function ($type) use ($recordStudentIds, $draftStudentIds, $totalManagedStudents) {
+                $presentCount = $recordStudentIds->get($type, collect())
+                    ->concat($draftStudentIds->get($type, collect()))
+                    ->unique()
+                    ->count();
                 $percentage = $totalManagedStudents > 0
                     ? min(100, (int) round(($presentCount / $totalManagedStudents) * 100))
                     : 0;
@@ -620,6 +639,12 @@ class DashboardService
             ])
             ->get();
 
+        $draftRecords = $this->getDraftAttendanceRows(
+            $dateRange['start'],
+            $dateRange['end']
+        );
+        $records = $records->concat($draftRecords);
+
         // Records for the four weeks shown in the dashboard table/chart.
         $weekFourStart = $selectedDate->copy()
             ->startOfWeek()
@@ -635,6 +660,9 @@ class DashboardService
                 $weekFourEnd,
             ])
             ->get();
+        $fourWeekRecords = $fourWeekRecords->concat(
+            $this->getDraftAttendanceRows($weekFourStart, $weekFourEnd)
+        );
 
         // Reusable rule:
         // 3 gathering types = complete
@@ -883,5 +911,34 @@ class DashboardService
             'tg' => 'Thanksgiving',
             default => $type ?? 'Unknown',
         };
+    }
+
+    /**
+     * Convert unsubmitted draft rows to the small record shape used by the
+     * Chancellor's reporting charts. Drafts are removed when submitted, so
+     * these rows do not overlap with persisted attendance records.
+     */
+    private function getDraftAttendanceRows($start, $end): \Illuminate\Support\Collection
+    {
+        return AttendanceDraft::query()
+            ->whereIn('status', ['draft', 'pending'])
+            ->whereBetween('day', [$start, $end])
+            ->get()
+            ->flatMap(function (AttendanceDraft $draft) {
+                return collect($draft->parsed_data ?? [])
+                    ->filter(fn (array $entry) => ! empty($entry['student_id']))
+                    ->map(function (array $entry) use ($draft) {
+                        return (object) [
+                            'student_id' => (int) $entry['student_id'],
+                            'student' => (object) [
+                                'program' => $entry['program'] ?? null,
+                                'year_level' => $entry['year_level'] ?? null,
+                            ],
+                            'gathering_type' => $entry['gathering_type'] ?? $draft->gathering_type,
+                            'day' => Carbon::parse($draft->day),
+                        ];
+                    });
+            })
+            ->values();
     }
 }

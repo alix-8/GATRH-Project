@@ -3,6 +3,7 @@
 namespace App\Services\Dashboard;
 
 use App\Models\AttendanceRecord;
+use App\Models\AttendanceDraft;
 use App\Models\Program;
 use App\Models\Student;
 use Carbon\Carbon;
@@ -167,8 +168,13 @@ class CmCoordinatorMonitoringService
             ->whereBetween('day', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])
             ->orderBy('day')
             ->get();
+        $records = $records->concat($this->getDraftAttendanceRows(
+            $month->toDateString(),
+            $month->copy()->endOfMonth()->toDateString(),
+            $roster->pluck('id')->all()
+        ));
 
-        $weekRecords = $records->filter(fn (AttendanceRecord $record) =>
+        $weekRecords = $records->filter(fn ($record) =>
             $record->day->toDateString() >= $week['start']
             && $record->day->toDateString() <= $week['end']
         );
@@ -196,11 +202,11 @@ class CmCoordinatorMonitoringService
                         'name' => $student->name,
                     ])->values();
 
-                $allValidated = $eventRecords->every(fn (AttendanceRecord $record) =>
+                $allValidated = $eventRecords->every(fn ($record) =>
                     in_array($record->validation_status, ['validated', 'approved'], true)
                 );
                 $latestApproval = $eventRecords
-                    ->filter(fn (AttendanceRecord $record) => in_array($record->validation_status, ['validated', 'approved'], true))
+                    ->filter(fn ($record) => in_array($record->validation_status, ['validated', 'approved'], true))
                     ->sortByDesc('updated_at')
                     ->first();
 
@@ -225,11 +231,11 @@ class CmCoordinatorMonitoringService
             ->sortBy(fn (array $entry) => $entry['date'] . '|' . $entry['gathering_type'])
             ->values();
         $latestApproval = $records
-            ->filter(fn (AttendanceRecord $record) => in_array($record->validation_status, ['validated', 'approved'], true))
+            ->filter(fn ($record) => in_array($record->validation_status, ['validated', 'approved'], true))
             ->sortByDesc('updated_at')
             ->first();
         $completedEvents = $weeks->sum(function (array $monthWeek) use ($records, $studentIds) {
-            $recordsForWeek = $records->filter(fn (AttendanceRecord $record) =>
+            $recordsForWeek = $records->filter(fn ($record) =>
                 $record->day->toDateString() >= $monthWeek['start']
                 && $record->day->toDateString() <= $monthWeek['end']
             );
@@ -317,17 +323,21 @@ class CmCoordinatorMonitoringService
             ->whereBetween('day', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])
             ->whereHas('student', fn ($query) => $query->whereIn('program', $programCodes))
             ->get();
+        $records = $records->concat($this->getDraftAttendanceRows(
+            $month->toDateString(),
+            $month->copy()->endOfMonth()->toDateString()
+        ));
 
         return $students->map(function (Collection $roster, string $key) use ($records, $weeks) {
             [$programCode, $yearLevel] = explode('|', $key, 2);
             $studentIds = $roster->pluck('id')->all();
-            $courseRecords = $records->filter(fn (AttendanceRecord $record) =>
+            $courseRecords = $records->filter(fn ($record) =>
                 strtoupper(trim((string) $record->student?->program)) === $programCode
                 && (string) $record->student?->year_level === (string) $yearLevel
             );
 
             $weeklyData = $weeks->map(function (array $week) use ($courseRecords, $studentIds) {
-                $recordsForWeek = $courseRecords->filter(fn (AttendanceRecord $record) =>
+                $recordsForWeek = $courseRecords->filter(fn ($record) =>
                     $record->day->toDateString() >= $week['start']
                     && $record->day->toDateString() <= $week['end']
                 );
@@ -392,6 +402,32 @@ class CmCoordinatorMonitoringService
             'completed_students' => min($submittedStudentCount, $totalStudents),
             'total_students' => $totalStudents,
         ];
+    }
+
+    private function getDraftAttendanceRows(string $start, string $end, ?array $studentIds = null): Collection
+    {
+        return AttendanceDraft::query()
+            ->whereIn('status', ['draft', 'pending'])
+            ->whereBetween('day', [$start, $end])
+            ->get()
+            ->flatMap(function (AttendanceDraft $draft) use ($studentIds) {
+                return collect($draft->parsed_data ?? [])
+                    ->filter(fn (array $entry) => ! empty($entry['student_id'])
+                        && ($studentIds === null || in_array((int) $entry['student_id'], $studentIds, true)))
+                    ->map(fn (array $entry) => (object) [
+                        'student_id' => (int) $entry['student_id'],
+                        'student' => (object) [
+                            'program' => $entry['program'] ?? null,
+                            'year_level' => $entry['year_level'] ?? null,
+                        ],
+                        'gathering_type' => $entry['gathering_type'] ?? $draft->gathering_type,
+                        'day' => Carbon::parse($draft->day),
+                        'validation_status' => 'unvalidated',
+                        'validator' => null,
+                        'updated_at' => $draft->updated_at,
+                    ]);
+            })
+            ->values();
     }
 
     private function getWeeks(Carbon $month): Collection
