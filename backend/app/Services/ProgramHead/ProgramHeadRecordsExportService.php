@@ -25,7 +25,7 @@ class ProgramHeadRecordsExportService
             ->with(['student.escalation', 'submitter'])
             ->where('validation_status', 'validated')
             ->whereHas('student', function (Builder $students) use ($user, $filters) {
-                $students->accessibleTo($user);
+                $students->active()->accessibleTo($user);
 
                 if (!empty($filters['year_level'])) {
                     $students->where('year_level', (int) $filters['year_level']);
@@ -63,6 +63,7 @@ class ProgramHeadRecordsExportService
         CarbonImmutable $end
     ): Collection {
         return Student::query()
+            ->active()
             ->accessibleTo($user)
             ->where('program', $program)
             ->where('year_level', $yearLevel)
