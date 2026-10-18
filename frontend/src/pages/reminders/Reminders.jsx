@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/layout/Sidebar'
 import Header from '../../components/layout/Header'
+import RecordDate from '../../components/RecordDate'
 import RemindersIcon from '../../assets/icons/reminders-icon.svg'
 import NeedsActionIcon from '../../assets/needs-action.png'
 import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
@@ -295,7 +296,8 @@ function Reminders() {
                         type: 'attendance',
                         sourceRecord: record,
                         title: 'Attendance record awaiting review',
-                        description: [record.gathering, record.date, record.program, record.year_label].filter(Boolean).join(' · '),
+                        description: [record.gathering, record.program, record.year_label].filter(Boolean).join(' · '),
+                        recordDate: record.date_iso || record.date,
                         status: 'needs_action',
                         statusLabel: 'Pending review',
                         tone: 'needs-action',
@@ -315,8 +317,9 @@ function Reminders() {
                                 title: meta.label,
                                 description: buildDateTime({
                                     date: record.gathering,
-                                    time: record.date,
+                                    time: record.time,
                                 }),
+                                recordDate: record.day_iso,
                                 status: record.status === 'approved' ? 'completed' : 'needs_action',
                                 statusLabel: meta.label,
                                 deadline: record.status !== 'validating'
@@ -763,7 +766,12 @@ function Reminders() {
                                                 has reached <span className="escalation-level">Escalation {item.sourceEscalation.escalation_level.toLowerCase()}</span> and requires a follow up.
                                             </p>
                                         ) : (
-                                            <p>{item.description || 'No details added'}</p>
+                                            <p>
+                                                {item.description || 'No details added'}
+                                                {item.type === 'attendance' && item.recordDate && (
+                                                    <> · <RecordDate value={item.recordDate} /></>
+                                                )}
+                                            </p>
                                         )}
                                     </div>
                                 </div>
@@ -841,7 +849,7 @@ function Reminders() {
                                     <ul className="escalation-report-history">
                                         {escalationReport.details.history.map(record => (
                                             <li key={record.id}>
-                                                <span>{record.gathering} · {record.date}</span>
+                                                <span>{record.gathering} · <RecordDate value={record.date} status={record.status} /></span>
                                                 <strong>{record.status.replaceAll('_', ' ')}</strong>
                                             </li>
                                         ))}

@@ -6,6 +6,7 @@ import CalendarIcon from '../../../assets/icons/calendar-icon.svg'
 import SortbyIcon from '../../../assets/icons/sort-by-icon.svg'
 import DropdownIcon from '../../../assets/icons/drop-down-icon.svg'
 import { request } from '../../../api/request'
+import RecordDate from '../../../components/RecordDate'
 import { TrashIcon } from '../../../components/Icons/Reusables'
 import Calendar from '../../../components/Calendar/Calendar'
 import './AttendanceTable.css'
@@ -384,7 +385,7 @@ function AttendanceTable() {
                                     )}
                                     <td>{record.course}</td>
                                     <td>{record.year}</td>
-                                    <td>{record.submission_date || record.date}</td>
+                                    <td><RecordDate value={record.submission_date || record.date} /></td>
                                     <td>{record.gathering}</td>
                                     <td>{record.time}</td>
                                     <td>

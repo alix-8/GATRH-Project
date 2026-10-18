@@ -8,6 +8,7 @@ import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
 import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg'
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
+import RecordDate from '../../../components/RecordDate'
 import './Monitoring.css'
 
 const GATHERING_LABELS = {
@@ -45,10 +46,6 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
     if (!value) return '—'
     const [year, month, day] = value.slice(0, 10).split('-').map(Number)
     return new Date(year, month - 1, day).toLocaleDateString('en-US', options)
-}
-
-function formatGatheringDate(entry) {
-    return formatDate(entry?.date, { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 function CoordinatorMonitoring() {
@@ -453,11 +450,7 @@ function CoordinatorMonitoring() {
                                         return (
                                             <div className="monitoring-week-detail-row" key={gatheringItem.type}>
                                                 <span>{gatheringItem.label}</span>
-                                                <span title={entry?.dates?.length > 1
-                                                    ? entry.dates.map((date) => formatDate(date, { month: 'long', day: 'numeric', year: 'numeric' })).join(', ')
-                                                    : undefined}>
-                                                    {formatGatheringDate(entry)}
-                                                </span>
+                                                <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} />
                                                 <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
                                                     <img
                                                         src={status === 'completed'

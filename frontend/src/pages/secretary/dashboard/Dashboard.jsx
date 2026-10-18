@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../../../api/request'
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
+import RecordDate from '../../../components/RecordDate'
 
 import PencilIcon from '../../../assets/icons/pencil-icon.svg'
 import EraserIcon from '../../../assets/icons/eraser-icon.svg'
@@ -390,7 +391,7 @@ function Dashboard() {
                                         ) : dashboardRecords.map(record => (
                                             <tr key={record.id}>
                                                 <td>{record.gathering}</td>
-                                                <td>{record.date}</td>
+                                                <td><RecordDate value={record.date} /></td>
                                                 <td>{String(record.students ?? '').replace(/\s*students?$/i, '')}</td>
                                                 <td>
                                                     <span className={`records-status records-status-${String(record.status || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>

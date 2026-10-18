@@ -10,6 +10,7 @@ import TotalSubmissionsIcon from '../../../assets/icons/TotalSubmissionsIcon.svg
 import SubmittedIcon from '../../../assets/icons/SubmittedIcon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
+import RecordDate from '../../../components/RecordDate'
 import './Dashboard.css'
 
 const metrics = [
@@ -95,7 +96,7 @@ function ProgramHeadDashboard() {
                                     {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.length === 0 ? <tr><td colSpan="7" className="ph-empty">You’re all caught up. No pending submissions.</td></tr> : pending.map((submission) => (
                                         <tr key={submission.id}>
                                             <td><UserAvatar className="ph-secretary-avatar" name={submission.secretary} program={submission.program} />{submission.secretary}</td>
-                                            <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td>{submission.date}</td>
+                                            <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td><RecordDate value={submission.date_iso || submission.date} /></td>
                                             <td><span className="ph-status"><i />{submission.status_label || 'Pending'}</span></td>
                                             <td><button className="ph-review-button" type="button" onClick={() => navigate(submissionPath, { state: { openSubmission: { ...submission, status: 'pending', year_label: submission.year_label || `${submission.year_level}${/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}` } } })}>View</button></td>
                                         </tr>

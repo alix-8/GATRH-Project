@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { request } from '../../../api/request'
+import RecordDay from '../../../components/RecordDay'
+import RecordDate from '../../../components/RecordDate'
 import './ReviewDrawer.css'
 import { headerTitle } from './header-title'
 import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../components/Icons/AttendanceIcons'
@@ -130,7 +132,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                     <div className="drawer-header">
                         <h2>{headerTitle(record?.status)}</h2>
                         <p className="drawer-subtitle">
-                            {record?.gathering || '—'} • {record?.date || '—'}
+                            {record?.gathering || '—'} • <RecordDate value={record?.date} />
                         </p>
                     </div>
 
@@ -248,7 +250,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                             <tr key={s.student_id ?? i}>
                                                 <td title={s.student_name}>{s.student_name}</td>
                                                 <td title={s.batch || '—'}>{s.batch || '—'}</td>
-                                                <td title={s.day || draft.day_iso || '—'}>{s.day || draft.day_iso || '—'}</td>
+                                                <td><RecordDay value={s.day || draft.day_iso} status={s.status} /></td>
                                                 <td title={s.venue || '—'}>{s.venue || '—'}</td>
                                                 <td>
                                                     <span className={`status-indicator status-${s.status === 'present' ? 'present' : 'no-response'}`}>

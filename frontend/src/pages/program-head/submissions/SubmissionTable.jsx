@@ -11,6 +11,7 @@ import FilterDropdown from '../../../components/Filters/FilterDropdown'
 import CalendarFilter from '../../../components/Filters/CalendarFilter'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
+import RecordDate from '../../../components/RecordDate'
 
 const GATHERINGS = [
     { value: '', label: 'Gathering' },
@@ -179,7 +180,7 @@ export default function SubmissionTable() {
                                         <td>{row.gathering}</td>
                                         <td>{row.program}</td>
                                         <td>{row.year_label}</td>
-                                        <td>{row.date}</td>
+                                        <td><RecordDate value={row.date_iso || row.date} /></td>
                                         <td>
                                             <span className={`ph-submission-status ${row.status}`}>
                                                 <i />
