@@ -85,6 +85,42 @@ function buildDateTime(parts) {
     return [parts.date, parts.time].filter(Boolean).join(' · ')
 }
 
+function fallbackSubmissionDeadline(gatheringDate) {
+    const match = String(gatheringDate || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (!match) return null
+
+    const [, year, month, day] = match
+    const deadline = new Date(Number(year), Number(month) - 1, Number(day) + 7)
+    return Number.isNaN(deadline.getTime()) ? null : deadline
+}
+
+function formatDeadlineCountdown(dueDate, now = Date.now()) {
+    if (!dueDate) return ''
+
+    const dueAt = new Date(dueDate).getTime()
+    if (!Number.isFinite(dueAt)) return ''
+
+    const remainingSeconds = Math.ceil((dueAt - now) / 1000)
+    if (remainingSeconds <= 0) {
+        const daysLate = Math.floor(Math.abs(remainingSeconds) / 86400)
+        return daysLate > 0
+            ? `Deadline passed ${daysLate} day${daysLate === 1 ? '' : 's'} ago`
+            : 'Deadline passed'
+    }
+
+    const days = Math.floor(remainingSeconds / 86400)
+    const hours = Math.floor((remainingSeconds % 86400) / 3600)
+    const minutes = Math.floor((remainingSeconds % 3600) / 60)
+    const seconds = remainingSeconds % 60
+    const parts = []
+
+    if (days) parts.push(`${days}d`)
+    if (hours || days) parts.push(`${hours}h`)
+    parts.push(`${minutes}m`, `${seconds}s`)
+
+    return `Deadline in ${parts.join(' ')}`
+}
+
 function formatReminderDate(date) {
     if (!date) return ''
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -186,6 +222,7 @@ function Reminders() {
     const [reminders, setReminders] = useState([])
     const [escalations, setEscalations] = useState([])
     const [attendanceTasks, setAttendanceTasks] = useState([])
+    const [countdownNow, setCountdownNow] = useState(() => Date.now())
     const [attendanceEntries, setAttendanceEntries] = useState([])
     const [highlightedReminderId, setHighlightedReminderId] = useState(null)
     const [activeFilter, setActiveFilter] = useState('all')
@@ -203,6 +240,11 @@ function Reminders() {
     const timeInputRef = useRef(null)
     const escalationReportControllerRef = useRef(null)
     const navigate = useNavigate()
+
+    useEffect(() => {
+        const intervalId = window.setInterval(() => setCountdownNow(Date.now()), 1000)
+        return () => window.clearInterval(intervalId)
+    }, [])
 
     useEffect(() => () => escalationReportControllerRef.current?.abort(), [])
 
@@ -238,6 +280,14 @@ function Reminders() {
                 const nextReminders = remindersData.data ?? []
                 const nextEscalations = ['secretary', 'program_head', 'cm_coordinator'].includes(role) ? remindersData.escalations ?? [] : []
                 const attendanceRows = attendanceData?.data ?? []
+                const submissionDeadlines = new Map(
+                    nextReminders
+                        .filter(reminder => reminder.reminder_type === 'submission_countdown')
+                        .map(reminder => [
+                            `${reminder.gathering_type}:${dateKeyInLocalTime(reminder.gathering_date)}`,
+                            reminder.due_date,
+                        ])
+                )
                 const programHeadSubmissions = programHeadSubmissionData?.submissions ?? []
                 const nextAttendanceTasks = role === 'program_head' || role === 'program_secretary'
                     ? programHeadSubmissions.map(record => ({
@@ -256,6 +306,7 @@ function Reminders() {
                         .filter(record => ['validating', 'pending', 'approved'].includes(record.status))
                         .map(record => {
                             const meta = ATTENDANCE_TASK_STATUS[record.status]
+                            const deadlineKey = `${record.gathering_type}:${record.day_iso}`
 
                             return {
                                 id: `attendance-${record.id}`,
@@ -268,6 +319,9 @@ function Reminders() {
                                 }),
                                 status: record.status === 'approved' ? 'completed' : 'needs_action',
                                 statusLabel: meta.label,
+                                deadline: record.status !== 'validating'
+                                    ? null
+                                    : submissionDeadlines.get(deadlineKey) || fallbackSubmissionDeadline(record.day_iso),
                                 tone: meta.tone,
                                 action: meta.action,
                                 createdAt: record.day_iso,
@@ -696,6 +750,11 @@ function Reminders() {
 
                                     <div className="task-copy">
                                         <h3>{item.title}</h3>
+                                        {item.type === 'attendance' && item.deadline && (
+                                            <p className="attendance-deadline-countdown">
+                                                {formatDeadlineCountdown(item.deadline, countdownNow)}
+                                            </p>
+                                        )}
                                         {item.type === 'escalation' ? (
                                             <p>
                                                 <span className="escalation-student">
