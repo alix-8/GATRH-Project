@@ -7,6 +7,7 @@ import FilterDropdown from '../../../components/Filters/FilterDropdown'
 import CalendarFilter from '../../../components/Filters/CalendarFilter'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
+import RecordDate from '../../../components/RecordDate'
 import SubmissionDrawer from '../submissions/SubmissionDrawer'
 import RecordsPagination from './RecordsPagination'
 import '../submissions/Submissions.css'
@@ -210,7 +211,7 @@ export default function RecordsTable() {
                                     <td>{row.gathering}</td>
                                     <td>{row.program}</td>
                                     <td>{row.year_label}</td>
-                                    <td>{row.date}</td>
+                                    <td><RecordDate value={row.date_iso || row.date} /></td>
                                     <td>
                                         <span className="ph-submission-status approved">
                                             <i />

@@ -5,6 +5,7 @@ import NotificationIcon from '../../assets/icons/notification-icon.svg'
 import MyReminderIcon from '../../assets/icons/my-reminder-icon.svg'
 import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
 import { request } from '../../api/request'
+import RecordDate from '../RecordDate'
 import './Notification.css'
 
 function formatReminderTime(value) {
@@ -146,7 +147,8 @@ function Notification() {
                             title: meta.title,
                             subtext: record.responded_count && record.total_students
                                 ? `${record.responded_count}/${record.total_students} students responded`
-                                : [record.gathering, record.date].filter(Boolean).join(' · ') || 'Attendance record updated',
+                                : record.gathering || 'Attendance record updated',
+                            recordDate: record.day_iso || record.date,
                             tone: meta.tone,
                             target: '/attendance',
                         }
@@ -226,7 +228,12 @@ function Notification() {
                                 </span>
                                 <span className="notification-item-copy">
                                     <strong>{item.title}</strong>
-                                    <small>{item.subtext}</small>
+                                    <small>
+                                        {item.subtext}
+                                        {item.iconType === 'attendance' && item.recordDate && (
+                                            <> · <RecordDate value={item.recordDate} /></>
+                                        )}
+                                    </small>
                                 </span>
                                 <span className="notification-item-dot" aria-hidden="true" />
                             </button>

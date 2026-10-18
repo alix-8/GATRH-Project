@@ -11,6 +11,8 @@ import RecordClockIcon from '../../../assets/icons/RecordClockIcon.svg'
 import RecordProgramIcon from '../../../assets/icons/RecordProgramIcon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
+import RecordDay from '../../../components/RecordDay'
+import RecordDate from '../../../components/RecordDate'
 import SearchPill from '../../../components/search/SearchPill'
 import './SubmissionDrawer.css'
 
@@ -120,7 +122,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                     <>
                         <small className="ph-record-date-time">
                             <img src={RecordCalendarIcon} alt="" />
-                            <span>{detail.day || submission.date}</span>
+                            <RecordDate value={detail.day || submission.date} />
                             <img className="ph-record-clock-icon" src={RecordClockIcon} alt="" />
                             <span className="ph-record-time-value">
                                 {detail.time
@@ -252,8 +254,8 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         <tr>
                                             <th>Name</th>
                                             <th>Time</th>
-                                            <th>Date</th>
-                                            <th>Location</th>
+                                            <th>Venue</th>
+                                            <th>Day</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
@@ -262,8 +264,8 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                             <tr key={student.record_id || student.student_id || index}>
                                                 <td>{student.student_name}</td>
                                                 <td>{student.batch || '—'}</td>
-                                                <td>{student.day || detail.day || '—'}</td>
                                                 <td>{student.venue || '—'}</td>
+                                                <td><RecordDay value={student.day || detail.day} status={student.status} /></td>
                                                 <td>
                                                     <span className={`ph-drawer-attendance-status ${student.status === 'present' ? 'present' : 'no-response'}`}>
                                                         <i />

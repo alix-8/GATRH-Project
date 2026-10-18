@@ -490,6 +490,40 @@
   justify-content: center;
 }
 
+.drawer-footer-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.drawer-footer-actions .drawer-submit-btn,
+.drawer-edit-btn {
+  flex: 1;
+  width: auto;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #1d9bf0;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drawer-edit-btn {
+  background: #fff;
+  color: #1d9bf0;
+}
+
+.drawer-edit-btn:hover:not(:disabled) {
+  background: #eef7ff;
+}
+
+.drawer-edit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .program-head-note {
   margin: 20px 0 24px;
   text-align: left;
@@ -513,4 +547,18 @@
   font-size: 12px;
   line-height: 1.55;
   white-space: pre-wrap;
+}
+
+.drawer-edit-field-error {
+  border-color: #e0625b !important;
+  background: #fff0f0 !important;
+}
+
+.drawer-edit-field-warning {
+  border-color: #f2994a !important;
+  background: #fff8ef !important;
+}
+
+.import-modal-overlay.attendance-edit-error-overlay {
+  z-index: 1400;
 }

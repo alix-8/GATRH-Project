@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import '../Import.css'
 
 const WarningIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -124,21 +125,32 @@ function ErrorItems({ type, items }) {
     ))
 }
 
-function ErrorModal({ errorMessage, errorDetails, attendanceLocked = false, onClose }) {
+function ErrorModal({
+    errorMessage,
+    errorDetails,
+    attendanceLocked = false,
+    title = 'Import Failed',
+    description = 'The attendance text could not be imported. Fix the issue below and try again.',
+    showRetryButton = true,
+    closeLabel = 'Close',
+    retryLabel = 'Try again',
+    overlayClassName = '',
+    onClose,
+}) {
     const [expandedError, setExpandedError] = useState(null)
     const errorItems = getErrorItems(errorDetails || {})
 
     return (
-        <div className="import-modal-overlay">
+        <div className={`import-modal-overlay ${overlayClassName}`} onClick={(event) => event.stopPropagation()}>
             <div className="import-modal import-modal-centered">
                 <button className="import-modal-close" type="button" onClick={onClose}>&times;</button>
                 <div className="import-status-icon import-status-icon-error">
                     <WarningIcon />
                 </div>
-                <h2 className="import-modal-title">Import Failed</h2>
+                <h2 className="import-modal-title">{title}</h2>
                 {!attendanceLocked && (
                     <p className="import-modal-subtext">
-                        The attendance text could not be imported. Fix the issue below and try again.
+                        {description}
                     </p>
                 )}
 
@@ -182,11 +194,11 @@ function ErrorModal({ errorMessage, errorDetails, attendanceLocked = false, onCl
 
                 <div className="import-modal-buttons">
                     <button className="import-clear-button" type="button" onClick={onClose}>
-                        Close
+                        {closeLabel}
                     </button>
-                    {!attendanceLocked && (
+                    {!attendanceLocked && showRetryButton && (
                         <button className="import-primary-button" type="button" onClick={onClose}>
-                            Try again
+                            {retryLabel}
                         </button>
                     )}
                 </div>

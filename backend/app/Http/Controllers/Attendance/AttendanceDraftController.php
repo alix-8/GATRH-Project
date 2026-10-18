@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
 use App\Models\Reminder;
+use App\Models\Student;
+use App\Services\Audit\AuditLogService;
 use App\Services\Attendance\AttendanceParsingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -47,6 +49,7 @@ class AttendanceDraftController extends Controller
 
                     // For absent/no-response students, use the gathering submission date.
                     'day'          => $record['day'] ?? $submissionDay ?? '---',
+                    'day_provided' => !empty($record['day']),
                 ];
             }
         );
@@ -89,7 +92,7 @@ class AttendanceDraftController extends Controller
                 ],
                 'submitted_by'       => [
                     'name' => $request->user()->name,
-                    'role' => trim(strtoupper($request->user()->program) . ' ' . $request->user()->year_level . 'rd Year · Spiritual Secretary'),
+                    'role' => trim(strtoupper($request->user()->program) . ' ' . $this->ordinalYear($request->user()->year_level) . ' · Spiritual Secretary'),
                 ],
                 'total_students'     => $total,
                 'responded_count'    => $responded,
@@ -108,6 +111,199 @@ class AttendanceDraftController extends Controller
                 ] : null,
             ],
         ], 200);
+    }
+
+    /**
+     * Save edits to an attendance draft without submitting it.
+     * PATCH /api/attendance/drafts/{id}
+     */
+    public function update(
+        Request $request,
+        int $id,
+        AttendanceParsingService $parsingService,
+        AuditLogService $auditLogService
+    ): JsonResponse {
+        $draft = AttendanceDraft::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->where('status', 'draft')
+            ->first();
+
+        if (!$draft) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Draft not found or already submitted.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'records' => 'required|array|min:1',
+            'records.*.student_id' => 'required|integer|exists:students,id',
+            'records.*.day' => 'nullable|date_format:Y-m-d',
+            'records.*.day_provided' => 'required|boolean',
+            'records.*.batch' => 'nullable|string|max:255',
+            'records.*.venue' => 'nullable|string|max:255',
+        ]);
+
+        $originalRecords = collect($draft->parsed_data ?? []);
+        $expectedIds = $originalRecords->pluck('student_id')->filter()->map(fn ($studentId) => (int) $studentId)->unique()->sort()->values();
+        $submittedIds = collect($validated['records'])->pluck('student_id')->map(fn ($studentId) => (int) $studentId)->unique()->sort()->values();
+
+        if ($expectedIds->all() !== $submittedIds->all() || $submittedIds->count() !== count($validated['records'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'The attendance draft must contain each original student exactly once.',
+            ], 422);
+        }
+
+        $accessibleStudentCount = Student::whereKey($submittedIds->all())
+            ->active()
+            ->accessibleTo($request->user())
+            ->count();
+        if ($accessibleStudentCount !== $submittedIds->count()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not authorized to edit attendance for one or more students.',
+            ], 403);
+        }
+
+        $range = $parsingService->getApplicableWeekRange(
+            (string) $draft->gathering_type,
+            null,
+            $draft->raw_text
+        );
+        $formatErrors = [];
+        $incompleteRecords = [];
+        $parsedRecords = [];
+
+        foreach ($validated['records'] as $record) {
+            $original = $originalRecords->firstWhere('student_id', $record['student_id']) ?? [];
+            $batch = trim((string) ($record['batch'] ?? ''));
+            $venue = trim((string) ($record['venue'] ?? ''));
+            $dayProvided = (bool) $record['day_provided'];
+            $day = $dayProvided ? ($record['day'] ?? null) : null;
+            $formattedBatch = $batch !== ''
+                ? $parsingService->formatBatchTime($batch)
+                : null;
+
+            if ($batch !== '' && (
+                !preg_match('/^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)$/i', $batch)
+                || $formattedBatch === null
+            )) {
+                $formatErrors[] = [
+                    'student_name' => $original['student_name'] ?? 'Unknown student',
+                    'raw_line' => $original['student_name'] ?? 'Unknown student',
+                    'errors' => [[
+                        'field' => 'batch',
+                        'value' => $batch,
+                        'reason' => 'Batch time must be in a valid time format, e.g. "8AM" or "8:30 AM".',
+                    ]],
+                ];
+            }
+
+            if ($dayProvided && (!$day || $day < $range['start']->toDateString() || $day > $range['end']->toDateString())) {
+                $formatErrors[] = [
+                    'student_name' => $original['student_name'] ?? 'Unknown student',
+                    'raw_line' => $original['student_name'] ?? 'Unknown student',
+                    'errors' => [[
+                        'field' => 'day',
+                        'value' => $day,
+                        'reason' => 'Day must resolve to a date within the applicable week range ('
+                            . $range['start']->toDateString() . ' to ' . $range['end']->toDateString() . ').',
+                    ]],
+                ];
+            }
+
+            $hasBatch = $batch !== '';
+            $hasVenue = $venue !== '';
+            $hasAnyAttendanceValue = $dayProvided || $hasBatch || $hasVenue;
+            $missing = array_values(array_filter([
+                !$dayProvided ? 'day' : null,
+                !$hasBatch ? 'batch' : null,
+                !$hasVenue ? 'venue' : null,
+            ]));
+            if ($hasAnyAttendanceValue && $missing !== []) {
+                $incompleteRecords[] = [
+                    'student_id' => $record['student_id'],
+                    'student_name' => $original['student_name'] ?? 'Unknown student',
+                    'raw_line' => $original['student_name'] ?? 'Unknown student',
+                    'missing' => $missing,
+                ];
+            }
+
+            $parsedRecords[] = array_merge($original, [
+                'student_id' => (int) $record['student_id'],
+                'gathering_type' => $draft->gathering_type,
+                'batch' => $formattedBatch,
+                'venue' => $hasVenue ? $venue : null,
+                'day' => $day,
+                'status' => $dayProvided && $formattedBatch && $hasVenue ? 'present' : 'no_response',
+            ]);
+        }
+
+        if ($formatErrors !== [] || $incompleteRecords !== []) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Fix the attendance format issues before saving this draft.',
+                'format_errors' => $formatErrors,
+                'incomplete_records' => $incompleteRecords,
+            ], 422);
+        }
+
+        DB::transaction(function () use ($draft, $parsedRecords): void {
+            $draft->update([
+                'parsed_data' => $parsedRecords,
+                'matched_count' => collect($parsedRecords)->where('status', 'present')->count(),
+            ]);
+        });
+
+        $auditLogService->recordAction(
+            "Edited attendance draft for {$draft->gathering_type}",
+            'attendance_drafts',
+            (string) $draft->id,
+            $request->user()
+        );
+
+        $submissionDay = optional($draft->day)->toDateString();
+        $students = collect($parsedRecords)->map(fn (array $record) => [
+            'student_id' => $record['student_id'],
+            'student_name' => $record['student_name'] ?? 'Unknown',
+            'status' => $record['status'],
+            'batch' => !empty($record['batch'])
+                ? \Carbon\Carbon::parse($record['batch'])->format('g:ia')
+                : '---',
+            'venue' => $record['venue'] ?? '---',
+            'day' => $record['day'] ?? $submissionDay ?? '---',
+            'day_provided' => !empty($record['day']),
+        ])->values();
+        $responded = $students->where('status', 'present')->count();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Attendance draft updated successfully.',
+            'data' => [
+                'students' => $students,
+                'responded_count' => $responded,
+                'no_response_count' => $students->count() - $responded,
+            ],
+        ], 200);
+    }
+
+    private function ordinalYear($yearLevel): string
+    {
+        if (! is_numeric($yearLevel) || (int) $yearLevel < 1) {
+            return '';
+        }
+
+        $year = (int) $yearLevel;
+        $suffix = match (true) {
+            $year % 100 >= 11 && $year % 100 <= 13 => 'th',
+            $year % 10 === 1 => 'st',
+            $year % 10 === 2 => 'nd',
+            $year % 10 === 3 => 'rd',
+            default => 'th',
+        };
+
+        return "{$year}{$suffix} Year";
     }
 
     /**
