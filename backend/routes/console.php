@@ -55,10 +55,16 @@ Artisan::command('inspire', function () {
     //spawn submission reminders for secretaries
     Schedule::call(function () {
         app(ReminderGenerationService::class)->spawnSubmissionReminders();
-    })->daily()->withoutOverlapping();
+    })
+        ->name('spawn-submission-reminders')
+        ->daily()
+        ->withoutOverlapping();
 
     //refresh submission progress for secretaries
     //this is for updating the progress of submission reminders, so that the countdown text is accurate
     Schedule::call(function () {
         app(ReminderGenerationService::class)->refreshSubmissionProgress();
-    })->hourly()->withoutOverlapping();
+    })
+        ->name('refresh-submission-progress')
+        ->hourly()
+        ->withoutOverlapping();
