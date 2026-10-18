@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'scheduler' => [
+        'secret' => env('SCHEDULER_SECRET'),
+    ],
+
 ];

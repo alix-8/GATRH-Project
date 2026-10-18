@@ -16,6 +16,8 @@ use App\Http\Controllers\ProgramHead\ProgramHeadSubmissionController;
 use App\Http\Controllers\Reminders\ReminderController;
 use App\Http\Controllers\Students\StudentController;
 use App\Http\Middleware\ApplySystemTimezone;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +34,30 @@ Route::get('/health', function () {
         'timestamp' => now()->setTimezone('Asia/Manila')->toIso8601String(),
     ]);
 });
+
+Route::post('/internal/scheduler/run', function (Request $request) {
+    $secret = config('services.scheduler.secret');
+    $providedSecret = $request->bearerToken();
+
+    abort_unless(
+        is_string($secret)
+            && $secret !== ''
+            && is_string($providedSecret)
+            && hash_equals($secret, $providedSecret),
+        403
+    );
+
+    $exitCode = Artisan::call('schedule:run');
+
+    if ($exitCode !== 0) {
+        return response()->json(['message' => 'Scheduler run failed.'], 500);
+    }
+
+    return response()->json([
+        'message' => 'Scheduler checked successfully.',
+        'checked_at' => now()->toIso8601String(),
+    ]);
+})->middleware('throttle:10,1');
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);

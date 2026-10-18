@@ -107,3 +107,15 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api`
 |-----------|-----------------------|---------------------------------------|
 | Backend   | `php artisan serve`  | Starts the Laravel backend dev server |
 | Frontend  | `npm run dev`        | Starts the frontend dev server        |
+
+### 🔵 Render Free plan scheduler
+
+Render Cron Jobs are a paid service. On the Free plan, use an external HTTP scheduler such as [cron-job.org](https://cron-job.org/) to call Laravel's scheduler endpoint. The endpoint is protected by a bearer secret and runs the existing schedules in `backend/routes/console.php`.
+
+1. Generate a random secret (for example, with `php -r "echo bin2hex(random_bytes(32));"`).
+2. In the Render backend service, add the environment variable `SCHEDULER_SECRET` with that secret, then deploy the latest backend code.
+3. In cron-job.org, create a job with URL `https://YOUR-BACKEND.onrender.com/api/internal/scheduler/run`, method `POST`, and schedule every minute (`* * * * *`).
+4. Add the request header `Authorization` with value `Bearer YOUR_SCHEDULER_SECRET` (use the same secret as the Render variable). Leave the request body empty.
+5. Run the job once and confirm it receives HTTP 200 with `Scheduler checked successfully.`
+
+This keeps the free web service receiving traffic, so it can use nearly all of Render's 750 monthly free instance hours. Free services can still restart, and external scheduling can be delayed, so this is best effort rather than a production-grade guarantee. If the Render app sleeps, a request may take about a minute to wake it. [Render free instance limits](https://render.com/docs/free) · [Render Cron Job pricing](https://render.com/docs/cronjobs) · [cron-job.org frequency and headers](https://cron-job.org/en/faq/)
