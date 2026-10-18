@@ -1,0 +1,19 @@
+.drawer-table-editing input,
+.drawer-table-editing select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 5px 4px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: #fff;
+    color: #172b4d;
+    font: inherit;
+    font-size: 10px;
+}
+
+.drawer-table-editing input:focus,
+.drawer-table-editing select:focus {
+    border-color: #1d9bf0;
+    outline: 2px solid rgb(29 155 240 / 18%);
+}

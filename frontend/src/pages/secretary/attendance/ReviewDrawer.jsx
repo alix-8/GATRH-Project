@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { request } from '../../../api/request'
-import RecordDay from '../../../components/RecordDay'
 import RecordDate from '../../../components/RecordDate'
 import './ReviewDrawer.css'
 import { headerTitle } from './header-title'
@@ -10,6 +9,15 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import SearchPill from '../../../components/search/SearchPill'
 import ConfirmOverrideModal from '../import/modals/ConfirmOverrideModal'
+import ErrorModal from '../import/modals/ErrorModal'
+import AttendanceEditButton from './AttendanceEditButton'
+import EditableAttendanceTable from './EditableAttendanceTable'
+import {
+    getAttendanceEditErrors,
+    getAutomaticAttendanceStatus,
+    hasAttendanceEditErrors,
+    resolveAttendanceDay,
+} from './attendanceEditValidation'
 
 export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [draft, setDraft] = useState(null)
@@ -17,7 +25,9 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [error, setError] = useState(null)
     const [submitting, setSubmitting] = useState(false)
     const [duplicateConfirm, setDuplicateConfirm] = useState(null)
+    const [editError, setEditError] = useState(null)
     const [search, setSearch] = useState('')
+    const [editing, setEditing] = useState(false)
     //for status filter
     const [statusFilter, setStatusFilter] = useState('all')
     const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
@@ -29,6 +39,8 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         setError(null)
         setDraft(null)
         setDuplicateConfirm(null)
+        setEditError(null)
+        setEditing(false)
 
         const url = record.source === 'draft'
         ? `/attendance/drafts/${record.ref_id}`
@@ -56,24 +68,55 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             const matchesSearch = s.student_name.toLowerCase().includes(search.toLowerCase())
             const matchesStatus =
                 statusFilter === 'all' ||
-                (statusFilter === 'present' && s.status === 'present') ||
-                (statusFilter === 'absent' && s.status !== 'present')
+                (statusFilter === 'present' && getAutomaticAttendanceStatus(s, draft.week_range) === 'present') ||
+                (statusFilter === 'absent' && getAutomaticAttendanceStatus(s, draft.week_range) !== 'present')
             return matchesSearch && matchesStatus
         })
     }, [draft, search, statusFilter])
 
+    const handleStudentChange = (student, field, value) => {
+        setDraft((current) => current ? {
+            ...current,
+            students: current.students.map((item) => item === student
+                ? { ...item, [field]: value, ...(field === 'day' ? { day_provided: Boolean(value) } : {}) }
+                : item),
+        } : current)
+    }
+
+    const normalizeServerErrors = (details) => {
+        if (details.format_errors || details.incomplete_records) return details
+        const validationErrors = Object.entries(details.errors || {}).flatMap(([field, messages]) =>
+            (Array.isArray(messages) ? messages : [messages]).map((reason) => ({
+                raw_line: field,
+                errors: [{ field, reason: String(reason) }],
+            }))
+        )
+        return validationErrors.length ? { ...details, format_errors: validationErrors } : details
+    }
+
     const handleSubmit = async (opts = {}) => {
         if (!draft) return
+
+        const editErrors = getAttendanceEditErrors(draft.students, draft.week_range)
+        if (hasAttendanceEditErrors(editErrors)) {
+            setEditing(true)
+            setEditError({
+                message: 'Fix the attendance format issues before submitting.',
+                details: editErrors,
+            })
+            return
+        }
+
         setSubmitting(true)
         setError(null)
         try {
             const records = draft.students.map((s) => ({
                 student_id: s.student_id,
                 gathering_type: record.gathering_type,
-                day: s.day || draft.day_iso,
-                status: s.status,
-                batch: s.batch,
-                venue: s.venue,
+                day: s.day_provided === false ? draft.day_iso : (s.day || draft.day_iso),
+                status: getAutomaticAttendanceStatus(s, draft.week_range),
+                batch: s.batch === '---' ? '' : s.batch,
+                venue: s.venue === '---' ? '' : s.venue,
             }))
 
             const isOverride = Boolean(opts.override)
@@ -99,8 +142,50 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                     week_range: details.week_range || { label: record.date || draft.day },
                 })
             } else {
-                setError(err.message)
+                setEditError({ message: err.message, details: normalizeServerErrors(details) })
             }
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const handleDoneEditing = async () => {
+        if (!draft) return
+        const editErrors = getAttendanceEditErrors(draft.students, draft.week_range)
+        if (hasAttendanceEditErrors(editErrors)) {
+            setEditError({
+                message: 'Fix the attendance format issues before leaving edit mode.',
+                details: editErrors,
+            })
+            return
+        }
+
+        setSubmitting(true)
+        setEditError(null)
+        try {
+            const response = await request(`/attendance/drafts/${draft.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    records: draft.students.map((student) => ({
+                        student_id: student.student_id,
+                        day: student.day_provided === false
+                            ? null
+                            : resolveAttendanceDay(student.day, draft.week_range),
+                        day_provided: Boolean(student.day_provided !== false && student.day),
+                        batch: student.batch === '---' ? '' : student.batch,
+                        venue: student.venue === '---' ? '' : student.venue,
+                    })),
+                }),
+            })
+            setDraft((current) => current ? {
+                ...current,
+                students: response.data?.students || current.students,
+                responded_count: response.data?.responded_count ?? current.responded_count,
+                no_response_count: response.data?.no_response_count ?? current.no_response_count,
+            } : current)
+            setEditing(false)
+        } catch (err) {
+            setEditError({ message: err.message, details: normalizeServerErrors(err.details || {}) })
         } finally {
             setSubmitting(false)
         }
@@ -116,10 +201,20 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             case 'pending':
                 return <div className="status-pill status-pill-pending">✓ Submitted</div>
             default:
+                if (editing) {
+                    return (
+                        <button type="button" className="drawer-submit-btn" onClick={handleDoneEditing} disabled={submitting}>
+                            {submitting ? 'Saving…' : 'Done'}
+                        </button>
+                    )
+                }
                 return (
-                    <button type="button" className="drawer-submit-btn" onClick={handleSubmit} disabled={submitting}>
-                        {submitting ? 'Submitting…' : '✓ Submit'}
-                    </button>
+                    <div className="drawer-footer-actions">
+                        {record.source === 'draft' && <AttendanceEditButton editing={false} disabled={submitting} onClick={() => setEditing(true)} />}
+                        <button type="button" className="drawer-submit-btn" onClick={handleSubmit} disabled={submitting}>
+                            {submitting ? 'Submitting…' : '✓ Submit'}
+                        </button>
+                    </div>
                 )
         }
     })()
@@ -165,7 +260,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                     <div className="kpi-icon">
                                         <RespondedIcon/>
                                     </div>
-                                    <div className="kpi-value">{draft.responded_count}</div>
+                                    <div className="kpi-value">{draft.students.filter((student) => getAutomaticAttendanceStatus(student, draft.week_range) === 'present').length}</div>
                                     <div className="kpi-title">Responded</div>
                                 </div>
 
@@ -173,7 +268,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                     <div className="kpi-icon">
                                         <NoResponseIcon/>
                                     </div>
-                                    <div className="kpi-value">{draft.no_response_count}</div>
+                                    <div className="kpi-value">{draft.students.filter((student) => getAutomaticAttendanceStatus(student, draft.week_range) !== 'present').length}</div>
                                     <div className="kpi-title">No Response</div>
                                 </div>
                             </div>
@@ -235,35 +330,14 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                             </div>
 
                             <div className="drawer-table-container">
-                                <table className="drawer-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Time</th>
-                                            <th>Date</th>
-                                            <th>Location</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredStudents.map((s, i) => (
-                                            <tr key={s.student_id ?? i}>
-                                                <td title={s.student_name}>{s.student_name}</td>
-                                                <td title={s.batch || '—'}>{s.batch || '—'}</td>
-                                                <td><RecordDay value={s.day || draft.day_iso} status={s.status} /></td>
-                                                <td title={s.venue || '—'}>{s.venue || '—'}</td>
-                                                <td>
-                                                    <span className={`status-indicator status-${s.status === 'present' ? 'present' : 'no-response'}`}>
-                                                        <span className="dot" /> {s.status === 'present' ? 'Present' : 'No response'}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {filteredStudents.length === 0 && (
-                                            <tr><td colSpan="5" className="drawer-table-empty">No students match these filters.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                <EditableAttendanceTable
+                                    students={filteredStudents}
+                                    day={draft.day_iso}
+                                    weekRange={draft.week_range}
+                                    editing={editing}
+                                    onStudentChange={handleStudentChange}
+                                    emptyMessage="No students match these filters."
+                                />
                             </div>
                         </>
                     )}
@@ -283,6 +357,23 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                         onClose()
                     }}
                     onOverride={() => handleSubmit({ override: true })}
+                />
+            )}
+
+            {editError && (
+                <ErrorModal
+                    title="Attendance Needs Fixes"
+                    description="Correct the highlighted format issues in the attendance table, then click Done to save again."
+                    overlayClassName="attendance-edit-error-overlay"
+                    errorMessage={editError.message}
+                    errorDetails={editError.details}
+                    showRetryButton={false}
+                    closeLabel="Back to editing"
+                    onClose={() => {
+                        setEditError(null)
+                        setError(null)
+                        setEditing(true)
+                    }}
                 />
             )}
         </div>

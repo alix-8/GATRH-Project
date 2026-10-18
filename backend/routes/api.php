@@ -125,6 +125,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::get('/attendance/session', [AttendanceController::class, 'showGatheringRecords']);
 
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);
+        Route::patch('/attendance/drafts/{id}', [AttendanceDraftController::class, 'update']);
         Route::post('/attendance/drafts/{id}/submit', [AttendanceDraftController::class, 'submit']);
 
         Route::post('/reminders/gathering', [ReminderController::class, 'storeGathering']);

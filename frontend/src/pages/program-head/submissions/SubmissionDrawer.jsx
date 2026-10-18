@@ -254,8 +254,8 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         <tr>
                                             <th>Name</th>
                                             <th>Time</th>
-                                            <th>Date</th>
-                                            <th>Location</th>
+                                            <th>Venue</th>
+                                            <th>Day</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
@@ -264,8 +264,8 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                             <tr key={student.record_id || student.student_id || index}>
                                                 <td>{student.student_name}</td>
                                                 <td>{student.batch || '—'}</td>
-                                                <td><RecordDay value={student.day || detail.day} status={student.status} /></td>
                                                 <td>{student.venue || '—'}</td>
+                                                <td><RecordDay value={student.day || detail.day} status={student.status} /></td>
                                                 <td>
                                                     <span className={`ph-drawer-attendance-status ${student.status === 'present' ? 'present' : 'no-response'}`}>
                                                         <i />
