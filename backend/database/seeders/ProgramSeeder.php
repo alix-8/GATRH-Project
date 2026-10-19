@@ -13,7 +13,7 @@ class ProgramSeeder extends Seeder
     public function run(): void
     {
         $programs = [
-            ['code' => 'ACT', 'name' => 'Associate in Computer Technology'],
+            ['code' => 'ACT', 'name' => 'Associate in Computer Technology', 'max_year_level' => 2],
             ['code' => 'BSIS', 'name' => 'Bachelor of Science in Information Systems'],
             ['code' => 'BSSW', 'name' => 'Bachelor of Science in Social Work'],
             ['code' => 'BSA', 'name' => 'Bachelor of Science in Accountancy'],

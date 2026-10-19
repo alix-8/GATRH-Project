@@ -479,7 +479,8 @@ function Reminders() {
         .map(reminder => {
             const isGathering = reminder.reminder_type === 'gathering'
             const gatheringDate = dateKeyInLocalTime(reminder.gathering_date || reminder.due_date)
-            const isToday = isGathering && gatheringDate === todayKey
+            const dueDateKey = dateKeyInLocalTime(reminder.due_date || reminder.gathering_date)
+            const isToday = (isGathering ? gatheringDate : dueDateKey) === todayKey
             const isPast = isGathering && gatheringDate !== '' && gatheringDate < todayKey
             const countdown = countdownByParent.get(String(reminder.id)) || reminder.countdown_text
 
@@ -520,7 +521,7 @@ function Reminders() {
                     ? formatDeadlineCountdown(reminder.due_date, countdownNow)
                     : '',
                 countdownOverdue: !isGathering && !isCompleted && isDeadlinePassed(reminder.due_date, countdownNow),
-                    isToday,
+                isToday,
                 action: isGathering && isToday && !alreadyRecorded ? 'Add attendance' : null,
             }
         })
@@ -541,6 +542,7 @@ function Reminders() {
             status: 'needs_action',
             statusLabel: 'Deadline reached',
             tone: 'needs-action',
+            isToday: dateKeyInLocalTime(reminder.due_date) === todayKey,
             action: 'Add attendance',
         }))
 
@@ -559,9 +561,23 @@ function Reminders() {
     }))
 
     const allItems = [...reminderItems, ...deadlineItems, ...escalationItems, ...attendanceTasks]
+        .map((item, index) => ({ item, index }))
+        .sort((left, right) => {
+            const getOrder = ({ item }) => {
+                if (item.status === 'completed') return 4
+                if (item.type === 'escalation') return 2
+                if (item.isToday) return 1
+                if (item.status === 'needs_action') return 3
+                if (item.status === 'upcoming') return 0
+                return 5
+            }
+
+            return getOrder(left) - getOrder(right) || left.index - right.index
+        })
+        .map(({ item }) => item)
     const visibleItems = allItems.filter(item => {
         if (activeFilter === 'all') return true
-        if (activeFilter === 'today') return item.type === 'gathering' && item.isToday
+        if (activeFilter === 'today') return item.isToday
         if (activeFilter === 'mine') return item.type === 'custom'
         if (activeFilter === 'needs_action') return item.type !== 'escalation' && item.status === 'needs_action'
         if (activeFilter === 'completed') return ['attendance', 'custom'].includes(item.type) && item.status === 'completed'
