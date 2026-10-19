@@ -19,6 +19,8 @@ import { request } from '../../api/request'
 import Calendar from '../../components/Calendar/Calendar'
 import { TrashIcon } from '../../components/Icons/Reusables'
 import LoadingCircle from '../../components/feedback/LoadingCircle'
+import ReviewDrawer from '../secretary/attendance/ReviewDrawer'
+import { markNotificationIdsSeen } from '../../components/feedback/notificationReadState'
 import './Reminders.css'
 
 const FILTERS = [
@@ -225,6 +227,9 @@ function Reminders() {
     const [attendanceTasks, setAttendanceTasks] = useState([])
     const [countdownNow, setCountdownNow] = useState(() => Date.now())
     const [attendanceEntries, setAttendanceEntries] = useState([])
+    const [attendanceDrawerOpen, setAttendanceDrawerOpen] = useState(false)
+    const [activeAttendanceRecord, setActiveAttendanceRecord] = useState(null)
+    const [attendanceRefreshTrigger, setAttendanceRefreshTrigger] = useState(0)
     const [highlightedReminderId, setHighlightedReminderId] = useState(null)
     const [activeFilter, setActiveFilter] = useState('all')
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
@@ -279,6 +284,9 @@ function Reminders() {
                 ])
 
                 const nextReminders = remindersData.data ?? []
+                markNotificationIdsSeen(nextReminders
+                    .filter(reminder => reminder.status !== 'completed' && reminder.reminder_type !== 'submission_countdown')
+                    .map(reminder => `reminder-${reminder.id}`))
                 const nextEscalations = ['secretary', 'program_head', 'cm_coordinator'].includes(role) ? remindersData.escalations ?? [] : []
                 const attendanceRows = attendanceData?.data ?? []
                 const submissionDeadlines = new Map(
@@ -293,6 +301,7 @@ function Reminders() {
                 const nextAttendanceTasks = role === 'program_head' || role === 'program_secretary'
                     ? programHeadSubmissions.map(record => ({
                         id: `submission-${record.id}`,
+                        reminderId: record.id,
                         type: 'attendance',
                         sourceRecord: record,
                         title: 'Attendance record awaiting review',
@@ -312,6 +321,7 @@ function Reminders() {
 
                             return {
                                 id: `attendance-${record.id}`,
+                                reminderId: record.id,
                                 type: 'attendance',
                                 sourceRecord: record,
                                 title: meta.label,
@@ -377,24 +387,36 @@ function Reminders() {
         fetchReminderData()
 
         return () => controller.abort()
-    }, [role])
+    }, [role, attendanceRefreshTrigger])
 
     useEffect(() => {
         const targetReminderId = location.state?.highlightReminderId
         const targetEscalationId = location.state?.highlightEscalationId
-        if ((targetReminderId == null && targetEscalationId == null) || loading) return
+        const targetAttendanceId = location.state?.highlightAttendanceId
+        const targetDeadlineId = location.state?.highlightDeadlineId
+        if ((targetReminderId == null && targetEscalationId == null && targetAttendanceId == null && targetDeadlineId == null) || loading) return
 
         const targetReminder = reminders.find(reminder => String(reminder.id) === String(targetReminderId))
+        const targetDeadline = reminders.find(reminder => reminder.reminder_type === 'submission_countdown'
+            && String(reminder.id) === String(targetDeadlineId))
         const targetEscalation = escalations.find(escalation => String(escalation.id) === String(targetEscalationId))
-        if (targetReminder || targetEscalation) {
+        const targetAttendance = attendanceTasks.find(item => (
+            String(item.sourceRecord?.id) === String(targetAttendanceId)
+            || String(item.sourceRecord?.ref_id) === String(targetAttendanceId)
+        ))
+        if (targetReminder || targetEscalation || targetAttendance || targetDeadline) {
             setHighlightedReminderId(targetEscalation
                 ? `escalation-${targetEscalation.id}`
-                : String(targetReminder.id))
+                : targetAttendance
+                    ? String(targetAttendance.reminderId)
+                    : targetDeadline
+                        ? `deadline-${targetDeadline.parent_reminder_id ?? targetDeadline.id}`
+                        : String(targetReminder.id))
             setActiveFilter('all')
         }
 
         navigate(location.pathname, { replace: true, state: null })
-    }, [location.pathname, location.state, loading, reminders, escalations, navigate])
+    }, [location.pathname, location.state, loading, reminders, escalations, attendanceTasks, navigate])
 
     useEffect(() => {
         if (!highlightedReminderId || loading) return
@@ -485,6 +507,25 @@ function Reminders() {
             }
         })
 
+    const deadlineItems = reminders
+        .filter(reminder => reminder.reminder_type === 'submission_countdown'
+            && reminder.status !== 'completed'
+            && reminder.due_date
+            && new Date(reminder.due_date).getTime() <= countdownNow)
+        .map(reminder => ({
+            id: `deadline-${reminder.parent_reminder_id ?? reminder.id}`,
+            reminderId: `deadline-${reminder.parent_reminder_id ?? reminder.id}`,
+            sourceReminder: reminder,
+            type: 'deadline',
+            icon: NotificationIcon,
+            title: 'Attendance submission deadline',
+            description: reminder.description || GATHERING_LABELS[reminder.gathering_type] || 'Attendance is due',
+            status: 'needs_action',
+            statusLabel: 'Deadline reached',
+            tone: 'needs-action',
+            action: 'Add attendance',
+        }))
+
     const escalationItems = escalations.map(escalation => ({
         id: `escalation-${escalation.id}`,
         reminderId: `escalation-${escalation.id}`,
@@ -499,7 +540,7 @@ function Reminders() {
         action: 'View',
     }))
 
-    const allItems = [...reminderItems, ...escalationItems, ...attendanceTasks]
+    const allItems = [...reminderItems, ...deadlineItems, ...escalationItems, ...attendanceTasks]
     const visibleItems = allItems.filter(item => {
         if (activeFilter === 'all') return true
         if (activeFilter === 'today') return item.type === 'gathering' && item.isToday
@@ -538,6 +579,20 @@ function Reminders() {
     const closeEscalationReport = () => {
         escalationReportControllerRef.current?.abort()
         setEscalationReport(null)
+    }
+
+    const markDeadlineNotificationsSeenForAttendance = (record) => {
+        const recordDay = record?.day_iso || record?.date_iso
+        if (!record?.gathering_type || !recordDay) return
+
+        const parentIds = reminders
+            .filter(reminder => reminder.reminder_type === 'submission_countdown'
+                && reminder.gathering_type === record.gathering_type
+                && dateKeyInLocalTime(reminder.gathering_date) === recordDay)
+            .map(reminder => reminder.parent_reminder_id)
+            .filter(Boolean)
+
+        markNotificationIdsSeen(parentIds.map(id => `deadline-${id}`))
     }
 
     const openEscalationReport = async (escalation) => {
@@ -627,6 +682,7 @@ function Reminders() {
                     body: JSON.stringify({ ...payload, status: 'upcoming' }),
                 })
                 setReminders(prev => [data.data, ...prev])
+                markNotificationIdsSeen([`reminder-${data.data.id}`])
                 setSummary(prev => ({
                     ...prev,
                     upcoming: prev.upcoming + 1,
@@ -795,6 +851,7 @@ function Reminders() {
                                                 if (item.type === 'escalation') {
                                                     openEscalationReport(item.sourceEscalation)
                                                 } else if (item.action === 'Add attendance') {
+                                                    markNotificationIdsSeen([`deadline-${item.sourceReminder.parent_reminder_id ?? item.sourceReminder.id}`])
                                                     navigate('/import', {
                                                         state: {
                                                             gathering_type: item.sourceReminder.gathering_type,
@@ -802,13 +859,14 @@ function Reminders() {
                                                         },
                                                     })
                                                 } else if (role === 'program_head' || role === 'program_secretary') {
+                                                    markDeadlineNotificationsSeenForAttendance(item.sourceRecord)
                                                     navigate(role === 'program_secretary' ? '/program-secretary/submission' : '/program-head/submission', {
                                                         state: { openSubmission: { ...item.sourceRecord, status: 'pending' } },
                                                     })
                                                 } else {
-                                                    navigate('/attendance', {
-                                                        state: { openAttendanceRecord: item.sourceRecord },
-                                                    })
+                                                    markDeadlineNotificationsSeenForAttendance(item.sourceRecord)
+                                                    setActiveAttendanceRecord(item.sourceRecord)
+                                                    setAttendanceDrawerOpen(true)
                                                 }
                                             }}                                        >
                                             {item.action}
@@ -1036,6 +1094,16 @@ function Reminders() {
                     </div>
                 </div>
             )}
+
+            <ReviewDrawer
+                isOpen={attendanceDrawerOpen}
+                onClose={() => setAttendanceDrawerOpen(false)}
+                record={activeAttendanceRecord}
+                onSubmitted={() => {
+                    setAttendanceDrawerOpen(false)
+                    setAttendanceRefreshTrigger(current => current + 1)
+                }}
+            />
         </div>
     )
 }

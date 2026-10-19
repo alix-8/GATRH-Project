@@ -14,6 +14,7 @@ import ResponseKpiIcon from '../../../assets/icons/response-kpi-icon.svg'
 import NoResponseKpiIcon from '../../../assets/icons/no-response-kpi-icon.svg'
 import PendingSubmissionKpiIcon from '../../../assets/icons/pending-submission-kpi-icon.svg'
 import DashboardSkeleton from './DashboardSkeleton'
+import ReviewDrawer from '../attendance/ReviewDrawer'
 import './Dashboard.css'
 
 const gatheringLabels = {
@@ -56,6 +57,9 @@ function Dashboard() {
     const [tasksAndReminders, setTasksAndReminders] = useState([])
     const [attendancePeriod, setAttendancePeriod] = useState('week')
     const [isAttendancePeriodOpen, setIsAttendancePeriodOpen] = useState(false)
+    const [attendanceDrawerOpen, setAttendanceDrawerOpen] = useState(false)
+    const [activeAttendanceRecord, setActiveAttendanceRecord] = useState(null)
+    const [attendanceRefreshTrigger, setAttendanceRefreshTrigger] = useState(0)
     const attendancePeriodDropdownRef = useRef(null)
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1)
     const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
@@ -124,7 +128,7 @@ function Dashboard() {
                 setCalendarMarks(defaultCalendar)
             })
             .finally(() => setIsLoading(false))
-    }, [calendarMonth, calendarYear, attendancePeriod])
+    }, [calendarMonth, calendarYear, attendancePeriod, attendanceRefreshTrigger])
 
     useEffect(() => {
         if (!isAttendancePeriodOpen) return undefined
@@ -402,7 +406,10 @@ function Dashboard() {
                                                     <button
                                                         type="button"
                                                         className="records-action"
-                                                        onClick={() => navigate('/attendance', { state: { openAttendanceRecord: record } })}
+                                                        onClick={() => {
+                                                            setActiveAttendanceRecord(record)
+                                                            setAttendanceDrawerOpen(true)
+                                                        }}
                                                     >
                                                         {record.status === 'validating' ? 'View' : record.action || 'View'} <span aria-hidden="true">›</span>
                                                     </button>
@@ -473,6 +480,16 @@ function Dashboard() {
 
 
             </main>
+
+            <ReviewDrawer
+                isOpen={attendanceDrawerOpen}
+                onClose={() => setAttendanceDrawerOpen(false)}
+                record={activeAttendanceRecord}
+                onSubmitted={() => {
+                    setAttendanceDrawerOpen(false)
+                    setAttendanceRefreshTrigger(current => current + 1)
+                }}
+            />
         </div>
     )
 }

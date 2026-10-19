@@ -6,6 +6,7 @@ import MyReminderIcon from '../../assets/icons/my-reminder-icon.svg'
 import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
 import { request } from '../../api/request'
 import RecordDate from '../RecordDate'
+import { getSeenNotificationIds, markNotificationIdsSeen } from './notificationReadState'
 import './Notification.css'
 
 function formatReminderTime(value) {
@@ -63,6 +64,7 @@ const GATHERING_LABELS = {
 function Notification() {
     const [isOpen, setIsOpen] = useState(false)
     const [items, setItems] = useState([])
+    const [hasUnreadReminder, setHasUnreadReminder] = useState(false)
     const panelRef = useRef(null)
     const navigate = useNavigate()
 
@@ -133,8 +135,27 @@ function Notification() {
                             subtext: formatReminderTime(reminder.due_date),
                             tone: reminder.status === 'needs_action' ? 'needs-attention' : 'read',
                             target: '/reminders',
+                            targetState: { highlightReminderId: reminder.id },
+                            tracksBellDot: true,
                         }
                     })
+
+                const dueAttendanceItems = (remindersData.data ?? [])
+                    .filter(reminder => reminder.reminder_type === 'submission_countdown'
+                        && reminder.status !== 'completed'
+                        && reminder.due_date
+                        && new Date(reminder.due_date).getTime() <= Date.now())
+                    .map(reminder => ({
+                        id: `deadline-${reminder.parent_reminder_id ?? reminder.id}`,
+                        iconType: 'attendance',
+                        title: 'Attendance submission deadline reached',
+                        subtext: reminder.description || GATHERING_LABELS[reminder.gathering_type] || 'Attendance is due',
+                        tone: 'needs-attention',
+                        target: '/reminders',
+                        targetState: { highlightDeadlineId: reminder.id },
+                        tracksBellDot: true,
+                        clearOnClick: false,
+                    }))
 
                 const attendanceItems = (attendanceData.data ?? [])
                     .filter(record => ['validating', 'pending', 'approved'].includes(record.status))
@@ -150,11 +171,16 @@ function Notification() {
                                 : record.gathering || 'Attendance record updated',
                             recordDate: record.day_iso || record.date,
                             tone: meta.tone,
-                            target: '/attendance',
+                            target: '/reminders',
+                            targetState: { highlightAttendanceId: record.id },
                         }
                     })
 
-                setItems([...escalationItems, ...reminderItems, ...attendanceItems].slice(0, 8))
+                const nextItems = [...escalationItems, ...reminderItems, ...dueAttendanceItems, ...attendanceItems]
+                const trackedIds = nextItems.filter(item => item.tracksBellDot).map(item => item.id)
+                const seenIds = getSeenNotificationIds()
+                setHasUnreadReminder(trackedIds.some(id => !seenIds.has(String(id))))
+                setItems(nextItems.slice(0, 8))
         } catch {
             // Aborted or failed refresh: keep whatever items are already shown.
         }
@@ -181,6 +207,16 @@ function Notification() {
         return () => window.removeEventListener('reminders:changed', fetchNotifications)
     }, [fetchNotifications])
 
+    useEffect(() => {
+        window.addEventListener('notifications:changed', fetchNotifications)
+        return () => window.removeEventListener('notifications:changed', fetchNotifications)
+    }, [fetchNotifications])
+
+    useEffect(() => {
+        const intervalId = window.setInterval(fetchNotifications, 60_000)
+        return () => window.clearInterval(intervalId)
+    }, [fetchNotifications])
+
     const iconMap = {
         calendar: CalendarIcon,
         attendance: NotificationIcon,
@@ -188,7 +224,8 @@ function Notification() {
         escalation: EscalationsIcon,
     }
 
-    const openTarget = (target, state = null) => {
+    const openTarget = (target, state = null, notificationId = null) => {
+        if (notificationId) markNotificationIdsSeen([notificationId])
         setIsOpen(false)
         navigate(target, { state })
     }
@@ -198,7 +235,7 @@ function Notification() {
             <button
                 type="button"
                 className="notification-icon"
-                aria-label="Notifications"
+                aria-label={hasUnreadReminder ? 'Notifications, new reminders' : 'Notifications'}
                 aria-expanded={isOpen}
                 onClick={() => setIsOpen(current => !current)}
             >
@@ -207,6 +244,7 @@ function Notification() {
                     alt=""
                     aria-hidden="true"
                 />
+                {hasUnreadReminder && <span className="notification-bell-dot" aria-label="New reminders" />}
             </button>
 
             {isOpen && (
@@ -221,7 +259,11 @@ function Notification() {
                                 type="button"
                                 className={`notification-item ${item.tone} ${item.iconType === 'escalation' ? 'escalation' : ''}`}
                                 key={item.id}
-                                onClick={() => openTarget(item.target, item.targetState)}
+                                onClick={() => openTarget(
+                                    item.target,
+                                    item.targetState,
+                                    item.clearOnClick === false ? null : item.id
+                                )}
                             >
                                 <span className={`notification-item-icon ${item.iconType}`} aria-hidden="true">
                                     <img src={iconMap[item.iconType]} alt="" />

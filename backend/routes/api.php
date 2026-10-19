@@ -147,7 +147,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::middleware('role:program_head')->group(function () {
             Route::get('/escalations', [EscalationController::class, 'index']);
             Route::get('/escalations/{id}', [EscalationController::class, 'show']);
-            Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
+            // Route::patch('/escalations/{id}', [EscalationController::class, 'update']);
         });
     });
 
