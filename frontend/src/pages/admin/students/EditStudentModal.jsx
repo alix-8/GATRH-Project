@@ -1,0 +1,106 @@
+import { useEffect, useRef, useState } from 'react'
+import { request } from '../../../api/request'
+import ModalSelect from '../dashboard/ModalSelect'
+import '../dashboard/AddUserModal.css'
+import '../dashboard/AddStudentModal.css'
+
+const years = [
+    { value: '1', label: '1st Year' },
+    { value: '2', label: '2nd Year' },
+    { value: '3', label: '3rd Year' },
+    { value: '4', label: '4th Year' },
+]
+
+function EditStudentModal({ student, programs, onClose, onUpdated }) {
+    const dialogRef = useRef(null)
+    const [form, setForm] = useState({
+        name: student.name,
+        program: student.program,
+        year_level: String(student.year_level),
+        is_active: Boolean(student.is_active),
+    })
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitError, setSubmitError] = useState('')
+    const [fieldErrors, setFieldErrors] = useState({})
+
+    useEffect(() => {
+        const dialog = dialogRef.current
+        const previousOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        dialog.showModal()
+        return () => {
+            document.body.style.overflow = previousOverflow
+            if (dialog.open) dialog.close()
+        }
+    }, [])
+
+    function updateField(field, value) {
+        setForm(current => ({
+            ...current,
+            [field]: value,
+            ...(field === 'program' && value === 'ACT' && Number(current.year_level) > 2 ? { year_level: '' } : {}),
+        }))
+        setFieldErrors(current => ({ ...current, [field]: undefined }))
+        setSubmitError('')
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault()
+        setIsSubmitting(true)
+        setSubmitError('')
+        setFieldErrors({})
+        try {
+            const result = await request(`/admin/students/${student.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ ...form, name: form.name.trim() }),
+            })
+            onUpdated(result.message)
+        } catch (error) {
+            setSubmitError(error.message || 'Unable to update the student.')
+            setFieldErrors(error.details?.errors ?? {})
+            setIsSubmitting(false)
+        }
+    }
+
+    return <dialog ref={dialogRef} className="admin-add-user-modal admin-add-student-modal" aria-labelledby="admin-edit-student-title" onCancel={event => {
+        event.preventDefault()
+        if (!isSubmitting) onClose()
+    }} onClick={event => {
+        const bounds = event.currentTarget.getBoundingClientRect()
+        if (!isSubmitting && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) onClose()
+    }}>
+        <button className="admin-add-user-close" type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close Edit Student">×</button>
+        <h2 id="admin-edit-student-title">Edit Student</h2>
+        <p className="admin-add-user-description">Update the student record.</p>
+        <form onSubmit={handleSubmit}>
+            <div className="admin-add-user-field">
+                <label htmlFor="admin-edit-student-name">Full Name<span>*</span></label>
+                <input id="admin-edit-student-name" autoFocus required maxLength={255} value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
+                {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
+            </div>
+            <div className="admin-add-user-field">
+                <label htmlFor="admin-edit-student-program">Program<span>*</span></label>
+                <ModalSelect id="admin-edit-student-program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
+                    {programs.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}
+                </ModalSelect>
+                {fieldErrors.program && <small className="admin-add-user-field-error">{fieldErrors.program[0]}</small>}
+            </div>
+            <div className="admin-add-user-field">
+                <label htmlFor="admin-edit-student-year">Year Level<span>*</span></label>
+                <ModalSelect id="admin-edit-student-year" required value={form.year_level} onChange={event => updateField('year_level', event.target.value)} aria-invalid={Boolean(fieldErrors.year_level)}>
+                    <option value="">Select Year Level</option>
+                    {(form.program === 'ACT' ? years.slice(0, 2) : years).map(year => <option key={year.value} value={year.value}>{year.label}</option>)}
+                </ModalSelect>
+                {fieldErrors.year_level && <small className="admin-add-user-field-error">{fieldErrors.year_level[0]}</small>}
+            </div>
+            <div className="admin-add-user-status">
+                <span>Student Status</span>
+                <div><button type="button" role="switch" aria-checked={form.is_active} aria-label="Student active" className={`admin-add-user-switch${form.is_active ? ' active' : ''}`} onClick={() => updateField('is_active', !form.is_active)}><span /></button><span className={form.is_active ? 'active' : 'inactive'}>{form.is_active ? 'Active' : 'Inactive'}</span></div>
+            </div>
+            {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
+            <button className="admin-add-user-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving…' : 'Save Changes'}</button>
+        </form>
+    </dialog>
+}
+
+export default EditStudentModal

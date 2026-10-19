@@ -35,6 +35,15 @@
     font-size: 13px;
 }
 
+.admin-students-notice {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #e9f9ef;
+    color: #17803c;
+    font-size: 13px;
+}
+
 .admin-student-cards {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -119,6 +128,197 @@
 .admin-student-card.purple { border-color: #d0b8f8; }
 .admin-student-card.purple .admin-student-card-icon { border-color: #b896f2; background: #eadcff; }
 
+.admin-students-panel {
+    min-width: 0;
+    margin-top: 16px;
+    padding: 18px 20px 22px;
+    border: 1px solid #dce2eb;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.admin-students-filter-bar,
+.admin-students-filter-controls,
+.admin-students-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.admin-students-filter-bar {
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.admin-students-filter-controls { min-width: 0; }
+.admin-students-actions { flex-shrink: 0; }
+.admin-students-select.program { width: 142px; }
+.admin-students-select.year { width: 168px; }
+.admin-students-select.status { width: 148px; }
+
+.admin-students-select .admin-modal-select select,
+.admin-students-search {
+    width: 100%;
+    height: 45px;
+    box-sizing: border-box;
+    border: 1px solid #c8d2e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #52627e;
+    font: inherit;
+    font-size: 12px;
+}
+
+.admin-students-select .admin-modal-select select {
+    padding: 0 34px 0 12px;
+    appearance: none;
+    cursor: pointer;
+    color-scheme: light;
+}
+
+.admin-students-select .admin-modal-select select:focus,
+.admin-students-search:focus-within {
+    outline: 2px solid #169ff4;
+    outline-offset: 0;
+    border-color: #169ff4;
+}
+
+.admin-students-search {
+    display: flex;
+    width: 200px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 11px;
+}
+
+.admin-students-search svg { width: 15px; height: 15px; flex-shrink: 0; }
+.admin-students-search input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #233756;
+    font: inherit;
+    font-size: 12px;
+}
+.admin-students-search input::placeholder { color: #bdc9dc; }
+
+.admin-students-add-button,
+.admin-students-import-button {
+    display: inline-flex;
+    height: 45px;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    box-sizing: border-box;
+    border-radius: 5px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.admin-students-add-button {
+    min-width: 140px;
+    border: 1px solid #159ff4;
+    background: #159ff4;
+    color: #fff;
+}
+.admin-students-add-button span { font-size: 20px; font-weight: 300; line-height: 1; }
+.admin-students-import-button {
+    min-width: 137px;
+    border: 1px solid #159ff4;
+    background: #fff;
+    color: #159ff4;
+}
+.admin-students-import-button img { width: 16px; height: 16px; }
+.admin-students-import-button:disabled { opacity: .6; cursor: wait; }
+.admin-students-file-input { display: none; }
+
+.admin-students-table-wrap {
+    max-height: 478px;
+    overflow: auto;
+    border: 1px solid #cbd4df;
+    border-radius: 6px;
+    scrollbar-color: #c9d3e0 #f3f6fa;
+    scrollbar-width: thin;
+}
+.admin-students-table-wrap:focus-visible { outline: 2px solid #169ff4; outline-offset: 2px; }
+.admin-students-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #52627e;
+    font-size: 11px;
+}
+.admin-students-table thead { position: sticky; top: 0; z-index: 1; }
+.admin-students-table th {
+    height: 32px;
+    padding: 0 15px;
+    background: #f1f5fa;
+    color: #203557;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+}
+.admin-students-table td {
+    height: 63px;
+    padding: 0 15px;
+    border-top: 1px solid #e5e9ef;
+    white-space: nowrap;
+}
+.admin-students-table th:first-child { width: 36%; }
+.admin-students-table th:last-child,
+.admin-students-table td:last-child { text-align: center; }
+.admin-students-name { display: inline-flex; align-items: center; gap: 10px; }
+.admin-students-name strong { color: #183154; font-size: 12px; font-weight: 600; }
+.admin-students-avatar {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 10px;
+}
+.admin-students-avatar.blue { background: #1b9ef4; }
+.admin-students-avatar.pink { background: #d867e9; }
+.admin-students-avatar.orange { background: #f08b2c; }
+.admin-students-avatar.yellow { background: #f1c64b; }
+.admin-students-avatar.slate { background: #71839e; }
+.admin-students-avatar.purple { background: #9369df; }
+.admin-students-status {
+    display: inline-block;
+    min-width: 50px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    text-align: center;
+    font-size: 9px;
+}
+.admin-students-status.active { background: #d8f6e2; color: #20a451; }
+.admin-students-status.inactive { background: #fff6dc; color: #cc9e26; }
+.admin-students-edit-button {
+    display: inline-grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border: 1px solid #9cd5ff;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+}
+.admin-students-edit-button img { width: 15px; height: 15px; }
+.admin-students-table-state { height: 120px !important; text-align: center; }
+.admin-students-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 12px; color: #62718a; font-size: 12px; }
+.admin-students-pagination button { border: 1px solid #bfd4e8; border-radius: 4px; padding: 6px 10px; background: #fff; color: #168fe0; cursor: pointer; }
+.admin-students-pagination button:disabled { opacity: .5; cursor: default; }
+
+@media (max-width: 1250px) {
+    .admin-students-filter-bar { align-items: stretch; flex-wrap: wrap; }
+    .admin-students-filter-controls { flex-wrap: wrap; }
+    .admin-students-actions { margin-left: auto; }
+}
+
 @media (max-width: 1100px) {
     .admin-student-cards {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -133,4 +333,10 @@
     .admin-student-cards {
         grid-template-columns: 1fr;
     }
+
+    .admin-students-panel { padding: 14px; }
+    .admin-students-filter-controls, .admin-students-actions { width: 100%; }
+    .admin-students-select.program, .admin-students-select.year, .admin-students-select.status, .admin-students-search { width: calc(50% - 2px); }
+    .admin-students-actions button { flex: 1; min-width: 0; }
+    .admin-students-table { min-width: 680px; }
 }
