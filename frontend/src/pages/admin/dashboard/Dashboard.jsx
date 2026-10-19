@@ -7,9 +7,18 @@ import ActiveUsersIcon from '../../../assets/icons/active-users-icon.svg'
 import AdminStudentsIcon from '../../../assets/icons/admin-students-icon.svg'
 import ActiveProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
 import SystemStatusIcon from '../../../assets/icons/system-status-icon.svg'
+import ChancellorIcon from '../../../assets/icons/chancellor-icon.svg'
+import ProgramHeadsIcon from '../../../assets/icons/program-heads-icon.svg'
+import SecretariesIcon from '../../../assets/icons/secretaries-icon.svg'
 import './Dashboard.css'
 
-const roleColors = ['purple', 'blue', 'green', 'yellow', 'navy']
+const accountRoleIcons = {
+    chancellor: { icon: ChancellorIcon, tone: 'purple' },
+    program_head: { icon: ProgramHeadsIcon, tone: 'blue' },
+    program_secretary: { icon: SecretariesIcon, tone: 'green' },
+    secretary: { icon: SecretariesIcon, tone: 'green' },
+    student: { icon: AdminStudentsIcon, tone: 'yellow' },
+}
 
 function formatDate(value) {
     if (!value) return '—'
@@ -30,6 +39,12 @@ function AdminDashboard() {
     }, [])
 
     const summary = dashboard?.summary
+    const accountRows = dashboard ? [
+        ...dashboard.accounts,
+        ...(!dashboard.accounts.some(account => account.role === 'student')
+            ? [{ role: 'student', label: 'Students', count: summary?.students ?? 0, isStudentRecord: true }]
+            : []),
+    ] : []
     const cards = [
         { label: 'Active users', value: summary?.active_users, detail: 'Across all roles', tone: 'blue', icon: ActiveUsersIcon },
         { label: 'Students', value: summary?.students, detail: 'Enrolled in programs', tone: 'green', icon: AdminStudentsIcon },
@@ -67,17 +82,21 @@ function AdminDashboard() {
                         <section className="admin-panel admin-accounts-panel">
                             <div className="admin-panel-heading">
                                 <div><h2>Manage System Accounts</h2><p>Create and maintain accounts.</p></div>
-                                <Link to="/admin/user-roles">Manage all <span aria-hidden="true">→</span></Link>
                             </div>
                             <div className="admin-account-list">
-                                {(dashboard?.accounts ?? []).map((account, index) => (
-                                    <div className="admin-account-row" key={account.role}>
-                                        <span className={`admin-account-icon ${roleColors[index % roleColors.length]}`} aria-hidden="true">♟</span>
-                                        <div><strong>{account.label}</strong><small>{account.count} {account.count === 1 ? 'account' : 'accounts'}</small></div>
-                                        <Link to="/admin/user-roles" aria-label={`Manage ${account.label}`}>Manage</Link>
-                                    </div>
-                                ))}
-                                {dashboard && dashboard.accounts.length === 0 && <p className="admin-empty">No user accounts found.</p>}
+                                {accountRows.map(account => {
+                                    const { icon, tone } = accountRoleIcons[account.role] ?? { icon: ActiveUsersIcon, tone: 'navy' }
+                                    const countLabel = account.isStudentRecord
+                                        ? (account.count === 1 ? 'student record' : 'student records')
+                                        : (account.count === 1 ? 'account' : 'accounts')
+                                    return (
+                                        <div className="admin-account-row" key={account.role}>
+                                            <span className={`admin-account-icon ${tone}`} aria-hidden="true"><img src={icon} alt="" /></span>
+                                            <div><strong>{account.label}</strong><small>{account.count} {countLabel}</small></div>
+                                            <Link to={account.role === 'student' ? '/admin/students' : '/admin/user-roles'} aria-label={`Manage ${account.label}`}>Manage</Link>
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </section>
 

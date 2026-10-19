@@ -192,18 +192,28 @@
     font-size: 11px;
 }
 
-.admin-panel-heading>a {
-    color: #078bf0;
-    font-size: 11px;
-    text-decoration: none;
-    white-space: nowrap;
+.admin-accounts-panel .admin-panel-heading {
+    padding-bottom: 5px;
+    border-bottom: 1px solid #dce7f5;
+}
+
+.admin-accounts-panel .admin-panel-heading p {
+    margin-bottom: 0;
+}
+
+.admin-account-list {
+    max-height: 216px;
+    overflow-y: auto;
+    scrollbar-color: #c9d5e7 transparent;
+    scrollbar-width: thin;
 }
 
 .admin-account-row {
     display: flex;
-    min-height: 45px;
+    height: 54px;
     align-items: center;
     gap: 9px;
+    box-sizing: border-box;
     border-bottom: 1px solid #edf0f4;
 }
 
@@ -213,12 +223,19 @@
 
 .admin-account-icon {
     display: grid;
-    width: 28px;
+    width: 34px;
     height: 28px;
+    flex: 0 0 34px;
     place-items: center;
     border-radius: 5px;
-    color: #fff;
-    font-size: 13px;
+}
+
+.admin-account-icon img {
+    display: block;
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
 }
 
 .admin-account-icon.purple {
@@ -258,13 +275,14 @@
 }
 
 .admin-account-row>a {
-    padding: 4px 12px;
+    padding: 1px 22px;
     border: 1px solid #c6e4ff;
-    border-radius: 6px;
+    border-radius: 10px;
     background: #eef8ff;
     color: #078bf0;
     font-size: 9px;
     text-decoration: none;
+    margin-right: 12px;
 }
 
 .admin-quick-grid {
