@@ -1,0 +1,43 @@
+.admin-add-program-modal {
+    width: min(460px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+    padding: 17px 16px;
+}
+
+.admin-add-program-modal h2 {
+    font-size: 20px;
+}
+
+.admin-add-program-modal .admin-add-user-description {
+    max-width: 355px;
+    margin: 3px 0 15px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.admin-add-program-modal .admin-add-user-field {
+    margin-bottom: 14px;
+}
+
+.admin-add-program-modal .admin-add-user-field label {
+    font-size: 13px;
+}
+
+.admin-add-program-modal .admin-add-user-field input,
+.admin-add-program-modal .admin-add-user-field select {
+    height: 40px;
+    font-size: 12px;
+}
+
+.admin-add-program-modal .admin-add-user-status {
+    margin: 4px 0 20px;
+}
+
+.admin-add-program-modal .admin-add-user-submit {
+    min-height: 44px;
+}
+
+.admin-add-program-modal .admin-add-user-note.permissions {
+    min-height: 78px;
+    margin-top: 12px;
+}
