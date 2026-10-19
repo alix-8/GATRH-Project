@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import { request } from '../../../api/request'
+import ActiveUsersIcon from '../../../assets/icons/active-users-icon.svg'
+import AdminStudentsIcon from '../../../assets/icons/admin-students-icon.svg'
+import ActiveProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
+import SystemStatusIcon from '../../../assets/icons/system-status-icon.svg'
 import './Dashboard.css'
 
 const roleColors = ['purple', 'blue', 'green', 'yellow', 'navy']
@@ -27,10 +31,10 @@ function AdminDashboard() {
 
     const summary = dashboard?.summary
     const cards = [
-        { label: 'User accounts', value: summary?.user_accounts, detail: 'Accounts across all roles', tone: 'blue', icon: '♟' },
-        { label: 'Students', value: summary?.students, detail: 'Registered in programs', tone: 'green', icon: '✦' },
-        { label: 'Programs', value: summary?.programs, detail: 'Available programs', tone: 'purple', icon: '▦' },
-        { label: 'System status', value: dashboard?.system_status, detail: 'Dashboard services responding', tone: 'navy', icon: '✓' },
+        { label: 'Active users', value: summary?.active_users, detail: 'Across all roles', tone: 'blue', icon: ActiveUsersIcon },
+        { label: 'Students', value: summary?.students, detail: 'Enrolled in programs', tone: 'green', icon: AdminStudentsIcon },
+        { label: 'Programs', value: summary?.active_programs, detail: 'Active programs', tone: 'purple', icon: ActiveProgramsIcon },
+        { label: 'System Status', value: dashboard?.system_status, detail: 'All systems operational', tone: 'navy', icon: SystemStatusIcon },
     ]
 
     return (
@@ -49,7 +53,7 @@ function AdminDashboard() {
                     <section className="admin-summary-grid" aria-label="System overview">
                         {cards.map(card => (
                             <article className={`admin-summary-card ${card.tone}`} key={card.label}>
-                                <span className="admin-summary-icon" aria-hidden="true">{card.icon}</span>
+                                <span className="admin-summary-icon" aria-hidden="true"><img src={card.icon} alt="" /></span>
                                 <div>
                                     <p>{card.label}</p>
                                     <strong>{dashboard ? card.value : '—'}</strong>
