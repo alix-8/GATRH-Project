@@ -2,7 +2,7 @@ import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import './Programs.css'
 
-function Students() {
+function Programs() {
     return (
         <div className="admin-programs">
             <Sidebar />
@@ -17,4 +17,4 @@ function Students() {
     )
 }
 
-export default Students
+export default Programs

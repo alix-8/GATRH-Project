@@ -115,6 +115,21 @@
 
 .profile-icon { display: block; width: 38px; height: 38px; border-radius: 50%; }
 
+.sidebar-settings {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    place-items: center;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    background: #ffffff;
+}
+
+.sidebar-settings.active { border-color: #F2C94C; }
+
+.settings-icon { display: block; width: 32px; height: 32px; }
+
 .logout-modal-backdrop {
     position: fixed;
     display: flex;

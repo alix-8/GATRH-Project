@@ -17,6 +17,7 @@ import AdminUserRoles from './pages/admin/user-roles/UserRoles'
 import AdminPrograms from './pages/admin/programs/Programs'
 import AdminStudents from './pages/admin/students/Students'
 import AdminActivityLog from './pages/admin/activity-log/ActivityLog'
+import AdminSystemSettings from './pages/admin/system-settings/SystemSettings'
 import ChancellorDashboard from './pages/chancellor/dashboard/Dashboard'
 import CoordinatorMonitoring from './pages/coordinator/monitoring/Monitoring'
 
@@ -52,7 +53,7 @@ const pageTitleByPath = {
   '/admin/students': 'Students',
   '/admin/programs': 'Programs',
   '/admin/activity-log': 'Activity Log',
-  '/admin/settings': 'System Settings',
+  '/admin/system-settings': 'System Settings',
   '/unauthorized': 'Access Not Configured',
 }
 
@@ -121,7 +122,7 @@ function AppRoutes() {
       <Route path="/admin/students" element={<RoleRoute roles={['admin']}><AdminStudents /></RoleRoute>} />
       <Route path="/admin/programs" element={<RoleRoute roles={['admin']}><AdminPrograms /></RoleRoute>} />
       <Route path="/admin/activity-log" element={<RoleRoute roles={['admin']}><AdminActivityLog /></RoleRoute>} />
-      <Route path="/admin/settings" element={<RoleRoute roles={['admin']}><RolePlaceholder title="System Settings" /></RoleRoute>} />
+      <Route path="/admin/system-settings" element={<RoleRoute roles={['admin']}><AdminSystemSettings /></RoleRoute>} />
 
       <Route path="/unauthorized" element={session ? <RolePlaceholder title="Access not configured" /> : <Navigate to="/" replace />} />
 

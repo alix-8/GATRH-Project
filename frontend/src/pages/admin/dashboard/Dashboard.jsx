@@ -85,7 +85,7 @@ function AdminDashboard() {
                                 <Link className="admin-quick-action blue" to="/admin/user-roles"><span aria-hidden="true">♟</span><strong>Add User</strong><small>Create an account and assign its role.</small><b aria-hidden="true">›</b></Link>
                                 <Link className="admin-quick-action green" to="/admin/students"><span aria-hidden="true">✦</span><strong>Manage Students</strong><small>Review student information.</small><b aria-hidden="true">›</b></Link>
                                 <Link className="admin-quick-action purple" to="/admin/programs"><span aria-hidden="true">▦</span><strong>Manage Programs</strong><small>Review and maintain programs.</small><b aria-hidden="true">›</b></Link>
-                                <Link className="admin-quick-action navy" to="/admin/settings"><span aria-hidden="true">⚙</span><strong>System Settings</strong><small>Manage system configuration.</small><b aria-hidden="true">›</b></Link>
+                                <Link className="admin-quick-action navy" to="/admin/system-settings"><span aria-hidden="true">⚙</span><strong>System Settings</strong><small>Manage system configuration.</small><b aria-hidden="true">›</b></Link>
                             </div>
                         </section>
                     </div>
