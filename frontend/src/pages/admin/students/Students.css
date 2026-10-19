@@ -1,0 +1,23 @@
+.admin-students {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #ffffff;
+}
+
+.admin-students-main {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: #ffffff;
+}
+
+.admin-students-header .header-title h3 {
+    font-size: 20px;
+}
+
+.admin-students-header .header-title p {
+    color: #77839a;
+    font-size: 13px;
+}
