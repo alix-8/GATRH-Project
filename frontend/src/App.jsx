@@ -13,9 +13,10 @@ import Profile from './pages/profile/Profile'
 import ProgramHeadSubmissions from './pages/program-head/submissions/Submissions'
 import ProgramHeadRecords from './pages/program-head/records/Records'
 import AdminDashboard from './pages/admin/dashboard/Dashboard'
-import UserRoles from './pages/admin/user-roles/UserRoles'
-import Programs from './pages/admin/programs/Programs'
+import AdminUserRoles from './pages/admin/user-roles/UserRoles'
+import AdminPrograms from './pages/admin/programs/Programs'
 import AdminStudents from './pages/admin/students/Students'
+import AdminActivityLog from './pages/admin/activity-log/ActivityLog'
 import ChancellorDashboard from './pages/chancellor/dashboard/Dashboard'
 import CoordinatorMonitoring from './pages/coordinator/monitoring/Monitoring'
 
@@ -50,6 +51,7 @@ const pageTitleByPath = {
   '/admin/user-roles': 'User Roles',
   '/admin/students': 'Students',
   '/admin/programs': 'Programs',
+  '/admin/activity-log': 'Activity Log',
   '/admin/settings': 'System Settings',
   '/unauthorized': 'Access Not Configured',
 }
@@ -115,9 +117,10 @@ function AppRoutes() {
       <Route path="/coordinator/monitoring" element={<RoleRoute roles={['cm_coordinator']}><CoordinatorMonitoring /></RoleRoute>} />
 
       <Route path="/admin/dashboard" element={<RoleRoute roles={['admin']}><AdminDashboard /></RoleRoute>} />
-      <Route path="/admin/user-roles" element={<RoleRoute roles={['admin']}><UserRoles /></RoleRoute>} />
+      <Route path="/admin/user-roles" element={<RoleRoute roles={['admin']}><AdminUserRoles /></RoleRoute>} />
       <Route path="/admin/students" element={<RoleRoute roles={['admin']}><AdminStudents /></RoleRoute>} />
-      <Route path="/admin/programs" element={<RoleRoute roles={['admin']}><Programs /></RoleRoute>} />
+      <Route path="/admin/programs" element={<RoleRoute roles={['admin']}><AdminPrograms /></RoleRoute>} />
+      <Route path="/admin/activity-log" element={<RoleRoute roles={['admin']}><AdminActivityLog /></RoleRoute>} />
       <Route path="/admin/settings" element={<RoleRoute roles={['admin']}><RolePlaceholder title="System Settings" /></RoleRoute>} />
 
       <Route path="/unauthorized" element={session ? <RolePlaceholder title="Access not configured" /> : <Navigate to="/" replace />} />

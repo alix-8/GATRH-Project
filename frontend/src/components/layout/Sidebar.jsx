@@ -13,6 +13,7 @@ import LogoutIcon from '../../assets/icons/logout-icon.svg'
 import ProfileIcon from '../../assets/icons/profile-icon.svg'
 import UserRolesIcon from '../../assets/icons/user-roles-icon.svg'
 import ProgramsIcon from '../../assets/icons/programs-icon.svg'
+import ActivityLogIcon from '../../assets/icons/activity-log-icon.svg'
 import './Sidebar.css'
 
 const navigationByRole = {
@@ -49,6 +50,7 @@ const navigationByRole = {
         { label: 'User & Roles', to: '/admin/user-roles', icon: UserRolesIcon },
         { label: 'Students', to: '/admin/students', icon: StudentsIcon },
         { label: 'Programs', to: '/admin/programs', icon: ProgramsIcon },
+        { label: 'Activity Log', to: '/admin/activity-log', icon: ActivityLogIcon },
         { label: 'System Settings', to: '/admin/settings', icon: AttendanceIcon },
     ],
 }
