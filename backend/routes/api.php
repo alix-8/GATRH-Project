@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminActivityLogController;
 use App\Http\Controllers\Admin\AdminProgramController;
 use App\Http\Controllers\Admin\AdminSystemSettingController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -96,6 +97,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
     /* Administrator */
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
+        Route::get('/admin/activity-log', [AdminActivityLogController::class, 'index']);
         Route::get('/admin/settings/general', [AdminSystemSettingController::class, 'show']);
         Route::patch('/admin/settings/general', [AdminSystemSettingController::class, 'update']);
         Route::get('/admin/settings/gatherings', [AdminSystemSettingController::class, 'showGatheringSchedules']);

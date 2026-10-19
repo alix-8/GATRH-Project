@@ -31,6 +31,12 @@ Artisan::command('inspire', function () {
         $this->info("Deleted {$deleted} expired reminder(s).");
     })->purpose('Delete expired gathering and submission reminders');
 
+    Artisan::command('reminders:expire-completed', function () {
+        $deleted = app(ReminderGenerationService::class)->deleteCompletedReminders();
+
+        $this->info("Expired {$deleted} completed reminder(s).");
+    })->purpose('Expire completed reminders');
+
     Artisan::command('escalations:refresh-weekly', function () {
         $synced = app(WeeklyEscalationService::class)->syncAll();
 
@@ -53,6 +59,11 @@ Artisan::command('inspire', function () {
     //delete expired gathering and submission reminders
     Schedule::command('reminders:delete-expired')
         ->dailyAt('00:15')
+        ->withoutOverlapping();
+
+    // Expire completed reminders every Monday at 11:59 PM.
+    Schedule::command('reminders:expire-completed')
+        ->weeklyOn(Carbon::MONDAY, '23:59')
         ->withoutOverlapping();
 
     //spawn submission reminders for secretaries

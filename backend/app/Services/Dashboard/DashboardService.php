@@ -8,6 +8,7 @@ use App\Models\Escalation;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\Reminder;
+use App\Services\Reminders\GatheringService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -41,13 +42,6 @@ class DashboardService
             ],
             default => $weekRange,
         };
-
-        $chartRange = $chartPeriod === 'month'
-            ? [
-                'start' => $month->copy()->startOfMonth(),
-                'end' => $month->copy()->endOfMonth()->endOfDay(),
-            ]
-            : $weekRange;
 
         return [
             'role' => 'secretary',
@@ -463,18 +457,22 @@ class DashboardService
         $month = Carbon::create($year, $monthNumber, 1)->startOfDay();
         $monthStart = $month->toDateString();
         $monthEnd = $month->copy()->endOfMonth()->toDateString();
+        $monthLastDay = $month->copy()->endOfMonth()->startOfDay();
         $totalManagedStudents = Student::query()->accessibleTo($user)->count();
 
-        $recordStudentIds = AttendanceRecord::query()
-            ->select('gathering_type', 'student_id')
+        $responsesByGathering = AttendanceRecord::query()
+            ->select('gathering_type', 'student_id', 'day')
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->where('status', 'present')
             ->whereBetween('day', [$monthStart, $monthEnd])
             ->get()
             ->groupBy('gathering_type')
-            ->map(fn ($group) => $group->pluck('student_id')->unique());
+            ->map(fn ($group) => $group->map(fn ($record) => [
+                'student_id' => (int) $record->student_id,
+                'day' => Carbon::parse($record->day)->toDateString(),
+            ]));
 
-        $draftStudentIds = AttendanceDraft::query()
+        $draftResponsesByGathering = AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->whereIn('status', ['draft', 'pending'])
             ->whereBetween('day', [$monthStart, $monthEnd])
@@ -485,18 +483,26 @@ class DashboardService
                 ->map(fn (array $entry) => [
                     'gathering_type' => $entry['gathering_type'] ?? $draft->gathering_type,
                     'student_id' => (int) $entry['student_id'],
+                    'day' => Carbon::parse($entry['day'] ?? $draft->day)->toDateString(),
                 ]))
             ->groupBy('gathering_type')
-            ->map(fn ($group) => $group->pluck('student_id')->unique());
+            ->map(fn ($group) => $group->map(fn ($entry) => [
+                'student_id' => $entry['student_id'],
+                'day' => $entry['day'],
+            ]));
 
         return collect(['pm', 'ws', 'tg'])
-            ->map(function ($type) use ($recordStudentIds, $draftStudentIds, $totalManagedStudents) {
-                $presentCount = $recordStudentIds->get($type, collect())
-                    ->concat($draftStudentIds->get($type, collect()))
-                    ->unique()
+            ->map(function ($type) use ($responsesByGathering, $draftResponsesByGathering, $totalManagedStudents, $month, $monthLastDay) {
+                $presentCount = $responsesByGathering->get($type, collect())
+                    ->concat($draftResponsesByGathering->get($type, collect()))
+                    ->unique(fn ($response) => $response['student_id'] . '|' . $response['day'])
                     ->count();
-                $percentage = $totalManagedStudents > 0
-                    ? min(100, (int) round(($presentCount / $totalManagedStudents) * 100))
+                $occurrences = app(GatheringService::class)
+                    ->countScheduledOccurrences($type, $month, $monthLastDay);
+                $expectedResponses = $totalManagedStudents * $occurrences;
+                $percentage = $expectedResponses > 0
+                    // Percentage = present responses ÷ expected responses × 100
+                    ? min(100, (int) round(($presentCount / $expectedResponses) * 100))
                     : 0;
 
                 return [

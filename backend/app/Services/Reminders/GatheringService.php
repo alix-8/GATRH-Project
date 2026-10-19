@@ -48,6 +48,23 @@ class GatheringService
         );
     }
 
+    public function countScheduledOccurrences(string $type, Carbon $start, Carbon $end): int
+    {
+        $count = 0;
+        $date = $start->copy()->startOfDay();
+        $lastDate = $end->copy()->startOfDay();
+
+        while ($date->lessThanOrEqualTo($lastDate)) {
+            if ($this->isScheduledDay($type, $date)) {
+                $count++;
+            }
+
+            $date->addDay();
+        }
+
+        return $count;
+    }
+
     public function scheduledDayNames(string $type): string
     {
         return collect($this->getScheduledDays($type))
