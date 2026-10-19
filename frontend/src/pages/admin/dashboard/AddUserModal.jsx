@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
+import ModalSelect from './ModalSelect'
 import './AddUserModal.css'
 
 const roleOptions = [
@@ -138,19 +139,19 @@ function AddUserModal({ onClose, onCreated }) {
 
                 <div className="admin-add-user-field">
                     <label htmlFor="admin-add-user-role">Role<span>*</span></label>
-                    <select id="admin-add-user-role" name="role" required value={form.role} onChange={event => updateField('role', event.target.value)} aria-invalid={Boolean(fieldErrors.role)}>
+                    <ModalSelect id="admin-add-user-role" name="role" required value={form.role} onChange={event => updateField('role', event.target.value)} aria-invalid={Boolean(fieldErrors.role)}>
                         <option value="">Select Role</option>
                         {roleOptions.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
-                    </select>
+                    </ModalSelect>
                     {fieldErrors.role && <small className="admin-add-user-field-error">{fieldErrors.role[0]}</small>}
                 </div>
 
                 {needsProgram && <div className="admin-add-user-field">
                     <label htmlFor="admin-add-user-program">{needsYearLevel ? 'Program' : 'Assigned Program'}<span>*</span></label>
-                    <select id="admin-add-user-program" name="program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
+                    <ModalSelect id="admin-add-user-program" name="program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
                         <option value="">{programsLoading ? 'Loading programs…' : 'Select Program'}</option>
                         {programs.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}
-                    </select>
+                    </ModalSelect>
                     {programsError && <small className="admin-add-user-field-error">{programsError}</small>}
                     {!programsLoading && !programsError && programs.length === 0 && <small className="admin-add-user-field-error">No programs available. Add a program first.</small>}
                     {fieldErrors.program && <small className="admin-add-user-field-error">{fieldErrors.program[0]}</small>}
@@ -158,10 +159,10 @@ function AddUserModal({ onClose, onCreated }) {
 
                 {needsYearLevel && <div className="admin-add-user-field">
                     <label htmlFor="admin-add-user-year">Year Level<span>*</span></label>
-                    <select id="admin-add-user-year" name="year_level" required value={form.year_level} onChange={event => updateField('year_level', event.target.value)} aria-invalid={Boolean(fieldErrors.year_level)}>
+                    <ModalSelect id="admin-add-user-year" name="year_level" required value={form.year_level} onChange={event => updateField('year_level', event.target.value)} aria-invalid={Boolean(fieldErrors.year_level)}>
                         <option value="">Select Year Level</option>
                         {[1, 2, 3, 4].map(year => <option key={year} value={String(year)}>{year}{['st', 'nd', 'rd', 'th'][year - 1]} Year</option>)}
-                    </select>
+                    </ModalSelect>
                     {fieldErrors.year_level && <small className="admin-add-user-field-error">{fieldErrors.year_level[0]}</small>}
                 </div>}
 
