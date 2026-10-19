@@ -26,9 +26,9 @@ import './Reminders.css'
 const FILTERS = [
     { value: 'all', label: 'All Reminders' },
     { value: 'today', label: 'Today' },
+    { value: 'mine', label: 'My reminder' },
     { value: 'needs_action', label: 'Needs Action' },
     { value: 'completed', label: 'Completed' },
-    { value: 'mine', label: 'My reminder' },
 ]
 
 const REMINDER_TYPES = [
@@ -97,6 +97,26 @@ function fallbackSubmissionDeadline(gatheringDate) {
     return Number.isNaN(deadline.getTime()) ? null : deadline
 }
 
+function formatCountdownDuration(totalSeconds) {
+    const days = Math.floor(totalSeconds / 86400)
+    const hours = Math.floor((totalSeconds % 86400) / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
+    const parts = []
+
+    if (days > 0) parts.push(`${days}d`)
+    if (hours > 0) parts.push(`${hours}h`)
+    if (minutes > 0) parts.push(`${minutes}m`)
+    if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`)
+
+    return parts.join(' ')
+}
+
+function isDeadlinePassed(dueDate, now = Date.now()) {
+    const dueAt = new Date(dueDate).getTime()
+    return Number.isFinite(dueAt) && dueAt <= now
+}
+
 function formatDeadlineCountdown(dueDate, now = Date.now()) {
     if (!dueDate) return ''
 
@@ -105,23 +125,11 @@ function formatDeadlineCountdown(dueDate, now = Date.now()) {
 
     const remainingSeconds = Math.ceil((dueAt - now) / 1000)
     if (remainingSeconds <= 0) {
-        const daysLate = Math.floor(Math.abs(remainingSeconds) / 86400)
-        return daysLate > 0
-            ? `Deadline passed ${daysLate} day${daysLate === 1 ? '' : 's'} ago`
-            : 'Deadline passed'
+        const elapsedSeconds = Math.abs(remainingSeconds)
+        return `Deadline passed ${formatCountdownDuration(elapsedSeconds)} ago`
     }
 
-    const days = Math.floor(remainingSeconds / 86400)
-    const hours = Math.floor((remainingSeconds % 86400) / 3600)
-    const minutes = Math.floor((remainingSeconds % 3600) / 60)
-    const seconds = remainingSeconds % 60
-    const parts = []
-
-    if (days) parts.push(`${days}d`)
-    if (hours || days) parts.push(`${hours}h`)
-    parts.push(`${minutes}m`, `${seconds}s`)
-
-    return `Deadline in ${parts.join(' ')}`
+    return `Deadline in ${formatCountdownDuration(remainingSeconds)}`
 }
 
 function formatReminderDate(date) {
@@ -240,6 +248,7 @@ function Reminders() {
     const [formData, setFormData] = useState(EMPTY_FORM)
     const [openMenu, setOpenMenu] = useState('')
     const [saving, setSaving] = useState(false)
+    const [completingReminderId, setCompletingReminderId] = useState(null)
     const [deletingReminder, setDeletingReminder] = useState(null)
     const [deleting, setDeleting] = useState(false)
     const [escalationReport, setEscalationReport] = useState(null)
@@ -480,6 +489,7 @@ function Reminders() {
             const title = isGathering
                 ? GATHERING_LABELS[reminder.gathering_type] || reminder.title
                 : `My Reminder : ${reminder.title}`
+            const isCompleted = reminder.status === 'completed'
 
             return {
                 id: `reminder-${reminder.id}`,
@@ -500,8 +510,16 @@ function Reminders() {
                             : isToday
                                 ? 'Today'
                                 : 'Upcoming'
-                    : 'Attendance Task',
-                tone: reminder.status === 'completed' ? 'completed' : 'upcoming',
+                    : isCompleted
+                        ? 'Completed'
+                        : reminder.status === 'needs_action'
+                            ? 'Needs Action'
+                            : 'Upcoming',
+                tone: isCompleted ? 'completed' : reminder.status === 'needs_action' ? 'needs-action' : 'upcoming',
+                countdown: !isGathering && !isCompleted
+                    ? formatDeadlineCountdown(reminder.due_date, countdownNow)
+                    : '',
+                countdownOverdue: !isGathering && !isCompleted && isDeadlinePassed(reminder.due_date, countdownNow),
                     isToday,
                 action: isGathering && isToday && !alreadyRecorded ? 'Add attendance' : null,
             }
@@ -546,12 +564,12 @@ function Reminders() {
         if (activeFilter === 'today') return item.type === 'gathering' && item.isToday
         if (activeFilter === 'mine') return item.type === 'custom'
         if (activeFilter === 'needs_action') return item.type !== 'escalation' && item.status === 'needs_action'
-        if (activeFilter === 'completed') return item.type === 'attendance' && item.status === 'completed'
+        if (activeFilter === 'completed') return ['attendance', 'custom'].includes(item.type) && item.status === 'completed'
         return true
     })
 
-    const selectedTypeLabel = REMINDER_TYPES.find(option => option.value === formData.type)?.label ?? 'Attendance Task'
-    const selectedGatheringLabel = GATHERING_OPTIONS.find(option => option.value === formData.gathering)?.label ?? 'Gathering'
+    const selectedTypeLabel = REMINDER_TYPES.find(option => option.value === formData.type)?.label ?? 'Select Type'
+    const selectedGatheringLabel = GATHERING_OPTIONS.find(option => option.value === formData.gathering)?.label ?? 'Select Gathering'
 
     const openTimePicker = () => {
         if (timeInputRef.current?.showPicker) {
@@ -621,6 +639,8 @@ function Reminders() {
             ...EMPTY_FORM,
             title: reminder.title ?? '',
             description: reminder.description ?? '',
+            type: reminder.custom_type ?? '',
+            gathering: reminder.gathering_type ?? '',
             date,
             time,
         })
@@ -639,8 +659,20 @@ function Reminders() {
             return
         }
 
-        if (!formData.type || !formData.gathering) {
-            setError('Please choose a type and related gathering.')
+        if (!formData.type && !formData.gathering) {
+            setError('Please choose a reminder type and a related gathering.')
+            setSaving(false)
+            return
+        }
+
+        if (!formData.type) {
+            setError('Please choose a reminder type.')
+            setSaving(false)
+            return
+        }
+
+        if (!formData.gathering) {
+            setError('Please choose a related gathering.')
             setSaving(false)
             return
         }
@@ -664,6 +696,8 @@ function Reminders() {
         const payload = {
             title: formData.title,
             description: formData.description || null,
+            custom_type: formData.type,
+            gathering_type: formData.gathering,
             due_date: `${toDateValue(formData.date)}T${formData.time}`,
         }
 
@@ -699,6 +733,33 @@ function Reminders() {
 
     const handleDeleteClick = (reminder) => {
         setDeletingReminder(reminder)
+    }
+
+    const handleCompleteReminder = async (reminder) => {
+        if (!reminder || completingReminderId) return
+
+        setCompletingReminderId(reminder.id)
+        try {
+            const response = await request(`/reminders/${reminder.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ status: 'completed' }),
+            })
+            const updated = response.data
+
+            setReminders(prev => prev.map(item => item.id === reminder.id ? { ...item, ...updated } : item))
+            markNotificationIdsSeen([`my-reminder-due-${reminder.id}`])
+            setSummary(prev => ({
+                ...prev,
+                upcoming: Math.max(0, prev.upcoming - (reminder.status === 'upcoming' ? 1 : 0)),
+                needs_action: Math.max(0, prev.needs_action - (reminder.status === 'needs_action' ? 1 : 0)),
+                completed: prev.completed + (reminder.status === 'completed' ? 0 : 1),
+            }))
+            notifyRemindersChanged()
+        } catch (err) {
+            setError(err.message || 'Unable to complete reminder.')
+        } finally {
+            setCompletingReminderId(null)
+        }
     }
 
     const handleCloseDeleteModal = () => {
@@ -809,8 +870,11 @@ function Reminders() {
 
                                     <div className="task-copy">
                                         <h3>{item.title}</h3>
+                                        {item.type === 'custom' && item.countdown && (
+                                            <p className={`attendance-deadline-countdown${item.countdownOverdue ? ' is-overdue' : ''}`}>{item.countdown}</p>
+                                        )}
                                         {item.type === 'attendance' && item.deadline && (
-                                            <p className="attendance-deadline-countdown">
+                                            <p className={`attendance-deadline-countdown${isDeadlinePassed(item.deadline, countdownNow) ? ' is-overdue' : ''}`}>
                                                 {formatDeadlineCountdown(item.deadline, countdownNow)}
                                             </p>
                                         )}
@@ -834,8 +898,18 @@ function Reminders() {
 
                                 <div className="task-status">
                                     <strong>{item.statusLabel}</strong>
-                                    {item.type === 'custom' && (
+                                    {item.type === 'custom' && item.status !== 'completed' && (
                                         <div className="task-actions">
+                                            <button
+                                                type="button"
+                                                className="task-action-btn task-complete-btn"
+                                                title="Mark reminder as done"
+                                                aria-label={`Mark ${item.title} as done`}
+                                                onClick={() => handleCompleteReminder(item.sourceReminder)}
+                                                disabled={completingReminderId === item.sourceReminder.id}
+                                            >
+                                                {completingReminderId === item.sourceReminder.id ? '…' : '✓'}
+                                            </button>
                                             <button type="button" className="task-action-btn" title="Edit reminder" onClick={() => handleEditReminder(item.sourceReminder)}>
                                                 <img src={EditIcon} alt="Edit" />
                                             </button>
@@ -963,6 +1037,7 @@ function Reminders() {
                                             className={`reminder-option ${formData.type === option.value ? 'selected' : ''}`}
                                             onClick={() => {
                                                 setFormData(prev => ({ ...prev, type: option.value }))
+                                                setError('')
                                                 setOpenMenu('')
                                             }}
                                         >
@@ -989,6 +1064,7 @@ function Reminders() {
                                             className={`reminder-option ${formData.gathering === option.value ? 'selected' : ''}`}
                                             onClick={() => {
                                                 setFormData(prev => ({ ...prev, gathering: option.value }))
+                                                setError('')
                                                 setOpenMenu('')
                                             }}
                                         >

@@ -140,6 +140,23 @@ function Notification() {
                         }
                     })
 
+                const dueMyReminderItems = (remindersData.data ?? [])
+                    .filter(reminder => reminder.reminder_type === 'custom'
+                        && reminder.status !== 'completed'
+                        && reminder.due_date
+                        && new Date(reminder.due_date).getTime() <= Date.now())
+                    .map(reminder => ({
+                        id: `my-reminder-due-${reminder.id}`,
+                        iconType: 'my-reminder',
+                        title: 'My Reminder due date reached',
+                        subtext: reminder.title,
+                        tone: 'needs-attention',
+                        target: '/reminders',
+                        targetState: { highlightReminderId: reminder.id },
+                        tracksBellDot: true,
+                        clearOnClick: false,
+                    }))
+
                 const dueAttendanceItems = (remindersData.data ?? [])
                     .filter(reminder => reminder.reminder_type === 'submission_countdown'
                         && reminder.status !== 'completed'
@@ -176,7 +193,7 @@ function Notification() {
                         }
                     })
 
-                const nextItems = [...escalationItems, ...reminderItems, ...dueAttendanceItems, ...attendanceItems]
+                const nextItems = [...escalationItems, ...dueAttendanceItems, ...dueMyReminderItems, ...reminderItems, ...attendanceItems]
                 const trackedIds = nextItems.filter(item => item.tracksBellDot).map(item => item.id)
                 const seenIds = getSeenNotificationIds()
                 setHasUnreadReminder(trackedIds.some(id => !seenIds.has(String(id))))
