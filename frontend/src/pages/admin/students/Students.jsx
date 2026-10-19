@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import { request } from '../../../api/request'
@@ -7,11 +7,12 @@ import SecretariesIcon from '../../../assets/icons/secretaries-icon.svg'
 import InactiveClockIcon from '../../../assets/icons/in-progress-programs-icon.svg'
 import ProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
 import EditIcon from '../../../assets/icons/edit-icon.svg'
-import ImportIcon from '../../../assets/icons/import-icon.svg'
+import ImportIcon from '../../../assets/icons/admin-import-icon.svg'
 import ModalSelect from '../dashboard/ModalSelect'
 import AddStudentModal from '../dashboard/AddStudentModal'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import EditStudentModal from './EditStudentModal'
+import ImportStudentsModal from './ImportStudentsModal'
 import './Students.css'
 
 const programOrder = ['ACT', 'BSIS', 'BSSW', 'BSA', 'BSAIS', 'BAB']
@@ -29,7 +30,6 @@ function yearLabel(value) {
 }
 
 function Students() {
-    const fileInputRef = useRef(null)
     const [pageData, setPageData] = useState(null)
     const [filters, setFilters] = useState({ program: '', year_level: '', status: '', search: '' })
     const [searchQuery, setSearchQuery] = useState('')
@@ -37,8 +37,8 @@ function Students() {
     const [refreshVersion, setRefreshVersion] = useState(0)
     const [loading, setLoading] = useState(true)
     const [isAddOpen, setIsAddOpen] = useState(false)
+    const [isImportOpen, setIsImportOpen] = useState(false)
     const [editingStudent, setEditingStudent] = useState(null)
-    const [importing, setImporting] = useState(false)
     const [notice, setNotice] = useState('')
     const [error, setError] = useState('')
 
@@ -100,26 +100,6 @@ function Students() {
         setLoading(true)
     }
 
-    async function handleImport(event) {
-        const file = event.target.files?.[0]
-        event.target.value = ''
-        if (!file) return
-
-        setImporting(true)
-        setError('')
-        setNotice('')
-        const formData = new FormData()
-        formData.append('file', file)
-        try {
-            const result = await request('/admin/students/import', { method: 'POST', body: formData })
-            refresh(result.message)
-        } catch (importError) {
-            setError(importError.message || 'Unable to import students.')
-        } finally {
-            setImporting(false)
-        }
-    }
-
     return (
         <div className="admin-students">
             <Sidebar />
@@ -152,8 +132,7 @@ function Students() {
                             </div>
                             <div className="admin-students-actions">
                                 <button className="admin-students-add-button" type="button" onClick={() => { setNotice(''); setIsAddOpen(true) }} aria-haspopup="dialog"><span aria-hidden="true">+</span> Add Student</button>
-                                <button className="admin-students-import-button" type="button" title="Import CSV: full_name, program, year_level, status" onClick={() => fileInputRef.current?.click()} disabled={importing}><img src={ImportIcon} alt="" />{importing ? 'Importing…' : 'Import'}</button>
-                                <input ref={fileInputRef} className="admin-students-file-input" type="file" accept=".csv,text/csv" aria-label="Choose student CSV file" onChange={handleImport} />
+                                <button className="admin-students-import-button" type="button" onClick={() => { setNotice(''); setIsImportOpen(true) }} aria-haspopup="dialog"><img src={ImportIcon} alt="" />Import</button>
                             </div>
                         </div>
                         <div className="admin-students-table-wrap" role="region" aria-label="Student records table" tabIndex="0" aria-busy={loading}>
@@ -177,6 +156,7 @@ function Students() {
                 </div>
             </main>
             {isAddOpen && <AddStudentModal onClose={() => setIsAddOpen(false)} onCreated={message => { setIsAddOpen(false); refresh(message || 'Student created successfully.') }} />}
+            {isImportOpen && <ImportStudentsModal programs={orderedPrograms} onClose={() => setIsImportOpen(false)} onImported={message => { setIsImportOpen(false); refresh(message || 'Students imported successfully.') }} />}
             {editingStudent && <EditStudentModal student={editingStudent} programs={orderedPrograms} onClose={() => setEditingStudent(null)} onUpdated={message => { setEditingStudent(null); refresh(message || 'Student updated successfully.') }} />}
         </div>
     )

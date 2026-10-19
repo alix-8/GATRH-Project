@@ -309,15 +309,6 @@
     height: 16px;
 }
 
-.admin-students-import-button:disabled {
-    opacity: .6;
-    cursor: wait;
-}
-
-.admin-students-file-input {
-    display: none;
-}
-
 .admin-students-table-wrap {
     max-height: 478px;
     overflow: auto;
