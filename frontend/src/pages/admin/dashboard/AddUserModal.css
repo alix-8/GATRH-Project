@@ -1,0 +1,263 @@
+.admin-add-user-modal {
+    width: 30%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    padding: 14px 14px 14px;
+    border: 1px solid #dce3ee;
+    border-radius: 9px;
+    background: #fff;
+    color: #172b4d;
+    box-shadow: 0 16px 42px rgba(12, 27, 50, .2);
+    font-family: inherit;
+    text-align: left;
+}
+
+.admin-add-user-modal::backdrop {
+    background: rgba(6, 14, 27, .64);
+}
+
+.admin-add-user-modal h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1.3;
+    color: #172b4d;
+}
+
+.admin-add-user-description {
+    margin: 1px px 1px;
+    color: #6b7890;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.admin-add-user-close {
+    position: absolute;
+    top: 13px;
+    right: 15px;
+    border: 0;
+    background: transparent;
+    color: #68758b;
+    font: inherit;
+    font-size: 21px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.admin-add-user-field {
+    margin-bottom: 10px;
+}
+
+.admin-add-user-field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.admin-add-user-field label span {
+    color: #e63946;
+}
+
+.admin-add-user-field input,
+.admin-add-user-field select {
+    display: block;
+    width: 100%;
+    height: 34px;
+    box-sizing: border-box;
+    padding: 0 10px;
+    border: 1px solid #d6dce7;
+    border-radius: 4px;
+    outline-color: #179ff5;
+    background: #fff;
+    color: #253957;
+    font: inherit;
+    font-size: 11px;
+}
+
+.admin-add-user-field select,
+.admin-add-user-field select option {
+    cursor: pointer;
+}
+
+.admin-modal-select {
+    position: relative;
+}
+
+.admin-add-user-field .admin-modal-select select {
+    padding-right: 34px;
+    appearance: none;
+}
+
+.admin-modal-select-chevron {
+    position: absolute;
+    top: 50%;
+    right: 11px;
+    display: flex;
+    width: 12px;
+    height: 10px;
+    align-items: center;
+    justify-content: center;
+    color: #7b8ba4;
+    pointer-events: none;
+    transform: translateY(-50%) rotate(0deg);
+    transition: transform 160ms ease;
+}
+
+.admin-modal-select-chevron svg {
+    width: 12px;
+    height: 10px;
+}
+
+.admin-modal-select.is-open .admin-modal-select-chevron {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.admin-add-user-field input::placeholder,
+.admin-add-user-field select:has(option:first-child:checked) {
+    color: #9aa9c0;
+}
+
+.admin-add-user-field [aria-invalid="true"] {
+    border-color: #d84242;
+}
+
+.admin-add-user-field-error {
+    display: block;
+    margin-top: 4px;
+    color: #bc3030;
+    font-size: 10px;
+}
+
+.admin-add-user-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    box-sizing: border-box;
+    padding: 9px;
+    border: 1px solid;
+    border-radius: 4px;
+}
+
+.admin-add-user-note > span {
+    display: grid;
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.admin-add-user-note p {
+    margin: 0;
+    color: #758197;
+    font-size: 9px;
+    line-height: 1.35;
+}
+
+.admin-add-user-note strong {
+    color: #172b4d;
+    font-size: 9px;
+}
+
+.admin-add-user-note.warning {
+    margin: 2px 0 14px;
+    border-color: #ffe5a4;
+    background: #fff9e8;
+}
+
+.admin-add-user-note.warning > span {
+    background: #f1c74b;
+}
+
+.admin-add-user-note.permissions {
+    margin-top: 10px;
+    border-color: #d8eefe;
+    background: #e8f6ff;
+}
+
+.admin-add-user-note.permissions > span {
+    background: #159ff2;
+}
+
+.admin-add-user-status {
+    margin-bottom: 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.admin-add-user-status > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.admin-add-user-status .active {
+    color: #24a756;
+}
+
+.admin-add-user-status .inactive {
+    color: #7d899d;
+}
+
+.admin-add-user-switch {
+    display: flex;
+    width: 51px;
+    height: 26px;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 2px;
+    border: 0;
+    border-radius: 20px;
+    background: #aab5c5;
+    cursor: pointer;
+}
+
+.admin-add-user-switch.active {
+    justify-content: flex-end;
+    background: #189ff4;
+}
+
+.admin-add-user-switch > span {
+    display: block;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .16);
+}
+
+.admin-add-user-submit {
+    width: 100%;
+    min-height: 35px;
+    border: 0;
+    border-radius: 5px;
+    background: #169ff4;
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-add-user-submit:disabled {
+    opacity: .65;
+    cursor: wait;
+}
+
+.admin-add-user-submit-error {
+    margin: 0 0 9px;
+    color: #bc3030;
+    font-size: 11px;
+}
+
+.admin-add-user-modal :is(button, input, select):focus-visible {
+    outline: 2px solid #087fd2;
+    outline-offset: 2px;
+}
