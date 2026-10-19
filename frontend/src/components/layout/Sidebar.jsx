@@ -12,6 +12,7 @@ import RemindersIcon from '../../assets/icons/reminders-icon.svg'
 import LogoutIcon from '../../assets/icons/logout-icon.svg'
 import ProfileIcon from '../../assets/icons/profile-icon.svg'
 import UserRolesIcon from '../../assets/icons/user-roles-icon.svg'
+import ProgramsIcon from '../../assets/icons/programs-icon.svg'
 import './Sidebar.css'
 
 const navigationByRole = {
@@ -47,7 +48,7 @@ const navigationByRole = {
         { label: 'Dashboard', to: '/admin/dashboard', icon: DashboardIcon },
         { label: 'User & Roles', to: '/admin/user-roles', icon: UserRolesIcon },
         { label: 'Students', to: '/admin/students', icon: StudentsIcon },
-        { label: 'Programs', to: '/admin/programs', icon: ImportIcon },
+        { label: 'Programs', to: '/admin/programs', icon: ProgramsIcon },
         { label: 'System Settings', to: '/admin/settings', icon: AttendanceIcon },
     ],
 }
