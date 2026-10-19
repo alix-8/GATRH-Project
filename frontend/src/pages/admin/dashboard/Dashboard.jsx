@@ -10,6 +10,10 @@ import SystemStatusIcon from '../../../assets/icons/system-status-icon.svg'
 import ChancellorIcon from '../../../assets/icons/chancellor-icon.svg'
 import ProgramHeadsIcon from '../../../assets/icons/program-heads-icon.svg'
 import SecretariesIcon from '../../../assets/icons/secretaries-icon.svg'
+import AddUserIcon from '../../../assets/icons/add-user-icon.svg'
+import AddProgramIcon from '../../../assets/icons/add-program-icon.svg'
+import SystemSettingsIcon from '../../../assets/icons/system-settings-icon.svg'
+import AddUserModal from './AddUserModal'
 import './Dashboard.css'
 
 const accountRoleIcons = {
@@ -31,6 +35,8 @@ function formatDate(value) {
 function AdminDashboard() {
     const [dashboard, setDashboard] = useState(null)
     const [error, setError] = useState('')
+    const [notice, setNotice] = useState('')
+    const [isAddUserOpen, setIsAddUserOpen] = useState(false)
 
     useEffect(() => {
         request('/admin/dashboard')
@@ -52,6 +58,17 @@ function AdminDashboard() {
         { label: 'System Status', value: dashboard?.system_status, detail: 'All systems operational', tone: 'navy', icon: SystemStatusIcon },
     ]
 
+    function handleUserCreated(message) {
+        setIsAddUserOpen(false)
+        setNotice(message || 'User account created successfully.')
+        request('/admin/dashboard')
+            .then(data => {
+                setDashboard(data)
+                setError('')
+            })
+            .catch(error => setError(error.message || 'Unable to refresh the admin dashboard.'))
+    }
+
     return (
         <div className="admin-dashboard">
             <Sidebar />
@@ -63,6 +80,7 @@ function AdminDashboard() {
                 />
 
                 {error && <p className="admin-dashboard-error" role="alert">{error}</p>}
+                {notice && <p className="admin-dashboard-notice" role="status">{notice}</p>}
 
                 <div className="admin-dashboard-content">
                     <section className="admin-summary-grid" aria-label="System overview">
@@ -102,13 +120,13 @@ function AdminDashboard() {
 
                         <section className="admin-panel admin-quick-panel">
                             <div className="admin-panel-heading">
-                                <div><h2>Quick Actions</h2><p>Common administration tasks.</p></div>
+                                <div><h2>Manage System Accounts</h2><p>Administrative changes.</p></div>
                             </div>
                             <div className="admin-quick-grid">
-                                <Link className="admin-quick-action blue" to="/admin/user-roles"><span aria-hidden="true">♟</span><strong>Add User</strong><small>Create an account and assign its role.</small><b aria-hidden="true">›</b></Link>
-                                <Link className="admin-quick-action green" to="/admin/students"><span aria-hidden="true">✦</span><strong>Manage Students</strong><small>Review student information.</small><b aria-hidden="true">›</b></Link>
-                                <Link className="admin-quick-action purple" to="/admin/programs"><span aria-hidden="true">▦</span><strong>Manage Programs</strong><small>Review and maintain programs.</small><b aria-hidden="true">›</b></Link>
-                                <Link className="admin-quick-action navy" to="/admin/system-settings"><span aria-hidden="true">⚙</span><strong>System Settings</strong><small>Manage system configuration.</small><b aria-hidden="true">›</b></Link>
+                                <button className="admin-quick-action blue" type="button" onClick={() => { setNotice(''); setIsAddUserOpen(true) }} aria-haspopup="dialog"><span className="admin-quick-icon" aria-hidden="true"><img src={AddUserIcon} alt="" /></span><strong>Add User</strong><small>Create a Secretary, Program Head, or Chancellor.</small><b aria-hidden="true">›</b></button>
+                                <Link className="admin-quick-action green" to="/admin/students"><span className="admin-quick-icon" aria-hidden="true"><img src={AdminStudentsIcon} alt="" /></span><strong>Add Student</strong><small>Create a Secretary, Program Head, or Chancellor.</small><b aria-hidden="true">›</b></Link>
+                                <Link className="admin-quick-action purple" to="/admin/programs"><span className="admin-quick-icon" aria-hidden="true"><img src={AddProgramIcon} alt="" /></span><strong>Add Program</strong><small>Create a new academic program.</small><b aria-hidden="true">›</b></Link>
+                                <Link className="admin-quick-action navy" to="/admin/system-settings"><span className="admin-quick-icon" aria-hidden="true"><img src={SystemSettingsIcon} alt="" /></span><strong>System Settings</strong><small>Manage system configuration.</small><b aria-hidden="true">›</b></Link>
                             </div>
                         </section>
                     </div>
@@ -136,6 +154,7 @@ function AdminDashboard() {
                     </section>
                 </div>
             </main>
+            {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onCreated={handleUserCreated} />}
         </div>
     )
 }
