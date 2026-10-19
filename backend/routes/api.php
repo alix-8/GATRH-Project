@@ -103,6 +103,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::get('/admin/settings/gatherings', [AdminSystemSettingController::class, 'showGatheringSchedules']);
         Route::patch('/admin/settings/gatherings', [AdminSystemSettingController::class, 'updateGatheringSchedules']);
         Route::get('/admin/programs', [AdminProgramController::class, 'index']);
+        Route::get('/admin/program-head-options', [AdminProgramController::class, 'headOptions']);
         Route::post('/admin/programs', [AdminProgramController::class, 'store']);
         Route::get('/admin/programs/{program}', [AdminProgramController::class, 'show']);
         Route::patch('/admin/programs/{program}', [AdminProgramController::class, 'update']);

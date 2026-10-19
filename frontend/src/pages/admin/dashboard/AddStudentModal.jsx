@@ -15,7 +15,7 @@ const yearOptions = [
 
 function AddStudentModal({ onClose, onCreated }) {
     const dialogRef = useRef(null)
-    const [form, setForm] = useState({ name: '', email: '', student_number: '', program: '', year_level: '', is_active: true })
+    const [form, setForm] = useState({ name: '', program: '', year_level: '', is_active: true })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const [fieldErrors, setFieldErrors] = useState({})
@@ -55,8 +55,6 @@ function AddStudentModal({ onClose, onCreated }) {
                 body: JSON.stringify({
                     ...form,
                     name: form.name.trim(),
-                    email: form.email.trim(),
-                    student_number: form.student_number.trim(),
                 }),
             })
             onCreated(result.message)
@@ -83,16 +81,6 @@ function AddStudentModal({ onClose, onCreated }) {
                 <label htmlFor="admin-add-student-name">Full Name<span>*</span></label>
                 <input id="admin-add-student-name" name="name" autoFocus required maxLength={255} placeholder="Enter full name" value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
-            </div>
-            <div className="admin-add-user-field">
-                <label htmlFor="admin-add-student-email">Email Address<span>*</span></label>
-                <input id="admin-add-student-email" name="email" type="email" required maxLength={255} placeholder="name@laverdad.edu.ph" value={form.email} onChange={event => updateField('email', event.target.value)} aria-invalid={Boolean(fieldErrors.email)} />
-                {fieldErrors.email && <small className="admin-add-user-field-error">{fieldErrors.email[0]}</small>}
-            </div>
-            <div className="admin-add-user-field">
-                <label htmlFor="admin-add-student-number">Student ID<span>*</span></label>
-                <input id="admin-add-student-number" name="student_number" required maxLength={50} placeholder="0024-407RAG" value={form.student_number} onChange={event => updateField('student_number', event.target.value)} aria-invalid={Boolean(fieldErrors.student_number)} />
-                {fieldErrors.student_number && <small className="admin-add-user-field-error">{fieldErrors.student_number[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-student-program">Program<span>*</span></label>

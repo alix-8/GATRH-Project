@@ -42,11 +42,23 @@ class AdminProgramController extends Controller
         ]);
     }
 
+    public function headOptions(): JsonResponse
+    {
+        return response()->json([
+            'program_head_options' => User::query()
+                ->where('role', 'program_head')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:programs,code'],
             'name' => ['required', 'string', 'max:255'],
+            'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['nullable', 'array'],
             'program_head_ids.*' => [
                 'integer', 'distinct',
@@ -67,6 +79,7 @@ class AdminProgramController extends Controller
     {
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['sometimes', 'nullable', 'array'],
             'program_head_ids.*' => [
                 'integer', 'distinct',

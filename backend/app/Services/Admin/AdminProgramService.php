@@ -42,7 +42,7 @@ class AdminProgramService
             $programHeadIds = $data['program_head_ids'] ?? [];
             unset($data['program_head_ids']);
             $data['code'] = strtoupper(trim($data['code']));
-
+            $data['max_year_level'] ??= 4;
             $program = Program::query()->create($data);
             $program->users()->sync($programHeadIds);
 

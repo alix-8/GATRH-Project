@@ -13,10 +13,12 @@ class Program extends Model
         'code',
         'name',
         'is_active',
+        'max_year_level',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'max_year_level' => 'integer',
     ];
 
     public function users()

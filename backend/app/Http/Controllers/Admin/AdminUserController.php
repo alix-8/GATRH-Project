@@ -41,13 +41,13 @@ class AdminUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', Rule::in(User::ROLES)],
-            'contact_number' => ['required', 'string', 'regex:/^09\d{9}$/'],
+            'contact_number' => ['nullable', 'string', 'regex:/^09\d{9}$/'],
             'password' => ['prohibited'],
             'password_confirmation' => ['prohibited'],
-            'program' => ['nullable', 'string', Rule::exists('programs', 'code')],
+            'program' => ['nullable', 'string', 'required_if:role,secretary,program_secretary,program_head', Rule::exists('programs', 'code')],
             'program_ids' => ['nullable', 'array'],
             'program_ids.*' => ['integer', 'distinct', Rule::exists('programs', 'id')],
-            'year_level' => ['nullable', 'string', 'max:20', 'required_if:role,secretary,program_secretary'],
+            'year_level' => ['nullable', 'string', 'max:20', 'required_if:role,secretary'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
@@ -55,10 +55,10 @@ class AdminUserController extends Controller
             $validated['program'] = strtoupper(trim($validated['program']));
         }
 
-        if (in_array($validated['role'], ['secretary', 'program_secretary'], true) && empty($validated['program'])) {
+        if (in_array($validated['role'], ['secretary', 'program_secretary', 'program_head'], true) && empty($validated['program'])) {
             return response()->json([
-                'message' => 'A program is required for secretary accounts.',
-                'errors' => ['program' => ['A program is required for secretary accounts.']],
+                'message' => 'A program is required for this role.',
+                'errors' => ['program' => ['A program is required for this role.']],
             ], 422);
         }
 
@@ -122,17 +122,21 @@ class AdminUserController extends Controller
             || $programIdsChanged
             || (string) $yearLevel !== (string) $user->year_level;
 
-        if (
-            in_array($role, ['secretary', 'program_secretary'], true)
-            && $assignmentChanged
-            && (! $program || ! $yearLevel)
-        ) {
+        $needsProgram = in_array($role, ['secretary', 'program_secretary', 'program_head'], true);
+        $needsYearLevel = $role === 'secretary';
+
+        if ($assignmentChanged && (($needsProgram && ! $program) || ($needsYearLevel && ! $yearLevel))) {
+            $errors = [];
+            if ($needsProgram && ! $program) {
+                $errors['program'] = ['A program is required for this role.'];
+            }
+            if ($needsYearLevel && ! $yearLevel) {
+                $errors['year_level'] = ['A year level is required for secretary accounts.'];
+            }
+
             return response()->json([
-                'message' => 'A program and year level are required for secretary accounts.',
-                'errors' => [
-                    'program' => ['A program is required for secretary accounts.'],
-                    'year_level' => ['A year level is required for secretary accounts.'],
-                ],
+                'message' => 'Complete the required role assignments.',
+                'errors' => $errors,
             ], 422);
         }
 
