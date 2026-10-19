@@ -46,8 +46,6 @@ class AdminStudentController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('students', 'email')],
-            'student_number' => ['required', 'string', 'max:50', Rule::unique('students', 'student_number')],
             'program' => ['required', 'string', Rule::exists('programs', 'code')],
             'year_level' => ['required', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],
@@ -65,8 +63,6 @@ class AdminStudentController extends Controller
     {
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'nullable', 'email', 'max:255', Rule::unique('students', 'email')->ignore($student->id)],
-            'student_number' => ['sometimes', 'nullable', 'string', 'max:50', Rule::unique('students', 'student_number')->ignore($student->id)],
             'program' => ['sometimes', 'required', 'string', Rule::exists('programs', 'code')],
             'year_level' => ['sometimes', 'required', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],
