@@ -182,6 +182,14 @@ class ReminderGenerationService
         return $deletedSubmissionReminders + $deletedGatheringReminders;
     }
 
+    /**
+     * Remove completed reminders during the weekly cleanup.
+     */
+    public function deleteCompletedReminders(): int
+    {
+        return Reminder::where('status', 'completed')->delete();
+    }
+
     private function buildSubmissionDescription(Reminder $reminder, ?int $responded = null, ?int $total = null): string
     {
         $responded ??= $reminder->respondedCount();
