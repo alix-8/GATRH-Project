@@ -30,6 +30,7 @@
 }
 
 .sidebar-link {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -46,11 +47,21 @@
 
 .sidebar-link.active {
     color: #ffffff;
-    border-left-color: #F2C94C;
     gap: 12px;
     padding-block: 12px;
     font-size: 14px;
     font-weight: 600;
+}
+
+.sidebar-link.active::before {
+    position: absolute;
+    top: 50%;
+    left: -2px;
+    width: 2px;
+    height: 26px;
+    background: #F2C94C;
+    content: '';
+    transform: translateY(-50%);
 }
 
 .sidebar-icon {
@@ -114,6 +125,21 @@
 .sidebar-profile.active { border-color: #F2C94C; }
 
 .profile-icon { display: block; width: 38px; height: 38px; border-radius: 50%; }
+
+.sidebar-settings {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    place-items: center;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    background: #ffffff;
+}
+
+.sidebar-settings.active { border-color: #F2C94C; }
+
+.settings-icon { display: block; width: 32px; height: 32px; }
 
 .logout-modal-backdrop {
     position: fixed;

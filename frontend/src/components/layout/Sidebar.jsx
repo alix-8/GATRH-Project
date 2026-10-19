@@ -11,6 +11,10 @@ import AttendanceIcon from '../../assets/icons/attendance-icon.svg'
 import RemindersIcon from '../../assets/icons/reminders-icon.svg'
 import LogoutIcon from '../../assets/icons/logout-icon.svg'
 import ProfileIcon from '../../assets/icons/profile-icon.svg'
+import SystemSettingsIcon from '../../assets/icons/system-settings-icon.svg'
+import UserRolesIcon from '../../assets/icons/user-roles-icon.svg'
+import ProgramsIcon from '../../assets/icons/programs-icon.svg'
+import ActivityLogIcon from '../../assets/icons/activity-log-icon.svg'
 import './Sidebar.css'
 
 const navigationByRole = {
@@ -44,10 +48,10 @@ const navigationByRole = {
     ],
     admin: [
         { label: 'Dashboard', to: '/admin/dashboard', icon: DashboardIcon },
-        { label: 'User Roles', to: '/admin/user-roles', icon: StudentsIcon },
+        { label: 'User & Roles', to: '/admin/user-roles', icon: UserRolesIcon },
         { label: 'Students', to: '/admin/students', icon: StudentsIcon },
-        { label: 'Programs', to: '/admin/programs', icon: ImportIcon },
-        { label: 'System Settings', to: '/admin/settings', icon: AttendanceIcon },
+        { label: 'Programs', to: '/admin/programs', icon: ProgramsIcon },
+        { label: 'Activity Log', to: '/admin/activity-log', icon: ActivityLogIcon },
     ],
 }
 
@@ -125,14 +129,25 @@ function Sidebar() {
                         aria-hidden="true"
                     />
                 </button>
-                <NavLink
-                    to="/profile"
-                    className={({ isActive }) => `sidebar-profile ${isActive ? 'active' : ''}`}
-                    aria-label="Profile"
-                    title="Profile"
-                >
-                    <img className="profile-icon" src={ProfileIcon} alt="" />
-                </NavLink>
+                {role === 'admin' ? (
+                    <NavLink
+                        to="/admin/system-settings"
+                        className={({ isActive }) => `sidebar-settings ${isActive ? 'active' : ''}`}
+                        aria-label="System Settings"
+                        title="System Settings"
+                    >
+                        <img className="settings-icon" src={SystemSettingsIcon} alt="" />
+                    </NavLink>
+                ) : (
+                    <NavLink
+                        to="/profile"
+                        className={({ isActive }) => `sidebar-profile ${isActive ? 'active' : ''}`}
+                        aria-label="Profile"
+                        title="Profile"
+                    >
+                        <img className="profile-icon" src={ProfileIcon} alt="" />
+                    </NavLink>
+                )}
             </div>
 
             {isLogoutModalOpen && createPortal(
