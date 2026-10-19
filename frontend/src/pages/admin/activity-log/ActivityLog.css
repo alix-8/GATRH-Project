@@ -21,3 +21,66 @@
     color: #77839a;
     font-size: 13px;
 }
+
+.admin-activity-log-content {
+    padding: 18px 20px 24px;
+    background: #f5f7fb;
+    min-height: calc(100vh - 96px);
+}
+
+.admin-activity-log-panel {
+    min-width: 0;
+    padding: 18px 20px;
+    border: 1px solid #e1e5ec;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.admin-activity-log-panel .admin-panel-heading {
+    margin-bottom: 14px;
+}
+
+.admin-activity-log-panel h2 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 16px;
+}
+
+.admin-activity-log-panel .admin-panel-heading p {
+    margin: 4px 0 0;
+    color: #8792a7;
+    font-size: 11px;
+}
+
+.admin-activity-log-error {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #fff0f0;
+    color: #9f2d2d;
+    font-size: 13px;
+}
+
+.admin-activity-log-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 14px;
+    color: #62718d;
+    font-size: 11px;
+}
+
+.admin-activity-log-pagination button {
+    padding: 6px 10px;
+    border: 1px solid #c6e4ff;
+    border-radius: 6px;
+    background: #eef8ff;
+    color: #078bf0;
+    font: inherit;
+    cursor: pointer;
+}
+
+.admin-activity-log-pagination button:disabled {
+    opacity: .5;
+    cursor: default;
+}

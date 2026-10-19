@@ -180,7 +180,7 @@ function AddUserModal({ onClose, onCreated }) {
                 </div>
 
                 {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
-                <button className="admin-add-user-submit" type="submit" disabled={isSubmitting || (needsProgram && (programsLoading || Boolean(programsError) || programs.length === 0))}>{isSubmitting ? 'Creating User…' : 'Create User'}</button>
+                <button className="admin-add-user-submit" type="submit" disabled={isSubmitting || (needsProgram && (programsLoading || Boolean(programsError) || programs.length === 0))}>{isSubmitting ? 'Creating User…' : 'Add User'}</button>
 
                 <div className="admin-add-user-note permissions">
                     <span aria-hidden="true">i</span>
