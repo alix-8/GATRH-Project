@@ -31,6 +31,12 @@ Artisan::command('inspire', function () {
         $this->info("Deleted {$deleted} expired reminder(s).");
     })->purpose('Delete expired gathering and submission reminders');
 
+    Artisan::command('escalations:refresh-weekly', function () {
+        $synced = app(WeeklyEscalationService::class)->syncAll();
+
+        $this->info("Refreshed weekly escalation for {$synced} student(s).");
+    })->purpose('Refresh student escalation levels from this week’s attendance');
+
 
 //FOR SCHEDULING
 
@@ -40,11 +46,8 @@ Artisan::command('inspire', function () {
         ->withoutOverlapping();
 
     // Reset escalation counts to the current week's PM, WS, and TG responses.
-    Schedule::call(function () {
-        app(WeeklyEscalationService::class)->syncAll();
-    })
-        ->name('weekly-escalation-refresh')
-        ->weeklyOn(Carbon::MONDAY, '00:01')
+    Schedule::command('escalations:refresh-weekly')
+        ->weeklyOn(Carbon::MONDAY, '11:59')
         ->withoutOverlapping();
 
     //delete expired gathering and submission reminders

@@ -25,6 +25,7 @@ const WEEKLY_GATHERING_TYPES = [
 function Students() {
     const [students, setStudents] = useState([])
     const [attendanceSession, setAttendanceSession] = useState(null)
+    const [escalationWeekRange, setEscalationWeekRange] = useState(null)
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedSort, setSelectedSort] = useState(null)
@@ -63,11 +64,13 @@ function Students() {
             .then(data => {
                 setStudents(Array.isArray(data.students) ? data.students : [])
                 setAttendanceSession(data.session || null)
+                setEscalationWeekRange(data.week_range || null)
                 setLoading(false)
             })
             .catch(() => {
                 setStudents([])
                 setAttendanceSession(null)
+                setEscalationWeekRange(null)
                 setLoading(false)
             })
     }, [])
@@ -132,6 +135,17 @@ function Students() {
     const escalationBars = (student) => {
         return Math.min(3, Math.max(0, Number(student.no_response_count) || 0))
     }
+    const formatEscalationDate = (value) => {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''))
+        if (!match) return null
+        const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    }
+    const escalationDateRange = [
+        formatEscalationDate(escalationWeekRange?.start),
+        formatEscalationDate(escalationWeekRange?.end),
+    ].filter(Boolean).join(' – ')
+    const escalationGuide = `Weekly Escalation Level\n${escalationDateRange ? `Date range: ${escalationDateRange}` : ''}\n\n1 No-response = 1 level`
     const formatOverviewDate = (date) => date ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${date}T00:00:00`)) : '—'
     const openOverview = async (student) => {
         setOverview({ student, month: '', summary: {}, history: [] })
@@ -352,7 +366,11 @@ function Students() {
                                             )}
                                         </td>
                                         <td>
-                                            <span className="escalation-bars" aria-label={`${student.no_response_count} no-response records`}>
+                                            <span
+                                                className="escalation-bars"
+                                                aria-label={`${student.no_response_count} no-response records`}
+                                                title={escalationGuide}
+                                            >
                                                 {[0, 1, 2].map((bar) => <i key={bar} className={bar < escalationBars(student) ? 'filled' : ''} />)}
                                             </span>
                                         </td>
@@ -400,7 +418,11 @@ function Students() {
                             <div className="overview-stat-card">
                                 <strong>Escalation</strong>
                                 <div className="overview-stat-escalation">
-                                    <span className="overview-escalation-indicator" aria-label={`${overview.summary?.escalation_count ?? 0} escalation levels`}>
+                                    <span
+                                        className="overview-escalation-indicator"
+                                        aria-label={`${overview.summary?.escalation_count ?? 0} escalation levels`}
+                                        title={escalationGuide}
+                                    >
                                         {[0, 1, 2].map((level) => (
                                             <i
                                                 key={level}

@@ -81,6 +81,10 @@ class StudentController extends Controller
             : null;
 
         return response()->json([
+            'week_range' => [
+                'start' => $weekStart,
+                'end' => $weekEnd,
+            ],
             'students' => $students->map(function (Student $student) use ($responses, $session, $weeklyEscalationCounts) {
                 $record = $responses->get($student->id);
                 $status = $record ? ($record['status'] ?? $record->status) : null;
@@ -121,21 +125,21 @@ class StudentController extends Controller
                 'status' => $record->status,
             ]);
 
-        // The latest draft is included so a secretary can see the import right
-        // away, before the attendance batch is submitted.
-        $draft = AttendanceDraft::query()
+        // Include each active draft containing this student, matching the
+        // attendance page where multiple gatherings can remain as drafts.
+        $drafts = AttendanceDraft::query()
             ->where('user_id', $request->user()->id)
             ->where('status', 'draft')
             ->orderByDesc('day')
             ->orderByDesc('updated_at')
-            ->first();
+            ->get();
 
-        if ($draft) {
+        foreach ($drafts as $draft) {
             $draftRecord = collect($draft->parsed_data ?? [])
                 ->first(fn (array $record) => (int) ($record['student_id'] ?? 0) === $student->id);
 
             if ($draftRecord) {
-                $history->prepend([
+                $history->push([
                     'id' => 'draft-' . $draft->id,
                     'gathering_type' => $draft->gathering_type,
                     'gathering' => $this->gatheringLabel($draft->gathering_type),

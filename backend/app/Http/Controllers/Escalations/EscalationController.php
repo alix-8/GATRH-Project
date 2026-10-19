@@ -47,28 +47,28 @@ class EscalationController extends Controller
         ]);
     }
 
-    /**
-     * Save intervention notes / advisor remarks for an escalated student.
-     */
-    public function update(Request $request, $id)
-    {
-        $escalation = Escalation::findOrFail($id);
+    // /**
+    //  * Save intervention notes / advisor remarks for an escalated student.
+    //  */
+    // public function update(Request $request, $id)
+    // {
+    //     $escalation = Escalation::findOrFail($id);
 
-        abort_unless(
-            Escalation::query()->visibleTo($request->user())->whereKey($escalation->id)->exists(),
-            404
-        );
+    //     abort_unless(
+    //         Escalation::query()->visibleTo($request->user())->whereKey($escalation->id)->exists(),
+    //         404
+    //     );
 
-        $validated = $request->validate([
-            'notes'  => 'nullable|string|max:1000',
-            'status' => 'nullable|in:pending,under_review,resolved',
-        ]);
+    //     $validated = $request->validate([
+    //         'notes'  => 'nullable|string|max:1000',
+    //         'status' => 'nullable|in:pending,under_review,resolved',
+    //     ]);
 
-        $escalation->update($validated);
+    //     $escalation->update($validated);
 
-        return response()->json([
-            'message'    => 'Intervention notes updated successfully.',
-            'escalation' => $escalation->load('student'),
-        ]);
-    }
+    //     return response()->json([
+    //         'message'    => 'Intervention notes updated successfully.',
+    //         'escalation' => $escalation->load('student'),
+    //     ]);
+    // }
 }
