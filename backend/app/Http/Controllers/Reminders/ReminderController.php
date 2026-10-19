@@ -158,6 +158,8 @@ class ReminderController extends Controller
         $validated = $request->validate([
             'title'       => 'required|string|max:20',
             'description' => 'nullable|string|max:100',
+            'custom_type' => 'required|in:submission,gathering,general',
+            'gathering_type' => 'required|in:pm,ws,tg',
             'due_date'    => 'required|date|after_or_equal:today',
             'status'      => 'nullable|in:upcoming,needs_action,completed',
         ]);
@@ -165,6 +167,8 @@ class ReminderController extends Controller
         $reminder = Reminder::create([
              'user_id'       => $request->user()->id,
             'reminder_type' => 'custom',
+            'custom_type'   => $validated['custom_type'],
+            'gathering_type' => $validated['gathering_type'],
             'title'         => $validated['title'],
             'description'   => $validated['description'] ?? null,
             'due_date'      => $validated['due_date'],
@@ -214,9 +218,18 @@ class ReminderController extends Controller
             return response()->json(['message' => 'Unauthorized action.'], 403);
         }
 
+        if ($reminder->status === 'completed') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Completed reminders cannot be edited.',
+            ], 422);
+        }
+
         $validated = $request->validate([
             'title'       => 'sometimes|required|string|max:20',
             'description' => 'nullable|string|max:100',
+            'custom_type' => 'sometimes|required|in:submission,gathering,general',
+            'gathering_type' => 'sometimes|required|in:pm,ws,tg',
             'due_date'    => 'sometimes|required|date|after_or_equal:today',
             'status'      => 'sometimes|required|in:upcoming,needs_action,completed',
         ]);
@@ -306,6 +319,13 @@ class ReminderController extends Controller
 
         if ($reminder->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized action.'], 403);
+        }
+
+        if ($reminder->status === 'completed') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Completed reminders cannot be deleted.',
+            ], 422);
         }
 
         $reminder->delete();

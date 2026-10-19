@@ -16,7 +16,7 @@ use App\Models\User;
 class Reminder extends Model
 {
     protected $fillable = [
-        'user_id', 'reminder_type', 'parent_reminder_id',
+        'user_id', 'reminder_type', 'custom_type', 'parent_reminder_id',
         'gathering_type', 'program', 'year_level', 'gathering_date',
         'title', 'description', 'due_date', 'status', 'completed_at',
     ];

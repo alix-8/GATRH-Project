@@ -14,8 +14,14 @@ class ReminderCountdownService
         $diffInSeconds = $due->diffInSeconds($now, false);
 
         if ($diffInSeconds >= 0) {
-            $daysPassed = (int) abs(floor($diffInSeconds / (60 * 60 * 24)));
-            return 'Due date has passed' . ($daysPassed > 0 ? " ({$daysPassed} days ago)" : '');
+            $elapsedSeconds = (int) abs($diffInSeconds);
+            $days = intdiv($elapsedSeconds, 86400);
+            $hours = intdiv($elapsedSeconds % 86400, 3600);
+            $minutes = intdiv($elapsedSeconds % 3600, 60);
+            $seconds = $elapsedSeconds % 60;
+            $parts = $this->durationParts($days, $hours, $minutes, $seconds);
+
+            return 'Due date has passed (' . implode(', ', $parts) . ' ago)';
         }
 
         $absSeconds = abs($diffInSeconds);
@@ -23,8 +29,21 @@ class ReminderCountdownService
         $hours = floor(($absSeconds % (60 * 60 * 24)) / (60 * 60));
         $minutes = floor(($absSeconds % (60 * 60)) / 60);
         $seconds = $absSeconds % 60;
+        $parts = $this->durationParts((int) $days, (int) $hours, (int) $minutes, (int) $seconds);
 
-        return sprintf('%d day/s, %d hour/s, %d minute/s, %d second/s', $days, $hours, $minutes, $seconds);
+        return implode(', ', $parts);
+    }
+
+    private function durationParts(int $days, int $hours, int $minutes, int $seconds): array
+    {
+        $parts = [];
+
+        if ($days > 0) $parts[] = "{$days} day/s";
+        if ($hours > 0) $parts[] = "{$hours} hour/s";
+        if ($minutes > 0) $parts[] = "{$minutes} minute/s";
+        if ($seconds > 0 || $parts === []) $parts[] = "{$seconds} second/s";
+
+        return $parts;
     }
 
     public function reminderCountdown(int $userId): array

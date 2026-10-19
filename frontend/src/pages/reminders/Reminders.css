@@ -333,6 +333,10 @@
     line-height: 1.2;
 }
 
+.task-copy p.attendance-deadline-countdown.is-overdue {
+    color: #d32f2f;
+}
+
 .task-status {
     display: flex;
     align-items: flex-end;
@@ -388,6 +392,25 @@
     border: 0;
     background: transparent;
     cursor: pointer;
+}
+
+.task-complete-btn {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #21b854;
+    border-radius: 50%;
+    color: #168a3d;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.task-complete-btn:disabled {
+    cursor: wait;
+    opacity: 0.6;
 }
 
 .task-action-btn img {
