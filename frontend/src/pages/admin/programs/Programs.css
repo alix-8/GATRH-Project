@@ -289,11 +289,209 @@
     line-height: 1;
 }
 
-.admin-programs-result-count {
-    margin: 14px 0 0;
-    color: #68758b;
+.admin-programs-table-wrap {
+    max-height: 478px;
+    margin-top: 18px;
+    overflow: auto;
+    border: 1px solid #cbd4df;
+    border-radius: 6px;
+    scrollbar-color: #c9d3e0 #f3f6fa;
+    scrollbar-width: thin;
+}
+
+.admin-programs-table-wrap:focus-visible {
+    outline: 2px solid #169ff4;
+    outline-offset: 2px;
+}
+
+.admin-programs-table {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    color: #52627e;
     font-size: 11px;
     text-align: left;
+}
+
+.admin-programs-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.admin-programs-table th {
+    height: 32px;
+    padding: 0 15px;
+    background: #f1f5fa;
+    color: #203557;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.admin-programs-table th:nth-child(1) { width: 31%; }
+.admin-programs-table th:nth-child(2) { width: 11%; }
+.admin-programs-table th:nth-child(3) { width: 21%; }
+.admin-programs-table th:nth-child(4) { width: 11%; }
+.admin-programs-table th:nth-child(5) { width: 13%; }
+.admin-programs-table th:nth-child(6) { width: 13%; }
+
+.admin-programs-table td {
+    height: 63px;
+    padding: 8px 15px;
+    border-top: 1px solid #e5e9ef;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+.admin-programs-table th:last-child,
+.admin-programs-table td:last-child {
+    text-align: center;
+}
+
+.admin-programs-name,
+.admin-programs-head {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-programs-name > span:last-child {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.admin-programs-name strong,
+.admin-programs-code {
+    color: #172b4d;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 12px;
+}
+
+.admin-programs-name small {
+    overflow: hidden;
+    color: #61708a;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 12px;
+}
+
+.admin-programs-code-icon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 8px;
+}
+
+.admin-programs-code-icon.red { background: #ef3d45; }
+.admin-programs-code-icon.orange { background: #f6a623; }
+.admin-programs-code-icon.yellow { background: #f2c94c; }
+.admin-programs-code-icon.blue { background: #163df4; }
+.admin-programs-code-icon.purple { background: #5926aa; }
+.admin-programs-code-icon.slate { background: #71839e; }
+
+.admin-programs-heads {
+    display: grid;
+    gap: 5px;
+}
+
+.admin-programs-head {
+    color: #172b4d;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.admin-programs-head-avatar {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 9px;
+}
+
+.admin-programs-head-avatar.blue { background: #1b9ef4; }
+.admin-programs-head-avatar.pink { background: #e651ae; }
+.admin-programs-head-avatar.green { background: #1a9d4b; }
+.admin-programs-head-avatar.yellow { background: #f1c64b; }
+.admin-programs-head-avatar.purple { background: #9369df; }
+
+.admin-programs-status {
+    display: inline-block;
+    min-width: 48px;
+    padding: 2px 8px;
+    border-radius: 50px;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 9px;
+}
+
+.admin-programs-status.active {
+    background: #d9f8e4;
+    color: #21864d;
+}
+
+.admin-programs-status.inactive {
+    background: #fff5dc;
+    color: #bd9027;
+}
+
+.admin-programs-edit-button {
+    display: inline-grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border: 1px solid #9cd5ff;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+}
+
+.admin-programs-edit-button img {
+    width: 15px;
+    height: 15px;
+}
+
+.admin-programs-table td.admin-programs-table-state {
+    height: 120px;
+    color: #68758b;
+    text-align: center;
+}
+
+.admin-programs-table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+    color: #62718a;
+    font-size: 12px;
+}
+
+.admin-programs-table-footer button {
+    padding: 6px 10px;
+    border: 1px solid #bfd4e8;
+    border-radius: 4px;
+    background: #fff;
+    color: #168fe0;
+    cursor: pointer;
+}
+
+.admin-programs-table-footer button:disabled {
+    opacity: .5;
+    cursor: default;
 }
 
 @media (max-width: 1280px) {
