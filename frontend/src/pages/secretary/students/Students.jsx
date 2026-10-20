@@ -482,8 +482,8 @@ function Students() {
                             {overviewError && <p className="overview-state overview-error">{overviewError}</p>}
                             {!overviewLoading && !overviewError && overviewHistory.length === 0 && <p className="overview-state">No attendance records yet.</p>}
                             {!overviewLoading && !overviewError && overviewHistory.length > 0 && (
-                                <table><thead><tr><th>Name</th><th>Time</th><th>Venue</th><th>Day</th><th>Status</th></tr></thead>
-                                    <tbody>{overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{record.time}</td><td>{record.location}</td><td><RecordDate value={record.date} tooltip="weekday" /></td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : record.status === 'excused' ? 'Excused' : 'No Response'}</span></td></tr>)}</tbody></table>
+                                <table><thead><tr><th>Name</th><th>Course / Year</th><th>Time</th><th>Venue</th><th>Day</th><th>Status</th></tr></thead>
+                                    <tbody>{overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{record.program ?? overview.student.program} {normalizedYear(record.year_level ?? overview.student.year_level)}</td><td>{record.time}</td><td>{record.location}</td><td><RecordDate value={record.date} tooltip="weekday" /></td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : record.status === 'excused' ? 'Excused' : 'No Response'}</span></td></tr>)}</tbody></table>
                             )}
                         </div>
                     </aside>

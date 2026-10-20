@@ -100,8 +100,10 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::get('/admin/activity-log', [AdminActivityLogController::class, 'index']);
         Route::get('/admin/settings/general', [AdminSystemSettingController::class, 'show']);
         Route::patch('/admin/settings/general', [AdminSystemSettingController::class, 'update']);
-        Route::get('/admin/settings/gatherings', [AdminSystemSettingController::class, 'showGatheringSchedules']);
-        Route::patch('/admin/settings/gatherings', [AdminSystemSettingController::class, 'updateGatheringSchedules']);
+        // Temporarily disabled: editable gathering schedules are not used by the
+        // reminder generator, which currently follows its fixed schedule.
+        // Route::get('/admin/settings/gatherings', [AdminSystemSettingController::class, 'showGatheringSchedules']);
+        // Route::patch('/admin/settings/gatherings', [AdminSystemSettingController::class, 'updateGatheringSchedules']);
         Route::get('/admin/programs', [AdminProgramController::class, 'index']);
         Route::get('/admin/program-head-options', [AdminProgramController::class, 'headOptions']);
         Route::post('/admin/programs', [AdminProgramController::class, 'store']);

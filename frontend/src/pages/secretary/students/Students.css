@@ -1,12 +1,16 @@
 .students {
     display: flex;
+    height: 100vh;
+    overflow: hidden;
     background-color: #ffffff;
 }
 
 .students-main {
     flex: 1;
     min-width: 0;
+    height: 100vh;
     overflow-x: hidden;
+    overflow-y: auto;
     background-color: #ffffff;
 }
 

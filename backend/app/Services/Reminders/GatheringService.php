@@ -2,7 +2,7 @@
 
 namespace App\Services\Reminders;
 
-use App\Models\SystemSetting;
+use App\Support\SystemTimezone;
 use Carbon\Carbon;
 
 class GatheringService
@@ -81,9 +81,6 @@ class GatheringService
 
     private function today(): Carbon
     {
-        $timezone = SystemSetting::query()->whereKey(1)->value('timezone')
-            ?? config('app.timezone');
-
-        return Carbon::today($timezone);
+        return SystemTimezone::today();
     }
 }

@@ -341,8 +341,8 @@ class DashboardService
                     'id'           => $first->batch_id ?? $first->id,
                     'secretary'    => $first->submitter?->name ?? 'Unknown Secretary',
                     'gathering'    => $this->formatGatheringName($first->gathering_type),
-                    'program'      => $first->student?->program ?? 'N/A',
-                    'year_level'   => $first->student?->year_level ?? 'N/A',
+                    'program'      => $first->program ?? $first->student?->program ?? 'N/A',
+                    'year_level'   => $first->year_level ?? $first->student?->year_level ?? 'N/A',
                     'date'         => Carbon::parse($first->day)->format('M d, Y'),
                     'student_count'=> $group->count(),
                     'status'       => 'Pending',
@@ -677,7 +677,7 @@ class DashboardService
         $getProgramStatus = function ($programCode, $programRecords): string {
             $gatheringCount = $programRecords
                 ->filter(
-                    fn ($record) => $record->student?->program === $programCode
+                    fn ($record) => ($record->program ?? $record->student?->program) === $programCode
                 )
                 ->pluck('gathering_type')
                 ->filter()
@@ -694,7 +694,7 @@ class DashboardService
         $getCompletionPercentage = function ($programCode, $programRecords): int {
             $gatheringCount = $programRecords
                 ->filter(
-                    fn ($record) => $record->student?->program === $programCode
+                    fn ($record) => ($record->program ?? $record->student?->program) === $programCode
                 )
                 ->pluck('gathering_type')
                 ->filter()

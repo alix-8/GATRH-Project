@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use App\Services\Reminders\ReminderGenerationService;
 use App\Services\Escalations\WeeklyEscalationService;
+use App\Support\SystemTimezone;
 use Carbon\Carbon;
 
 Artisan::command('inspire', function () {
@@ -32,9 +33,9 @@ Artisan::command('inspire', function () {
     })->purpose('Delete expired gathering and submission reminders');
 
     Artisan::command('reminders:expire-completed', function () {
-        $deleted = app(ReminderGenerationService::class)->deleteCompletedReminders();
+        $expired = app(ReminderGenerationService::class)->expireCompletedReminders();
 
-        $this->info("Expired {$deleted} completed reminder(s).");
+        $this->info("Marked {$expired} completed reminder(s) as expired.");
     })->purpose('Expire completed reminders');
 
     Artisan::command('escalations:refresh-weekly', function () {
@@ -46,24 +47,30 @@ Artisan::command('inspire', function () {
 
 //FOR SCHEDULING
 
+$schedulerTimezone = SystemTimezone::timezone();
+
     //weekly gathering reminders for secretaries
     Schedule::command('reminders:generate-weekly-gatherings')
         ->weeklyOn(Carbon::MONDAY, '00:05')
+        ->timezone($schedulerTimezone)
         ->withoutOverlapping();
 
     // Reset escalation counts to the current week's PM, WS, and TG responses.
     Schedule::command('escalations:refresh-weekly')
         ->weeklyOn(Carbon::MONDAY, '11:59')
+        ->timezone($schedulerTimezone)
         ->withoutOverlapping();
 
     //delete expired gathering and submission reminders
     Schedule::command('reminders:delete-expired')
         ->dailyAt('00:15')
+        ->timezone($schedulerTimezone)
         ->withoutOverlapping();
 
-    // Expire completed reminders every Monday at 11:59 PM.
+    // Mark completed reminders as expired every Monday at 11:59 PM; retain their rows for history.
     Schedule::command('reminders:expire-completed')
         ->weeklyOn(Carbon::MONDAY, '23:59')
+        ->timezone($schedulerTimezone)
         ->withoutOverlapping();
 
     //spawn submission reminders for secretaries
@@ -72,6 +79,7 @@ Artisan::command('inspire', function () {
     })
         ->name('spawn-submission-reminders')
         ->daily()
+        ->timezone($schedulerTimezone)
         ->withoutOverlapping();
 
     //refresh submission progress for secretaries
@@ -81,4 +89,5 @@ Artisan::command('inspire', function () {
     })
         ->name('refresh-submission-progress')
         ->hourly()
+        ->timezone($schedulerTimezone)
         ->withoutOverlapping();

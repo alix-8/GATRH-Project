@@ -294,8 +294,8 @@ class AttendanceController extends Controller
         $students = $records->map(fn ($r) => [
             'student_id'   => $r->student_id,
             'student_name' => $r->student->name ?? 'Unknown',
-            'program'      => $r->student->program ?? 'N/A',
-            'year_level'   => $r->student->year_level,
+            'program'      => $r->program ?? $r->student->program ?? 'N/A',
+            'year_level'   => $r->year_level ?? $r->student->year_level,
             'status'       => $r->status,
             'venue'        => $r->venue ?: '---',
             'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',
@@ -964,6 +964,11 @@ class AttendanceController extends Controller
             ], 403);
         }
 
+        // Preserve the student's course and year at the time attendance is submitted.
+        $studentsById = Student::whereKey($studentIds)
+            ->get(['id', 'program', 'year_level'])
+            ->keyBy('id');
+
         $submittedBy = $request->user()->id;
         $isOverride = (bool) $request->boolean('override');
         $cycle = $request->input('cycle') ?? $request->input('week_range');
@@ -1085,7 +1090,7 @@ class AttendanceController extends Controller
 
         // --- Atomic Bulk Insert / Update within DB Transaction ---
         try {
-            $savedRecords = DB::transaction(function () use ($recordsToProcess, $submittedBy, $validated, $request, $isOverride) {
+            $savedRecords = DB::transaction(function () use ($recordsToProcess, $submittedBy, $validated, $request, $isOverride, $studentsById) {
             $records = [];
             $overriddenCount = 0;
             $createdCount = 0;
@@ -1094,6 +1099,7 @@ class AttendanceController extends Controller
             foreach ($recordsToProcess as $item) {
                 $recordData = $item['data'];
                 $existing = $item['existing'];
+                $studentSnapshot = $studentsById->get($recordData['student_id']);
                 $formattedBatch = $this->parsingService->formatBatchTime($recordData['batch'] ?? null);
 
                 if ($existing && $isOverride) {
@@ -1107,6 +1113,8 @@ class AttendanceController extends Controller
 
                     $existing->update([
                         'batch_id'          => $batchId,
+                        'program'           => $studentSnapshot?->program,
+                        'year_level'        => $studentSnapshot?->year_level,
                         'day'               => $recordData['day'],
                         'batch'             => $formattedBatch,
                         'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
@@ -1120,6 +1128,8 @@ class AttendanceController extends Controller
                     $records[] = AttendanceRecord::create([
                         'batch_id'          => $batchId,
                         'student_id'        => $recordData['student_id'],
+                        'program'           => $studentSnapshot?->program,
+                        'year_level'        => $studentSnapshot?->year_level,
                         'gathering_type'    => $recordData['gathering_type'],
                         'day'               => $recordData['day'],
                         'batch'             => $formattedBatch,
@@ -1234,8 +1244,8 @@ class AttendanceController extends Controller
             'record_id'    => $r->id,
             'student_id'   => $r->student_id,
             'student_name' => $r->student->name ?? 'Unknown',
-            'program'      => $r->student->program ?? 'N/A',
-            'year_level'   => $r->student->year_level,
+            'program'      => $r->program ?? $r->student->program ?? 'N/A',
+            'year_level'   => $r->year_level ?? $r->student->year_level,
             'status'       => $r->status,
             'venue'        => $r->venue ?: '---',
             'batch'        => $r->batch ? Carbon::parse($r->batch)->format('g:ia') : '---',
