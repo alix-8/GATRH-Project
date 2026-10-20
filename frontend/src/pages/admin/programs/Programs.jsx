@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
+import ModalSelect from '../dashboard/ModalSelect'
 import { request } from '../../../api/request'
 import TotalProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
 import ProgramHeadsIcon from '../../../assets/icons/active-users-icon.svg'
@@ -120,17 +121,17 @@ function Programs() {
                         <div className="admin-programs-filter-bar">
                             <div className="admin-programs-filter-controls">
                                 <label className="admin-programs-select program">
-                                    <select aria-label="Filter by program" value={filters.program} onChange={event => updateFilter('program', event.target.value)}>
+                                    <ModalSelect aria-label="Filter by program" value={filters.program} onChange={event => updateFilter('program', event.target.value)}>
                                         <option value="">All Programs</option>
                                         {orderedPrograms.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}
-                                    </select>
+                                    </ModalSelect>
                                 </label>
                                 <label className="admin-programs-select">
-                                    <select aria-label="Filter by status" value={filters.status} onChange={event => updateFilter('status', event.target.value)}>
+                                    <ModalSelect aria-label="Filter by status" value={filters.status} onChange={event => updateFilter('status', event.target.value)}>
                                         <option value="">All Statuses</option>
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
-                                    </select>
+                                    </ModalSelect>
                                 </label>
                                 <label className="admin-programs-search">
                                     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.3" stroke="currentColor" strokeWidth="1.6" /><path d="m12.7 12.7 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>

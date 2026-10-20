@@ -194,18 +194,7 @@
     flex-basis: 142px;
 }
 
-.admin-programs-select::after {
-    position: absolute;
-    top: 50%;
-    right: 13px;
-    width: 6px;
-    height: 6px;
-    border-right: 2px solid #64748f;
-    border-bottom: 2px solid #64748f;
-    content: '';
-    pointer-events: none;
-    transform: translateY(-70%) rotate(45deg);
-}
+.admin-programs-select .admin-modal-select-chevron { right: 12px; color: #64748f; }
 
 .admin-programs-select select,
 .admin-programs-search {
