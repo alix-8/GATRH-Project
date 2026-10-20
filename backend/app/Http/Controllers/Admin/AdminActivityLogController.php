@@ -11,6 +11,7 @@ class AdminActivityLogController extends Controller
     public function index(): JsonResponse
     {
         $activityLogs = AuditLog::query()
+            ->performedByAdministrators()
             ->with('actor:id,name')
             ->latest()
             ->paginate(25)

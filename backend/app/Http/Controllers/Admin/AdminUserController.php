@@ -22,6 +22,7 @@ class AdminUserController extends Controller
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'role' => ['nullable', Rule::in(User::ROLES)],
+            'program' => ['nullable', 'string', Rule::exists('programs', 'code')],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
             'per_page' => ['nullable', 'integer', 'between:1,100'],
             'page' => ['nullable', 'integer', 'min:1'],

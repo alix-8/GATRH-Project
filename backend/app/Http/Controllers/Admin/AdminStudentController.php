@@ -6,13 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Program;
 use App\Models\Student;
 use App\Services\Admin\AdminStudentService;
+use App\Services\Admin\StudentImportFileReader;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminStudentController extends Controller
 {
-    public function __construct(private AdminStudentService $studentService)
+    public function __construct(private AdminStudentService $studentService, private StudentImportFileReader $importFileReader)
     {
     }
 
@@ -57,6 +60,69 @@ class AdminStudentController extends Controller
             'message' => 'Student created successfully.',
             'student' => $student,
         ], 201);
+    }
+    
+    public function import(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'extensions:csv,xlsx', 'max:2048'],
+            'program' => ['nullable', 'required_with:year_level', 'string', Rule::exists('programs', 'code')],
+            'year_level' => ['nullable', 'required_with:program', Rule::in(['1', '2', '3', '4'])],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $lines = $this->importFileReader->read($request->file('file'));
+        $headers = array_shift($lines);
+        if (! is_array($headers)) {
+            throw ValidationException::withMessages(['file' => ['The file is empty.']]);
+        }
+
+        $headers = array_map(fn ($header) => strtolower(trim((string) $header, " \t\n\r\0\x0B\xEF\xBB\xBF")), $headers);
+        $columns = array_flip($headers);
+        $nameColumn = $columns['full_name'] ?? $columns['full name'] ?? $columns['name'] ?? null;
+        if ($nameColumn === null || (! isset($validated['program']) && ! isset($columns['program']))
+            || (! isset($validated['year_level']) && ! isset($columns['year_level']))) {
+            throw ValidationException::withMessages(['file' => ['Include a Full Name column. If Program and Year Level are not selected, the file must also have program and year_level columns.']]);
+        }
+
+        $validPrograms = Program::query()->pluck('code')->all();
+        $students = [];
+        foreach ($lines as $index => $values) {
+            if (count($values) === 1 && trim((string) $values[0]) === '') {
+                continue;
+            }
+
+            $name = trim((string) ($values[$nameColumn] ?? ''));
+            $program = strtoupper(trim((string) ($validated['program'] ?? $values[$columns['program']] ?? '')));
+            $yearLevel = trim((string) ($validated['year_level'] ?? $values[$columns['year_level']] ?? ''));
+            $status = strtolower(trim((string) ($values[$columns['status'] ?? -1] ?? 'active')));
+            if ($name === '' || mb_strlen($name) > 255 || ! in_array($program, $validPrograms, true)
+                || ! in_array($yearLevel, $program === 'ACT' ? ['1', '2'] : ['1', '2', '3', '4'], true)
+                || (! isset($validated['is_active']) && ! in_array($status, ['active', 'inactive'], true))) {
+                throw ValidationException::withMessages(['file' => ['Invalid student data on row ' . ($index + 2) . '. Check the name, program, year level, and status.']]);
+            }
+            $students[] = [
+                'name' => $name,
+                'program' => $program,
+                'year_level' => $yearLevel,
+                'is_active' => isset($validated['is_active']) ? (bool) $validated['is_active'] : $status === 'active',
+            ];
+            if (count($students) > 5000) {
+                throw ValidationException::withMessages(['file' => ['Import up to 5,000 students at a time.']]);
+            }
+        }
+
+        if ($students === []) {
+            throw ValidationException::withMessages(['file' => ['The file has no student rows.']]);
+        }
+
+        DB::transaction(function () use ($students): void {
+            foreach ($students as $student) {
+                $this->studentService->create($student);
+            }
+        });
+
+        return response()->json(['message' => count($students) . ' students imported successfully.', 'count' => count($students)], 201);
     }
 
     public function update(Request $request, Student $student): JsonResponse

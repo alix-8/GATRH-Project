@@ -21,4 +21,10 @@ class AuditLog extends Model
     {
         return $this->belongsTo(User::class, 'actor_id');
     }
+    
+    public function scopePerformedByAdministrators($query)
+    {
+        return $query->whereHas('actor', fn ($actorQuery) => $actorQuery->where('role', 'admin'));
+    }
+
 }
