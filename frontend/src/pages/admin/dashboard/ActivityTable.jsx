@@ -4,6 +4,7 @@ import './ActivityTable.css'
 function activityCategory(activity) {
     const target = (activity.target ?? activity.target_table ?? '').toLowerCase()
 
+    if (/^(Signed in|Changed password)$/i.test(activity.action)) return { label: 'Security', tone: 'security', icon: 'user' }
     if (target === 'users') return { label: 'User Management', tone: 'users', icon: 'user' }
     if (target === 'students') return { label: 'Students', tone: 'students', icon: 'student' }
     if (target === 'programs') return { label: 'Programs', tone: 'programs', icon: 'program' }

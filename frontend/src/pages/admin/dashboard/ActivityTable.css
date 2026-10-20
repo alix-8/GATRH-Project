@@ -116,6 +116,11 @@
     color: #ec5260;
 }
 
+.admin-activity-icon.security {
+    background: #ffe7e8;
+    color: #ec5260;
+}
+
 .admin-activity-badge {
     display: block;
     width: min(100%, 106px);
@@ -149,6 +154,11 @@
 .admin-activity-badge.attendance {
     background: #fff3d5;
     color: #a77a10;
+}
+
+.admin-activity-badge.security {
+    background: #ffe7e8;
+    color: #c63847;
 }
 
 .admin-activity-table td.admin-activity-empty {
