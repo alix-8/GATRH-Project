@@ -21,3 +21,133 @@
     color: #77839a;
     font-size: 13px;
 }
+
+.admin-programs-content {
+    padding: 20px 30px 24px;
+}
+
+.admin-programs-error {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #fff0f0;
+    color: #9f2d2d;
+    font-size: 13px;
+}
+
+.admin-programs-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 13px;
+}
+
+.admin-programs-card {
+    display: flex;
+    min-width: 0;
+    min-height: 135px;
+    align-items: center;
+    gap: 14px;
+    box-sizing: border-box;
+    padding: 13px;
+    border: 1px solid;
+    border-radius: 7px;
+    background: #fff;
+    text-align: left;
+}
+
+.admin-programs-card-icon {
+    display: grid;
+    width: 63px;
+    height: 63px;
+    flex: 0 0 63px;
+    place-items: center;
+    box-sizing: border-box;
+    border: 1px solid;
+    border-radius: 50%;
+}
+
+.admin-programs-card-icon img {
+    display: block;
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+}
+
+.admin-programs-card h2,
+.admin-programs-card p {
+    margin: 0;
+}
+
+.admin-programs-card h2 {
+    color: #172b4d;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.admin-programs-card strong {
+    display: block;
+    margin: 5px 0 8px;
+    color: #172b4d;
+    font-size: 29px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.admin-programs-card p {
+    color: #68758b;
+    font-size: 9px;
+    line-height: 1.3;
+}
+
+.admin-programs-card.purple {
+    border-color: #d0b8f8;
+}
+
+.admin-programs-card.purple .admin-programs-card-icon {
+    border-color: #b896f2;
+    background: #eadcff;
+}
+
+.admin-programs-card.blue {
+    border-color: #b5dfff;
+}
+
+.admin-programs-card.blue .admin-programs-card-icon {
+    border-color: #92d3ff;
+    background: #d4efff;
+}
+
+.admin-programs-card.green {
+    border-color: #bceacb;
+}
+
+.admin-programs-card.green .admin-programs-card-icon {
+    border-color: #a0e5b6;
+    background: #e2fbea;
+}
+
+.admin-programs-card.yellow {
+    border-color: #c4ccd9;
+}
+
+.admin-programs-card.yellow .admin-programs-card-icon {
+    border-color: #ffe49b;
+    background: #fff5d8;
+}
+
+@media (max-width: 1100px) {
+    .admin-programs-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .admin-programs-content {
+        padding: 16px;
+    }
+
+    .admin-programs-cards {
+        grid-template-columns: 1fr;
+    }
+}
