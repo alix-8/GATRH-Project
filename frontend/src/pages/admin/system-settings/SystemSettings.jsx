@@ -7,11 +7,13 @@ import { request } from '../../../api/request'
 import GeneralIcon from '../../../assets/icons/system-settings-icon.svg'
 import SecurityIcon from '../../../assets/icons/system-status-icon.svg'
 import SaveChangesIcon from '../../../assets/icons/save-changes-icon.svg'
+import SecuritySettingsForm from './SecuritySettingsForm'
 import './SystemSettings.css'
 
 const dateFormats = ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD']
 
 function SystemSettings() {
+    const [activeSection, setActiveSection] = useState('general')
     const [settings, setSettings] = useState(null)
     const [form, setForm] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -98,14 +100,15 @@ function SystemSettings() {
                 <Header title="System Settings" subtitle="Set up your system settings and grab a backup." showNotification={false} className="admin-system-settings-header" />
                 <div className="admin-system-settings-content">
                     <nav className="admin-settings-nav" aria-label="Settings sections">
-                        <button type="button" className="admin-settings-nav-item active" aria-current="page"><img src={GeneralIcon} alt="" />General</button>
-                        <button type="button" className="admin-settings-nav-item" disabled title="Security settings will be available later"><img src={SecurityIcon} alt="" />Security</button>
+                        <button type="button" className={`admin-settings-nav-item${activeSection === 'general' ? ' active' : ''}`} aria-current={activeSection === 'general' ? 'page' : undefined} onClick={() => setActiveSection('general')}><img src={GeneralIcon} alt="" />General</button>
+                        <button type="button" className={`admin-settings-nav-item${activeSection === 'security' ? ' active' : ''}`} aria-current={activeSection === 'security' ? 'page' : undefined} onClick={() => setActiveSection('security')}><img src={SecurityIcon} alt="" />Security</button>
                     </nav>
-                    <section className="admin-settings-panel" aria-labelledby="admin-settings-general-title">
-                        <div className="admin-settings-panel-heading">
+                    <section className="admin-settings-panel" aria-labelledby={activeSection === 'general' ? 'admin-settings-general-title' : 'admin-settings-security-title'}>
+                        {activeSection === 'general' ? <>
+                            <div className="admin-settings-panel-heading">
                             <h2 id="admin-settings-general-title">General</h2>
                             <p>Update your institution details and default settings.</p>
-                        </div>
+                            </div>
                         {loading ? <div className="admin-settings-loading"><LoadingCircle label="Loading general settings..." /></div>
                             : !form ? <div className="admin-settings-load-error" role="alert"><p>{error || 'Unable to load system settings.'}</p><button type="button" onClick={() => { setLoading(true); setError(''); setLoadAttempt(current => current + 1) }}>Try again</button></div>
                                 : <form className="admin-settings-form" onSubmit={saveSettings}>
@@ -121,6 +124,7 @@ function SystemSettings() {
                                         <button className="admin-settings-save" type="submit" disabled={saving || unchanged}><img src={SaveChangesIcon} alt="" />{saving ? 'Saving…' : 'Save Changes'}</button>
                                     </div>
                                 </form>}
+                        </> : <SecuritySettingsForm />}
                     </section>
                 </div>
             </main>

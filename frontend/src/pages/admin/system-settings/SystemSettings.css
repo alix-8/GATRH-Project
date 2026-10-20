@@ -61,6 +61,7 @@
     font: inherit;
     font-size: 14px;
     text-align: left;
+    cursor: pointer;
 }
 
 .admin-settings-nav-item.active {
@@ -70,6 +71,11 @@
 .admin-settings-nav-item:disabled {
     opacity: 1;
     cursor: default;
+}
+
+.admin-settings-nav-item:focus-visible {
+    outline: 2px solid #169ff4;
+    outline-offset: -2px;
 }
 
 .admin-settings-nav-item img {
@@ -109,6 +115,104 @@
     flex-direction: column;
     justify-content: space-between;
     gap: 24px;
+}
+
+.admin-settings-security-content h3 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.admin-settings-security-content > p {
+    margin: 0 0 25px;
+    color: #687791;
+    font-size: 11px;
+    text-align: left;
+}
+
+.admin-settings-password-fields {
+    display: grid;
+    gap: 13px;
+    width: min(100%, 419px);
+}
+
+.admin-settings-password-field:first-child {
+    margin-bottom: 19px;
+}
+
+.admin-settings-password-field label {
+    display: block;
+    margin-bottom: 4px;
+    color: #172b4d;
+    font-size: 12px;
+    text-align: left;
+}
+
+.admin-settings-password-input {
+    position: relative;
+}
+
+.admin-settings-password-input input {
+    width: 100%;
+    height: 35px;
+    box-sizing: border-box;
+    padding: 0 34px 0 10px;
+    border: 1px solid #d5dce7;
+    border-radius: 4px;
+    background: #fff;
+    color: #172b4d;
+    font: inherit;
+    font-size: 11px;
+}
+
+.admin-settings-password-input input::placeholder {
+    color: #687791;
+}
+
+.admin-settings-password-input input:focus {
+    outline: 0;
+    border-color: #169ff4;
+    box-shadow: 0 0 0 2px #169ff426;
+}
+
+.admin-settings-password-input input[aria-invalid="true"] {
+    border-color: #b43636;
+}
+
+.admin-settings-password-input button {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.admin-settings-password-input button:focus-visible {
+    outline: 2px solid #169ff4;
+    border-radius: 3px;
+}
+
+.admin-settings-password-input button img {
+    width: 14px;
+    height: 14px;
+    opacity: .6;
+}
+
+.admin-settings-field-error {
+    display: block;
+    margin-top: 4px;
+    color: #b43636;
+    font-size: 11px;
 }
 
 .admin-settings-fields {
@@ -213,6 +317,11 @@
 .admin-settings-save img {
     width: 18px;
     height: 18px;
+}
+
+.admin-settings-update-password {
+    min-width: 164px;
+    font-size: 11px;
 }
 
 .admin-settings-save:disabled {
