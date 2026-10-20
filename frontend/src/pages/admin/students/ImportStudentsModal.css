@@ -1,0 +1,48 @@
+.admin-import-students-modal {
+    width: min(390px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+}
+
+.admin-import-students-modal .admin-add-user-description {
+    margin: 2px 0 13px;
+}
+
+.admin-import-file-input {
+    display: none !important;
+}
+
+.admin-import-drop-zone {
+    display: flex;
+    width: 100%;
+    height: 145px;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px dashed #adddff;
+    border-radius: 4px;
+    background: #fff;
+    color: #159ff2;
+    font: inherit;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+
+.admin-import-drop-zone.is-dragging,
+.admin-import-drop-zone:hover {
+    background: #f2f9ff;
+    border-color: #169ff4;
+}
+
+.admin-import-drop-zone svg {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+}
+
+.admin-import-students-modal .admin-add-user-status {
+    margin-top: 12px;
+    margin-bottom: 14px;
+}

@@ -1,0 +1,8 @@
+.user-roles-edit-modal {
+    width: min(430px, calc(100vw - 30px));
+    max-height: calc(100vh - 30px);
+}
+
+.user-roles-edit-modal .admin-add-user-description {
+    margin: 3px 0 16px;
+}

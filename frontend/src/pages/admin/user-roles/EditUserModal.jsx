@@ -1,0 +1,144 @@
+import { useEffect, useRef, useState } from 'react'
+import { request } from '../../../api/request'
+import ModalSelect from '../dashboard/ModalSelect'
+import '../dashboard/AddUserModal.css'
+import './EditUserModal.css'
+
+function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
+    const dialogRef = useRef(null)
+    const initialProgram = user.program || user.programs?.[0]?.code || ''
+    const initialYearLevel = String(user.year_level || '').match(/^[1-4]/)?.[0] || String(user.year_level || '')
+    const [form, setForm] = useState({
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        program: initialProgram,
+        year_level: initialYearLevel,
+        is_active: user.is_active,
+    })
+    const [saving, setSaving] = useState(false)
+    const [error, setError] = useState('')
+    const [fieldErrors, setFieldErrors] = useState({})
+
+    useEffect(() => {
+        const dialog = dialogRef.current
+        const previousOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        dialog.showModal()
+        return () => {
+            document.body.style.overflow = previousOverflow
+            if (dialog.open) dialog.close()
+        }
+    }, [])
+
+    const needsProgram = ['secretary', 'program_secretary', 'program_head'].includes(form.role)
+    const needsYearLevel = form.role === 'secretary'
+
+    function updateField(field, value) {
+        setForm(current => ({
+            ...current,
+            [field]: value,
+            ...(field === 'role' && value !== current.role ? { program: '', year_level: '' } : {}),
+        }))
+        setError('')
+        setFieldErrors(current => ({ ...current, [field]: undefined }))
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault()
+        setSaving(true)
+        setError('')
+        setFieldErrors({})
+
+        const payload = {
+            name: form.name.trim(),
+            email: form.email.trim(),
+            role: form.role,
+            is_active: form.is_active,
+        }
+
+        if (form.role !== user.role || form.program !== initialProgram) {
+            payload.program = needsProgram ? form.program : null
+        }
+        if (form.role !== user.role || form.year_level !== initialYearLevel) {
+            payload.year_level = needsYearLevel ? form.year_level : null
+        }
+
+        try {
+            const result = await request(`/admin/users/${user.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload),
+            })
+            onUpdated(result.message)
+        } catch (submitError) {
+            setError(submitError.message || 'Unable to update this user.')
+            setFieldErrors(submitError.details?.errors ?? {})
+            setSaving(false)
+        }
+    }
+
+    return <dialog
+        ref={dialogRef}
+        className="admin-add-user-modal user-roles-edit-modal"
+        aria-labelledby="user-roles-edit-title"
+        aria-describedby="user-roles-edit-description"
+        onCancel={event => { event.preventDefault(); if (!saving) onClose() }}
+        onClick={event => {
+            const bounds = event.currentTarget.getBoundingClientRect()
+            const outside = event.clientX < bounds.left || event.clientX > bounds.right
+                || event.clientY < bounds.top || event.clientY > bounds.bottom
+            if (outside && !saving) onClose()
+        }}
+    >
+        <button className="admin-add-user-close" type="button" onClick={onClose} disabled={saving} aria-label="Close Edit User">×</button>
+        <h2 id="user-roles-edit-title">Edit User</h2>
+        <p id="user-roles-edit-description" className="admin-add-user-description">Update this account and its role assignment.</p>
+
+        <form onSubmit={handleSubmit}>
+            <div className="admin-add-user-field">
+                <label htmlFor="user-roles-edit-name">Full Name<span>*</span></label>
+                <input id="user-roles-edit-name" autoFocus required maxLength={255} value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
+                {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
+            </div>
+            <div className="admin-add-user-field">
+                <label htmlFor="user-roles-edit-email">Email Address<span>*</span></label>
+                <input id="user-roles-edit-email" type="email" required maxLength={255} value={form.email} onChange={event => updateField('email', event.target.value)} aria-invalid={Boolean(fieldErrors.email)} />
+                {fieldErrors.email && <small className="admin-add-user-field-error">{fieldErrors.email[0]}</small>}
+            </div>
+            <div className="admin-add-user-field">
+                <label htmlFor="user-roles-edit-role">Role<span>*</span></label>
+                <ModalSelect id="user-roles-edit-role" required value={form.role} onChange={event => updateField('role', event.target.value)} aria-invalid={Boolean(fieldErrors.role)}>
+                    {roles.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
+                </ModalSelect>
+                {fieldErrors.role && <small className="admin-add-user-field-error">{fieldErrors.role[0]}</small>}
+            </div>
+            {needsProgram && <div className="admin-add-user-field">
+                <label htmlFor="user-roles-edit-program">Program<span>*</span></label>
+                <ModalSelect id="user-roles-edit-program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
+                    <option value="">Select Program</option>
+                    {programs.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}
+                </ModalSelect>
+                {fieldErrors.program && <small className="admin-add-user-field-error">{fieldErrors.program[0]}</small>}
+            </div>}
+            {needsYearLevel && <div className="admin-add-user-field">
+                <label htmlFor="user-roles-edit-year">Year Level<span>*</span></label>
+                <ModalSelect id="user-roles-edit-year" required value={form.year_level} onChange={event => updateField('year_level', event.target.value)} aria-invalid={Boolean(fieldErrors.year_level)}>
+                    <option value="">Select Year Level</option>
+                    {[1, 2, 3, 4].map(year => <option key={year} value={String(year)}>{year}{['st', 'nd', 'rd', 'th'][year - 1]} Year</option>)}
+                </ModalSelect>
+                {fieldErrors.year_level && <small className="admin-add-user-field-error">{fieldErrors.year_level[0]}</small>}
+            </div>}
+            <div className="admin-add-user-status">
+                <span>Account Status</span>
+                <div>
+                    <button type="button" role="switch" aria-checked={form.is_active} aria-label="Account active" className={`admin-add-user-switch${form.is_active ? ' active' : ''}`} onClick={() => updateField('is_active', !form.is_active)}><span /></button>
+                    <span className={form.is_active ? 'active' : 'inactive'}>{form.is_active ? 'Active' : 'Inactive'}</span>
+                </div>
+            </div>
+            {error && <p className="admin-add-user-submit-error" role="alert">{error}</p>}
+            <button className="admin-add-user-submit" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
+        </form>
+    </dialog>
+}
+
+export default EditUserModal

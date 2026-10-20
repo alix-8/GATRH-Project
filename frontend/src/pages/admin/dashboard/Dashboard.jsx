@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
+import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import { request } from '../../../api/request'
 import ActiveUsersIcon from '../../../assets/icons/active-users-icon.svg'
 import AdminStudentsIcon from '../../../assets/icons/admin-students-icon.svg'
@@ -16,6 +17,7 @@ import SystemSettingsIcon from '../../../assets/icons/system-settings-icon.svg'
 import AddUserModal from './AddUserModal'
 import AddStudentModal from './AddStudentModal'
 import AddProgramModal from './AddProgramModal'
+import ActivityTable from './ActivityTable'
 import './Dashboard.css'
 
 const accountRoleIcons = {
@@ -24,14 +26,6 @@ const accountRoleIcons = {
     program_secretary: { icon: SecretariesIcon, tone: 'green' },
     secretary: { icon: SecretariesIcon, tone: 'green' },
     student: { icon: AdminStudentsIcon, tone: 'yellow' },
-}
-
-function formatDate(value) {
-    if (!value) return '—'
-    return new Date(value).toLocaleString('en-US', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    })
 }
 
 function AdminDashboard() {
@@ -128,6 +122,7 @@ function AdminDashboard() {
                                 <div><h2>Manage System Accounts</h2><p>Create and maintain accounts.</p></div>
                             </div>
                             <div className="admin-account-list">
+                                {!dashboard && !error && <div className="admin-account-loading"><LoadingCircle label="Loading accounts…" /></div>}
                                 {accountRows.map(account => {
                                     const { icon, tone } = accountRoleIcons[account.role] ?? { icon: ActiveUsersIcon, tone: 'navy' }
                                     const countLabel = account.isStudentRecord
@@ -159,24 +154,10 @@ function AdminDashboard() {
 
                     <section className="admin-panel admin-activity-panel">
                         <div className="admin-panel-heading">
-                            <div><h2>Recent System Activity</h2><p>Latest recorded account and system changes.</p></div>
+                            <div><h2>Recent System Activity</h2><p>Recent administrative actions</p></div>
+                            <Link className="admin-activity-view-all" to="/admin/activity-log">View All <span aria-hidden="true">→</span></Link>
                         </div>
-                        <div className="admin-activity-table-wrap">
-                            <table className="admin-activity-table">
-                                <thead><tr><th>Date</th><th>Action</th><th>Target</th><th>Performed by</th></tr></thead>
-                                <tbody>
-                                    {(dashboard?.recent_activity ?? []).map(activity => (
-                                        <tr key={activity.id}>
-                                            <td>{formatDate(activity.created_at)}</td>
-                                            <td>{activity.action}</td>
-                                            <td>{activity.target}{activity.target_id ? ` #${activity.target_id}` : ''}</td>
-                                            <td>{activity.performed_by}</td>
-                                        </tr>
-                                    ))}
-                                    {dashboard && dashboard.recent_activity.length === 0 && <tr><td className="admin-empty" colSpan="4">No activity has been recorded yet.</td></tr>}
-                                </tbody>
-                            </table>
-                        </div>
+                        <ActivityTable activities={dashboard?.recent_activity?.slice(0, 6)} loading={!dashboard && !error} administratorLabel />
                     </section>
                 </div>
             </main>
