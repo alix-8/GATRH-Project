@@ -8,25 +8,39 @@
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .admin-activity-table th {
-    height: 30px;
+    height: 32px;
     box-sizing: border-box;
     padding: 7px 15px;
     background: #e8eef6;
     color: #63718a;
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     text-align: left;
 }
 
-.admin-activity-table th:nth-child(1) { width: 24%; }
-.admin-activity-table th:nth-child(2) { width: 15%; }
-.admin-activity-table th:nth-child(3) { width: 30%; }
-.admin-activity-table th:nth-child(4) { width: 16%; }
-.admin-activity-table th:nth-child(5) { width: 15%; }
+.admin-activity-table th:nth-child(1) {
+    width: 24%;
+}
+
+.admin-activity-table th:nth-child(2) {
+    width: 15%;
+}
+
+.admin-activity-table th:nth-child(3) {
+    width: 30%;
+}
+
+.admin-activity-table th:nth-child(4) {
+    width: 16%;
+}
+
+.admin-activity-table th:nth-child(5) {
+    width: 15%;
+}
 
 .admin-activity-table td {
     height: 40px;
@@ -43,8 +57,8 @@
 
 .admin-activity-table td:first-child,
 .admin-activity-table td:nth-child(2) {
-    font-size: 10px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 400;
 }
 
 .admin-activity-table .admin-activity-actor {
@@ -58,7 +72,7 @@
     min-width: 0;
 }
 
-.admin-activity-action > span:last-child {
+.admin-activity-action>span:last-child {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -137,12 +151,16 @@
     color: #a77a10;
 }
 
-.admin-activity-empty {
+.admin-activity-table td.admin-activity-empty {
     padding: 24px 15px !important;
     color: #8390a5 !important;
+    font-size: 12px;
+    font-weight: 400;
     text-align: center;
 }
 
 @media (max-width: 780px) {
-    .admin-activity-table { min-width: 760px; }
+    .admin-activity-table {
+        min-width: 760px;
+    }
 }
