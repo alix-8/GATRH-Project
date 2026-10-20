@@ -512,7 +512,7 @@ function Reminders() {
                                 ? 'Today'
                                 : 'Upcoming'
                     : isCompleted
-                        ? 'Completed'
+                        ? (reminder.expired_at ? 'Expired' : 'Completed')
                         : reminder.status === 'needs_action'
                             ? 'Needs Action'
                             : 'Upcoming',

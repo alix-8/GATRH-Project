@@ -117,6 +117,8 @@ class StudentController extends Controller
             ->get()
             ->map(fn (AttendanceRecord $record) => [
                 'id' => 'record-' . $record->id,
+                'program' => $record->program ?? $student->program,
+                'year_level' => $record->year_level ?? $student->year_level,
                 'gathering_type' => $record->gathering_type,
                 'gathering' => $this->gatheringLabel($record->gathering_type),
                 'time' => $record->batch ? substr($record->batch, 0, 5) : '—',

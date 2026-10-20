@@ -332,7 +332,7 @@ class CmCoordinatorMonitoringService
             [$programCode, $yearLevel] = explode('|', $key, 2);
             $studentIds = $roster->pluck('id')->all();
             $courseRecords = $records->filter(fn ($record) =>
-                strtoupper(trim((string) $record->student?->program)) === $programCode
+                strtoupper(trim((string) ($record->program ?? $record->student?->program))) === $programCode
                 && (string) $record->student?->year_level === (string) $yearLevel
             );
 

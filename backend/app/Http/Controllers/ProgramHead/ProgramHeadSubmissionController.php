@@ -54,9 +54,9 @@ class ProgramHeadSubmissionController extends Controller
                     'secretary' => $first->submitter?->name ?? 'Unknown Secretary',
                     'gathering' => $this->gatheringLabel($first->gathering_type),
                     'gathering_type' => $first->gathering_type,
-                    'program' => $first->student?->program ?? 'N/A',
-                    'year_level' => $first->student?->year_level,
-                    'year_label' => $this->ordinalYear($first->student?->year_level),
+                    'program' => $first->program ?? $first->student?->program ?? 'N/A',
+                    'year_level' => $first->year_level ?? $first->student?->year_level,
+                    'year_label' => $this->ordinalYear($first->year_level ?? $first->student?->year_level),
                     'date' => Carbon::parse($first->day)->format('M j, Y'),
                     'date_iso' => Carbon::parse($first->day)->toDateString(),
                     'status' => $status,
@@ -130,19 +130,19 @@ class ProgramHeadSubmissionController extends Controller
             ->get()
             ->groupBy(fn (AttendanceRecord $record) => implode('|', [
                 $record->batch_id ?: implode(':', [$record->gathering_type, Carbon::parse($record->day)->toDateString(), $record->submitted_by]),
-                $record->student?->program ?? 'N/A',
-                $record->student?->year_level ?? 0,
+                $record->program ?? $record->student?->program ?? 'N/A',
+                $record->year_level ?? $record->student?->year_level ?? 0,
             ]))
             ->map(function ($group, $key) {
                 $first = $group->first();
-                $year = (int) ($first->student?->year_level ?? 0);
+                $year = (int) ($first->year_level ?? $first->student?->year_level ?? 0);
                 return [
                     'id' => $key,
                     'batch_key' => $first->batch_id ?: implode('|', [$first->gathering_type, Carbon::parse($first->day)->toDateString(), $first->submitted_by]),
                     'secretary' => $first->submitter?->name ?? 'Unknown Secretary',
                     'gathering' => $this->gatheringLabel($first->gathering_type),
                     'gathering_type' => $first->gathering_type,
-                    'program' => $first->student?->program ?? 'N/A',
+                    'program' => $first->program ?? $first->student?->program ?? 'N/A',
                     'year_level' => $year,
                     'year_label' => $this->ordinalYear($year),
                     'date' => Carbon::parse($first->day)->format('M j, Y'),

@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\SystemSetting;
+use App\Support\SystemTimezone;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,7 +11,7 @@ class ApplySystemTimezone
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $timezone = SystemSetting::query()->whereKey(1)->value('timezone');
+        $timezone = SystemTimezone::timezone();
 
         if ($timezone) {
             config(['app.timezone' => $timezone]);

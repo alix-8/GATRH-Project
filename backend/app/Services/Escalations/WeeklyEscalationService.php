@@ -5,6 +5,7 @@ namespace App\Services\Escalations;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceDraft;
 use App\Models\Escalation;
+use App\Support\SystemTimezone;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -17,8 +18,9 @@ class WeeklyEscalationService
             return collect();
         }
 
-        $start = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $end = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
+        $now = SystemTimezone::now();
+        $start = $now->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $end = $now->copy()->endOfWeek(Carbon::SUNDAY)->toDateString();
 
         $noResponseGatherings = AttendanceRecord::query()
             ->whereIn('student_id', $ids)
@@ -84,8 +86,9 @@ class WeeklyEscalationService
 
     public function syncAll(): int
     {
-        $start = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $end = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
+        $now = SystemTimezone::now();
+        $start = $now->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $end = $now->copy()->endOfWeek(Carbon::SUNDAY)->toDateString();
         $studentIds = Escalation::query()->pluck('student_id')
             ->merge(AttendanceRecord::query()->distinct()->pluck('student_id'))
             ->merge(AttendanceDraft::query()->where('status', 'draft')

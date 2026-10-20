@@ -5,7 +5,7 @@ namespace App\Services\Reminders;
 use App\Models\Reminder;
 use App\Models\AttendanceRecord;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Support\SystemTimezone;
 
 class ReminderGenerationService
 {
@@ -19,8 +19,8 @@ class ReminderGenerationService
      */
     public function generateWeeklyGatheringReminders(?User $onlyUser = null): int
     {   
-        $today = Carbon::today();
-        $currentWeekEnd = Carbon::today()->endOfWeek();
+        $today = SystemTimezone::today();
+        $currentWeekEnd = $today->copy()->endOfWeek();
 
         Reminder::where('reminder_type', 'gathering')
             ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
@@ -64,8 +64,8 @@ class ReminderGenerationService
                         continue;
                     }
 
-                    $currentWeekStart = Carbon::today()->startOfWeek();
-                    $currentWeekEnd = Carbon::today()->endOfWeek();
+                    $currentWeekStart = SystemTimezone::today()->startOfWeek();
+                    $currentWeekEnd = $currentWeekStart->copy()->endOfWeek();
 
                     Reminder::where('reminder_type', 'gathering')
                         ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
@@ -102,7 +102,7 @@ class ReminderGenerationService
     public function spawnSubmissionReminders(int $submissionWindowDays = 7, ?int $onlyUserId = null): void
     {
         $dueGatherings = Reminder::where('reminder_type', 'gathering')
-            ->whereDate('gathering_date', '<=', Carbon::today())
+            ->whereDate('gathering_date', '<=', SystemTimezone::today())
             ->when($onlyUserId, fn ($query) => $query->where('user_id', $onlyUserId))
             ->whereDoesntHave('children') // no submission reminder spawned yet
             ->get();
@@ -141,7 +141,7 @@ class ReminderGenerationService
             $reminder->update([
                 'description'  => $this->buildSubmissionDescription($reminder, $responded, $total),
                 'status'       => $isComplete ? 'completed' : 'needs_action',
-                'completed_at' => $isComplete ? now() : null,
+                'completed_at' => $isComplete ? SystemTimezone::now() : null,
             ]);
         }
     }
@@ -152,7 +152,7 @@ class ReminderGenerationService
     public function deleteExpiredReminders(
     int $submissionRetentionDays = 7
     ): int {
-        $today = Carbon::today();
+        $today = SystemTimezone::today();
         $currentWeekEnd = $today->copy()->endOfWeek();
 
         // Keep submission tasks for seven days after their deadline.
@@ -183,11 +183,13 @@ class ReminderGenerationService
     }
 
     /**
-     * Remove completed reminders during the weekly cleanup.
+     * Mark completed reminders as expired during the weekly cleanup, retaining their history.
      */
-    public function deleteCompletedReminders(): int
+    public function expireCompletedReminders(): int
     {
-        return Reminder::where('status', 'completed')->delete();
+        return Reminder::where('status', 'completed')
+            ->whereNull('expired_at')
+            ->update(['expired_at' => SystemTimezone::now()]);
     }
 
     private function buildSubmissionDescription(Reminder $reminder, ?int $responded = null, ?int $total = null): string

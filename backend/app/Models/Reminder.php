@@ -18,12 +18,13 @@ class Reminder extends Model
     protected $fillable = [
         'user_id', 'reminder_type', 'custom_type', 'parent_reminder_id',
         'gathering_type', 'program', 'year_level', 'gathering_date',
-        'title', 'description', 'due_date', 'status', 'completed_at',
+        'title', 'description', 'due_date', 'status', 'completed_at', 'expired_at',
     ];
 
     protected $casts = [
         'due_date'       => 'datetime',
         'completed_at'   => 'datetime',
+        'expired_at'     => 'datetime',
         'gathering_date' => 'date',
     ];
 
@@ -49,16 +50,19 @@ class Reminder extends Model
     {
         return AttendanceRecord::whereHas('student', function ($q) {
                 $q->where('program', $this->program)
-                  ->where('year_level', $this->year_level);
+                  ->where('year_level', $this->year_level)
+                  ->where('is_active', true);
             })
             ->where('gathering_type', $this->gathering_type)
             ->where('day', $this->gathering_date->toDateString())
+            ->whereIn('status', ['present', 'excused'])
             ->count();
     }
 
     public function totalStudents(): int
     {
-        return Student::where('program', $this->program)
+        return Student::active()
+            ->where('program', $this->program)
             ->where('year_level', $this->year_level)
             ->count();
     }
