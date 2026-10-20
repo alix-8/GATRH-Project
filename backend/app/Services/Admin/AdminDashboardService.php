@@ -52,6 +52,7 @@ class AdminDashboardService
     private function getRecentActivity(): array
     {
         return AuditLog::query()
+            ->performedByAdministrators()
             ->with('actor:id,name')
             ->latest()
             ->limit(8)

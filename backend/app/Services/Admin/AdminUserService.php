@@ -126,11 +126,19 @@ class AdminUserService
         return User::query()
             ->with('programs:id,code,name')
             ->when($filters['role'] ?? null, fn ($query, $role) => $query->where('role', $role))
+            ->when($filters['program'] ?? null, fn ($query, $program) => $query->where(function ($programQuery) use ($program) {
+                $programQuery->where('program', $program)
+                    ->orWhereHas('programs', fn ($assignedProgram) => $assignedProgram->where('code', $program));
+            }))
             ->when(isset($filters['is_active']), fn ($query) => $query->where('is_active', $filters['is_active']))
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
+            if (ctype_digit($search)) {
+                        $userQuery->orWhere('id', (int) $search);
+                    }
+
                 });
             })
             ->orderBy('name')
