@@ -208,6 +208,17 @@
     opacity: .6;
 }
 
+.admin-settings-password-slash {
+    position: absolute;
+    top: 3px;
+    left: 11px;
+    width: 2px;
+    height: 18px;
+    background: #667085;
+    transform: rotate(45deg);
+    pointer-events: none;
+}
+
 .admin-settings-field-error {
     display: block;
     margin-top: 4px;

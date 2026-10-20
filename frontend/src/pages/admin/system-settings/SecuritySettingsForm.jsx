@@ -26,6 +26,7 @@ function SecuritySettingsForm() {
 
     function updatePassword(name, value) {
         setPasswords(current => ({ ...current, [name]: value }))
+        if (!value) setVisible(current => ({ ...current, [name]: false }))
         setFieldErrors(current => ({ ...current, [name]: '' }))
         setError('')
         setNotice('')
@@ -85,12 +86,12 @@ function SecuritySettingsForm() {
                                 required
                                 disabled={saving}
                             />
-                            <button
+                            {passwords[field.name] && <button
                                 type="button"
                                 onClick={() => setVisible(current => ({ ...current, [field.name]: !current[field.name] }))}
                                 aria-label={`${visible[field.name] ? 'Hide' : 'Show'} ${field.label.toLowerCase()}`}
                                 disabled={saving}
-                            ><img src={ShowPasswordIcon} alt="" /></button>
+                            ><img src={ShowPasswordIcon} alt="" />{!visible[field.name] && <span className="admin-settings-password-slash" aria-hidden="true" />}</button>}
                         </div>
                         {fieldErrors[field.name] && <small id={`admin-settings-${field.name}-error`} className="admin-settings-field-error">{fieldErrors[field.name]}</small>}
                     </div>)}
