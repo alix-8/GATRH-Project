@@ -358,6 +358,15 @@
     width: 36%;
 }
 
+.admin-students-table th:nth-child(2),
+.admin-students-table th:nth-child(3),
+.admin-students-table th:nth-child(4),
+.admin-students-table td:nth-child(2),
+.admin-students-table td:nth-child(3),
+.admin-students-table td:nth-child(4) {
+    text-align: center;
+}
+
 .admin-students-table th:last-child,
 .admin-students-table td:last-child {
     text-align: center;

@@ -337,6 +337,17 @@
 .admin-programs-table th:nth-child(5) { width: 13%; }
 .admin-programs-table th:nth-child(6) { width: 13%; }
 
+.admin-programs-table th:nth-child(2),
+.admin-programs-table th:nth-child(3),
+.admin-programs-table th:nth-child(4),
+.admin-programs-table th:nth-child(5),
+.admin-programs-table td:nth-child(2),
+.admin-programs-table td:nth-child(3),
+.admin-programs-table td:nth-child(4),
+.admin-programs-table td:nth-child(5) {
+    text-align: center;
+}
+
 .admin-programs-table td {
     height: 63px;
     padding: 8px 15px;
@@ -401,8 +412,10 @@
 .admin-programs-code-icon.slate { background: #71839e; }
 
 .admin-programs-heads {
-    display: grid;
+    display: inline-grid;
     gap: 5px;
+    max-width: 100%;
+    text-align: left;
 }
 
 .admin-programs-head {
