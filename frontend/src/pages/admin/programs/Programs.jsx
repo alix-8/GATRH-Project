@@ -40,6 +40,7 @@ function Programs() {
                 <Header
                     title="Programs"
                     subtitle="Manage student records, program assignments, and account status."
+                    showNotification={false}
                     className="admin-programs-header"
                 />
                 <div className="admin-programs-content">

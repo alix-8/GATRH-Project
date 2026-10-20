@@ -31,6 +31,7 @@ function ActivityLog() {
                 <Header
                     title="Activity Log"
                     subtitle="Track administrator actions across your system."
+                    showNotification={false}
                     className="admin-activity-log-header"
                 />
                 <div className="admin-activity-log-content">

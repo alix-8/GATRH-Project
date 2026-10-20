@@ -96,6 +96,7 @@ function AdminDashboard() {
                 <Header
                     title="Dashboard"
                     subtitle="Maintain users, programs, students, and system configuration."
+                    showNotification={false}
                     className="admin-dashboard-header"
                 />
 

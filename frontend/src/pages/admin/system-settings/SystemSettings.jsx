@@ -10,6 +10,7 @@ function SystemSettings() {
                 <Header
                     title="System Settings"
                     subtitle="Set up your system settings and grap a backup."
+                    showNotification={false}
                     className="admin-system-settings-header"
                 />
             </main>
