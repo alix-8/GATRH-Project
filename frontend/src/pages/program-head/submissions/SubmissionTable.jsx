@@ -6,7 +6,6 @@ import GatheringIcon from '../../../assets/icons/GatheringFilterIcon.svg'
 import YearIcon from '../../../assets/icons/FilterYearIcon.svg'
 import StatusIcon from '../../../assets/icons/FilterStatusIcon.svg'
 import SubmissionDrawer from './SubmissionDrawer'
-import SubmissionPagination from './SubmissionPagination'
 import FilterDropdown from '../../../components/Filters/FilterDropdown'
 import CalendarFilter from '../../../components/Filters/CalendarFilter'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
@@ -36,21 +35,19 @@ export default function SubmissionTable() {
     const navigate = useNavigate()
     const [rows, setRows] = useState([])
     const [pendingCount, setPendingCount] = useState(0)
-    const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 })
     const [filters, setFilters] = useState({ date: '', gathering_type: '', year_level: '', status: '', search: '' })
-    const [page, setPage] = useState(1)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [activeSubmission, setActiveSubmission] = useState(() => location.state?.openSubmission ?? null)
     const [refresh, setRefresh] = useState(0)
 
     const params = useMemo(() => {
-        const values = new URLSearchParams({ page: String(page), per_page: '5' })
+        const values = new URLSearchParams({ all: '1' })
         Object.entries(filters).forEach(([key, value]) => {
             if (value) values.set(key, value)
         })
         return values.toString()
-    }, [filters, page])
+    }, [filters])
 
     const loadSubmissions = useCallback(async (signal) => {
         setLoading(true)
@@ -59,7 +56,6 @@ export default function SubmissionTable() {
             const result = await request(`/program-head/submissions?${params}`, { signal })
             setRows(Array.isArray(result.data) ? result.data : [])
             setPendingCount(result.pending_count ?? 0)
-            setMeta(result.meta ?? { current_page: 1, last_page: 1, total: 0 })
         } catch (err) {
             if (err.name !== 'AbortError') {
                 setError(err.message || 'Could not load submissions.')
@@ -82,7 +78,6 @@ export default function SubmissionTable() {
 
     const updateFilter = (key, value) => {
         setFilters((current) => ({ ...current, [key]: value }))
-        setPage(1)
     }
 
     const updateAfterReview = () => {
@@ -202,7 +197,6 @@ export default function SubmissionTable() {
                             </tbody>
                         </table>
                     </div>
-                    <SubmissionPagination page={page} lastPage={meta.last_page} onPageChange={setPage} disabled={loading} />
                 </section>
             </div>
             {activeSubmission && <SubmissionDrawer submission={activeSubmission} onClose={() => setActiveSubmission(null)} onUpdated={updateAfterReview} />}
