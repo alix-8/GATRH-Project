@@ -15,6 +15,8 @@ import SystemSettingsIcon from '../../assets/icons/system-settings-icon.svg'
 import UserRolesIcon from '../../assets/icons/user-roles-icon.svg'
 import ProgramsIcon from '../../assets/icons/programs-icon.svg'
 import ActivityLogIcon from '../../assets/icons/activity-log-icon.svg'
+import PendingSubmissionIcon from '../../assets/icons/pending-submission-kpi-icon.svg'
+import RecordManagementIcon from '../../assets/icons/record-management.svg'
 import './Sidebar.css'
 
 const navigationByRole = {
@@ -35,8 +37,8 @@ const navigationByRole = {
 
     program_head: [
         { label: 'Dashboard', to: '/program-head/dashboard', icon: DashboardIcon },
-        { label: 'Submission', to: '/program-head/submission', icon: ImportIcon },
-        { label: 'Records', to: '/program-head/records', icon: AttendanceIcon },
+        { label: 'Submission', to: '/program-head/submission', icon: PendingSubmissionIcon, lightIcon: true },
+        { label: 'Records', to: '/program-head/records', icon: RecordManagementIcon, lightIcon: true },
         { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
     ],
     chancellor: [
@@ -113,7 +115,7 @@ function Sidebar() {
                         end
                         className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                     >
-                        <img className="sidebar-icon" src={item.icon} alt="" />
+                        <img className={`sidebar-icon${item.lightIcon ? ' sidebar-icon-light' : ''}`} src={item.icon} alt="" />
                         <span>{item.label}</span>
                     </NavLink>
                 ))}

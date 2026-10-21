@@ -70,6 +70,10 @@
     transition: width 0.2s ease, height 0.2s ease, flex-basis 0.2s ease, opacity 0.2s ease;
 }
 
+.sidebar-icon-light {
+    filter: brightness(0) invert(1);
+}
+
 .sidebar-link.active .sidebar-icon {
     width: 26px;
     height: 26px;
