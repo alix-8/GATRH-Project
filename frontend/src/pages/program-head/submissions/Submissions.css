@@ -36,7 +36,7 @@
 
 .ph-submission-filters {
     display: grid;
-    grid-template-columns: repeat(4, minmax(95px, 1fr)) minmax(170px, 2fr);
+    grid-template-columns: 260px repeat(3, minmax(95px, 1fr)) minmax(170px, 2fr);
     gap: 10px;
 }
 

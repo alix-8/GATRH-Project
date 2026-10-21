@@ -7,7 +7,7 @@
 .ph-record-filters {
     display: grid;
     grid-template-columns:
-        minmax(135px, 1fr)
+        260px
         minmax(135px, 1fr)
         minmax(120px, 0.9fr)
         minmax(190px, 2fr);
