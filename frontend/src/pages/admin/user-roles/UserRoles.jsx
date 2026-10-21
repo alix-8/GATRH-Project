@@ -119,6 +119,7 @@ function UserRoles() {
                 <Header
                     title="User & Roles"
                     subtitle="Manage system users, assign roles, and control access permissions."
+                    showNotification={false}
                     className="user-roles-header"
                 />
                 <div className="user-roles-content">

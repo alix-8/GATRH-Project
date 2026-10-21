@@ -80,37 +80,9 @@
     cursor: pointer;
 }
 
-.admin-modal-select {
-    position: relative;
-}
-
 .admin-add-user-field .admin-modal-select select {
     padding-right: 34px;
     appearance: none;
-}
-
-.admin-modal-select-chevron {
-    position: absolute;
-    top: 50%;
-    right: 11px;
-    display: flex;
-    width: 12px;
-    height: 10px;
-    align-items: center;
-    justify-content: center;
-    color: #7b8ba4;
-    pointer-events: none;
-    transform: translateY(-50%) rotate(0deg);
-    transition: transform 160ms ease;
-}
-
-.admin-modal-select-chevron svg {
-    width: 12px;
-    height: 10px;
-}
-
-.admin-modal-select.is-open .admin-modal-select-chevron {
-    transform: translateY(-50%) rotate(180deg);
 }
 
 .admin-add-user-field input::placeholder,

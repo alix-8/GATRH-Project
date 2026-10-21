@@ -9,11 +9,9 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
 import SubmissionDrawer from '../submissions/SubmissionDrawer'
-import RecordsPagination from './RecordsPagination'
 import '../submissions/Submissions.css'
 import './RecordsTable.css'
 
-const PAGE_SIZE = 10
 const GATHERINGS = [
     { value: '', label: 'Gathering' },
     { value: 'pm', label: 'Prayer Meeting' },
@@ -30,21 +28,19 @@ const YEARS = [
 
 export default function RecordsTable() {
     const [rows, setRows] = useState([])
-    const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 })
     const [filters, setFilters] = useState({ gathering_type: '', date: '', year_level: '', search: '' })
-    const [page, setPage] = useState(1)
     const [loading, setLoading] = useState(true)
     const [loadError, setLoadError] = useState('')
     const [exportNotice, setExportNotice] = useState(null)
     const [activeRecord, setActiveRecord] = useState(null)
 
     const params = useMemo(() => {
-        const values = new URLSearchParams({ page: String(page), per_page: String(PAGE_SIZE) })
+        const values = new URLSearchParams({ all: '1' })
         Object.entries(filters).forEach(([key, value]) => {
             if (value) values.set(key, value)
         })
         return values.toString()
-    }, [filters, page])
+    }, [filters])
 
     const loadRecords = useCallback(async (signal) => {
         setLoading(true)
@@ -52,7 +48,6 @@ export default function RecordsTable() {
         try {
             const result = await request(`/program-head/records?${params}`, { signal })
             setRows(Array.isArray(result.data) ? result.data : [])
-            setMeta(result.meta ?? { current_page: 1, last_page: 1, total: 0 })
         } catch (err) {
             if (err.name !== 'AbortError') {
                 setLoadError(err.message || 'Could not load records.')
@@ -77,7 +72,6 @@ export default function RecordsTable() {
 
     const updateFilter = (key, value) => {
         setFilters((current) => ({ ...current, [key]: value }))
-        setPage(1)
     }
 
     const exportRecord = async (record) => {
@@ -232,7 +226,6 @@ export default function RecordsTable() {
                         </tbody>
                     </table>
                 </div>
-                <RecordsPagination page={page} lastPage={meta.last_page} onPageChange={setPage} disabled={loading} />
             </section>
             {activeRecord && (
                 <SubmissionDrawer

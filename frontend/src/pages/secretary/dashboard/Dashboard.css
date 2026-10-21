@@ -165,6 +165,7 @@
     color: #172b4d;
     font-size: 13px;
     font-weight: 600;
+    text-align: left;
 }
 
 .kpi-copy strong {
@@ -172,12 +173,14 @@
     margin: 8px 0 4px;
     color: #172b4d;
     font-size: 26px;
+    text-align: left;
 }
 
 .kpi-copy p {
     margin: 0;
     color: #687386;
     font-size: 11px;
+    text-align: left;
 }
 
 

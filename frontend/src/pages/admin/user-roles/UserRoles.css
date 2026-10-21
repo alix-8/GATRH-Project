@@ -359,6 +359,15 @@
 .user-roles-table th:nth-child(5) { width: 17%; }
 .user-roles-table th:nth-child(6) { width: 11%; }
 
+.user-roles-table th:nth-child(3),
+.user-roles-table th:nth-child(4),
+.user-roles-table th:nth-child(5),
+.user-roles-table td:nth-child(3),
+.user-roles-table td:nth-child(4),
+.user-roles-table td:nth-child(5) {
+    text-align: center;
+}
+
 .user-roles-name {
     display: flex;
     min-width: 0;

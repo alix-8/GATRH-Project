@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './ModalSelect.css'
 
 function ModalSelect({ children, onChange, onBlur, onKeyDown, onPointerDown, ...props }) {
     const [isOpen, setIsOpen] = useState(false)

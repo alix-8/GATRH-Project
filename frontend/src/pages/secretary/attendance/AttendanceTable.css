@@ -446,4 +446,9 @@
     top: calc(100% + 6px);
     left: 0;
     z-index: 60;
+    width: 100%;
+}
+
+.toolbar-calendar-popover .rcal {
+    width: 100%;
 }
