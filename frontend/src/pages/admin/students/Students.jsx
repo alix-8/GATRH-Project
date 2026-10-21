@@ -107,6 +107,7 @@ function Students() {
                 <Header
                     title="Students"
                     subtitle="Manage student records, program assignments, and account status."
+                    showNotification={false}
                     className="admin-students-header"
                 />
                 <div className="admin-students-content">

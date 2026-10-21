@@ -135,10 +135,12 @@
 }
 
 .filter-calendar-popover {
+    box-sizing: border-box;
     position: absolute;
     z-index: 130;
     top: calc(100% + 6px);
     left: 0;
+    width: 100%;
     padding: 4px;
     border: 1px solid #d6d9de;
     border-radius: 10px;
@@ -147,6 +149,7 @@
 }
 
 .filter-calendar-popover .rcal {
+    width: 100%;
     border: 0;
     border-radius: 8px;
 }

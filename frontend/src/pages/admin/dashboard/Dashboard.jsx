@@ -96,6 +96,7 @@ function AdminDashboard() {
                 <Header
                     title="Dashboard"
                     subtitle="Maintain users, programs, students, and system configuration."
+                    showNotification={false}
                     className="admin-dashboard-header"
                 />
 
@@ -157,7 +158,7 @@ function AdminDashboard() {
                             <div><h2>Recent System Activity</h2><p>Recent administrative actions</p></div>
                             <Link className="admin-activity-view-all" to="/admin/activity-log">View All <span aria-hidden="true">→</span></Link>
                         </div>
-                        <ActivityTable activities={dashboard?.recent_activity?.slice(0, 6)} loading={!dashboard && !error} administratorLabel />
+                        <ActivityTable activities={dashboard?.recent_activity} loading={!dashboard && !error} />
                     </section>
                 </div>
             </main>
