@@ -171,24 +171,28 @@ function Dashboard() {
         {
             key: 'total_students',
             title: 'Total Students',
+            detail: 'Enrolled students',
             icon: TotalStudentsKpiIcon,
             value: kpis?.total_students,
         },
         {
             key: 'week_respondents',
             title: "This Week's Respondents",
+            detail: 'Students who responded',
             icon: ResponseKpiIcon,
             value: kpis?.week_respondents,
         },
         {
             key: 'week_no_response',
             title: "This Week's No Response",
+            detail: 'Students yet to respond',
             icon: NoResponseKpiIcon,
             value: kpis?.week_no_response,
         },
         {
             key: 'pending_submission',
             title: 'Pending Submission',
+            detail: 'Reports not yet submitted',
             icon: PendingSubmissionKpiIcon,
             value: kpis?.pending_submission,
         },
@@ -271,7 +275,7 @@ function Dashboard() {
                             <div className="kpi-copy">
                                 <h4>{card.title}</h4>
                                 <strong>{card.value ?? '—'}</strong>
-                                <p>Awaiting your review</p>
+                                <p>{card.detail}</p>
                             </div>
                         </article>
                     ))}
