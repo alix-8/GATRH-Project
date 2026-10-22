@@ -94,7 +94,7 @@ The following instructions cover setup for both the `backend` and `frontend` pro
    cp .env.example .env.local
 ```
 > Note: # Make sure Vite environment variables start with `VITE_
-VITE_API_BASE_URL=http://127.0.0.1:8000/api`
+VITE_API_BASE_URL=http://localhost:8000/api`
 
 4. **Run the frontend dev server**
 ```bash

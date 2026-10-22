@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { API_BASE_URL } from '../../api/request'
+import { API_BASE_URL, initializeCsrf, xsrfHeaders } from '../../api/request'
 import Login from './Login'
 import './PasswordReset.css'
 
@@ -75,9 +75,11 @@ export function ForgotPassword() {
         setError('')
         setLoading(true)
         try {
+            await initializeCsrf()
             const response = await fetch(`${API_BASE_URL}/forgot-password`, {
                 method: 'POST',
-                headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                credentials: 'include',
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...xsrfHeaders() },
                 body: JSON.stringify({ email }),
             })
             const data = await response.json().catch(() => ({}))
@@ -101,9 +103,11 @@ export function ForgotPassword() {
         setError('')
         setLoading(true)
         try {
+            await initializeCsrf()
             const response = await fetch(`${API_BASE_URL}/verify-reset-code`, {
                 method: 'POST',
-                headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                credentials: 'include',
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...xsrfHeaders() },
                 body: JSON.stringify({ email, code }),
             })
             const data = await response.json().catch(() => ({}))
@@ -131,9 +135,11 @@ export function ForgotPassword() {
 
         setLoading(true)
         try {
+            await initializeCsrf()
             const response = await fetch(`${API_BASE_URL}/reset-password`, {
                 method: 'POST',
-                headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                credentials: 'include',
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...xsrfHeaders() },
                 body: JSON.stringify({ email, code, password, password_confirmation: confirmation }),
             })
             const data = await response.json().catch(() => ({}))

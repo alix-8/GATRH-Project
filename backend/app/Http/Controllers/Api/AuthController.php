@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
@@ -48,18 +49,21 @@ class AuthController extends Controller
             return response()->json(['message' => 'This account is inactive.'], 403);
         }
 
-        $user->load('programs');
-
+        // Retire the previous browser bearer-token sessions during migration
+        // to the HttpOnly first-party session cookie.
+        $user->tokens()->delete();
         $remember = $request->boolean('remember');
-        $expiresAt = $remember
-            ? null
-            : now()->addMinutes(config('auth.token.session_minutes'));
-        $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
+        Auth::login($user, $remember);
+        $request->session()->regenerate();
 
         return response()->json([
-            'access_token' => $token,
-            'token_type'   => 'Bearer',
-            'user'         => $user,
+            // Keep the login response limited to the fields needed to route
+            // the user after sign-in. The session cookie is HttpOnly.
+            'user'         => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role,
+            ],
             'message'      => 'Login successful',
         ]);
     }
@@ -67,17 +71,27 @@ class AuthController extends Controller
     // Get the authenticated user's information
     function me(Request $request)
     {
-        $request->user()->load('programs');
+        $user = $request->user();
 
         return response()->json([
-            'user'    => $request->user(),
+            'user'    => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'program' => $user->program,
+                'year_level' => $user->year_level,
+                'contact_number' => $user->contact_number,
+            ],
             'message' => 'User information retrieved successfully',
         ]);
     }
 
     function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return response()->json(['message' => 'Logged out successfully']);
     }

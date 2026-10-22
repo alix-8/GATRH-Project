@@ -77,7 +77,6 @@ export default function RecordsTable() {
     const exportRecord = async (record) => {
         setExportNotice(null)
         try {
-            const token = localStorage.getItem('auth_token')
             const params = new URLSearchParams({
                 date: record.date_iso,
                 gathering_type: record.gathering_type,
@@ -85,9 +84,9 @@ export default function RecordsTable() {
                 batch_key: record.batch_key,
             })
             const response = await fetch(`${API_BASE_URL}/program-head/records/export?${params}`, {
+                credentials: 'include',
                 headers: {
                     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
             })
             if (!response.ok) {

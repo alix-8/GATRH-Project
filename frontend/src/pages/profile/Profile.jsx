@@ -39,17 +39,15 @@ function Profile() {
     }
 
     useEffect(() => {
-        const token = localStorage.getItem('auth_token')
-
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             navigate('/')
             return
         }
 
         fetch(`${API_BASE_URL}/me`, {
+            credentials: 'include',
             headers: {
                 Accept: 'application/json',
-                Authorization: `Bearer ${token}`,
             },
         })
             .then(response => response.ok ? response.json() : null)
@@ -63,14 +61,13 @@ function Profile() {
     }, [navigate])
 
     const handlePasswordSubmit = () => {
-        const token = localStorage.getItem('auth_token')
-
         fetch(`${API_BASE_URL}/change-password`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
+                'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('; ').find(value => value.startsWith('XSRF-TOKEN='))?.slice('XSRF-TOKEN='.length) || ''),
             },
             body: JSON.stringify(passwordForm),
         })

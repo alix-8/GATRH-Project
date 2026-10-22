@@ -24,11 +24,31 @@ class AdminUserService
     {
         return [
             'summary' => $this->getSummary(),
-            'users' => $this->getUsers($filters),
+            'users' => $this->getUsers($filters)->through(fn (User $user) => $this->presentUser($user)),
             'programs' => Program::query()
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
             'roles' => $this->getRoleOptions(),
+        ];
+    }
+
+    /** Return only the account fields required by the admin UI. */
+    public function presentUser(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'contact_number' => $user->contact_number,
+            'program' => $user->program,
+            'year_level' => $user->year_level,
+            'is_active' => $user->is_active,
+            'programs' => $user->programs->map(fn (Program $program) => [
+                'id' => $program->id,
+                'code' => $program->code,
+                'name' => $program->name,
+            ])->values()->all(),
         ];
     }
 

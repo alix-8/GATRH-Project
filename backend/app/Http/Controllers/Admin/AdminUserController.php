@@ -73,7 +73,7 @@ class AdminUserController extends Controller
 
         return response()->json([
             'message' => 'User account created successfully. A temporary password was emailed to the user.',
-            'user' => $created['user'],
+            'user' => $this->userService->presentUser($created['user']),
             'temporary_password_email_sent' => $created['temporary_password_email_sent'],
         ], 201);
     }
@@ -145,7 +145,7 @@ class AdminUserController extends Controller
 
         return response()->json([
             'message' => 'User account updated successfully.',
-            'user' => $updatedUser,
+            'user' => $this->userService->presentUser($updatedUser),
         ]);
     }
 
