@@ -48,7 +48,12 @@ class ReminderCountdownService
 
     public function reminderCountdown(int $userId): array
     {
-        $reminders = Reminder::where('user_id', $userId)->get();
+        return $this->reminderCountdownFor(Reminder::where('user_id', $userId)->get());
+    }
+
+    /** Build countdown labels from reminders already loaded by the caller. */
+    public function reminderCountdownFor(iterable $reminders): array
+    {
         $countdownData = [];
 
         foreach ($reminders as $reminder) {
@@ -65,16 +70,21 @@ class ReminderCountdownService
      */
     public function statusSetter(int $userId): void
     {
-        $reminders = Reminder::where('user_id', $userId)
+        $now = now();
+        $eligibleReminders = Reminder::where('user_id', $userId)
             ->where('status', '!=', 'completed')
-            ->where('reminder_type', '!=', 'gathering')
-            ->get();
+            ->where('reminder_type', '!=', 'gathering');
 
-        foreach ($reminders as $reminder) {
-            $due = Carbon::parse($reminder->due_date);
+        // Update only records whose status actually changes. The previous
+        // per-row save caused one database write per reminder on every GET.
+        (clone $eligibleReminders)
+            ->where('due_date', '<', $now)
+            ->where('status', '!=', 'needs_action')
+            ->update(['status' => 'needs_action']);
 
-            $reminder->status = now()->greaterThan($due) ? 'needs_action' : 'upcoming';
-            $reminder->save();
-        }
+        (clone $eligibleReminders)
+            ->where('due_date', '>=', $now)
+            ->where('status', '!=', 'upcoming')
+            ->update(['status' => 'upcoming']);
     }
 }

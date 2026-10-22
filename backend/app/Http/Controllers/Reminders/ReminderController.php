@@ -68,7 +68,7 @@ class ReminderController extends Controller
         }
 
         $reminders = $query->get();
-        $countdowns = $this->countdownService->reminderCountdown($userId);
+        $countdowns = $this->countdownService->reminderCountdownFor($reminders);
 
         $reminders->each(function ($reminder) use ($countdowns) {
             $reminder->countdown_text = $countdowns[$reminder->id] ?? null;
@@ -107,12 +107,23 @@ class ReminderController extends Controller
             ];
         })->values();
 
+        // Get all reminder status totals in one TiDB query instead of three.
+        $reminderSummary = Reminder::query()
+            ->where('user_id', $userId)
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS upcoming, '
+                . 'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS needs_action, '
+                . 'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS completed',
+                ['upcoming', 'needs_action', 'completed']
+            )
+            ->first();
+
         return response()->json([
             'status'  => 'success',
             'summary' => [
-                'upcoming'     => $request->user()->reminders()->where('status', 'upcoming')->count(),
-                'needs_action' => $request->user()->reminders()->where('status', 'needs_action')->count(),
-                'completed'    => $request->user()->reminders()->where('status', 'completed')->count(),
+                'upcoming'     => (int) $reminderSummary->upcoming,
+                'needs_action' => (int) $reminderSummary->needs_action,
+                'completed'    => (int) $reminderSummary->completed,
                 'escalation_count' => $alertLevel
                     ? $escalationAlerts->count()
                     : Escalation::query()->visibleTo($user)->count(),
