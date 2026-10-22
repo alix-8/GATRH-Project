@@ -2,14 +2,9 @@ import React from 'react'
 import './ConfirmOverrideModal.css'
 
 function ConfirmOverrideModal({ duplicateData, onCancel, onOverride, isSubmitting = false }) {
+    const labels = { pm: 'Prayer Meeting', ws: 'Worship Service', tg: 'Thanksgiving' }
     const gatheringTypeLabel = duplicateData?.gathering_type
-        ? (duplicateData.gathering_type === 'pm'
-            ? 'Prayer Meeting'
-            : duplicateData.gathering_type === 'ws'
-                ? 'Worship Service'
-                : duplicateData.gathering_type === 'tg'
-                    ? 'Thanksgiving'
-                    : duplicateData.gathering_type.toUpperCase())
+        ? duplicateData.gathering_type.split('/').map(type => labels[type.toLowerCase()] || type.toUpperCase()).join(', ')
         : 'Gathering'
 
     const weekLabel = duplicateData?.week_range?.label || 'the applicable week'

@@ -160,9 +160,13 @@ class AdminProgramService
                 $query->where(function ($programQuery) use ($search) {
                     $programQuery->where('name', 'like', "%{$search}%")
                         ->orWhere('code', 'like', "%{$search}%");
+
+                    if (ctype_digit((string) $search)) {
+                        $programQuery->orWhere('id', (int) $search);
+                    }
                 });
             })
-            ->orderBy('code')
+            ->orderByRaw("CASE code WHEN 'ACT' THEN 0 WHEN 'BSIS' THEN 1 WHEN 'BSSW' THEN 2 WHEN 'BSA' THEN 3 WHEN 'BSAIS' THEN 4 WHEN 'BAB' THEN 5 ELSE 6 END")
             ->paginate($filters['per_page'] ?? 10)
             ->withQueryString();
     }

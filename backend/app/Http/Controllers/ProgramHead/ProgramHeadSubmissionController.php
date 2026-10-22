@@ -23,6 +23,7 @@ class ProgramHeadSubmissionController extends Controller
             'gathering_type' => ['nullable', 'in:pm,ws,tg'],
             'year_level' => ['nullable', 'integer', 'between:1,4'],
             'search' => ['nullable', 'string', 'max:100'],
+            'all' => ['nullable', 'boolean'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'between:1,50'],
         ]);
@@ -88,9 +89,10 @@ class ProgramHeadSubmissionController extends Controller
             ])), $needle))->values();
         }
 
-        $page = (int) ($filters['page'] ?? 1);
-        $perPage = (int) ($filters['per_page'] ?? 5);
         $total = $records->count();
+        $all = (bool) ($filters['all'] ?? false);
+        $page = $all ? 1 : (int) ($filters['page'] ?? 1);
+        $perPage = $all ? max(1, $total) : (int) ($filters['per_page'] ?? 5);
         $lastPage = max(1, (int) ceil($total / $perPage));
         $page = min($page, $lastPage);
 
@@ -118,6 +120,7 @@ class ProgramHeadSubmissionController extends Controller
             'gathering_type' => ['nullable', 'in:pm,ws,tg'],
             'year_level' => ['nullable', 'integer', 'between:1,4'],
             'search' => ['nullable', 'string', 'max:100'],
+            'all' => ['nullable', 'boolean'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'between:1,50'],
         ]);
@@ -166,9 +169,10 @@ class ProgramHeadSubmissionController extends Controller
             ])), $needle))->values();
         }
 
-        $page = (int) ($filters['page'] ?? 1);
-        $perPage = (int) ($filters['per_page'] ?? 10);
         $total = $groups->count();
+        $all = (bool) ($filters['all'] ?? false);
+        $page = $all ? 1 : (int) ($filters['page'] ?? 1);
+        $perPage = $all ? max(1, $total) : (int) ($filters['per_page'] ?? 10);
         $lastPage = max(1, (int) ceil($total / $perPage));
         $page = min($page, $lastPage);
         return response()->json([

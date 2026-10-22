@@ -54,15 +54,18 @@ class AdminDashboardService
         return AuditLog::query()
             ->performedByAdministrators()
             ->with('actor:id,name')
-            ->latest()
-            ->limit(8)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(6)
             ->get()
             ->map(fn (AuditLog $log) => [
                 'id' => $log->id,
                 'action' => $log->action,
                 'target' => $log->target_table,
                 'target_id' => $log->target_id,
+                'module' => $log->moduleLabel(),
                 'performed_by' => $log->actor?->name ?? 'Unknown user',
+                'result' => $log->resultLabel(),
                 'created_at' => $log->created_at?->toIso8601String(),
             ])
             ->toArray();
