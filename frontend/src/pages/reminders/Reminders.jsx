@@ -812,7 +812,7 @@ function Reminders() {
     const reportAlertName = reportStudentName.includes(',')
         ? reportStudentName.split(',').reverse().map(part => part.trim()).join(' ')
         : reportStudentName
-    const reportNoResponseCount = escalationReport?.details?.student.no_response_count ?? reportLevel
+    const reportNoResponseCount = escalationReport?.escalation.no_response_count ?? reportLevel
 
     return (
         <div className="reminders">
