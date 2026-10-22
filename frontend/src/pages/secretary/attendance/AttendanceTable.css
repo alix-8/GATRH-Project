@@ -441,6 +441,10 @@
     color: #172B4D;
 }
 
+.toolbar-dropdown-clear + .toolbar-dropdown-chevron {
+    margin-left: 0;
+}
+
 .toolbar-calendar-popover {
     position: absolute;
     top: calc(100% + 6px);

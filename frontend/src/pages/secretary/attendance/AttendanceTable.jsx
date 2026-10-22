@@ -268,6 +268,11 @@ function AttendanceTable() {
                                 ×
                             </button>
                         )}
+                        <img
+                            className={`toolbar-dropdown-chevron ${isCalendarOpen ? 'rotate' : ''}`}
+                            src={DropdownIcon}
+                            alt=""
+                        />
                     </div>
 
                     {isCalendarOpen && (
