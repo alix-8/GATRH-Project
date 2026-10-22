@@ -228,9 +228,10 @@ class AttendanceController extends Controller
                     ? $r->day->format('Y-m-d')
                     : Carbon::parse($r->day)->format('Y-m-d');
 
-                return $r->gathering_type . '|' . $dayFormatted;
+                // Keep legacy records from separate submitters in separate rows.
+                return $r->gathering_type . '|' . $dayFormatted . '|' . $r->submitted_by;
             })
-            ->map(function ($group) use ($program, $yearLevel) {
+            ->map(function ($group) use ($program, $yearLevel, $user) {
                 $first = $group->first();
                 $dayCarbon = $first->day instanceof Carbon
                     ? $first->day
@@ -250,8 +251,11 @@ class AttendanceController extends Controller
                     'raw_day'          => $dayCarbon,
                     'gathering_type'   => $first->gathering_type,
                     'gathering'        => $this->gatheringLabel($first->gathering_type),
+                    'submitted_by_id'  => $first->submitted_by,
                     'time'             => optional($group->max('updated_at'))->format('g:i A'),
                     'status'           => $this->aggregateStatus($group),
+                    'can_unsubmit'     => $group->every(fn ($record) => (int) $record->submitted_by === (int) $user->id)
+                        && $group->every(fn ($record) => in_array($record->validation_status, [null, 'unvalidated'], true)),
                 ];
             })
             ->values();
@@ -346,7 +350,9 @@ class AttendanceController extends Controller
         ]);
 
         $responded = $students->where('status', 'present')->count();
-        $submitter = $records->first()->submitter;
+        $firstRecord = $records->first();
+        $submitter = $firstRecord->submitter;
+        $weekRange = $this->gatheringRangeForDate($firstRecord->gathering_type, $firstRecord->day);
 
         $submitterProgram = $submitter?->program ? strtoupper($submitter->program) : '';
         $submitterYear = $this->ordinalYear($submitter?->year_level);
@@ -354,8 +360,13 @@ class AttendanceController extends Controller
         return response()->json([
             'status' => 'success',
             'data'   => [
-                'gathering_type'    => $records->first()->gathering_type,
-                'day'               => $records->first()->day->format('F j, Y'),
+                'gathering_type'    => $firstRecord->gathering_type,
+                'day'               => $firstRecord->day->format('F j, Y'),
+                'week_range'        => [
+                    'start' => $weekRange['start']->toDateString(),
+                    'end' => $weekRange['end']->toDateString(),
+                    'label' => GatheringCycle::formatRangeLabel($weekRange['start'], $weekRange['end']),
+                ],
                 'submitted_by'      => [
                     'name' => $submitter?->name ?? 'Unknown',
                     'role' => trim(implode(' · ', array_filter([
@@ -388,6 +399,17 @@ class AttendanceController extends Controller
             'tg'      => 'Thanksgiving',
             default   => ucfirst($type),
         };
+    }
+
+    /** Resolve the scheduled date range containing a submitted gathering date. */
+    private function gatheringRangeForDate(string $gatheringType, $day): array
+    {
+        $date = $day instanceof Carbon ? $day->copy() : Carbon::parse($day);
+        $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
+        $start = $weekStart->addDays($gatheringType === 'pm' ? 2 : 5);
+        $end = $start->copy()->addDays($gatheringType === 'pm' ? 2 : 1);
+
+        return ['start' => $start, 'end' => $end];
     }
 
     private function mapStatus(string $validationStatus): string
@@ -1295,6 +1317,7 @@ class AttendanceController extends Controller
 
         $first = $records->first();
         $submitter = $first->submitter;
+        $weekRange = $this->gatheringRangeForDate($first->gathering_type, $first->day);
 
         $students = $records->map(fn ($r) => [
             'record_id'    => $r->id,
@@ -1313,6 +1336,11 @@ class AttendanceController extends Controller
                 'gathering_type'    => $first->gathering_type,
                 'gathering'         => $this->gatheringLabel($first->gathering_type),
                 'day'               => $first->day->format('F j, Y'),
+                'week_range'        => [
+                    'start' => $weekRange['start']->toDateString(),
+                    'end' => $weekRange['end']->toDateString(),
+                    'label' => GatheringCycle::formatRangeLabel($weekRange['start'], $weekRange['end']),
+                ],
                 'time'              => $first->created_at?->format('g:i A') ?? '—',
                 'validation_status' => $first->validation_status,
                 'submitted_by'      => [
@@ -1369,6 +1397,103 @@ class AttendanceController extends Controller
             'message'       => "Submission approved across {$updatedCount} records.",
             'updated_count' => $updatedCount,
         ], 200);
+    }
+
+    /** Move a secretary's pending attendance submission back into editable drafts. */
+    public function unsubmitSubmission(Request $request, string $batchKey)
+    {
+        $user = $request->user();
+        $query = AttendanceRecord::query()
+            ->where('submitted_by', $user->id)
+            ->whereHas('student', fn ($studentQuery) => $studentQuery->accessibleTo($user));
+
+        if (str_contains($batchKey, '|')) {
+            [$gatheringType, $day, $submittedBy] = explode('|', $batchKey, 3);
+            if ((int) $submittedBy !== (int) $user->id) {
+                return response()->json(['status' => 'error', 'message' => 'You can only unsubmit your own attendance records.'], 403);
+            }
+            $query->where('gathering_type', $gatheringType)->whereDate('day', $day);
+        } else {
+            $query->where('batch_id', $batchKey);
+        }
+
+        try {
+            $result = DB::transaction(function () use ($query, $user) {
+                $records = $query->with('student')->lockForUpdate()->get();
+                if ($records->isEmpty()) {
+                    throw new \DomainException('Submission not found or it is no longer available to unsubmit.', 404);
+                }
+                if ($records->contains(fn (AttendanceRecord $record) => $record->validation_status === 'validated')) {
+                    throw new \DomainException('Approved attendance cannot be unsubmitted.', 409);
+                }
+
+                $createdDrafts = [];
+                foreach ($records->groupBy('gathering_type') as $type => $group) {
+                    $firstDay = $group->min(fn (AttendanceRecord $record) => Carbon::parse($record->day)->toDateString());
+                    $weekStart = Carbon::parse($firstDay)->startOfWeek(Carbon::MONDAY);
+                    $offset = $type === 'pm' ? 2 : 5;
+                    $rangeStart = $weekStart->copy()->addDays($offset);
+                    $rangeEnd = $rangeStart->copy()->addDays($type === 'pm' ? 2 : 1);
+
+                    if (AttendanceDraft::where('user_id', $user->id)
+                        ->where('gathering_type', $type)
+                        ->whereDate('day', $rangeStart->toDateString())
+                        ->where('status', 'draft')
+                        ->exists()) {
+                        throw new \DomainException("An editable {$this->gatheringLabel($type)} draft already exists for this week.", 409);
+                    }
+
+                    $label = GatheringCycle::formatRangeLabel($rangeStart, $rangeEnd);
+                    $gathering = $this->gatheringLabel($type);
+                    $parsedData = $group->map(fn (AttendanceRecord $record) => [
+                        'student_id' => $record->student_id,
+                        'student_name' => $record->student?->name ?? 'Unknown',
+                        'program' => $record->program ?? $record->student?->program,
+                        'year_level' => $record->year_level ?? $record->student?->year_level,
+                        'gathering_type' => $type,
+                        // A no-response row has a required database day, but it is not
+                        // an attendance date the secretary entered. Keep it blank in the draft.
+                        'day' => $record->status === 'no_response'
+                            ? null
+                            : Carbon::parse($record->day)->toDateString(),
+                        'batch' => $record->batch,
+                        'venue' => $record->venue,
+                        'status' => $record->status,
+                        'is_manual' => false,
+                    ])->values()->all();
+
+                    $createdDrafts[] = AttendanceDraft::create([
+                        'user_id' => $user->id,
+                        'gathering_type' => $type,
+                        'day' => $rangeStart->toDateString(),
+                        'raw_text' => "--- GATRH ATTENDANCE FORM ---\nGathering: {$gathering}\n{$gathering} - {$label}\n",
+                        'parsed_data' => $parsedData,
+                        'total_detected' => count($parsedData),
+                        'matched_count' => collect($parsedData)->where('status', 'present')->count(),
+                        'status' => 'draft',
+                    ]);
+                }
+
+                AttendanceRecord::whereIn('id', $records->pluck('id'))->delete();
+                return ['drafts' => $createdDrafts, 'record_count' => $records->count()];
+            });
+        } catch (\DomainException $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], $exception->getCode() ?: 409);
+        }
+
+        $this->auditLogService->recordAction(
+            'Unsubmitted attendance submission',
+            'attendance_records',
+            $batchKey,
+            $user
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Attendance returned to Validating. You can edit and submit it again.',
+            'draft_ids' => collect($result['drafts'])->pluck('id'),
+            'returned_count' => $result['record_count'],
+        ]);
     }
 
     /**

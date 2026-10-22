@@ -10,6 +10,7 @@ use App\Models\Reminder;
 use App\Models\Student;
 use App\Services\Audit\AuditLogService;
 use App\Services\Attendance\AttendanceParsingService;
+use App\Support\GatheringCycle;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +39,14 @@ class AttendanceDraftController extends Controller
 
         $students = collect($draft->parsed_data)->map(
             function ($record) use ($submissionDay) {
+                // No-response records retain a required database date, but this is
+                // only the gathering's scheduled day, not a date entered by the secretary.
+                $dayProvided = ($record['day_provided'] ?? null) !== null
+                    ? (bool) $record['day_provided']
+                    : (!empty($record['day'])
+                        && $record['day'] !== '---'
+                        && ($record['status'] ?? null) !== 'no_response');
+
                 return [
                     'student_id'   => $record['student_id'] ?? null,
                     'student_name' => $record['student_name'] ?? 'Unknown',
@@ -48,8 +57,8 @@ class AttendanceDraftController extends Controller
                     'venue'        => $record['venue'] ?? '---',
 
                     // For absent/no-response students, use the gathering submission date.
-                    'day'          => $record['day'] ?? $submissionDay ?? '---',
-                    'day_provided' => !empty($record['day']),
+                    'day'          => $dayProvided ? ($record['day'] ?? $submissionDay ?? '---') : '---',
+                    'day_provided' => $dayProvided,
                 ];
             }
         );
@@ -89,6 +98,7 @@ class AttendanceDraftController extends Controller
                 'week_range'         => [
                     'start' => $range['start']->toDateString(),
                     'end'   => $range['end']->toDateString(),
+                    'label' => GatheringCycle::formatRangeLabel($range['start'], $range['end']),
                 ],
                 'submitted_by'       => [
                     'name' => $request->user()->name,

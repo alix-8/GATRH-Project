@@ -130,6 +130,8 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::post('/attendance/parse-batch-text', [AttendanceController::class, 'parseBatchText']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
         Route::get('/attendance/session', [AttendanceController::class, 'showGatheringRecords']);
+        Route::post('/attendance/submissions/{batchKey}/unsubmit', [AttendanceController::class, 'unsubmitSubmission'])
+            ->where('batchKey', '.*');
 
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);
         Route::patch('/attendance/drafts/{id}', [AttendanceDraftController::class, 'update']);
