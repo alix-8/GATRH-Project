@@ -26,9 +26,9 @@ import './Reminders.css'
 const FILTERS = [
     { value: 'all', label: 'All Reminders' },
     { value: 'today', label: 'Today' },
-    { value: 'mine', label: 'My reminder' },
     { value: 'needs_action', label: 'Needs Action' },
     { value: 'completed', label: 'Completed' },
+    { value: 'mine', label: 'My reminder' },
 ]
 
 const REMINDER_TYPES = [
