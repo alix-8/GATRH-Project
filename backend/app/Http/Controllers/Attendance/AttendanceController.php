@@ -28,6 +28,49 @@ class AttendanceController extends Controller
         $this->auditLogService = $auditLogService;
     }
 
+    private function importPeriodCycle(?string $period): ?array
+    {
+        if (!in_array($period, ['last', 'current'], true)) return null;
+        return GatheringCycle::getImportPeriodRanges($period);
+    }
+
+    /** Preflight both import choices so the selector can show existing records and exact ranges. */
+    public function importPeriods(Request $request)
+    {
+        $user = $request->user();
+        $periods = [];
+        foreach (['last', 'current'] as $period) {
+            $ranges = GatheringCycle::getImportPeriodRanges($period);
+            $gatherings = [];
+            foreach ($ranges as $type => $range) {
+                $start = $range['start']->toDateString();
+                $end = $range['end']->toDateString();
+                $records = AttendanceRecord::where('gathering_type', $type)
+                    ->whereBetween('day', [$start, $end])
+                    ->whereHas('student', fn ($query) => $query->where('program', $user->program)->where('year_level', $user->year_level));
+                $drafts = AttendanceDraft::where('gathering_type', $type)->where('status', 'draft')
+                    ->whereBetween('day', [$start, $end])
+                    ->whereHas('user', fn ($query) => $query->where('program', $user->program)->where('year_level', $user->year_level));
+                $recordCount = (clone $records)->count();
+                $draftCount = (clone $drafts)->count();
+                $protectedCount = $this->addProtectedAttendanceStatuses(clone $records)->count();
+                $hasProtected = $protectedCount > 0;
+                $gatherings[$type] = [
+                    'start' => $start,
+                    'end' => $end,
+                    'label' => GatheringCycle::formatRangeLabel($range['start'], $range['end']),
+                    'is_upcoming' => $range['start']->greaterThan(Carbon::today()),
+                    'count' => $recordCount + $draftCount,
+                    'confirmable_count' => $hasProtected ? 0 : $recordCount + $draftCount,
+                    'protected' => $hasProtected,
+                    'submitted' => $recordCount > 0,
+                ];
+            }
+            $periods[$period] = $gatherings;
+        }
+        return response()->json(['periods' => $periods]);
+    }
+
     /**
      * Check for same-week attendance before the import page displays its student preview.
      */
@@ -41,7 +84,7 @@ class AttendanceController extends Controller
         ]);
 
         $user = $request->user();
-        $cycle = $request->input('cycle') ?? $request->input('week_range');
+        $cycle = $this->importPeriodCycle($request->input('week_period')) ?? $request->input('cycle') ?? $request->input('week_range');
         $types = $validated['gathering_type'] === 'week'
             ? ['pm', 'ws', 'tg']
             : [$validated['gathering_type']];
@@ -407,10 +450,11 @@ class AttendanceController extends Controller
         }
 
         $gatheringType = strtoupper($request->gathering_type ?? 'pm');
+        $periodRanges = $this->importPeriodCycle($request->input('week_period'));
 
 
         if (($request->gathering_type ?? 'pm') === 'week') {
-            $result = $this->parsingService->generateWeeklyTemplate($program, $yearLevel);
+            $result = $this->parsingService->generateWeeklyTemplate($program, $yearLevel, $periodRanges);
 
             if ($result['count'] === 0) {
                 return response()->json([
@@ -444,7 +488,11 @@ class AttendanceController extends Controller
 
         // Build header template string
         $template = "--- GATRH ATTENDANCE FORM ---\n";
-        $template .= "Gathering: {$gatheringType}\n";
+        $typeLabel = match (strtolower($gatheringType)) { 'PM' => 'Prayer Meeting', 'WS' => 'Worship Service', 'TG' => 'Thanksgiving', default => $gatheringType };
+        $range = $periodRanges[strtolower($gatheringType)] ?? $this->parsingService->getApplicableWeekRange(strtolower($gatheringType));
+        $rangeLabel = GatheringCycle::formatRangeLabel($range['start'], $range['end']);
+        $template .= "Gathering: {$typeLabel}\n";
+        $template .= "{$typeLabel} - {$rangeLabel}\n";
         $template .= "\n";
         $template .= "[FILL OUT YOUR DETAILS BELOW]\n";
         $template .= "Name | Batch(Time) | Venue | Day (e.g., Monday, Mon)\n";
@@ -487,7 +535,7 @@ class AttendanceController extends Controller
             ], 422);
         }
 
-        $cycle = $request->input('cycle') ?? $request->input('week_range');
+        $cycle = $this->importPeriodCycle($request->input('week_period')) ?? $request->input('cycle') ?? $request->input('week_range');
 
         $metadata = $this->parsingService->extractHeaderMetadata(
             $request->raw_text,
@@ -500,6 +548,14 @@ class AttendanceController extends Controller
         if ($metadata['gathering_type'] !== ($request->gathering_type ?? 'pm')) {
             return response()->json([
                 'message' => "Check the gathering type, it doesn't match the one on the parsed text",
+            ], 422);
+        }
+
+        $selectedRange = $this->parsingService->getApplicableWeekRange($metadata['gathering_type'], $cycle, $request->raw_text);
+        if ($selectedRange['start']->greaterThan(Carbon::today())) {
+            return response()->json([
+                'status' => 'future_gathering',
+                'message' => 'Attendance cannot be added yet because this gathering’s scheduled date range has not begun.',
             ], 422);
         }
 
@@ -756,7 +812,7 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Your account is not assigned to a program and year level.'], 422);
         }
 
-        $cycle = $request->input('cycle') ?? $request->input('week_range');
+        $cycle = $this->importPeriodCycle($request->input('week_period')) ?? $request->input('cycle') ?? $request->input('week_range');
         $parsed = $this->parsingService->parseBatchText($request->raw_text, $user->program, $user->year_level, $cycle);
         $confirmBlank = (bool) $request->boolean('confirm_blank');
         $isOverride = (bool) $request->boolean('override');
@@ -971,7 +1027,7 @@ class AttendanceController extends Controller
 
         $submittedBy = $request->user()->id;
         $isOverride = (bool) $request->boolean('override');
-        $cycle = $request->input('cycle') ?? $request->input('week_range');
+        $cycle = $this->importPeriodCycle($request->input('week_period')) ?? $request->input('cycle') ?? $request->input('week_range');
 
         $duplicateRecords = [];
         $recordsToProcess = [];
