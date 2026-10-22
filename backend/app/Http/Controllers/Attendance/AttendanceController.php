@@ -181,7 +181,7 @@ class AttendanceController extends Controller
             $draftsQuery->whereDate('updated_at', $validated['date']);
         }
 
-        $drafts = $draftsQuery->get()->map(function ($draft) use ($program, $yearLevel) {
+        $drafts = $draftsQuery->get(['id', 'day', 'updated_at', 'gathering_type'])->map(function ($draft) use ($program, $yearLevel) {
             return [
                 'source'         => 'draft',
                 'id'             => 'draft-' . $draft->id,
@@ -218,51 +218,68 @@ class AttendanceController extends Controller
             $recordsQuery->whereDate('updated_at', $validated['date']);
         }
 
-        $records = $recordsQuery->get()
-            ->groupBy(function ($r) {
-                if (!empty($r->batch_id)) {
-                    return $r->batch_id;
-                }
+        // Group rows in TiDB so PHP receives one row per submission batch,
+        // rather than downloading every student's attendance row first.
+        // Legacy rows remain separated by gathering, date, and submitter.
+        $groupExpression = "CASE WHEN batch_id IS NOT NULL AND batch_id <> '' "
+            . "THEN CONCAT('batch:', batch_id) "
+            . "ELSE CONCAT('legacy:', gathering_type, '|', DATE_FORMAT(day, '%Y-%m-%d'), '|', submitted_by) END";
 
-                $dayFormatted = $r->day instanceof Carbon
-                    ? $r->day->format('Y-m-d')
-                    : Carbon::parse($r->day)->format('Y-m-d');
+        $recordsQuery
+            ->selectRaw(
+                'MAX(batch_id) AS batch_id, MIN(day) AS day, MIN(gathering_type) AS gathering_type, '
+                . 'MIN(submitted_by) AS submitted_by, MAX(updated_at) AS raw_submission_at, '
+                . 'COUNT(*) AS row_count, '
+                . 'SUM(CASE WHEN validation_status = ? THEN 1 ELSE 0 END) AS validated_count, '
+                . 'SUM(CASE WHEN submitted_by <> ? OR '
+                . '(validation_status IS NOT NULL AND validation_status <> ?) '
+                . 'THEN 1 ELSE 0 END) AS unsubmit_blocker_count',
+                ['validated', $user->id, 'unvalidated']
+            )
+            ->groupByRaw($groupExpression);
 
-                // Keep legacy records from separate submitters in separate rows.
-                return $r->gathering_type . '|' . $dayFormatted . '|' . $r->submitted_by;
-            })
-            ->map(function ($group) use ($program, $yearLevel, $user) {
-                $first = $group->first();
-                $dayCarbon = $first->day instanceof Carbon
-                    ? $first->day
-                    : Carbon::parse($first->day);
-
-                return [
-                    'source'           => 'record',
-                    'id'               => 'record-' . ($first->batch_id ?? ($first->gathering_type . '-' . $dayCarbon->format('Y-m-d'))),
-                    'ref_id'           => null,
-                    'batch_id'         => $first->batch_id ?? null,
-                    'course'           => $program,
-                    'year'             => $yearLevel,
-                    'date'             => $dayCarbon->format('F j, Y'),
-                    'submission_date'  => optional($group->max('updated_at'))->format('F j, Y'),
-                    'raw_submission_at' => $group->max('updated_at'),
-                    'day_iso'          => $dayCarbon->toDateString(),
-                    'raw_day'          => $dayCarbon,
-                    'gathering_type'   => $first->gathering_type,
-                    'gathering'        => $this->gatheringLabel($first->gathering_type),
-                    'submitted_by_id'  => $first->submitted_by,
-                    'time'             => optional($group->max('updated_at'))->format('g:i A'),
-                    'status'           => $this->aggregateStatus($group),
-                    'can_unsubmit'     => $group->every(fn ($record) => (int) $record->submitted_by === (int) $user->id)
-                        && $group->every(fn ($record) => in_array($record->validation_status, [null, 'unvalidated'], true)),
-                ];
-            })
-            ->values();
-
-        if (!empty($validated['status']) && $validated['status'] !== 'all') {
-            $records = $records->filter(fn ($r) => $r['status'] === $validated['status'])->values();
+        if (($validated['status'] ?? null) === 'approved') {
+            $recordsQuery->havingRaw(
+                'SUM(CASE WHEN validation_status = ? THEN 1 ELSE 0 END) = COUNT(*)',
+                ['validated']
+            );
+        } elseif (($validated['status'] ?? null) === 'pending') {
+            $recordsQuery->havingRaw(
+                'SUM(CASE WHEN validation_status = ? THEN 1 ELSE 0 END) < COUNT(*)',
+                ['validated']
+            );
+        } elseif (!empty($validated['status']) && $validated['status'] !== 'all') {
+            // The remaining supported filter is "validating", which applies
+            // only to drafts and therefore has no submitted-record matches.
+            $recordsQuery->havingRaw('1 = 0');
         }
+
+        $records = $recordsQuery->get()->map(function ($group) use ($program, $yearLevel) {
+            $day = Carbon::parse($group->day);
+            $submissionTime = Carbon::parse($group->raw_submission_at);
+
+            return [
+                'source'            => 'record',
+                'id'                => 'record-' . ($group->batch_id ?? ($group->gathering_type . '-' . $day->format('Y-m-d'))),
+                'ref_id'            => null,
+                'batch_id'          => $group->batch_id,
+                'course'            => $program,
+                'year'              => $yearLevel,
+                'date'              => $day->format('F j, Y'),
+                'submission_date'   => $submissionTime->format('F j, Y'),
+                'raw_submission_at' => $submissionTime,
+                'day_iso'           => $day->toDateString(),
+                'raw_day'           => $day,
+                'gathering_type'    => $group->gathering_type,
+                'gathering'         => $this->gatheringLabel($group->gathering_type),
+                'submitted_by_id'   => $group->submitted_by,
+                'time'              => $submissionTime->format('g:i A'),
+                'status'            => (int) $group->validated_count === (int) $group->row_count
+                    ? 'approved'
+                    : 'pending',
+                'can_unsubmit'      => (int) $group->unsubmit_blocker_count === 0,
+            ];
+        })->values();
 
         // --- Merge, sort, paginate manually ---
         $combined = $drafts->concat($records)
@@ -381,14 +398,6 @@ class AttendanceController extends Controller
                 'students'          => $students,
             ],
         ], 200);
-    }
-
-    private function aggregateStatus($group): string
-    {
-        if ($group->every(fn ($r) => $r->validation_status === 'validated')) {
-            return 'approved';
-        }
-        return 'pending';
     }
 
     private function gatheringLabel(string $type): string
