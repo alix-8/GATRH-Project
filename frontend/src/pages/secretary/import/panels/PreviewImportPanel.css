@@ -1,15 +1,20 @@
 .preview-cards {
-    border: 1px solid #dbe1ec;
-    border-radius: 12px;
+    box-sizing: border-box;
+    border: 1px solid #aaa6a6;
+    border-radius: 10px;
     overflow: auto;
-    max-height: 420px;
+    height: var(--import-preview-height, 260px);
+}
+
+.import-columns.is-previewing .preview-cards {
+    height: calc(var(--import-preview-height) + var(--import-actions-height) + 0.5rem);
 }
 
 .preview-header-row {
     display: grid;
     grid-template-columns: 1.2fr 1fr 1fr 1fr;
     gap: 10px;
-    padding: 14px 16px;
+    padding: 10px 16px;
     background: #f4f6f9;
     font-size: 0.75rem;
     font-weight: 600;
@@ -20,7 +25,7 @@
     display: grid;
     grid-template-columns: 1.2fr 1fr 1fr 1fr;
     gap: 10px;
-    padding: 14px 16px;
+    padding: 10px 16px;
     border-top: 1px solid #eef0f2;
     align-items: start;
 }
@@ -85,11 +90,13 @@
 .preview-header-row-single {
     align-items: center;
     min-height: 64px;
+    box-sizing: border-box;
 }
 
 .preview-card-single {
     align-items: center;
     min-height: 76px;
+    box-sizing: border-box;
 }
 
 .preview-card-single .preview-card-name {

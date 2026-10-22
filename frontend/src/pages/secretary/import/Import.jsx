@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
 import { request } from '../../../api/request'
@@ -20,12 +20,6 @@ import PreviewImportPanel from './panels/PreviewImportPanel'
 import PreviewIndividualPanel from './panels/PreviewIndividualPanel'
 import './Import.css'
 
-const CheckIcon = () => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-)
-
 const getGatheringTypeFromText = text => {
     const match = text.match(/^\s*gathering\s*:\s*(.+?)\s*$/im)
     if (!match) return null
@@ -38,8 +32,12 @@ const getGatheringTypeFromText = text => {
         'worship service': 'ws',
         tg: 'tg',
         thanksgiving: 'tg',
+        'weekly reporting': 'week',
     }[gathering] || gathering
 }
+
+const hasIndividualRows = text => /^\s*\d+[.)]\s*[^|\r\n]+\s*\|/m.test(text)
+const hasWeeklySlots = text => /^\s*(?:PM|WS|TG)\s*:/im.test(text)
 
 function Import({ onGoToAttendance = () => {} }) {
     const location = useLocation()
@@ -55,8 +53,6 @@ function Import({ onGoToAttendance = () => {} }) {
     const [isProcessing, setIsProcessing] = useState(false)
     const [result, setResult] = useState(null)
     const navigate = useNavigate()
-
-    const [batchMode, setBatchMode] = useState(false)
 
     // modal: null | 'generate' | 'success' | 'error'
     const [modal, setModal] = useState(null)
@@ -207,9 +203,23 @@ function Import({ onGoToAttendance = () => {} }) {
             setFieldWarning('Paste some attendance text first.')
             return
         }
+        const previewGatheringType = isWeekMode && ['pm', 'ws', 'tg'].includes(parsedGatheringType)
+            ? parsedGatheringType
+            : form.gathering_type
         if (gatheringTypeMismatch) {
             setFieldWarning(`The gathering type in your text doesn't match the selected dropdown ("${form.gathering_type.toUpperCase()}"). Fix one or the other before previewing.`)
             return
+        }
+        if (previewGatheringType === 'week' && hasIndividualRows(form.raw_text)) {
+            setFieldWarning('This text uses the single-gathering format. Select Prayer Meeting, Worship Service, or Thanksgiving before previewing.')
+            return
+        }
+        if (previewGatheringType !== 'week' && hasWeeklySlots(form.raw_text)) {
+            setFieldWarning('This text uses the All Gathering format. Select All Gathering before previewing.')
+            return
+        }
+        if (previewGatheringType !== form.gathering_type) {
+            setForm(current => ({ ...current, gathering_type: previewGatheringType }))
         }
         setFieldWarning(null)
         setPreviewRowCount(0)
@@ -220,7 +230,7 @@ function Import({ onGoToAttendance = () => {} }) {
                 method: 'POST',
                 body: JSON.stringify({
                     raw_text: form.raw_text,
-                    gathering_type: form.gathering_type,
+                    gathering_type: previewGatheringType,
                 }),
             })
             setDuplicateSource('preview')

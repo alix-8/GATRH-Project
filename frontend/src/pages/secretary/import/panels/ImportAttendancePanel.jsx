@@ -54,7 +54,7 @@ function ImportAttendancePanel({
 
             {fieldWarning && <p className="import-field-warning">{fieldWarning}</p>}
 
-            <div className="import-columns">
+            <div className={`import-columns ${isPreviewing ? 'is-previewing' : ''}`}>
                 <div className="import-column">
                     <p className="import-column-label">Attendance Text</p>
                     <textarea

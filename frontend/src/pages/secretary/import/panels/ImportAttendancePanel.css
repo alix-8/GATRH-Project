@@ -1,4 +1,6 @@
 .import-columns {
+    --import-preview-height: 260px;
+    --import-actions-height: 42px;
     display: grid;
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
     gap: 1.25rem;
@@ -17,12 +19,17 @@
 
 .import-column textarea,
 .import-preview-placeholder {
+    box-sizing: border-box;
     border: 1px solid #aaa6a6;
     border-radius: 10px;
     padding: 1rem;
     color: #0d0d0d;
-    resize: vertical;
-    min-height: 220px;
+    height: var(--import-preview-height);
+    overflow-y: auto;
+}
+
+.import-column textarea {
+    resize: none;
 }
 
 .import-column textarea::placeholder {
@@ -96,6 +103,7 @@
 .import-column-actions-row {
     display: flex;
     gap: 0.75rem;
+    min-height: var(--import-actions-height);
 }
 
 .import-column-actions-row .import-clear-button,
@@ -141,7 +149,7 @@
 
 .import-process-btn {
     width: 100%;
-    margin-top: 0.25rem;
+    margin-top: auto;
     border-radius: 10px;
     font-size: 15px;
     font-weight: 600;
