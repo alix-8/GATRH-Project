@@ -21,14 +21,6 @@ class AdminActivityObserver
 
     public function updated(Model $model): void
     {
-        if ($model instanceof User && $model->wasChanged('password')) {
-            $this->auditLogService->record('Changed password', $model);
-
-            if (array_diff(array_keys($model->getChanges()), ['password', 'updated_at']) === []) {
-                return;
-            }
-        }
-
         $this->recordActivity('Updated', $model);
     }
 

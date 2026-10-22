@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\Audit\AuditLogService;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -56,10 +55,6 @@ class AuthController extends Controller
             ? null
             : now()->addMinutes(config('auth.token.session_minutes'));
         $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
-
-        if ($user->role === 'admin') {
-            app(AuditLogService::class)->recordAction('Signed in', 'users', (string) $user->id, $user);
-        }
 
         return response()->json([
             'access_token' => $token,

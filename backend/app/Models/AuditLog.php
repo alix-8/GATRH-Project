@@ -27,39 +27,4 @@ class AuditLog extends Model
         return $query->whereHas('actor', fn ($actorQuery) => $actorQuery->where('role', 'admin'));
     }
 
-    public function moduleKey(): string
-    {
-        if (in_array($this->action, ['Signed in', 'Changed password'], true)) {
-            return 'security';
-        }
-
-        return match (true) {
-            $this->target_table === 'users' => 'users',
-            $this->target_table === 'students' => 'students',
-            $this->target_table === 'programs' => 'programs',
-            in_array($this->target_table, ['system_settings', 'gathering_schedules', 'school_year_rollovers'], true) => 'settings',
-            str_starts_with($this->target_table, 'attendance') => 'attendance',
-            default => 'system',
-        };
-    }
-
-    public function moduleLabel(): string
-    {
-        return match ($this->moduleKey()) {
-            'users' => 'User & Roles',
-            'students' => 'Students',
-            'programs' => 'Programs',
-            'settings' => 'System Settings',
-            'security' => 'Security',
-            'attendance' => 'Attendance',
-            default => 'System',
-        };
-    }
-
-    public function resultLabel(): string
-    {
-        // Audit entries are recorded after the action succeeds.
-        return 'Success';
-    }
-
 }
