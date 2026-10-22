@@ -71,7 +71,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 (statusFilter === 'present' && getAutomaticAttendanceStatus(s, draft.week_range) === 'present') ||
                 (statusFilter === 'absent' && getAutomaticAttendanceStatus(s, draft.week_range) !== 'present')
             return matchesSearch && matchesStatus
-        })
+        }).sort((a, b) => a.student_name.localeCompare(b.student_name, undefined, { sensitivity: 'base' }))
     }, [draft, search, statusFilter])
 
     const handleStudentChange = (student, field, value) => {
