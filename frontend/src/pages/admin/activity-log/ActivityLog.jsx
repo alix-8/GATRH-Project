@@ -80,6 +80,7 @@ function ActivityLog() {
             .catch(error => {
                 if (active) {
                     setActivityLog(null)
+                    setSummary(null)
                     setError(error.message || 'Unable to load the activity log.')
                 }
             })
@@ -132,7 +133,7 @@ function ActivityLog() {
                             <span className="admin-activity-log-card-icon" aria-hidden="true"><img src={card.icon} alt="" /></span>
                             <div className="admin-activity-log-card-copy">
                                 <h2>{card.label}</h2>
-                                <strong>{summary ? card.value : '—'}</strong>
+                                <strong>{summary ? (card.value ?? 0) : '—'}</strong>
                                 <p>{card.detail}</p>
                             </div>
                         </article>)}

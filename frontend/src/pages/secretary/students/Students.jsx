@@ -461,14 +461,13 @@ function Students() {
                             <div className="overview-filter-container">
                                 <button type="button" className="overview-filter-control" aria-expanded={overviewOpenFilter === 'status'} onClick={() => setOverviewOpenFilter(overviewOpenFilter === 'status' ? null : 'status')}>
                                     <img src={LevelIcon} alt="" />
-                                    <span>{overviewStatus === 'present' ? 'Present' : overviewStatus === 'no_response' ? 'No Response' : overviewStatus === 'excused' ? 'Excused' : 'Status'}</span>
+                                    <span>{overviewStatus === 'present' ? 'Present' : overviewStatus === 'no_response' ? 'No Response' : 'Status'}</span>
                                     <img className="overview-dropdown-icon" src={DropdownIcon} alt="" />
                                 </button>
                                 {overviewOpenFilter === 'status' && <ul className="overview-filter-menu" role="listbox">
                                     <li role="option" className={`overview-filter-option ${!overviewStatus ? 'selected' : ''}`} aria-selected={!overviewStatus} onClick={(event) => { event.stopPropagation(); setOverviewStatus(''); setOverviewOpenFilter(null) }}>Status</li>
                                     <li role="option" className={`overview-filter-option ${overviewStatus === 'present' ? 'selected' : ''}`} aria-selected={overviewStatus === 'present'} onClick={(event) => { event.stopPropagation(); setOverviewStatus('present'); setOverviewOpenFilter(null) }}>Present</li>
                                     <li role="option" className={`overview-filter-option ${overviewStatus === 'no_response' ? 'selected' : ''}`} aria-selected={overviewStatus === 'no_response'} onClick={(event) => { event.stopPropagation(); setOverviewStatus('no_response'); setOverviewOpenFilter(null) }}>No Response</li>
-                                    <li role="option" className={`overview-filter-option ${overviewStatus === 'excused' ? 'selected' : ''}`} aria-selected={overviewStatus === 'excused'} onClick={(event) => { event.stopPropagation(); setOverviewStatus('excused'); setOverviewOpenFilter(null) }}>Excused</li>
                                 </ul>}
                             </div>
                         </div>
