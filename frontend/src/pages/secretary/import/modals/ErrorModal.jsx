@@ -104,14 +104,33 @@ function ErrorItems({ type, items }) {
     }
 
     if (type === 'incomplete_records') {
-        return items.map((item, index) => (
-            <p className="import-error-item" key={`${type}-${index}`}>
-                <span className="import-error-line">{item.raw_line}</span>
-                <strong className="import-error-reason">
-                    Missing: {(item.missing || []).join(', ') || 'required attendance information'}
-                </strong>
-            </p>
-        ))
+        const fieldLabels = { day: 'Day', date: 'Day', time: 'Time', batch: 'Time', venue: 'Venue' }
+        return items.map((item, index) => {
+            const nestedFields = (item.errors || []).flatMap((error) =>
+                error.field ? [error.field] : (error.missing || error.fields || [])
+            )
+            const directMissing = item.missing ?? item.missing_fields ?? item.fields_missing
+            const missing = Array.isArray(directMissing) && directMissing.length > 0
+                ? directMissing
+                : directMissing && !Array.isArray(directMissing)
+                    ? [directMissing]
+                    : nestedFields
+            const missingList = Array.isArray(missing) ? missing : (missing ? [missing] : [])
+            const missingLabels = [...new Set(missingList.map((field) => fieldLabels[String(field).toLowerCase()] || field))]
+            const student = item.student_name || item.raw_line || 'Unknown student'
+            const gathering = item.gathering_type ? ` (${String(item.gathering_type).toUpperCase()})` : ''
+
+            return (
+                <p className="import-error-item" key={`${type}-${index}`}>
+                    <span className="import-error-line">{student}{gathering}</span>
+                    <strong className="import-error-reason">
+                        {missingLabels.length
+                            ? `Missing: ${missingLabels.join(', ')}`
+                            : 'No blank fields; see Format Errors for details.'}
+                    </strong>
+                </p>
+            )
+        })
     }
 
     if (type === 'all_no_response_warning') {

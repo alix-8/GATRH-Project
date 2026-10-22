@@ -12,10 +12,11 @@ function GenerateTemplate({
     generateTemplate,
     cancelGenerateTemplate,
     applyGeneratedTemplate,
+    onGatheringChange,
 }) {
     const [isCopied, setIsCopied] = useState(false)
-    const [gatheringType, setGatheringType] = useState(() => form.gathering_type === 'week' ? 'pm' : form.gathering_type)
     const [isGatheringOpen, setIsGatheringOpen] = useState(false)
+    const gatheringType = form.gathering_type || 'week'
 
     useEffect(() => {
         generateTemplate(gatheringType)
@@ -23,7 +24,8 @@ function GenerateTemplate({
     }, [gatheringType, generateTemplate, cancelGenerateTemplate])
 
     const handleGatheringChange = event => {
-        setGatheringType(event.target.value)
+        const nextGatheringType = event.target.value
+        onGatheringChange?.(nextGatheringType)
         setIsGatheringOpen(false)
         resetPreview()
         setIsCopied(false)
@@ -56,6 +58,7 @@ function GenerateTemplate({
                             }}
                             onBlur={() => setIsGatheringOpen(false)}
                         >
+                            <option value="week">All gathering</option>
                             <option value="pm">Prayer Meeting</option>
                             <option value="ws">Worship Service</option>
                             <option value="tg">Thanksgiving</option>
@@ -68,10 +71,18 @@ function GenerateTemplate({
 
                 <div className="import-modal-preview-header">
                     <div className="import-modal-preview-label">Format Preview</div>
-                    <button className="import-copy-button" type="button" onClick={copyPreview} disabled={!previewText || isGenerating} aria-label={isCopied ? 'Copied format preview' : 'Copy format preview'} title={isCopied ? 'Copied' : 'Copy preview'}>
+                    <button
+                        className={`import-copy-button ${previewText && !isGenerating && !isCopied ? 'is-ready' : ''} ${isCopied ? 'is-copied' : ''}`}
+                        type="button"
+                        onClick={copyPreview}
+                        disabled={!previewText || isGenerating}
+                        aria-label={isCopied ? 'Copied format preview' : 'Copy format preview'}
+                        title={isCopied ? 'Copied' : 'Copy preview'}
+                    >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M8 5h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.5" />
-                            <path d="M16 5V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h1" stroke="currentColor" strokeWidth="1.5" />
+                            <path d="M8 5h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" fill="currentColor" />
+                            <path d="M16 5V2l3 3h-2a1 1 0 0 1-1-1Z" fill="#fff" />
+                            <path d="M6 18H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </button>
                 </div>
@@ -103,7 +114,7 @@ function GenerateTemplate({
                         onClick={() => previewText ? applyGeneratedTemplate(gatheringType) : generateTemplate(gatheringType)}
                         disabled={isGenerating}
                     >
-                        {isGenerating ? 'Loading...' : 'Generate'}
+                        {isGenerating ? 'Loading...' : previewText ? 'Use Format' : 'Generate'}
                     </button>
                 </div>
             </div>
