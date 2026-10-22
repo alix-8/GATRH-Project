@@ -581,7 +581,7 @@ class AttendanceParsingService
                 $anyFilled = $hasDay || $hasTime || $hasVenue;
                 $allFilled = $hasDay && $hasTime && $hasVenue && $resolvedDay !== null;
 
-                if ($anyFilled && !$allFilled) {
+                if ($anyFilled && (!$hasDay || !$hasTime || !$hasVenue)) {
                     $incompleteRecords[] = [
                         'student_id'     => $student->id,
                         'student_name'   => $student->name,

@@ -132,6 +132,10 @@
     cursor: pointer;
 }
 .import-period-change-button:hover { background: #eef3fb; }
+.import-period-change-button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
 
 @media (max-width: 900px) {
     .import-period-banner { grid-template-columns: 1fr auto; }
@@ -655,6 +659,17 @@ textarea {
 .import-format-modal .import-copy-button:disabled {
     opacity: 1;
     cursor: default;
+}
+
+.import-format-modal .import-copy-button.is-ready {
+    border-color: #159fe8;
+    color: #159fe8;
+}
+
+.import-format-modal .import-copy-button.is-copied {
+    border-color: #cbd5e1;
+    background: #fff;
+    color: #159fe8;
 }
 
 .import-format-modal .import-modal-preview {

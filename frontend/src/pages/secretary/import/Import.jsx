@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
 import { request } from '../../../api/request'
@@ -42,6 +42,7 @@ const hasWeeklySlots = text => /^\s*(?:PM|WS|TG)\s*:/im.test(text)
 
 function Import({ onGoToAttendance = () => {} }) {
     const location = useLocation()
+    const templateRequestId = useRef(0)
     const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
     const [form, setForm] = useState({
         program: loggedInUser.program || '',
@@ -102,7 +103,7 @@ function Import({ onGoToAttendance = () => {} }) {
 
     const isWeekMode = form.gathering_type === 'week'
     const parsedGatheringType = getGatheringTypeFromText(form.raw_text)
-    const gatheringTypeMismatch = !isWeekMode && parsedGatheringType && parsedGatheringType !== form.gathering_type
+    const gatheringTypeMismatch = parsedGatheringType && parsedGatheringType !== form.gathering_type
 
     const generateTemplate = useCallback(async (gatheringType) => {
         const requestId = ++templateRequestId.current
@@ -114,7 +115,7 @@ function Import({ onGoToAttendance = () => {} }) {
             const query = new URLSearchParams({
                 program: form.program,
                 year_level: form.year_level,
-                gathering_type: form.gathering_type, // 'week' now flows straight through
+                gathering_type: gatheringType,
                 week_period: weekPeriod || 'current',
             })
             const data = await request(`/attendance/generate-template?${query}`)
@@ -131,7 +132,11 @@ function Import({ onGoToAttendance = () => {} }) {
         } finally {
             if (requestId === templateRequestId.current) setIsGenerating(false)
         }
-    }, [form.program, form.year_level])
+    }, [form.program, form.year_level, weekPeriod])
+
+    const handleTemplateGatheringChange = gatheringType => {
+        setForm(current => ({ ...current, gathering_type: gatheringType }))
+    }
 
     const cancelGenerateTemplate = useCallback(() => {
         templateRequestId.current += 1
@@ -404,7 +409,7 @@ function Import({ onGoToAttendance = () => {} }) {
                                     )
                                 })}
                             </div>
-                            <button className="import-period-change-button" type="button" onClick={() => setModal('select-week')}>
+                            <button className="import-period-change-button" type="button" onClick={() => setModal('select-week')} disabled={isPreviewing}>
                                 Change week
                             </button>
                         </section>
@@ -476,6 +481,7 @@ function Import({ onGoToAttendance = () => {} }) {
                     generateTemplate={generateTemplate}
                     cancelGenerateTemplate={cancelGenerateTemplate}
                     applyGeneratedTemplate={applyGeneratedTemplate}
+                    onGatheringChange={handleTemplateGatheringChange}
                 />
             )}
 

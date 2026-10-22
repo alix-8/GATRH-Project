@@ -98,10 +98,12 @@ function preserveHeader(rawText, serializedStudents) {
 
 const TIME_RE = /^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}\s*(?:AM|PM)?)$/i
 
-function fieldError(slotType, field, value, errors) {
+function fieldError(studentName, slotType, field, value, errors) {
     if (!errors) return false
     if (field === 'time' && value && !TIME_RE.test(value.trim())) return true
-    return errors.format_errors?.some((e) => e.gathering_type === slotType && e.field === field)
+    return errors.format_errors?.some((e) =>
+        e.student_name === studentName && e.gathering_type === slotType && e.field === field
+    )
 }
 
 function isIncomplete(studentName, slotType, errors) {
@@ -148,7 +150,7 @@ export default function PreviewImportPanel({ rawText, onChange, errors, onRowsPa
                         {['pm', 'ws', 'tg'].map((slotType) => (
                             <div className="preview-slot-col" key={slotType}>
                                 {['day', 'time', 'venue'].map((field) => {
-                                    const hasError = fieldError(slotType, field, s[slotType][field], errors)
+                                    const hasError = fieldError(s.name, slotType, field, s[slotType][field], errors)
                                     const incomplete = isIncomplete(s.name, slotType, errors)
                                     return (
                                         <input

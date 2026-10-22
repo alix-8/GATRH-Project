@@ -126,6 +126,16 @@
     font-size: 12px;
 }
 
+.import-column-actions-row button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.import-panel-heading .import-native-select:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
 .import-parse-preview-btn {
     width: 100%;
     border: none;
