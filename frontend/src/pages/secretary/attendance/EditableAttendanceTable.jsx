@@ -73,7 +73,7 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                                     aria-label={`Day for ${student.student_name}`}
                                     type="text"
                                     className={`${invalidDay ? 'drawer-edit-field-error' : ''} ${incomplete && !hasDay ? 'drawer-edit-field-warning' : ''}`}
-                                    value={student.day_provided === false ? '' : displayAttendanceDay(editableValue(student.day || day))}
+                                    value={hasDay ? displayAttendanceDay(editableValue(student.day)) : ''}
                                     placeholder="Day"
                                     title={dayError || (incomplete && !hasDay ? 'Day is required when any attendance details are entered.' : '')}
                                     onChange={(event) => onStudentChange(student, 'day', event.target.value)}

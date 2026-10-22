@@ -38,6 +38,14 @@ class AttendanceDraftController extends Controller
 
         $students = collect($draft->parsed_data)->map(
             function ($record) use ($submissionDay) {
+                // No-response records retain a required database date, but this is
+                // only the gathering's scheduled day, not a date entered by the secretary.
+                $dayProvided = ($record['day_provided'] ?? null) !== null
+                    ? (bool) $record['day_provided']
+                    : (!empty($record['day'])
+                        && $record['day'] !== '---'
+                        && ($record['status'] ?? null) !== 'no_response');
+
                 return [
                     'student_id'   => $record['student_id'] ?? null,
                     'student_name' => $record['student_name'] ?? 'Unknown',
@@ -48,8 +56,8 @@ class AttendanceDraftController extends Controller
                     'venue'        => $record['venue'] ?? '---',
 
                     // For absent/no-response students, use the gathering submission date.
-                    'day'          => $record['day'] ?? $submissionDay ?? '---',
-                    'day_provided' => !empty($record['day']),
+                    'day'          => $dayProvided ? ($record['day'] ?? $submissionDay ?? '---') : '---',
+                    'day_provided' => $dayProvided,
                 ];
             }
         );

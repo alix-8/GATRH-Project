@@ -24,6 +24,8 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [submitting, setSubmitting] = useState(false)
+    const [unsubmitting, setUnsubmitting] = useState(false)
+    const [unsubmitConfirm, setUnsubmitConfirm] = useState(false)
     const [duplicateConfirm, setDuplicateConfirm] = useState(null)
     const [editError, setEditError] = useState(null)
     const [search, setSearch] = useState('')
@@ -41,6 +43,8 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         setDuplicateConfirm(null)
         setEditError(null)
         setEditing(false)
+        setUnsubmitConfirm(false)
+        setUnsubmitting(false)
 
         const url = record.source === 'draft'
         ? `/attendance/drafts/${record.ref_id}`
@@ -171,7 +175,12 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                         day: student.day_provided === false
                             ? null
                             : resolveAttendanceDay(student.day, draft.week_range),
-                        day_provided: Boolean(student.day_provided !== false && student.day),
+                        day_provided: Boolean(
+                            student.day_provided !== false
+                            && student.day
+                            && student.day !== '---'
+                            && resolveAttendanceDay(student.day, draft.week_range)
+                        ),
                         batch: student.batch === '---' ? '' : student.batch,
                         venue: student.venue === '---' ? '' : student.venue,
                     })),
@@ -191,6 +200,23 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         }
     }
 
+    const handleUnsubmit = async () => {
+        if (!record?.can_unsubmit || !record?.batch_id && !record?.submitted_by_id) return
+        const batchKey = record.batch_id || `${record.gathering_type}|${record.day_iso}|${record.submitted_by_id}`
+        setUnsubmitting(true)
+        setError(null)
+        try {
+            await request(`/attendance/submissions/${encodeURIComponent(batchKey)}/unsubmit`, { method: 'POST' })
+            setUnsubmitConfirm(false)
+            onSubmitted(record.id)
+        } catch (err) {
+            setError(err.message)
+            setUnsubmitConfirm(false)
+        } finally {
+            setUnsubmitting(false)
+        }
+    }
+
     if (!isOpen) return null
 
     // Decide footer control based on the row's current lifecycle status
@@ -199,7 +225,16 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             case 'approved':
                 return <div className="status-pill status-pill-approved">✓ Approved</div>
             case 'pending':
-                return <div className="status-pill status-pill-pending">✓ Submitted</div>
+                return (
+                    <div className="drawer-footer-actions">
+                        {record.can_unsubmit && (
+                            <button type="button" className="drawer-edit-btn unsubmit-btn" onClick={() => setUnsubmitConfirm(true)} disabled={unsubmitting}>
+                                Unsubmit
+                            </button>
+                        )}
+                        <div className="status-pill status-pill-pending">✓ Submitted</div>
+                    </div>
+                )
             default:
                 if (editing) {
                     return (
@@ -375,6 +410,21 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                         setEditing(true)
                     }}
                 />
+            )}
+
+            {unsubmitConfirm && (
+                <div className="unsubmit-confirm-overlay">
+                    <section className="unsubmit-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="unsubmit-confirm-title">
+                        <h2 id="unsubmit-confirm-title">Return attendance to Validating?</h2>
+                        <p>This submission will become an editable draft again. You can make changes and submit it for validation later.</p>
+                        <div className="unsubmit-confirm-actions">
+                            <button type="button" className="unsubmit-cancel-btn" onClick={() => setUnsubmitConfirm(false)} disabled={unsubmitting}>Cancel</button>
+                            <button type="button" className="unsubmit-submit-btn" onClick={handleUnsubmit} disabled={unsubmitting}>
+                                {unsubmitting ? 'Returning…' : 'Unsubmit'}
+                            </button>
+                        </div>
+                    </section>
+                </div>
             )}
         </div>
     )
