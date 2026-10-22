@@ -78,6 +78,40 @@
     border-color: #5c7499;
 }
 
+.import-gathering-select {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 204px;
+    max-width: 100%;
+}
+
+.import-gathering-select .import-native-select {
+    width: 100%;
+    min-height: 44px;
+    padding-right: 34px;
+    border-color: #cbd5e1;
+    border-radius: 6px;
+    background-image: none;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.import-gathering-chevron {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    color: #64748b;
+    pointer-events: none;
+    transform: translateY(-50%);
+    transition: transform 180ms ease;
+}
+
+.import-gathering-select.open .import-gathering-chevron {
+    transform: translateY(-50%) rotate(180deg);
+}
+
 .import-panel-heading select.import-gathering-mismatch {
     border-color: #d9534f !important;
     background-color: #fff1f0 !important;

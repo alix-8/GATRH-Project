@@ -48,7 +48,7 @@ function Import({ onGoToAttendance = () => {} }) {
     const [form, setForm] = useState({
         program: loggedInUser.program || '',
         year_level: loggedInUser.year_level || '',
-        gathering_type: location.state?.gathering_type || 'pm',
+        gathering_type: location.state?.gathering_type || 'week',
         raw_text: '',
     })
     const [fieldWarning, setFieldWarning] = useState(null)

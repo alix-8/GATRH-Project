@@ -36,10 +36,10 @@ function GenerateTemplate({
                 <label className="import-modal-label">
                     Gathering
                     <select className="import-native-select" name="gathering_type" placeholder="Gathering" value={form.gathering_type} onChange={handleGatheringChange}>
+                        <option value="week">All Gathering</option>
                         <option value="pm">Prayer Meeting</option>
                         <option value="ws">Worship Service</option>
                         <option value="tg">Thanksgiving</option>
-                        <option value="week">Whole Week Attendance</option>
                     </select>
                 </label>
 

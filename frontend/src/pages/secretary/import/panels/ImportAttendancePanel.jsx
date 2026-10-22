@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './ImportAttendancePanel.css'
 
 function ImportAttendancePanel({
@@ -16,26 +17,38 @@ function ImportAttendancePanel({
     onGeneratePreview = () => {},
     onBackToEdit = () => {},
 }) {
+    const [isGatheringOpen, setIsGatheringOpen] = useState(false)
+
     return (
         <section className="import-panel">
             <div className="import-panel-heading">
                 <div>
                     <h2>Import Attendance</h2>
                 </div>
-                <label>
+                <label className={`import-gathering-select ${isGatheringOpen ? 'open' : ''}`}>
                     <select
+                        aria-label="Gathering type"
                         name="gathering_type"
                         value={form.gathering_type}
-                        onChange={updateField}
+                        onChange={(event) => { updateField(event); setIsGatheringOpen(false) }}
+                        onPointerDown={() => setIsGatheringOpen((open) => !open)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') setIsGatheringOpen(false)
+                            else if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) setIsGatheringOpen(true)
+                        }}
+                        onBlur={() => setIsGatheringOpen(false)}
                         disabled={isPreviewing}
                         className={`import-native-select ${gatheringTypeMismatch ? 'import-gathering-mismatch' : ''}`}
                         aria-invalid={gatheringTypeMismatch || undefined}
                     >
+                        <option value="week">All Gathering</option>
                         <option value="pm">Prayer Meeting</option>
                         <option value="ws">Worship Service</option>
                         <option value="tg">Thanksgiving</option>
-                        <option value="week">Whole Week Attendance</option>
                     </select>
+                    <svg className="import-gathering-chevron" width="9" height="6" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+                        <path d="m1 1 5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                 </label>
             </div>
 
