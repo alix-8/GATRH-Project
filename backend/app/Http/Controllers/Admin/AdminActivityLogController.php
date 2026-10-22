@@ -23,7 +23,8 @@ class AdminActivityLogController extends Controller
             'result' => ['sometimes', 'nullable', 'in:success,failed'],
         ]);
 
-        $administratorActivity = AuditLog::query()->performedByAdministrators();
+        $administratorActivity = AuditLog::query()
+            ->whereHas('actor', fn (Builder $actor) => $actor->where('role', 'admin'));
         $today = today();
         $summary = [
             'total' => (clone $administratorActivity)->count(),
