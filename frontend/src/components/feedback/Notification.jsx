@@ -82,9 +82,7 @@ function Notification() {
     const fetchControllerRef = useRef(null)
 
     const fetchNotifications = useCallback(async () => {
-        const token = localStorage.getItem('auth_token')
-
-        if (!token) return
+        if (!localStorage.getItem('user')) return
 
         let isCoordinator = false
         try {

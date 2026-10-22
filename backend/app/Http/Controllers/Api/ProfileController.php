@@ -20,7 +20,15 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Contact number updated successfully.',
-            'user' => $user->fresh(),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'program' => $user->program,
+                'year_level' => $user->year_level,
+                'contact_number' => $user->contact_number,
+            ],
         ]);
     }
 

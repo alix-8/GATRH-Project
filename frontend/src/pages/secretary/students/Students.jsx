@@ -41,7 +41,7 @@ function Students() {
     const [students, setStudents] = useState([])
     const [attendanceSession, setAttendanceSession] = useState(null)
     const [escalationWeekRange, setEscalationWeekRange] = useState(null)
-    const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
+    const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('user')))
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedSort, setSelectedSort] = useState(null)
     const [isSortOpen, setIsSortOpen] = useState(false)
@@ -64,15 +64,14 @@ function Students() {
     const overviewFiltersRef = useRef(null)
 
     useEffect(() => {
-        const token = localStorage.getItem('auth_token')
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             return
         }
 
         fetch(`${API_BASE_URL}/students/attendance-snapshot`, {
+            credentials: 'include',
             headers: {
                 Accept: 'application/json',
-                Authorization: `Bearer ${token}`,
             },
         })
             .then(res => res.ok ? res.json() : [])
@@ -172,7 +171,8 @@ function Students() {
         setOverviewOpenFilter(null)
         try {
             const response = await fetch(`${API_BASE_URL}/students/${student.id}/overview`, {
-                headers: { Accept: 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+                credentials: 'include',
+                headers: { Accept: 'application/json' },
             })
             if (!response.ok) throw new Error('Unable to load this student’s overview.')
             setOverview(await response.json())

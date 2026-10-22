@@ -84,9 +84,7 @@ function Dashboard() {
     }
 
     useEffect(() => {
-        const token = localStorage.getItem('auth_token')
-
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             setOverviewError('Please sign in to load attendance data.')
             setIsLoading(false)
             return
@@ -99,9 +97,9 @@ function Dashboard() {
         })
 
         fetch(`${API_BASE_URL}/dashboard?${params.toString()}`, {
+            credentials: 'include',
             headers: {
                 Accept: 'application/json',
-                Authorization: `Bearer ${token}`,
             },
         })
             .then(response => {

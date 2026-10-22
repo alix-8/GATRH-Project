@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../../api/request'
 import LVCCLogo from '../../assets/icons/lvcc-logo.svg'
 import Illustration from '../../assets/illustrations/login-illustration.webp'
+import { initializeCsrf, xsrfHeaders } from '../../api/request'
 import ShowPasswordIcon from '../../assets/icons/show-password-icon.svg'
 import AttendanceTrackingIcon from '../../assets/icons/attendance-tracking-icon.svg'
 import AttendanceConverterIcon from '../../assets/icons/attendance-converter-icon.svg'
@@ -51,11 +52,14 @@ function Login({ initialEmail = '' }) {
         setLoading(true)
 
         try {
+            await initializeCsrf()
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    ...xsrfHeaders(),
                 },
                 body: JSON.stringify({
                     email,
@@ -90,9 +94,6 @@ function Login({ initialEmail = '' }) {
 
                 throw new Error(data.message || 'Something went wrong.')
             }
-
-            // Store the token for authenticated API requests
-            localStorage.setItem('auth_token', data.access_token)
 
             // Store the user information
             localStorage.setItem('user', JSON.stringify(data.user))

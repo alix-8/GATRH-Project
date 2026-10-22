@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { API_BASE_URL } from '../../api/request'
+import { API_BASE_URL, initializeCsrf, xsrfHeaders } from '../../api/request'
 import LVCCLogo from '../../assets/icons/lvcc-logo.svg'
 import DashboardIcon from '../../assets/icons/dashboard-icon.svg'
 import MonitoringIcon from '../../assets/icons/monitoring-icon.svg'
@@ -65,20 +65,15 @@ function Sidebar() {
     const navigationItems = navigationByRole[role] || []
 
     const handleSignOut = () => {
-        const token = localStorage.getItem('auth_token')
-        localStorage.removeItem('auth_token')
         localStorage.removeItem('user')
         setIsLogoutModalOpen(false)
         navigate('/', { replace: true })
 
-        if (token) {
-            fetch(`${API_BASE_URL}/logout`, {
-                method: 'POST',
-                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-            }).catch(() => {
-                // The local session is already cleared; ignore a network failure.
-            })
-        }
+        initializeCsrf().then(() => fetch(`${API_BASE_URL}/logout`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { Accept: 'application/json', ...xsrfHeaders() },
+        })).catch(() => {})
     }
 
     useEffect(() => {

@@ -59,9 +59,9 @@ const pageTitleByPath = {
 
 function getSession() {
   try {
+    localStorage.removeItem('auth_token')
     const user = JSON.parse(localStorage.getItem('user') || 'null')
-    const token = localStorage.getItem('auth_token')
-    return user && token ? user : null
+    return user
   } catch {
     return null
   }

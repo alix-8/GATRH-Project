@@ -241,7 +241,7 @@ function Reminders() {
     const [attendanceRefreshTrigger, setAttendanceRefreshTrigger] = useState(0)
     const [highlightedReminderId, setHighlightedReminderId] = useState(null)
     const [activeFilter, setActiveFilter] = useState('all')
-    const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('auth_token')))
+    const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('user')))
     const [error, setError] = useState('')
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [editingReminder, setEditingReminder] = useState(null)
@@ -265,9 +265,7 @@ function Reminders() {
     useEffect(() => () => escalationReportControllerRef.current?.abort(), [])
 
     useEffect(() => {
-        const token = localStorage.getItem('auth_token')
-
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             return
         }
 

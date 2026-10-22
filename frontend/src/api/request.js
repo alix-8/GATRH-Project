@@ -1,23 +1,32 @@
 export const API_BASE_URL = (
-    import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
+    import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 ).replace(/\/+$/, '')
 
+export function xsrfHeaders() {
+    const cookie = document.cookie.split('; ').find(value => value.startsWith('XSRF-TOKEN='))
+    return cookie ? { 'X-XSRF-TOKEN': decodeURIComponent(cookie.slice('XSRF-TOKEN='.length)) } : {}
+}
+
+export async function initializeCsrf() {
+    const appBase = API_BASE_URL.replace(/\/api$/, '')
+    await fetch(`${appBase}/sanctum/csrf-cookie`, { credentials: 'include' })
+}
+
 export async function request(url, options = {}) {
-    const token = localStorage.getItem('auth_token')
     const response = await fetch(`${API_BASE_URL}${url}`, {
         ...options,
+        credentials: 'include',
         headers: {
             Accept: 'application/json',
             ...(options.body && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...xsrfHeaders(),
             ...options.headers,
         },
     })
 
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-        if (response.status === 401 && token) {
-            localStorage.removeItem('auth_token')
+        if (response.status === 401) {
             localStorage.removeItem('user')
             window.dispatchEvent(new CustomEvent('auth:expired'))
         }
