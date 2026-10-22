@@ -11,6 +11,7 @@ import GenerateTemplate from './modals/GenerateTemplate'
 // Modals
 import ConfirmBlankModal from './modals/ConfirmBlankModal'
 import ConfirmOverrideModal from './modals/ConfirmOverrideModal'
+import SelectAttendanceWeekModal from './modals/SelectAttendanceWeekModal'
 import ErrorModal from './modals/ErrorModal'
 import SuccessModal from './modals/SuccessModal'
 
@@ -55,14 +56,30 @@ function Import({ onGoToAttendance = () => {} }) {
     const navigate = useNavigate()
 
     // modal: null | 'generate' | 'success' | 'error'
-    const [modal, setModal] = useState(null)
+    const [modal, setModal] = useState('select-week')
     const [modalMessage, setModalMessage] = useState('')
     const [parseErrors, setParseErrors] = useState(null)
     const [previewText, setPreviewText] = useState('')
     const [previewCount, setPreviewCount] = useState(0)
     const [previewRowCount, setPreviewRowCount] = useState(0)
     const [templateError, setTemplateError] = useState('')
-    const templateRequestId = useRef(0)
+    const [periods, setPeriods] = useState(null)
+    const [isLoadingPeriods, setIsLoadingPeriods] = useState(true)
+    const [weekPeriod, setWeekPeriod] = useState(null)
+
+    useEffect(() => {
+        let active = true
+        request('/attendance/import-periods')
+            .then(data => { if (active) setPeriods(data.periods) })
+            .catch(error => {
+                if (!active) return
+                setModalMessage(error.message)
+                setParseErrors(error.details || null)
+                setModal('error')
+            })
+            .finally(() => { if (active) setIsLoadingPeriods(false) })
+        return () => { active = false }
+    }, [])
 
     const updateField = event => {
         const { name, value } = event.target
@@ -97,7 +114,8 @@ function Import({ onGoToAttendance = () => {} }) {
             const query = new URLSearchParams({
                 program: form.program,
                 year_level: form.year_level,
-                gathering_type: gatheringType,
+                gathering_type: form.gathering_type, // 'week' now flows straight through
+                week_period: weekPeriod || 'current',
             })
             const data = await request(`/attendance/generate-template?${query}`)
             if (requestId !== templateRequestId.current) return
@@ -156,8 +174,8 @@ function Import({ onGoToAttendance = () => {} }) {
         try {
             const endpoint = isWeekMode ? '/attendance/parse-batch-text' : '/attendance/parse-text'
             const payload = isWeekMode
-                ? { raw_text: form.raw_text, confirm_blank: isConfirmBlank, override: isOverride }
-                : { ...form, confirm_blank: isConfirmBlank, override: isOverride }
+                ? { raw_text: form.raw_text, confirm_blank: isConfirmBlank, override: isOverride, week_period: weekPeriod }
+                : { ...form, confirm_blank: isConfirmBlank, override: isOverride, week_period: weekPeriod }
 
             const data = await request(endpoint, { method: 'POST', body: JSON.stringify(payload) })
 
@@ -224,13 +242,20 @@ function Import({ onGoToAttendance = () => {} }) {
         setFieldWarning(null)
         setPreviewRowCount(0)
 
+        if (overridePending) {
+            setDuplicateSource('preview')
+            setIsPreviewing(true)
+            return
+        }
+
         setIsProcessing(true)
         try {
             await request('/attendance/check-duplicates', {
                 method: 'POST',
                 body: JSON.stringify({
                     raw_text: form.raw_text,
-                    gathering_type: previewGatheringType,
+                    gathering_type: form.gathering_type,
+                    week_period: weekPeriod,
                 }),
             })
             setDuplicateSource('preview')
@@ -262,6 +287,25 @@ function Import({ onGoToAttendance = () => {} }) {
     const [duplicateData, setDuplicateData] = useState(null)
     const [duplicateSource, setDuplicateSource] = useState(null)
 
+    const periodHasDuplicates = period => ['pm', 'ws', 'tg'].some(type => (period?.[type]?.confirmable_count || 0) > 0)
+    const handleChoosePeriod = period => {
+        setWeekPeriod(period)
+        setOverridePending(false)
+        if (periodHasDuplicates(periods?.[period])) {
+            const entries = ['pm', 'ws', 'tg'].filter(type => (periods?.[period]?.[type]?.confirmable_count || 0) > 0)
+            const range = periods?.[period]?.[entries[0]]
+            setDuplicateData({
+                gathering_type: entries.join('/'),
+                duplicates_count: entries.reduce((sum, type) => sum + periods[period][type].confirmable_count, 0),
+                week_range: { start: range?.start, end: range?.end, label: entries.map(type => `${type.toUpperCase()} ${periods[period][type].label}`).join('; ') },
+            })
+            setDuplicateSource('period-select')
+            setModal('confirm-override')
+            return
+        }
+        setModal(null)
+    }
+
     const handleConfirmBlankProceed = () => {
         setConfirmBlankPending(true)
         setModal(null)
@@ -269,6 +313,13 @@ function Import({ onGoToAttendance = () => {} }) {
     }
 
     const handleConfirmOverrideProceed = () => {
+        if (duplicateSource === 'period-select') {
+            setOverridePending(true)
+            setDuplicateData(null)
+            setDuplicateSource(null)
+            setModal(null)
+            return
+        }
         if (duplicateSource === 'preview') {
             setOverridePending(true)
             setModal(null)
@@ -281,6 +332,15 @@ function Import({ onGoToAttendance = () => {} }) {
         setOverridePending(true)
         setModal(null)
         processAttendance({ override: true, confirm_blank: confirmBlankPending })
+    }
+
+    const handleCancelOverride = () => {
+        const cameFromPeriodChoice = duplicateSource === 'period-select'
+        setModal(cameFromPeriodChoice ? 'select-week' : null)
+        setDuplicateData(null)
+        setOverridePending(false)
+        setDuplicateSource(null)
+        if (cameFromPeriodChoice) setWeekPeriod(null)
     }
 
     const clearForm = () => {
@@ -306,6 +366,49 @@ function Import({ onGoToAttendance = () => {} }) {
                 />
 
                 <div className="import-content">
+                    {weekPeriod && periods?.[weekPeriod] && (
+                        <section className="import-period-banner" aria-live="polite">
+                            <div className="import-period-summary">
+                                <svg className="import-period-calendar-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                                    <path d="M7 3v4M17 3v4M3 9h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                                </svg>
+                                <div className="import-period-banner-heading">
+                                    <span className="import-period-eyebrow">Your editing</span>
+                                    <h2>{weekPeriod === 'last' ? "Last week's attendance record" : "This week's attendance record"}</h2>
+                                </div>
+                            </div>
+                            <div className="import-period-cards">
+                                {[
+                                    ['pm', 'Prayer Meeting'],
+                                    ['ws', 'Worship Service'],
+                                    ['tg', 'Thanksgiving'],
+                                ].map(([type, label]) => {
+                                    const range = periods[weekPeriod][type]
+                                    const submitted = range.submitted
+                                    const upcoming = range.is_upcoming && !submitted
+                                    const tooltip = submitted
+                                        ? 'Attendance for this week cannot be edited anymore. Submitted attendance records are uneditable.'
+                                        : 'Attendance for this gathering cannot be added yet because its scheduled date range has not begun.'
+                                    return (
+                                        <div
+                                            key={type}
+                                            className={`import-period-date-card ${submitted ? 'import-period-date-submitted' : upcoming ? 'import-period-date-upcoming' : ''}`}
+                                            data-tooltip={submitted || upcoming ? tooltip : undefined}
+                                            tabIndex={submitted || upcoming ? 0 : undefined}
+                                            aria-label={`${label}: ${range.label}${submitted || upcoming ? `. ${tooltip}` : ''}`}
+                                        >
+                                            <div className="import-period-card-heading">{label}</div>
+                                            <div className="import-period-card-date">{range.label}</div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                            <button className="import-period-change-button" type="button" onClick={() => setModal('select-week')}>
+                                Change week
+                            </button>
+                        </section>
+                    )}
                     <ImportAttendancePanel
                     form={form}
                     updateField={updateField}
@@ -335,13 +438,19 @@ function Import({ onGoToAttendance = () => {} }) {
                 <ConfirmOverrideModal
                     duplicateData={duplicateData}
                     isSubmitting={isProcessing}
-                    onCancel={() => {
-                        setModal(null)
-                        setDuplicateData(null)
-                        setOverridePending(false)
-                        setDuplicateSource(null)
-                    }}
+                    onCancel={handleCancelOverride}
                     onOverride={handleConfirmOverrideProceed}
+                />
+            )}
+            {modal === 'select-week' && (
+                <SelectAttendanceWeekModal
+                    periods={periods}
+                    loading={isLoadingPeriods}
+                    onSelect={handleChoosePeriod}
+                    onCancel={() => {
+                        if (!weekPeriod) setWeekPeriod('current')
+                        setModal(null)
+                    }}
                 />
             )}
             {modal === 'confirm-blank' && (

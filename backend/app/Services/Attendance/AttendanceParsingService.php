@@ -130,7 +130,7 @@ class AttendanceParsingService
         ];
     }
 
-    public function generateWeeklyTemplate(string $program, int $yearLevel): array
+    public function generateWeeklyTemplate(string $program, int $yearLevel, ?array $periodRanges = null): array
     {
         $students = Student::where('program', $program)
             ->active()
@@ -142,9 +142,11 @@ class AttendanceParsingService
             return ['count' => 0, 'template' => null];
         }
 
-        $pmLabel = GatheringCycle::reportWeekWindowLabel('pm');
-        $wsLabel = GatheringCycle::reportWeekWindowLabel('ws');
-        $tgLabel = GatheringCycle::reportWeekWindowLabel('tg');
+        $ranges = $periodRanges ?? GatheringCycle::getImportPeriodRanges('current');
+        $label = fn (string $type): string => GatheringCycle::formatRangeLabel($ranges[$type]['start'], $ranges[$type]['end']);
+        $pmLabel = $label('pm');
+        $wsLabel = $label('ws');
+        $tgLabel = $label('tg');
 
         $template = "--- GATRH ATTENDANCE FORM ---\n";
         $template .= "Gathering: WEEKLY REPORTING\n";
@@ -177,7 +179,11 @@ class AttendanceParsingService
             return null;
         }
 
-        return match (strtolower(trim($matches[1]))) {
+        $gathering = strtolower(trim($matches[1]));
+        if (preg_match('/^(prayer meeting|worship service|thanksgiving)\b/i', $gathering, $labelMatch)) {
+            $gathering = strtolower($labelMatch[1]);
+        }
+        return match ($gathering) {
             'pm', 'prayer meeting' => 'pm',
             'ws', 'worship service' => 'ws',
             'tg', 'thanksgiving' => 'tg',
@@ -485,6 +491,9 @@ class AttendanceParsingService
 
                 foreach (['pm', 'ws', 'tg'] as $type) {
                     $range = $this->getApplicableWeekRange($type, $cycle, $rawText);
+                    if ($range['start']->greaterThan(\Carbon\Carbon::today())) {
+                        continue;
+                    }
                     $result[$type][] = [
                         'student_id'     => $student->id,
                         'student_name'   => $student->name,
@@ -527,6 +536,10 @@ class AttendanceParsingService
 
                 $range = $this->getApplicableWeekRange($type, $cycle, $rawText);
                 $resolvedDay = null;
+
+                if (!$hasDay && !$hasTime && !$hasVenue && $range['start']->greaterThan(\Carbon\Carbon::today())) {
+                    continue;
+                }
 
                 if ($hasDay) {
                     $resolution = $this->resolveWeekdayToDate($slot['day'], $range['start'], $range['end']);
@@ -694,6 +707,13 @@ class AttendanceParsingService
             }
 
             if (count($matches) === 1) {
+                if (\Carbon\Carbon::parse($matches[0])->isAfter(\Carbon\Carbon::today())) {
+                    return [
+                        'success' => false,
+                        'date' => null,
+                        'error' => "Attendance cannot be added for {$clean} ({$matches[0]}) before that date.",
+                    ];
+                }
                 return [
                     'success' => true,
                     'date'    => $matches[0],
@@ -727,6 +747,13 @@ class AttendanceParsingService
                 $end = $rangeEnd->copy()->startOfDay();
 
                 if ($dateObj->greaterThanOrEqualTo($start) && $dateObj->lessThanOrEqualTo($end)) {
+                    if ($dateObj->greaterThan(\Carbon\Carbon::today())) {
+                        return [
+                            'success' => false,
+                            'date' => null,
+                            'error' => "Attendance cannot be added for {$clean} before that date.",
+                        ];
+                    }
                     return [
                         'success' => true,
                         'date'    => $clean,

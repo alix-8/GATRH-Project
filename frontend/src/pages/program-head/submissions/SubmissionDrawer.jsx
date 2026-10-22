@@ -122,7 +122,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                     <>
                         <small className="ph-record-date-time">
                             <img src={RecordCalendarIcon} alt="" />
-                            <RecordDate value={detail.day || submission.date} />
+                            <span>{detail.week_range?.label || submission.week_range?.label || <RecordDate value={detail.day || submission.date} />}</span>
                             <img className="ph-record-clock-icon" src={RecordClockIcon} alt="" />
                             <span className="ph-record-time-value">
                                 {detail.time
@@ -166,13 +166,11 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         : 'Submission Details'}
                             </h2>
                             <p>
-                                {submission.status === 'approved'
-                                    ? 'View finalized attendance record details'
-                                    : [
-                                        detail?.gathering || submission.gathering,
-                                        detail?.day || submission.date,
-                                        detail?.time,
-                                    ].filter(Boolean).join(' · ')}
+                                {[
+                                    detail?.gathering || submission.gathering,
+                                    detail?.week_range?.label || submission.week_range?.label || detail?.day || submission.date,
+                                    submission.status === 'approved' ? null : detail?.time,
+                                ].filter(Boolean).join(' · ')}
                             </p>
                         </div>
                     </header>

@@ -123,12 +123,15 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
 
     /* Secretary */
     Route::middleware('role:secretary')->group(function () {
+        Route::get('/attendance/import-periods', [AttendanceController::class, 'importPeriods']);
         Route::get('/attendance/generate-template', [AttendanceController::class, 'generateTemplate']);
         Route::post('/attendance/check-duplicates', [AttendanceController::class, 'checkDuplicates']);
         Route::post('/attendance/parse-text', [AttendanceController::class, 'parseText']);
         Route::post('/attendance/parse-batch-text', [AttendanceController::class, 'parseBatchText']);
         Route::post('/attendance/submit', [AttendanceController::class, 'store']);
         Route::get('/attendance/session', [AttendanceController::class, 'showGatheringRecords']);
+        Route::post('/attendance/submissions/{batchKey}/unsubmit', [AttendanceController::class, 'unsubmitSubmission'])
+            ->where('batchKey', '.*');
 
         Route::get('/attendance/drafts/{id}', [AttendanceDraftController::class, 'show']);
         Route::patch('/attendance/drafts/{id}', [AttendanceDraftController::class, 'update']);

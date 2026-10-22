@@ -1,0 +1,45 @@
+.import-week-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(15, 34, 71, 0.42);
+}
+
+.import-week-dialog {
+    width: min(900px, 100%);
+    padding: 30px;
+    border: 1px solid #e2e7ef;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 20px 60px rgba(15, 34, 71, 0.18);
+}
+
+.import-week-dialog h2 { margin: 0; color: #0f2247; font-size: 1.25rem; text-align: center; }
+.import-week-intro, .import-week-status { margin: 8px 0 22px; color: #69758a; font-size: .88rem; text-align: center; }
+.import-week-error { color: #b42318; }
+.import-week-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.import-week-option {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 230px;
+    padding: 22px;
+    border: 1px solid #cbd5e1;
+    border-radius: 16px;
+    background: #fff;
+    color: #0f2247;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.import-week-option:hover:not(:disabled), .import-week-option:focus-visible { border-color: #3156a6; box-shadow: 0 8px 24px rgba(49, 86, 166, .12); transform: translateY(-2px); }
+.import-week-option:disabled { cursor: not-allowed; opacity: .58; }
+.import-week-option-title { font-size: 1.05rem; font-weight: 700; }
+.import-week-date-list { display: grid; gap: 12px; color: #576579; font-size: .85rem; line-height: 1.45; }
+.import-week-date-list strong { color: #0f2247; }
+.import-week-select-hint { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 12px; border-top: 1px solid #cbd5e1; color: #3156a6; font-size: .8rem; font-weight: 600; }
+.import-week-footer { display: flex; justify-content: flex-end; margin-top: 20px; }
+@media (max-width: 640px) { .import-week-options { grid-template-columns: 1fr; } .import-week-dialog { padding: 22px; } }

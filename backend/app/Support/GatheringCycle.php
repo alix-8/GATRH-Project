@@ -206,6 +206,27 @@ class GatheringCycle
         ];
     }
 
+    /** Returns each gathering's reporting window for the selected import period. */
+    public static function getImportPeriodRanges(string $period): array
+    {
+        $offset = $period === 'last' ? -7 : 0;
+        $weekStart = Carbon::today()->startOfWeek(Carbon::MONDAY)->addDays($offset);
+        $ranges = [];
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            $start = $weekStart->copy()->addDays(match ($type) { 'pm' => 2, default => 5 });
+            $days = self::WINDOW_DAYS[$type] ?? 1;
+            $end = $start->copy()->addDays($days - 1);
+            $ranges[$type] = ['start' => $start, 'end' => $end];
+        }
+        return $ranges;
+    }
+
+    public static function formatRangeLabel(Carbon $start, Carbon $end): string
+    {
+        if ($start->isSameMonth($end)) return $start->format('F j') . '-' . $end->format('j, Y');
+        return $start->format('F j') . '-' . $end->format('F j, Y');
+    }
+
     public static function currentCycleStart(string $gatheringType): Carbon
     {
         $type = strtolower($gatheringType);

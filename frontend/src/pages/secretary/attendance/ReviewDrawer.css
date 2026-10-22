@@ -497,9 +497,11 @@
 }
 
 .drawer-footer-actions .drawer-submit-btn,
-.drawer-edit-btn {
+.drawer-edit-btn,
+.drawer-footer-actions .status-pill {
   flex: 1;
   width: auto;
+  min-width: 0;
   min-height: 34px;
   box-sizing: border-box;
   padding: 8px;
@@ -524,10 +526,54 @@
   opacity: 0.65;
 }
 
+.drawer-footer-actions .unsubmit-btn {
+  border-color: #d99a00;
+  background: #d99a00;
+  color: #fff;
+}
+
+.drawer-footer-actions .unsubmit-btn:hover:not(:disabled) {
+  border-color: #bd8500;
+  background: #bd8500;
+}
+
+.drawer-footer-actions .status-pill-pending {
+  border-color: #F2994A;
+  background: #D0D8E3;
+  color: #172B4D;
+}
+
 .program-head-note {
   margin: 20px 0 24px;
   text-align: left;
 }
+
+.unsubmit-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 34, 71, .42);
+}
+
+.unsubmit-confirm-dialog {
+  width: min(440px, 100%);
+  padding: 24px;
+  border: 1px solid #dbe1ec;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 44px rgba(15, 34, 71, .2);
+}
+
+.unsubmit-confirm-dialog h2 { margin: 0; color: #172b4d; font-size: 18px; }
+.unsubmit-confirm-dialog p { margin: 12px 0 22px; color: #64748b; font-size: 14px; line-height: 1.5; }
+.unsubmit-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.unsubmit-confirm-actions button { min-width: 100px; padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 7px; font-weight: 600; cursor: pointer; }
+.unsubmit-cancel-btn { background: #fff; color: #334155; }
+.unsubmit-submit-btn { border-color: #1d9bf0 !important; background: #1d9bf0; color: #fff; }
+.unsubmit-confirm-actions button:disabled { cursor: not-allowed; opacity: .65; }
 
 .program-head-note h3 {
   margin: 0 0 10px;
