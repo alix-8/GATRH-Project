@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
 import { request } from '../../../api/request'
@@ -67,6 +66,7 @@ function Import({ onGoToAttendance = () => {} }) {
     const [previewCount, setPreviewCount] = useState(0)
     const [previewRowCount, setPreviewRowCount] = useState(0)
     const [templateError, setTemplateError] = useState('')
+    const templateRequestId = useRef(0)
 
     const updateField = event => {
         const { name, value } = event.target
@@ -91,35 +91,41 @@ function Import({ onGoToAttendance = () => {} }) {
     const parsedGatheringType = getGatheringTypeFromText(form.raw_text)
     const gatheringTypeMismatch = !isWeekMode && parsedGatheringType && parsedGatheringType !== form.gathering_type
 
-    const generateTemplate = async () => {
+    const generateTemplate = useCallback(async (gatheringType) => {
+        const requestId = ++templateRequestId.current
         setIsGenerating(true)
+        setPreviewText('')
+        setPreviewCount(0)
+        setTemplateError('')
         try {
             const query = new URLSearchParams({
                 program: form.program,
                 year_level: form.year_level,
-                gathering_type: form.gathering_type, // 'week' now flows straight through
+                gathering_type: gatheringType,
             })
             const data = await request(`/attendance/generate-template?${query}`)
+            if (requestId !== templateRequestId.current) return
             setPreviewText(data.template)
             setPreviewCount(data.count)
-            setTemplateError('')
         } catch (error) {
+            if (requestId !== templateRequestId.current) return
             if (error.details?.template === null && /no active students/i.test(error.details?.message || error.message)) {
-                setPreviewText('')
-                setPreviewCount(0)
                 setTemplateError('There are no active students assigned to your program and year level. Ask an administrator to activate or add students, then try again.')
                 return
             }
-            setModalMessage(error.message)
-            setParseErrors(null)
-            setModal('error')
+            setTemplateError(error.message || 'Unable to load the format preview.')
         } finally {
-            setIsGenerating(false)
+            if (requestId === templateRequestId.current) setIsGenerating(false)
         }
-    }
+    }, [form.program, form.year_level])
 
-    const applyGeneratedTemplate = () => {
-        setForm(current => ({ ...current, raw_text: previewText }))
+    const cancelGenerateTemplate = useCallback(() => {
+        templateRequestId.current += 1
+        setIsGenerating(false)
+    }, [])
+
+    const applyGeneratedTemplate = (gatheringType) => {
+        setForm(current => ({ ...current, gathering_type: gatheringType, raw_text: previewText }))
         setModal(null)
     }
 
@@ -338,7 +344,6 @@ function Import({ onGoToAttendance = () => {} }) {
             {modal === 'generate' && (
                 <GenerateTemplate
                     form={form}
-                    updateField={updateField}
                     previewText={previewText}
                     previewCount={previewCount}
                     templateError={templateError}
@@ -350,6 +355,7 @@ function Import({ onGoToAttendance = () => {} }) {
                     }}
                     isGenerating={isGenerating}
                     generateTemplate={generateTemplate}
+                    cancelGenerateTemplate={cancelGenerateTemplate}
                     applyGeneratedTemplate={applyGeneratedTemplate}
                 />
             )}
