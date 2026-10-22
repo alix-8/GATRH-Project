@@ -6,6 +6,7 @@ import RecordDate from '../../components/RecordDate'
 import RemindersIcon from '../../assets/icons/reminders-icon.svg'
 import NeedsActionIcon from '../../assets/needs-action.png'
 import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
+import StudentsIcon from '../../assets/icons/students-icon.svg'
 import CompletedIcon from '../../assets/icons/completed-icon.svg'
 import DropDownIcon from '../../assets/icons/drop-down-icon.svg'
 import NotificationIcon from '../../assets/icons/notification-icon.svg'
@@ -805,6 +806,13 @@ function Reminders() {
     }
 
     const showReminderList = !loading && (!error || isAddOpen)
+    const reportLevel = Math.min(3, Number(escalationReport?.escalation.escalation_level?.match(/\d+/)?.[0]) || 0)
+    const reportFor = ['—', 'Spiritual Secretary', 'Program Head', 'CM Coordinator'][reportLevel]
+    const reportStudentName = escalationReport?.escalation.student_name ?? ''
+    const reportAlertName = reportStudentName.includes(',')
+        ? reportStudentName.split(',').reverse().map(part => part.trim()).join(' ')
+        : reportStudentName
+    const reportNoResponseCount = escalationReport?.details?.student.no_response_count ?? reportLevel
 
     return (
         <div className="reminders">
@@ -879,7 +887,7 @@ function Reminders() {
                                     <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : item.type === 'escalation' ? 'escalation-icon' : 'attendance-task'}`} aria-hidden="true">
                                         <img
                                             className="task-icon"
-                                            src={item.icon ?? NotificationIcon}
+                                            src={item.type === 'escalation' ? EscalationsIcon : item.icon ?? NotificationIcon}
                                             alt=""
                                         />
                                     </span>
@@ -960,7 +968,9 @@ function Reminders() {
                                                 }
                                             }}                                        >
                                             {item.action}
-                                            <img src={DropDownIcon} alt="" aria-hidden="true" />
+                                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                                <path d="m7 4 6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
                                         </button>
                                     )}
                                 </div>
@@ -978,33 +988,60 @@ function Reminders() {
                         <div className="escalation-report-header">
                             <div>
                                 <h2 id="escalation-report-title">Escalation Report</h2>
-                                <p>{escalationReport.escalation.program}-{escalationReport.escalation.year_level} · {escalationReport.escalation.student_name}</p>
+                                <p>{escalationReport.escalation.program}-{escalationReport.escalation.year_level} {reportStudentName}</p>
                             </div>
                             <button type="button" onClick={closeEscalationReport} aria-label="Close escalation report">×</button>
                         </div>
-                        <p className="escalation-report-message">{escalationReport.escalation.description}</p>
+                        <div className="escalation-report-message">
+                            <img className="escalation-report-alert-icon" src={EscalationsIcon} alt="" aria-hidden="true" />
+                            <span><strong>{reportAlertName}</strong> has reached Escalation Level {reportLevel}.</span>
+                        </div>
                         {escalationReport.loading && <p className="escalation-report-state"><LoadingCircle label="Loading attendance history…" /></p>}
                         {escalationReport.error && <p className="escalation-report-state escalation-report-error" role="alert">{escalationReport.error}</p>}
                         {escalationReport.details && (
                             <>
-                                <p className="escalation-report-count">
-                                    <strong>{escalationReport.details.student.no_response_count}</strong> no-response records
-                                </p>
-                                <h3>Attendance history</h3>
-                                {(escalationReport.details.history ?? []).length === 0 ? (
-                                    <p className="escalation-report-state">No attendance records are available.</p>
-                                ) : (
-                                    <ul className="escalation-report-history">
-                                        {escalationReport.details.history.map(record => (
-                                            <li key={record.id}>
-                                                <span>{record.gathering} · <RecordDate value={record.date} status={record.status} /></span>
-                                                <strong>{record.status.replaceAll('_', ' ')}</strong>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                                <div className="escalation-report-summary">
+                                    <div className="escalation-report-card">
+                                        <strong>Escalation</strong>
+                                        <span className="escalation-level-bars" aria-hidden="true">
+                                            {[1, 2, 3].map(level => <i className={level <= reportLevel ? 'filled' : ''} key={level} />)}
+                                        </span>
+                                        <b>{reportLevel}</b>
+                                    </div>
+                                    <div className="escalation-report-card">
+                                        <strong>No Response</strong>
+                                        <span className="escalation-no-response-icon" aria-hidden="true">−</span>
+                                        <b>{reportNoResponseCount}</b>
+                                    </div>
+                                    <div className="escalation-report-card">
+                                        <strong>Report For</strong>
+                                        <span className="escalation-report-for-icon" aria-hidden="true">
+                                            <img src={StudentsIcon} alt="" />
+                                        </span>
+                                        <b>{reportFor}</b>
+                                    </div>
+                                </div>
+                                <div className="escalation-report-history">
+                                    <table className="escalation-report-table">
+                                        <thead><tr><th>Gathering</th><th>Time</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
+                                        <tbody>
+                                            {(escalationReport.details.history ?? []).length === 0 ? (
+                                                <tr><td colSpan="5" className="escalation-report-empty">No attendance records are available.</td></tr>
+                                            ) : escalationReport.details.history.map(record => (
+                                                <tr key={record.id}>
+                                                    <td title={record.gathering}>{record.gathering || '—'}</td>
+                                                    <td>{record.time && record.time !== '—' ? record.time : '---'}</td>
+                                                    <td>{record.date || '---'}</td>
+                                                    <td title={record.location}>{record.location && record.location !== '—' ? record.location : '---'}</td>
+                                                    <td><span className={`escalation-report-status ${record.status === 'present' ? 'present' : 'no-response'}`}><i />{record.status === 'present' ? 'Present' : 'No Response'}</span></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </>
                         )}
+                        <button type="button" className="escalation-report-close" onClick={closeEscalationReport}>Close</button>
                     </section>
                 </div>
             )}
