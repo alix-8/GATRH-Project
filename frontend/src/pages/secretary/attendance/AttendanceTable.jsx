@@ -11,7 +11,6 @@ import { TrashIcon } from '../../../components/Icons/Reusables'
 import Calendar from '../../../components/Calendar/Calendar'
 import './AttendanceTable.css'
 import ReviewDrawer from './ReviewDrawer'
-import AttendancePagination from './AttendancePagination'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 
 const STATUS_META = {
@@ -49,8 +48,6 @@ function formatDateLabel(date) {
 
 function AttendanceTable() {
     const [records, setRecords] = useState([])
-    const [meta, setMeta] = useState({ current_page: 1, last_page: 1 })
-    const [page, setPage] = useState(1)
     const [gathering, setGathering] = useState('')
     const [selectedDate, setSelectedDate] = useState(null)
     const [sortBy, setSortBy] = useState('day')
@@ -104,26 +101,22 @@ function AttendanceTable() {
 
     const handleSelectGathering = (value) => {
         setGathering(value)
-        setPage(1)
         setIsGatheringOpen(false)
     }
 
     const handleSelectSort = (value) => {
         setSortBy(value)
-        setPage(1)
         setIsSortOpen(false)
     }
 
     const handleSelectDate = (date) => {
         setSelectedDate(date)
-        setPage(1)
         setIsCalendarOpen(false)
     }
 
     const clearDate = (e) => {
         e.stopPropagation()
         setSelectedDate(null)
-        setPage(1)
     }
 
     const fetchRecords = useCallback(async (signal) => {
@@ -135,18 +128,29 @@ function AttendanceTable() {
             if (selectedDate) params.set('date', toDateParam(selectedDate))
             params.set('status', 'all')
             if (sortBy) params.set('sort_by', sortBy)
-                params.set('page', page)
+            params.set('per_page', '100')
 
-            const json = await request(`/attendance?${params.toString()}`, { signal })
+            const query = params.toString()
+            const firstPage = await request(`/attendance?${query}&page=1`, { signal })
+            const allRecords = [...(firstPage.data ?? [])]
+            const lastPage = Number(firstPage.meta?.last_page) || 1
 
-            setRecords(json.data)
-            setMeta(json.meta)
+            for (let nextPage = 2; nextPage <= lastPage; nextPage += 4) {
+                const pages = await Promise.all(
+                    Array.from({ length: Math.min(4, lastPage - nextPage + 1) }, (_, index) =>
+                        request(`/attendance?${query}&page=${nextPage + index}`, { signal })
+                    )
+                )
+                allRecords.push(...pages.flatMap((result) => result.data ?? []))
+            }
+
+            if (!signal?.aborted) setRecords(allRecords)
         } catch (err) {
             if (err.name !== 'AbortError') setError(err.message)
         } finally {
             if (!signal?.aborted) setLoading(false)
         }
-    }, [gathering, selectedDate, sortBy, page])
+    }, [gathering, selectedDate, sortBy])
 
     useEffect(() => {
         const controller = new AbortController()
@@ -157,11 +161,6 @@ function AttendanceTable() {
     const handleActionClick = (record) => {
         setActiveRecord(record)
         setDrawerOpen(true)
-    }
-
-    const goToPage = (newPage) => {
-        if (newPage < 1 || newPage > meta.last_page) return
-        setPage(newPage)
     }
 
     const deletableRecords = records.filter((r) => r.source === 'draft')
@@ -268,6 +267,11 @@ function AttendanceTable() {
                                 ×
                             </button>
                         )}
+                        <img
+                            className={`toolbar-dropdown-chevron ${isCalendarOpen ? 'rotate' : ''}`}
+                            src={DropdownIcon}
+                            alt=""
+                        />
                     </div>
 
                     {isCalendarOpen && (
@@ -409,12 +413,6 @@ function AttendanceTable() {
                     </tbody>
                 </table>
             </div>
-
-            <AttendancePagination
-                page={page}
-                meta={meta}
-                goToPage={goToPage}
-            />
 
             {confirmOpen && (
                 <div className="delete-modal-overlay">

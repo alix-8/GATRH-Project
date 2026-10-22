@@ -18,7 +18,7 @@
     max-width: 1040px;
     margin: 2rem auto 0;
     width: 100%;
-    padding: 0 1.5rem;
+    padding: 0 1.5rem 2rem;
     box-sizing: border-box;
 }
 
@@ -531,6 +531,11 @@ textarea {
     line-height: 1.5;
 }
 
+.import-template-loading {
+    color: #64748b;
+    font-size: 12px;
+}
+
 .import-modal-tips-text {
     margin: 0;
     font-size: 0.78rem;
@@ -553,6 +558,156 @@ textarea {
 .import-modal-buttons button {
     flex: 1;
     padding: 0.6rem 0;
+}
+
+.import-format-modal {
+    box-sizing: border-box;
+    width: 370px;
+    max-width: 100%;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    padding: 22px 22px 17px;
+    border: 1px solid #c7c6c6;
+    border-radius: 7px;
+}
+
+.import-format-modal .import-modal-close {
+    top: 18px;
+    right: 20px;
+    color: #9aaec5;
+}
+
+.import-format-modal .import-modal-title {
+    margin-bottom: 14px;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.import-format-modal .import-modal-label {
+    gap: 8px;
+    margin-bottom: 15px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.import-format-modal .import-native-select {
+    width: 100%;
+    min-height: 42px;
+    border-color: #d7dee8;
+    border-radius: 6px;
+}
+
+.import-format-select {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.import-format-select .import-native-select {
+    padding-right: 38px;
+    background-image: none;
+}
+
+.import-format-chevron {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    color: #64748b;
+    pointer-events: none;
+    transform: translateY(-50%);
+    transition: transform 180ms ease;
+}
+
+.import-format-select.open .import-format-chevron {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.import-format-modal .import-modal-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.import-format-modal .import-modal-preview-label {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: default;
+}
+
+.import-format-modal .import-copy-button {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    place-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 50%;
+    color: #64748b;
+}
+
+.import-format-modal .import-copy-button:disabled {
+    opacity: 1;
+    cursor: default;
+}
+
+.import-format-modal .import-modal-preview {
+    box-sizing: border-box;
+    height: 187px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border-color: #aeb8c8;
+    border-radius: 6px;
+    overflow-y: scroll;
+    scrollbar-color: #cbd5e1 #172b4d;
+}
+
+.import-format-modal .import-modal-preview::-webkit-scrollbar {
+    width: 16px;
+}
+
+.import-format-modal .import-modal-preview::-webkit-scrollbar-track {
+    background: #172b4d;
+    border-radius: 0 6px 6px 0;
+}
+
+.import-format-modal .import-modal-preview::-webkit-scrollbar-thumb {
+    border: 3px solid #172b4d;
+    border-radius: 10px;
+    background: #cbd5e1;
+}
+
+.import-format-modal .import-modal-count {
+    margin-bottom: 19px;
+    color: #9aacc5;
+    font-size: 11px;
+}
+
+.import-format-modal .import-modal-buttons {
+    gap: 8px;
+}
+
+.import-format-modal .import-modal-buttons button {
+    height: 33px;
+    padding: 0;
+    border-radius: 5px !important;
+    font-size: 12px;
+}
+
+.import-format-modal .import-modal-buttons .import-clear-button {
+    border-color: #ffcaca;
+    background: #fffafa;
+    color: #f44343;
+}
+
+.import-format-modal .import-modal-buttons .import-primary-button {
+    background: #1da1f2;
 }
 
 .import-status-icon {

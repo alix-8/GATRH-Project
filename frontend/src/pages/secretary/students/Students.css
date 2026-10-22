@@ -333,12 +333,14 @@
     margin-top: 4px;
     border: 1px solid #24b85d;
     color: #129946;
+    background: #eaf9ef;
 }
 
 .response-badge.no-response {
     margin-top: 4px;
     border: 1px solid #ff5757;
     color: #e43d3d;
+    background: #fff0f0;
 }
 
 .response-badge::before {
@@ -745,6 +747,10 @@
 
 .overview-status.present {
     color: #159b48;
+}
+
+.overview-status.no_response {
+    color: #94a3b8;
 }
 
 .overview-status.excused {

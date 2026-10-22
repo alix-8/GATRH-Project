@@ -18,8 +18,8 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                 <tr>
                     <th>Name</th>
                     <th>Time</th>
-                    <th>Venue</th>
-                    <th>Day</th>
+                    <th>Date</th>
+                    <th>Location</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -57,28 +57,35 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                         <td>
                             {editing ? (
                                 <input
-                                    aria-label={`Venue for ${student.student_name}`}
+                                    aria-label={`Date for ${student.student_name}`}
                                     type="text"
-                                    className={incomplete && !hasVenue ? 'drawer-edit-field-warning' : ''}
-                                    value={editableValue(student.venue)}
-                                    placeholder="Venue"
-                                    title={incomplete && !hasVenue ? 'Venue is required when any attendance details are entered.' : ''}
-                                    onChange={(event) => onStudentChange(student, 'venue', event.target.value)}
+                                    className={`${invalidDay ? 'drawer-edit-field-error' : ''} ${incomplete && !hasDay ? 'drawer-edit-field-warning' : ''}`}
+                                    value={student.day_provided === false ? '' : displayAttendanceDay(editableValue(student.day || day))}
+                                    placeholder="Date"
+                                    title={dayError || (incomplete && !hasDay ? 'Date is required when any attendance details are entered.' : '')}
+                                    onChange={(event) => onStudentChange(student, 'day', event.target.value)}
                                 />
-                            ) : <span title={student.venue || '—'}>{student.venue || '—'}</span>}
+                            ) : <RecordDay value={resolveAttendanceDay(student.day, weekRange) || day} status={status} />}
                         </td>
                         <td>
                             {editing ? (
                                 <input
-                                    aria-label={`Day for ${student.student_name}`}
+                                    aria-label={`Location for ${student.student_name}`}
                                     type="text"
+                                    
+                                    className={incomplete && !hasVenue ? 'drawer-edit-field-warning' : ''}
+                                    value={editableValue(student.venue)}
+                                    placeholder="Location"
+                                    title={incomplete && !hasVenue ? 'Location is required when any attendance details are entered.' : ''}
+                                    onChange={(event) => onStudentChange(student, 'venue', event.target.value)}
+                                    
                                     className={`${invalidDay ? 'drawer-edit-field-error' : ''} ${incomplete && !hasDay ? 'drawer-edit-field-warning' : ''}`}
                                     value={hasDay ? displayAttendanceDay(editableValue(student.day)) : ''}
                                     placeholder="Day"
                                     title={dayError || (incomplete && !hasDay ? 'Day is required when any attendance details are entered.' : '')}
                                     onChange={(event) => onStudentChange(student, 'day', event.target.value)}
                                 />
-                            ) : <RecordDay value={resolveAttendanceDay(student.day, weekRange) || day} status={status} />}
+                            ) : <span title={student.venue || '—'}>{student.venue || '—'}</span>}
                         </td>
                         <td>
                             <span

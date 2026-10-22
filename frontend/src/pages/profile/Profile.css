@@ -92,8 +92,9 @@
 
 .profile-fields {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 28px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    width: min(100%, 415px);
 }
 
 .profile-fields label {
@@ -114,36 +115,6 @@
     font: inherit;
 }
 
-.profile-field-title {
-    color: #172b4d;
-}
-
-.profile-contact-row input {
-    width: 100%;
-}
-
-.profile-contact-action {
-    position: relative;
-    left: 76%;
-    margin-top: 10px;
-    width: 100px;
-    border: none;
-    border-radius: 6px;
-    color: white;
-    background: #17A1FA;
-    cursor: pointer;
-    font: inherit;
-}
-
-.profile-contact-action:hover {
-    background: #17A1FA;
-}
-
-.profile-contact-message {
-    color: #15803d;
-    font-size: 12px;
-}
-
 .profile-change-password {
     margin-top: 10px;
     padding: 20px 0 0;
@@ -153,7 +124,7 @@
     display: grid;
     grid-template-columns: repeat(1, minmax(0, 1fr));
     gap: 10px;
-    width: 415px;
+    width: min(100%, 415px);
 }
 
 .password-field-label {
