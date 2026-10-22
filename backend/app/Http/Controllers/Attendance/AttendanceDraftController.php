@@ -10,6 +10,7 @@ use App\Models\Reminder;
 use App\Models\Student;
 use App\Services\Audit\AuditLogService;
 use App\Services\Attendance\AttendanceParsingService;
+use App\Support\GatheringCycle;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -97,6 +98,7 @@ class AttendanceDraftController extends Controller
                 'week_range'         => [
                     'start' => $range['start']->toDateString(),
                     'end'   => $range['end']->toDateString(),
+                    'label' => GatheringCycle::formatRangeLabel($range['start'], $range['end']),
                 ],
                 'submitted_by'       => [
                     'name' => $request->user()->name,

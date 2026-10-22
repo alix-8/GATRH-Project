@@ -350,7 +350,9 @@ class AttendanceController extends Controller
         ]);
 
         $responded = $students->where('status', 'present')->count();
-        $submitter = $records->first()->submitter;
+        $firstRecord = $records->first();
+        $submitter = $firstRecord->submitter;
+        $weekRange = $this->gatheringRangeForDate($firstRecord->gathering_type, $firstRecord->day);
 
         $submitterProgram = $submitter?->program ? strtoupper($submitter->program) : '';
         $submitterYear = $this->ordinalYear($submitter?->year_level);
@@ -358,8 +360,13 @@ class AttendanceController extends Controller
         return response()->json([
             'status' => 'success',
             'data'   => [
-                'gathering_type'    => $records->first()->gathering_type,
-                'day'               => $records->first()->day->format('F j, Y'),
+                'gathering_type'    => $firstRecord->gathering_type,
+                'day'               => $firstRecord->day->format('F j, Y'),
+                'week_range'        => [
+                    'start' => $weekRange['start']->toDateString(),
+                    'end' => $weekRange['end']->toDateString(),
+                    'label' => GatheringCycle::formatRangeLabel($weekRange['start'], $weekRange['end']),
+                ],
                 'submitted_by'      => [
                     'name' => $submitter?->name ?? 'Unknown',
                     'role' => trim(implode(' · ', array_filter([
@@ -392,6 +399,17 @@ class AttendanceController extends Controller
             'tg'      => 'Thanksgiving',
             default   => ucfirst($type),
         };
+    }
+
+    /** Resolve the scheduled date range containing a submitted gathering date. */
+    private function gatheringRangeForDate(string $gatheringType, $day): array
+    {
+        $date = $day instanceof Carbon ? $day->copy() : Carbon::parse($day);
+        $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
+        $start = $weekStart->addDays($gatheringType === 'pm' ? 2 : 5);
+        $end = $start->copy()->addDays($gatheringType === 'pm' ? 2 : 1);
+
+        return ['start' => $start, 'end' => $end];
     }
 
     private function mapStatus(string $validationStatus): string
@@ -1299,6 +1317,7 @@ class AttendanceController extends Controller
 
         $first = $records->first();
         $submitter = $first->submitter;
+        $weekRange = $this->gatheringRangeForDate($first->gathering_type, $first->day);
 
         $students = $records->map(fn ($r) => [
             'record_id'    => $r->id,
@@ -1317,6 +1336,11 @@ class AttendanceController extends Controller
                 'gathering_type'    => $first->gathering_type,
                 'gathering'         => $this->gatheringLabel($first->gathering_type),
                 'day'               => $first->day->format('F j, Y'),
+                'week_range'        => [
+                    'start' => $weekRange['start']->toDateString(),
+                    'end' => $weekRange['end']->toDateString(),
+                    'label' => GatheringCycle::formatRangeLabel($weekRange['start'], $weekRange['end']),
+                ],
                 'time'              => $first->created_at?->format('g:i A') ?? '—',
                 'validation_status' => $first->validation_status,
                 'submitted_by'      => [

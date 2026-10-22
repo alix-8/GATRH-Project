@@ -262,7 +262,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                     <div className="drawer-header">
                         <h2>{headerTitle(record?.status)}</h2>
                         <p className="drawer-subtitle">
-                            {record?.gathering || '—'} • <RecordDate value={record?.date} />
+                            {record?.gathering || '—'} • {draft?.week_range?.label || record?.week_range?.label || <RecordDate value={record?.date} />}
                         </p>
                     </div>
 
