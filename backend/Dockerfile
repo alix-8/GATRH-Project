@@ -1,4 +1,4 @@
-FROM php:8.4-fpm-bookworm
+FROM php:8.4.27-fpm-bookworm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends nginx supervisor libicu-dev libzip-dev libonig-dev unzip ca-certificates \
