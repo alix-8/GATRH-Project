@@ -57,7 +57,7 @@ $schedulerTimezone = SystemTimezone::timezone();
 
     // Reset escalation counts to the current week's PM, WS, and TG responses.
     Schedule::command('escalations:refresh-weekly')
-        ->weeklyOn(Carbon::MONDAY, '11:59')
+        ->weeklyOn(Carbon::WEDNESDAY, '00:00')
         ->timezone($schedulerTimezone)
         ->withoutOverlapping();
 

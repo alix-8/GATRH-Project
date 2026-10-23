@@ -97,7 +97,7 @@ class ProgramHeadAttendanceWorkbookService
         return $path;
     }
 
-    /** Return Saturday-to-Wednesday reporting weeks and their attendance query bounds. */
+    /** Return Wednesday-to-Tuesday reporting weeks and their attendance query bounds. */
     public function periodBounds(CarbonImmutable $selectedDate, string $period, ?int $weekNumber = null): array
     {
         [, $start, $end] = $this->periodWeeks($selectedDate, $period, $weekNumber);
@@ -110,10 +110,10 @@ class ProgramHeadAttendanceWorkbookService
         if ($period === 'week') {
             $monthStart = $selectedDate->startOfMonth();
             $monthEnd = $selectedDate->endOfMonth();
-            $firstSaturday = $monthStart->startOfWeek(Carbon::SATURDAY);
-            $weekCount = intdiv((int) $firstSaturday->diffInDays($monthEnd), 7) + 1;
+            $firstWeekStart = $monthStart->startOfWeek(Carbon::WEDNESDAY);
+            $weekCount = intdiv((int) $firstWeekStart->diffInDays($monthEnd), 7) + 1;
             $selectedWeekNumber = $weekNumber ?? (
-                intdiv((int) $firstSaturday->diffInDays($selectedDate->startOfWeek(Carbon::SATURDAY)), 7) + 1
+                intdiv((int) $firstWeekStart->diffInDays($selectedDate->startOfWeek(Carbon::WEDNESDAY)), 7) + 1
             );
 
             if ($selectedWeekNumber < 1 || $selectedWeekNumber > $weekCount) {
@@ -122,8 +122,8 @@ class ProgramHeadAttendanceWorkbookService
                 ]);
             }
 
-            $start = $firstSaturday->addWeeks($selectedWeekNumber - 1);
-            $end = $start->addDays(4);
+            $start = $firstWeekStart->addWeeks($selectedWeekNumber - 1);
+            $end = $start->addDays(6);
 
             return [[[
                 'number' => $selectedWeekNumber,
@@ -135,16 +135,16 @@ class ProgramHeadAttendanceWorkbookService
 
         $monthStart = $selectedDate->startOfMonth();
         $monthEnd = $selectedDate->endOfMonth();
-        $firstSaturday = $monthStart->startOfWeek(Carbon::SATURDAY);
+        $firstWeekStart = $monthStart->startOfWeek(Carbon::WEDNESDAY);
         $weeks = [];
 
-        for ($start = $firstSaturday, $number = 1; $start->lessThanOrEqualTo($monthEnd); $start = $start->addDays(7), $number++) {
-            $end = $start->addDays(4);
+        for ($start = $firstWeekStart, $number = 1; $start->lessThanOrEqualTo($monthEnd); $start = $start->addDays(7), $number++) {
+            $end = $start->addDays(6);
             $weeks[] = [
                 'number' => $number,
                 'start' => $start,
                 'end' => $end,
-                'label_end' => $end->greaterThan($monthEnd) ? $monthEnd : $end,
+                'label_end' => $end,
             ];
         }
 
@@ -162,12 +162,13 @@ class ProgramHeadAttendanceWorkbookService
             $week['first_column'] = $columnNumber;
 
             foreach (['ws', 'tg', 'pm'] as $type) {
-                $day = $type === 'pm' ? $week['start']->addDays(4) : $week['start'];
+                $dateStart = $type === 'pm' ? $week['start'] : $week['start']->addDays(3);
+                $dateEnd = $dateStart->addDays($type === 'pm' ? 2 : 1);
                 $columns[] = [
                     'week' => $week['number'],
                     'type' => $type,
-                    'date' => $day,
-                    'date_end' => $day->addDay(),
+                    'date_start' => $dateStart,
+                    'date_end' => $dateEnd,
                     'column' => $columnNumber++,
                 ];
             }
@@ -212,13 +213,13 @@ class ProgramHeadAttendanceWorkbookService
         foreach ($weeks as $index => $week) {
             $firstColumn = 2 + ($index * 3);
             $lastWeekColumn = $firstColumn + 2;
-            $weekDate = $week['start']->format('F j') . ' - ' . $week['label_end']->format('F j');
+            $weekDate = $week['start']->format('M j') . ' - ' . $week['label_end']->format('M j, Y');
             $rows[1] = $this->appendCell($rows[1], $this->cell($this->columnName($firstColumn) . '2', 'WEEK ' . $week['number'], 4));
             $rows[2] = $this->appendCell($rows[2], $this->cell($this->columnName($firstColumn) . '3', $weekDate, 16));
 
             foreach (array_slice($slotColumns, $index * 3, 3) as $slot) {
                 $column = $this->columnName($slot['column']);
-                $dateLabel = $slot['date']->format('M j') . ' - ' . $slot['date_end']->format('M j');
+                $dateLabel = $slot['date_start']->format('M j') . ' - ' . $slot['date_end']->format('M j');
                 $rows[3] = $this->appendCell($rows[3], $this->cell($column . '4', strtoupper($slot['type']), $this->gatheringStyle($slot['type'])));
                 $rows[4] = $this->appendCell($rows[4], $this->cell($column . '5', $dateLabel, 17));
             }
@@ -243,9 +244,13 @@ class ProgramHeadAttendanceWorkbookService
             $cells = [$this->cell('A' . $rowNumber, mb_strtoupper($student->name), 8)];
 
             foreach ($slotColumns as $slot) {
-                $record = $attendanceByStudentAndSlot[$student->id][$slot['type'] . '|' . $slot['date']->toDateString()]
-                    ?? $attendanceByStudentAndSlot[$student->id][$slot['type'] . '|' . $slot['date_end']->toDateString()]
-                    ?? null;
+                $record = null;
+                for ($day = $slot['date_start']; $day->lessThanOrEqualTo($slot['date_end']); $day = $day->addDay()) {
+                    $record = $attendanceByStudentAndSlot[$student->id][$slot['type'] . '|' . $day->toDateString()] ?? null;
+                    if ($record) {
+                        break;
+                    }
+                }
                 $present = $record?->status === 'present';
                 $value = $present ? $this->attendanceDetails($record) : 'No Response';
                 $style = $present ? $this->gatheringStyle($slot['type']) : 7;

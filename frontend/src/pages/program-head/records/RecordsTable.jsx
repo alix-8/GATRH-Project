@@ -106,8 +106,8 @@ export default function RecordsTable() {
             const link = document.createElement('a')
             link.href = url
             const disposition = response.headers.get('Content-Disposition') || ''
-            const extension = disposition.match(/\.([a-z0-9]+)"?$/i)?.[1] || 'xls'
-            link.download = `approved-${record.gathering_type}-${record.date_iso}.${extension}`
+            const exportedFilename = disposition.match(/filename="?([^";]+)"?/i)?.[1]
+            link.download = exportedFilename || `approved-${record.gathering_type}-${record.date_iso}.xls`
             document.body.append(link)
             link.click()
             link.remove()

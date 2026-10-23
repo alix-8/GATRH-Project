@@ -8,11 +8,11 @@ use App\Models\AttendanceRecord;
 use App\Models\Program;
 use App\Services\ProgramHead\ProgramHeadAttendanceWorkbookService;
 use App\Services\ProgramHead\ProgramHeadRecordsExportService;
+use App\Support\GatheringCycle;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class ProgramHeadSubmissionController extends Controller
 {
@@ -231,17 +231,41 @@ class ProgramHeadSubmissionController extends Controller
                 $programName,
                 $selectedWeek
             );
+            $safeProgram = preg_replace('/[^A-Za-z0-9_-]+/', '-', $program);
+            $safeProgram = trim($safeProgram, '-_') ?: 'Course';
+            $rangeLabel = GatheringCycle::formatRangeLabel($start->toMutable(), $end->toMutable());
             $filename = sprintf(
-                '%s-attendance-%s-%s-to-%s.xlsx',
-                $period === 'week' ? 'weekly' : 'monthly',
-                Str::slug($program),
-                $start->toDateString(),
-                $end->toDateString()
+                '%s_%d(All Gatherings - %s).%s',
+                $safeProgram,
+                $yearLevel,
+                $rangeLabel,
+                $workbookService->fileExtension()
             );
         } else {
             $records = $exportService->query($request->user(), $filters)->get();
             $workbookPath = $workbookService->create($records);
-            $filename = 'approved-attendance-records.' . $workbookService->fileExtension();
+            $firstRecord = $records->first();
+            if ($firstRecord) {
+                $program = preg_replace('/[^A-Za-z0-9_-]+/', '-', (string) ($firstRecord->program ?? $firstRecord->student?->program ?? 'Course'));
+                $program = trim($program, '-_') ?: 'Course';
+                $yearLevel = $firstRecord->year_level ?? $firstRecord->student?->year_level ?? 'Year';
+                $gatheringType = strtolower((string) $firstRecord->gathering_type);
+                $gathering = $this->gatheringLabel($gatheringType);
+                $day = Carbon::parse($firstRecord->day);
+                $ranges = GatheringCycle::getRangesForWeekStart(GatheringCycle::weekStartForDate($day));
+                $range = $ranges[$gatheringType] ?? ['start' => $day, 'end' => $day];
+                $rangeLabel = GatheringCycle::formatRangeLabel($range['start'], $range['end']);
+                $filename = sprintf(
+                    '%s_%s(%s - %s).%s',
+                    $program,
+                    $yearLevel,
+                    $gathering,
+                    $rangeLabel,
+                    $workbookService->fileExtension()
+                );
+            } else {
+                $filename = 'approved-attendance-records.' . $workbookService->fileExtension();
+            }
         }
 
         return response()

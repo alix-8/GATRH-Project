@@ -455,8 +455,8 @@ class CmCoordinatorMonitoringService
 
     private function getWeeks(Carbon $month): Collection
     {
-        $weekStart = $month->copy()->startOfWeek(Carbon::MONDAY);
-        $lastWeekStart = $month->copy()->endOfMonth()->startOfWeek(Carbon::MONDAY);
+        $weekStart = GatheringCycle::weekStartForDate($month);
+        $lastWeekStart = GatheringCycle::weekStartForDate($month->copy()->endOfMonth());
         $weeks = collect();
 
         for ($number = 1; $weekStart->lessThanOrEqualTo($lastWeekStart); $number++, $weekStart->addWeek()) {

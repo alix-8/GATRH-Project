@@ -414,11 +414,7 @@ class AttendanceController extends Controller
     private function gatheringRangeForDate(string $gatheringType, $day): array
     {
         $date = $day instanceof Carbon ? $day->copy() : Carbon::parse($day);
-        $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
-        $start = $weekStart->addDays($gatheringType === 'pm' ? 2 : 5);
-        $end = $start->copy()->addDays($gatheringType === 'pm' ? 2 : 1);
-
-        return ['start' => $start, 'end' => $end];
+        return GatheringCycle::getRangesForWeekStart($date)[strtolower($gatheringType)];
     }
 
     private function mapStatus(string $validationStatus): string
@@ -1475,10 +1471,9 @@ class AttendanceController extends Controller
                 $createdDrafts = [];
                 foreach ($records->groupBy('gathering_type') as $type => $group) {
                     $firstDay = $group->min(fn (AttendanceRecord $record) => Carbon::parse($record->day)->toDateString());
-                    $weekStart = Carbon::parse($firstDay)->startOfWeek(Carbon::MONDAY);
-                    $offset = $type === 'pm' ? 2 : 5;
-                    $rangeStart = $weekStart->copy()->addDays($offset);
-                    $rangeEnd = $rangeStart->copy()->addDays($type === 'pm' ? 2 : 1);
+                    $gatheringRange = GatheringCycle::getRangesForWeekStart(Carbon::parse($firstDay))[strtolower($type)];
+                    $rangeStart = $gatheringRange['start'];
+                    $rangeEnd = $gatheringRange['end'];
 
                     if (AttendanceDraft::where('user_id', $user->id)
                         ->where('gathering_type', $type)
