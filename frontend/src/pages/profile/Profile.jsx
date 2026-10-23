@@ -13,15 +13,19 @@ function formatRole(role = '') {
 
 function formatProfileRole(user) {
     const role = formatRole(user.role)
-    if (user.role !== 'secretary' || !user.program || !user.year_level) return role
+    const details = []
+    if (user.program) details.push(String(user.program).toUpperCase())
 
-    const yearLevel = Number(user.year_level)
-    const suffix = yearLevel % 100 >= 11 && yearLevel % 100 <= 13
-        ? 'th'
-        : ({ 1: 'st', 2: 'nd', 3: 'rd' }[yearLevel % 10] || 'th')
-    const year = Number.isFinite(yearLevel) ? `${yearLevel}${suffix} Year` : `${user.year_level} Year`
+    if (user.year_level) {
+        const yearLevel = Number(user.year_level)
+        const suffix = yearLevel % 100 >= 11 && yearLevel % 100 <= 13
+            ? 'th'
+            : ({ 1: 'st', 2: 'nd', 3: 'rd' }[yearLevel % 10] || 'th')
+        const year = Number.isFinite(yearLevel) ? `${yearLevel}${suffix} Year` : `${user.year_level} Year`
+        details.push(year)
+    }
 
-    return `${String(user.program).toUpperCase()} · ${year} · ${role}`
+    return [...details, role].join(' · ')
 }
 
 function Profile() {

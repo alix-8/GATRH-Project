@@ -55,9 +55,10 @@ class AdminProgramController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $request->merge(['name' => trim((string) $request->input('name'))]);
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:programs,code'],
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('programs', 'name')],
             'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['nullable', 'array'],
             'program_head_ids.*' => [
@@ -77,8 +78,11 @@ class AdminProgramController extends Controller
 
     public function update(Request $request, Program $program): JsonResponse
     {
+        if ($request->exists('name')) {
+            $request->merge(['name' => trim((string) $request->input('name'))]);
+        }
         $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('programs', 'name')->ignore($program->id)],
             'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['sometimes', 'nullable', 'array'],
             'program_head_ids.*' => [
