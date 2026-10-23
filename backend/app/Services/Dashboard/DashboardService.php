@@ -9,6 +9,7 @@ use App\Models\Program;
 use App\Models\Student;
 use App\Models\Reminder;
 use App\Services\Reminders\GatheringService;
+use App\Support\GatheringCycle;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -21,8 +22,8 @@ class DashboardService
     public function getGeneralDashboardPayload($user, array $filters): array
     {
         // Secretary dashboard is always centered on the current reporting week.
-        // Secretary reporting weeks run Monday through Sunday.
-        $weekStart = now()->startOfWeek(Carbon::MONDAY);
+        // All system reporting weeks run Wednesday through Tuesday.
+        $weekStart = GatheringCycle::weekStartForDate(now());
         $weekRange = [
             'start' => $weekStart,
             'end' => $weekStart->copy()->addDays(6)->endOfDay(),
@@ -604,11 +605,11 @@ class DashboardService
     {
         return match ($filter) {
             'today'      => ['start' => now()->startOfDay(), 'end' => now()->endOfDay()],
-            'this_week'  => ['start' => now()->startOfWeek(), 'end' => now()->endOfWeek()],
+            'this_week'  => ['start' => GatheringCycle::weekStartForDate(now()), 'end' => GatheringCycle::weekEndForDate(now())],
             'this_month' => ['start' => now()->startOfMonth(), 'end' => now()->endOfMonth()],
-            'last_week'  => ['start' => now()->subWeek()->startOfWeek(), 'end' => now()->subWeek()->endOfWeek()],
+            'last_week'  => ['start' => GatheringCycle::weekStartForDate(now())->subWeek(), 'end' => GatheringCycle::weekEndForDate(now())->subWeek()],
             'all'        => ['start' => Carbon::createFromDate(2000, 1, 1), 'end' => now()->addYears(10)],
-            default      => ['start' => now()->startOfWeek(), 'end' => now()->endOfWeek()],
+            default      => ['start' => GatheringCycle::weekStartForDate(now()), 'end' => GatheringCycle::weekEndForDate(now())],
         };
     }
 
@@ -619,8 +620,8 @@ class DashboardService
     {
         $selectedDate = Carbon::parse($filters['date'] ?? now());
         $dateRange = [
-            'start' => $selectedDate->copy()->startOfWeek(),
-            'end' => $selectedDate->copy()->endOfWeek(),
+            'start' => GatheringCycle::weekStartForDate($selectedDate),
+            'end' => GatheringCycle::weekEndForDate($selectedDate),
         ];
         // Use the program catalog so seeded programs remain available without enrolled students.
          $allPrograms = Program::query()
@@ -654,11 +655,11 @@ class DashboardService
 
         // Records for the four weeks shown in the dashboard table/chart.
         $weekFourStart = $selectedDate->copy()
-            ->startOfWeek()
+            ->startOfWeek(Carbon::WEDNESDAY)
             ->subWeeks(3);
 
         $weekFourEnd = $selectedDate->copy()
-            ->endOfWeek();
+            ->endOfWeek(Carbon::TUESDAY);
 
         $fourWeekRecords = AttendanceRecord::query()
             ->with('student:id,program,year_level')
@@ -724,10 +725,10 @@ class DashboardService
                         $getProgramStatus
                     ) {
                         $weekStart = $selectedDate->copy()
-                            ->startOfWeek()
+                            ->startOfWeek(Carbon::WEDNESDAY)
                             ->subWeeks($weekOffset);
 
-                        $weekEnd = $weekStart->copy()->endOfWeek();
+                        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
 
                         $recordsForWeek = $fourWeekRecords->filter(
                             fn ($record) => $record->day->betweenIncluded(
@@ -787,10 +788,10 @@ class DashboardService
                             $getProgramStatus
                         ) {
                             $weekStart = $selectedDate->copy()
-                                ->startOfWeek()
+                                ->startOfWeek(Carbon::WEDNESDAY)
                                 ->subWeeks($weekOffset);
 
-                            $weekEnd = $weekStart->copy()->endOfWeek();
+                            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
                             $recordsForWeek = $fourWeekYearRecords->filter(
                                 fn ($record) => $record->day->betweenIncluded(
                                     $weekStart,
@@ -842,10 +843,10 @@ class DashboardService
                 $getProgramStatus
             ) {
                 $weekStart = $selectedDate->copy()
-                    ->startOfWeek()
+                    ->startOfWeek(Carbon::WEDNESDAY)
                     ->subWeeks($weekOffset);
 
-                $weekEnd = $weekStart->copy()->endOfWeek();
+                $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
 
                 $recordsForWeek = $fourWeekRecords->filter(
                     fn ($record) => $record->day->betweenIncluded(

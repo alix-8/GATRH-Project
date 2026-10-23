@@ -155,6 +155,7 @@ class AdminStudentController extends Controller
     {
         $validated = $request->validate([
             'school_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
+            'preview_token' => ['required', 'string', 'size:64'],
         ]);
 
         [$startYear, $endYear] = array_map('intval', explode('-', $validated['school_year']));
@@ -168,8 +169,28 @@ class AdminStudentController extends Controller
         $result = $this->studentService->rolloverSchoolYear(
             $validated['school_year'],
             $request->user(),
+            $validated['preview_token'],
         );
 
         return response()->json($result);
+    }
+
+    public function previewSchoolYearRollover(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'school_year' => ['required', 'regex:/^\d{4}-\d{4}$/'],
+        ]);
+
+        return response()->json($this->studentService->previewSchoolYearRollover($validated['school_year']));
+    }
+
+    public function schoolYearRolloverStatus(): JsonResponse
+    {
+        return response()->json($this->studentService->schoolYearRolloverStatus());
+    }
+
+    public function undoSchoolYearRollover(Request $request, int $rollover): JsonResponse
+    {
+        return response()->json($this->studentService->undoSchoolYearRollover($rollover, $request->user()));
     }
 }

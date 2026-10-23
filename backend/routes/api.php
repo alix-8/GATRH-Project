@@ -114,11 +114,14 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::patch('/admin/users/{user}', [AdminUserController::class, 'update']);
         Route::post('/admin/students/import', [AdminStudentController::class, 'import']);
         Route::get('/admin/students', [AdminStudentController::class, 'index']);
+        Route::get('/admin/students/school-year-rollover', [AdminStudentController::class, 'schoolYearRolloverStatus']);
+        Route::post('/admin/students/school-year-rollover/preview', [AdminStudentController::class, 'previewSchoolYearRollover']);
         Route::post('/admin/students', [AdminStudentController::class, 'store']);
         Route::get('/admin/students/{student}', [AdminStudentController::class, 'show']);
         Route::patch('/admin/students/{student}', [AdminStudentController::class, 'update']);
         Route::delete('/admin/students/{student}', [AdminStudentController::class, 'destroy']);
         Route::post('/admin/students/school-year-rollover', [AdminStudentController::class, 'rolloverSchoolYear']);
+        Route::post('/admin/students/school-year-rollover/{rollover}/undo', [AdminStudentController::class, 'undoSchoolYearRollover']);
     });
 
     /* Secretary */

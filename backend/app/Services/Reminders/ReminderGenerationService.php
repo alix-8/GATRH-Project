@@ -5,6 +5,7 @@ namespace App\Services\Reminders;
 use App\Models\Reminder;
 use App\Models\AttendanceRecord;
 use App\Models\User;
+use App\Support\GatheringCycle;
 use App\Support\SystemTimezone;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -23,7 +24,7 @@ class ReminderGenerationService
     public function generateWeeklyGatheringReminders(?User $onlyUser = null): int
     {   
         $today = SystemTimezone::today();
-        $currentWeekEnd = $today->copy()->endOfWeek();
+        $currentWeekEnd = GatheringCycle::weekEndForDate($today);
 
         Reminder::where('reminder_type', 'gathering')
             ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
@@ -88,8 +89,8 @@ class ReminderGenerationService
                 // Preserve the existing cleanup, but run it only once when at
                 // least one new reminder is actually going to be created.
                 if (! $staleRemindersDeleted) {
-                    $currentWeekStart = SystemTimezone::today()->startOfWeek();
-                    $currentWeekEnd = $currentWeekStart->copy()->endOfWeek();
+                    $currentWeekStart = GatheringCycle::weekStartForDate(SystemTimezone::today());
+                    $currentWeekEnd = GatheringCycle::weekEndForDate(SystemTimezone::today());
 
                     Reminder::where('reminder_type', 'gathering')
                         ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
@@ -210,7 +211,7 @@ class ReminderGenerationService
     int $submissionRetentionDays = 7
     ): int {
         $today = SystemTimezone::today();
-        $currentWeekEnd = $today->copy()->endOfWeek();
+        $currentWeekEnd = GatheringCycle::weekEndForDate($today);
 
         // Keep submission tasks for seven days after their deadline.
         $submissionCutoff = $today->copy()

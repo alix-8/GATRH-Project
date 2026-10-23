@@ -9,6 +9,7 @@ use App\Models\AttendanceRecord;
 use App\Models\GatheringSchedule;
 use App\Models\Student;
 use App\Services\Escalations\WeeklyEscalationService;
+use App\Support\GatheringCycle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -32,14 +33,15 @@ class StudentController extends Controller
         $weeklyEscalationCounts = app(WeeklyEscalationService::class)
             ->countsForStudents($students->pluck('id'));
 
-        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $weekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString();
-        $recordsByStudent = AttendanceRecord::query()
+        $weekStart = GatheringCycle::weekStartForDate(Carbon::now())->toDateString();
+        $weekEnd = GatheringCycle::weekEndForDate(Carbon::now())->toDateString();
+        $weeklyRecords = AttendanceRecord::query()
             ->whereIn('student_id', $students->pluck('id'))
             ->whereBetween('day', [$weekStart, $weekEnd])
-            ->orderByDesc('created_at')
             ->orderByDesc('day')
-            ->get()
+            ->orderByDesc('created_at')
+            ->get();
+        $recordsByStudent = $weeklyRecords
             ->groupBy('student_id')
             ->map(fn ($records) => $records->first());
         $drafts = AttendanceDraft::query()
@@ -49,6 +51,15 @@ class StudentController extends Controller
             ->orderByDesc('day')
             ->orderByDesc('updated_at')
             ->get();
+        $latestRecord = $weeklyRecords->first();
+        $latestDraft = $drafts->first();
+        $latestDraftIsNewer = $latestDraft && (! $latestRecord
+            || $latestDraft->day->gt($latestRecord->day)
+            || ($latestDraft->day->equalTo($latestRecord->day)
+                && $latestDraft->updated_at->gt($latestRecord->created_at)));
+        $latestGatheringType = $latestDraftIsNewer
+            ? $latestDraft->gathering_type
+            : $latestRecord?->gathering_type;
         $responses = collect();
 
         foreach ($students as $student) {
@@ -71,7 +82,9 @@ class StudentController extends Controller
                     && $latestDraft[0]->updated_at->gt($latestRecord->created_at)));
 
             if ($draftIsNewer) {
-                $responses->put($student->id, $latestDraft[1]);
+                $responses->put($student->id, [
+                    'status' => $latestDraft[1]['status'] ?? 'no_response',
+                ]);
             } elseif ($latestRecord) {
                 $responses->put($student->id, $latestRecord);
             }
@@ -101,6 +114,7 @@ class StudentController extends Controller
                 ];
             })->values(),
             'session' => $session,
+            'latest_gathering_type' => $session ? $latestGatheringType : null,
         ]);
     }
     /** Return the selected student's attendance details for the overview drawer. */
@@ -163,8 +177,8 @@ class StudentController extends Controller
         $thisMonth = collect($monthEntries)->where('status', 'present')->count();
         $weekEntries = $this->attendanceEntriesForPeriod(
             $student,
-            Carbon::now()->startOfWeek(Carbon::MONDAY),
-            Carbon::now()->endOfWeek(Carbon::SUNDAY)
+            GatheringCycle::weekStartForDate(Carbon::now()),
+            GatheringCycle::weekEndForDate(Carbon::now())
         );
         $thisWeek = collect(['pm', 'ws', 'tg'])->map(function (string $type) use ($weekEntries) {
             $entry = collect($weekEntries)

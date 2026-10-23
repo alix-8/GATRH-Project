@@ -210,10 +210,28 @@ class GatheringCycle
     public static function getImportPeriodRanges(string $period): array
     {
         $offset = $period === 'last' ? -7 : 0;
-        $weekStart = Carbon::today()->startOfWeek(Carbon::MONDAY)->addDays($offset);
+        $weekStart = self::weekStartForDate(Carbon::today())->addDays($offset);
+        return self::getRangesForWeekStart($weekStart);
+    }
+
+    /** Return the start of the Wednesday-to-Tuesday weekly cycle containing a date. */
+    public static function weekStartForDate(Carbon $date): Carbon
+    {
+        return $date->copy()->startOfWeek(Carbon::WEDNESDAY);
+    }
+
+    public static function weekEndForDate(Carbon $date): Carbon
+    {
+        return self::weekStartForDate($date)->addDays(6)->endOfDay();
+    }
+
+    /** Returns the configured gathering windows for a Wednesday-to-Tuesday reporting week. */
+    public static function getRangesForWeekStart(Carbon $weekStart): array
+    {
+        $weekStart = self::weekStartForDate($weekStart);
         $ranges = [];
         foreach (['pm', 'ws', 'tg'] as $type) {
-            $start = $weekStart->copy()->addDays(match ($type) { 'pm' => 2, default => 5 });
+            $start = $weekStart->copy()->addDays(match ($type) { 'pm' => 0, default => 3 });
             $days = self::WINDOW_DAYS[$type] ?? 1;
             $end = $start->copy()->addDays($days - 1);
             $ranges[$type] = ['start' => $start, 'end' => $end];
@@ -280,10 +298,10 @@ class GatheringCycle
     /** Returns the gathering's scheduled window in the current calendar week. */
     public static function reportWeekWindowLabel(string $gatheringType): string
     {
-        $weekStart = Carbon::today()->startOfWeek(Carbon::MONDAY);
+        $weekStart = self::weekStartForDate(Carbon::today());
         $offset = match (strtolower($gatheringType)) {
-            'pm' => 2,
-            'ws', 'tg' => 5,
+            'pm' => 0,
+            'ws', 'tg' => 3,
             default => 0,
         };
         $windowDays = self::WINDOW_DAYS[strtolower($gatheringType)] ?? 1;

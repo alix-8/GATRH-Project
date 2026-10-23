@@ -244,6 +244,201 @@
     gap: 10px;
 }
 
+.admin-rollover-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px 18px;
+    padding: 15px;
+    border: 1px solid #d5dce7;
+    border-radius: 6px;
+    background: #f8fbff;
+}
+
+.admin-rollover-panel h3,
+.admin-rollover-breakdown h3 {
+    margin: 0 0 4px;
+    color: #172b4d;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-rollover-panel p {
+    margin: 0;
+    color: #687791;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.admin-rollover-preview-button {
+    min-width: 142px;
+    height: 38px;
+}
+
+.admin-rollover-error {
+    grid-column: 1 / -1;
+    color: #b43636 !important;
+}
+
+.admin-rollover-undo {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #d5dce7;
+    color: #20834b;
+    font-size: 12px;
+}
+
+.admin-rollover-undo button {
+    min-width: 75px;
+    min-height: 32px;
+    border: 1px solid #d97706;
+    border-radius: 5px;
+    background: #fff;
+    color: #b45309;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-rollover-undo button:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+.admin-rollover-modal {
+    width: min(470px, calc(100vw - 24px));
+    max-height: calc(100vh - 28px);
+    box-sizing: border-box;
+    overflow-y: auto;
+    padding: 20px;
+    color: #53627b;
+    font-size: 12px;
+    scrollbar-color: #aebbd0 #f1f4f8;
+    scrollbar-width: thin;
+}
+
+.admin-rollover-modal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.admin-rollover-modal::-webkit-scrollbar-track {
+    border-radius: 8px;
+    background: #f1f4f8;
+}
+
+.admin-rollover-modal::-webkit-scrollbar-thumb {
+    border: 2px solid #f1f4f8;
+    border-radius: 8px;
+    background: #aebbd0;
+}
+
+.admin-rollover-modal::backdrop {
+    background: rgba(6, 14, 27, .64);
+}
+
+.admin-rollover-modal button {
+    font-size: 12px;
+}
+
+.admin-rollover-modal h2 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 12px;
+}
+
+.admin-rollover-modal .admin-add-user-description {
+    margin: 5px 0 16px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.admin-rollover-modal .admin-rollover-breakdown h3 {
+    font-size: 12px;
+}
+
+.admin-rollover-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.admin-rollover-summary > div,
+.admin-rollover-breakdown > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid #e1e7ef;
+    border-radius: 5px;
+    background: #f8fbff;
+    color: #53627b;
+    font-size: 12px;
+}
+
+.admin-rollover-summary strong,
+.admin-rollover-breakdown strong {
+    color: #172b4d;
+    font-size: 12px;
+}
+
+.admin-rollover-breakdown {
+    display: grid;
+    gap: 6px;
+    margin-top: 16px;
+}
+
+.admin-rollover-breakdown h3 {
+    margin-bottom: 2px;
+}
+
+.admin-rollover-breakdown > p {
+    margin: 0;
+    padding: 10px;
+    color: #687791;
+    font-size: 12px;
+}
+
+.admin-rollover-warning {
+    margin: 14px 0;
+    padding: 10px;
+    border: 1px solid #f4d6a3;
+    border-radius: 5px;
+    background: #fff8e8;
+    color: #815b1a;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.admin-rollover-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 8px;
+}
+
+.admin-rollover-actions > button:first-child {
+    min-height: 35px;
+    border: 1px solid #d5dce7;
+    border-radius: 5px;
+    background: #fff;
+    color: #53627b;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.admin-rollover-actions .admin-add-user-submit {
+    font-size: 12px;
+}
+
+.admin-settings-field select option:disabled {
+    color: #aab2bf;
+}
+
 .admin-settings-field span {
     color: #111827;
     font-size: 12px;

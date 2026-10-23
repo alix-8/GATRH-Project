@@ -41,6 +41,7 @@ function formatOverviewTime(value) {
 function Students() {
     const [students, setStudents] = useState([])
     const [attendanceSession, setAttendanceSession] = useState(null)
+    const [latestGatheringType, setLatestGatheringType] = useState(null)
     const [escalationWeekRange, setEscalationWeekRange] = useState(null)
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('user')))
     const [pollTick, setPollTick] = useState(0)
@@ -84,6 +85,7 @@ function Students() {
                 if (controller.signal.aborted) return
                 setStudents(Array.isArray(data.students) ? data.students : [])
                 setAttendanceSession(data.session || null)
+                setLatestGatheringType(data.latest_gathering_type || null)
                 setEscalationWeekRange(data.week_range || null)
                 setLoading(false)
             })
@@ -91,6 +93,7 @@ function Students() {
                 if (controller.signal.aborted) return
                 setStudents([])
                 setAttendanceSession(null)
+                setLatestGatheringType(null)
                 setEscalationWeekRange(null)
                 setLoading(false)
             })
@@ -373,7 +376,7 @@ function Students() {
                         <table className="students-table">
                             <thead>
                                 <tr>
-                                    <th>Name</th><th>Year</th><th>Program</th><th>This Week's Response</th><th>Escalation</th><th>Action</th>
+                                    <th>Name</th><th>Year</th><th>Program</th><th>Latest Response{latestGatheringType ? ` (${latestGatheringType.toUpperCase()})` : ''}</th><th>Escalation</th><th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>

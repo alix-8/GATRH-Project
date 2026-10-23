@@ -217,16 +217,21 @@ function CoordinatorMonitoring() {
                                         <th className="monitoring-program-heading" scope="col">Program</th>
                                         <th className="monitoring-type-heading" scope="col">Type</th>
                                         {weeks.map((item) => (
-                                            <th key={item.number} className="monitoring-week-heading" scope="colgroup" colSpan={gatheringTypes.length}>
+                                            <th
+                                                key={item.number}
+                                                className="monitoring-week-heading"
+                                                scope="colgroup"
+                                                colSpan={gatheringTypes.length}
+                                                title={`${item.label}: ${formatDate(item.start)} – ${formatDate(item.end)}`}
+                                            >
                                                 <span className="monitoring-week-title">{item.label}</span>
                                                 <small>{item.description}</small>
                                                 <span className="monitoring-week-gatherings">
                                                     {gatheringTypes.map((type) => (
-                                                        <span key={type} title={{
-                                                            pm: 'Prayer Meeting',
-                                                            tg: 'Thanksgiving',
-                                                            ws: 'Worship Service',
-                                                        }[type]}>{GATHERING_LABELS[type]}</span>
+                                                        <span
+                                                            key={type}
+                                                            title={`${GATHERING_LABELS[type]} · ${formatDate(item.gathering_ranges?.[type]?.start || item.start)} – ${formatDate(item.gathering_ranges?.[type]?.end || item.end)}`}
+                                                        >{GATHERING_LABELS[type]}</span>
                                                     ))}
                                                 </span>
                                             </th>
@@ -278,18 +283,23 @@ function CoordinatorMonitoring() {
                                                         const courseWeek = course.weeks.find((entry) => entry.number === item.number)
                                                         return gatheringTypes.map((type) => {
                                                             const itemStatus = courseWeek?.gatherings.find((entry) => entry.type === type)
+                                                            const noAttendanceRecorded = itemStatus?.status === 'no_report' && !itemStatus?.has_attendance
+                                                            const statusTooltip = noAttendanceRecorded
+                                                                ? 'No attendance recorded yet'
+                                                                : `${itemStatus?.responded_students ?? 0}/${itemStatus?.total_students ?? course.students_count} students responded`
                                                             return (
                                                                 <td
                                                                     key={`${course.label}-${item.number}-${type}`}
-                                                                    className={`monitoring-status-cell ${type === gatheringTypes[gatheringTypes.length - 1] ? 'monitoring-week-end' : ''}`}
+                                                                    className={`monitoring-status-cell monitoring-status-cell-tooltip ${type === gatheringTypes[gatheringTypes.length - 1] ? 'monitoring-week-end' : ''}`}
+                                                                    data-tooltip={statusTooltip}
+                                                                    data-tooltip-tone={noAttendanceRecorded ? 'error' : undefined}
                                                                 >
                                                                     <span
-                                                                        className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'}`}
+                                                                        className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'} ${noAttendanceRecorded ? 'monitoring-status-no-attendance' : ''}`}
                                                                         role="img"
-                                                                        aria-label={`${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status?.replace('_', ' ') || 'No report'}`}
-                                                                        title={itemStatus
-                                                                            ? `${itemStatus.completed_students}/${itemStatus.total_students} students`
-                                                                            : 'No report'}
+                                                                        aria-label={noAttendanceRecorded
+                                                                            ? `${item.label} ${GATHERING_LABELS[type]}: No attendance recorded yet`
+                                                                            : `${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status === 'no_report' || !itemStatus ? 'No response' : itemStatus.status}`}
                                                                     >
                                                                         <img
                                                                             src={itemStatus?.status === 'completed'
@@ -304,7 +314,10 @@ function CoordinatorMonitoring() {
                                                             )
                                                         })
                                                     })}
-                                                    <td className="monitoring-progress-cell">
+                                                    <td
+                                                        className="monitoring-progress-cell"
+                                                        title={`${course.progress.completed} out of ${course.progress.total} gathering attendance completed`}
+                                                    >
                                                         <span>{course.progress.completed}/{course.progress.total}</span>
                                                         <div className="monitoring-progress-track">
                                                             <span style={{ width: `${course.progress.percentage}%` }} />
@@ -344,7 +357,7 @@ function CoordinatorMonitoring() {
                                     <span className="monitoring-legend-icon monitoring-legend-no-report">
                                         <img src={NoReportsIcon} alt="" />
                                     </span>
-                                    No Report
+                                    No Response
                                 </span>
                             </div>
                         </div>
@@ -383,7 +396,10 @@ function CoordinatorMonitoring() {
                                         No students are currently enrolled in this year level.
                                     </p>
                                 )}
-                                <div className="monitoring-detail-progress">
+                                <div
+                                    className="monitoring-detail-progress"
+                                    title={`${currentDetails.progress.completed} out of ${currentDetails.progress.total} gathering attendance completed`}
+                                >
                                     <div>
                                         <span>Overall Progress</span>
                                         <span>{currentDetails.progress.completed}/{currentDetails.progress.total}</span>
@@ -443,7 +459,7 @@ function CoordinatorMonitoring() {
                                 <section className="monitoring-week-details">
                                     <h4>
                                         {currentDetails.week.label}
-                                        <small> - {currentDetails.week.description.toLowerCase()}</small>
+                                        <small> - {currentDetails.week.description}</small>
                                     </h4>
                                     <div className="monitoring-week-detail-headings">
                                         <span>Gathering</span>
@@ -456,9 +472,14 @@ function CoordinatorMonitoring() {
                                             (item) => item.gathering_type === gatheringItem.type
                                         )
                                         const status = entry?.status || 'no_report'
+                                        const gatheringDates = entry?.dates?.length ? entry.dates : entry?.date ? [entry.date] : []
+                                        const scheduledRange = currentDetails.week.gathering_ranges?.[gatheringItem.type]
+                                        const gatheringDateRange = gatheringDates.length
+                                            ? `${formatDate(gatheringDates[0])}${gatheringDates.length > 1 ? ` – ${formatDate(gatheringDates[gatheringDates.length - 1])}` : ''}`
+                                            : `${formatDate(scheduledRange?.start || currentDetails.week.start)} – ${formatDate(scheduledRange?.end || currentDetails.week.end)}`
                                         return (
                                             <div className="monitoring-week-detail-row" key={gatheringItem.type}>
-                                                <span>{gatheringItem.label}</span>
+                                                <span title={`${gatheringItem.label} · ${gatheringDateRange}`}>{gatheringItem.label}</span>
                                                 <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} />
                                                 <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
                                                     <img
@@ -473,7 +494,7 @@ function CoordinatorMonitoring() {
                                                         ? 'Completed'
                                                         : status === 'incomplete'
                                                             ? 'Incomplete'
-                                                            : 'No Report'}
+                                                            : 'No Response'}
                                                 </span>
                                                 <span>{entry?.remarks || '—'}</span>
                                             </div>
