@@ -9,6 +9,7 @@ use App\Services\Admin\AdminSystemSettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminSystemSettingController extends Controller
 {
@@ -38,6 +39,14 @@ class AdminSystemSettingController extends Controller
 
     public function update(Request $request): JsonResponse
     {
+        if ($request->has('academic_year')
+            && $request->input('academic_year') !== $this->settingService->getGeneralSettings()->academic_year) {
+            throw ValidationException::withMessages([
+                'academic_year' => ['Use Academic Year Rollover to advance the current school year.'],
+            ]);
+        }
+        $request->request->remove('academic_year');
+
         $validated = $request->validate([
             'institution_name' => ['sometimes', 'required', 'string', 'max:255'],
             'academic_year' => ['sometimes', 'required', 'string', 'regex:/^\d{4}-\d{4}$/'],
