@@ -136,6 +136,7 @@ class DashboardService
 
         return [
             'total_students' => Student::query()
+                ->active()
                 ->accessibleTo($user)
                 ->count(),
 
@@ -358,7 +359,7 @@ class DashboardService
 
     public function getRecentRecords($user, ?array $dateRange = null): array
     {
-        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
+        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
 
         // 1. Unsubmitted Drafts
         $drafts = AttendanceDraft::query()
@@ -458,7 +459,7 @@ class DashboardService
         $monthStart = $month->toDateString();
         $monthEnd = $month->copy()->endOfMonth()->toDateString();
         $monthLastDay = $month->copy()->endOfMonth()->startOfDay();
-        $totalManagedStudents = Student::query()->accessibleTo($user)->count();
+        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
 
         $responsesByGathering = AttendanceRecord::query()
             ->select('gathering_type', 'student_id', 'day')

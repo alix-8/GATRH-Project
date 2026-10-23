@@ -167,10 +167,9 @@ function formatSavedReminderDateTime(value) {
 function formatGatheringReminderDateTime(reminder) {
     const date = reminder.gathering_date || reminder.due_date
     const formattedDate = formatSavedReminderDateTime(date).split(' · ')[0]
-    const time = reminder.due_date ? formatSavedReminderDateTime(reminder.due_date).split(' · ')[1] : '4:30 AM'
     const program = [reminder.program, reminder.year_level].filter(Boolean).join('-')
 
-    return [formattedDate, time, program].filter(Boolean).join(' · ')
+    return [formattedDate, program].filter(Boolean).join(' · ')
 }
 
 function splitDueDate(value) {

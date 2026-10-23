@@ -144,6 +144,7 @@ class CmCoordinatorMonitoringService
         }
 
         $roster = Student::query()
+            ->active()
             ->whereRaw('UPPER(TRIM(program)) = ?', [$programCode])
             ->where('year_level', $yearLevel)
             ->orderBy('name')
@@ -285,6 +286,7 @@ class CmCoordinatorMonitoringService
                 || str_contains(mb_strtolower((string) $program['name']), mb_strtolower($search))
             )->pluck('code')->all();
         $students = Student::query()
+            ->active()
             ->whereIn('program', $programCodes)
             ->when($search !== '', function ($query) use ($search, $matchingProgramCodes) {
                 $query->where(function ($studentQuery) use ($search, $matchingProgramCodes) {
