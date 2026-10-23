@@ -11,6 +11,19 @@ function formatRole(role = '') {
     return role.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase())
 }
 
+function formatProfileRole(user) {
+    const role = formatRole(user.role)
+    if (user.role !== 'secretary' || !user.program || !user.year_level) return role
+
+    const yearLevel = Number(user.year_level)
+    const suffix = yearLevel % 100 >= 11 && yearLevel % 100 <= 13
+        ? 'th'
+        : ({ 1: 'st', 2: 'nd', 3: 'rd' }[yearLevel % 10] || 'th')
+    const year = Number.isFinite(yearLevel) ? `${yearLevel}${suffix} Year` : `${user.year_level} Year`
+
+    return `${String(user.program).toUpperCase()} · ${year} · ${role}`
+}
+
 function Profile() {
     const navigate = useNavigate()
     const [user, setUser] = useState(() => {
@@ -39,6 +52,20 @@ function Profile() {
     }
 
     useEffect(() => {
+        let passwordFlashMessage = ''
+        try {
+            passwordFlashMessage = sessionStorage.getItem('profile-password-success') || ''
+            sessionStorage.removeItem('profile-password-success')
+        } catch {
+            // Continue without a post-refresh message if session storage is unavailable.
+        }
+
+        if (passwordFlashMessage) {
+            setPasswordMessageType('success')
+            setPasswordMessage(passwordFlashMessage)
+            window.setTimeout(() => setPasswordMessage(''), 2000)
+        }
+
         if (!localStorage.getItem('user')) {
             navigate('/')
             return
@@ -96,17 +123,16 @@ function Profile() {
                     return
                 }
 
-                setPasswordMessageType('success')
-                setPasswordMessage(data?.message || 'Password changed successfully.')
-                setPasswordForm({
-                    current_password: '',
-                    password: '',
-                    password_confirmation: '',
-                })
+                try {
+                    sessionStorage.setItem('profile-password-success', data?.message || 'Password changed successfully.')
+                } catch {
+                    setPasswordMessageType('success')
+                    setPasswordMessage(data?.message || 'Password changed successfully.')
+                    window.setTimeout(() => setPasswordMessage(''), 2000)
+                    return
+                }
 
-                window.setTimeout(() => {
-                    setPasswordMessage('')
-                }, 2000)
+                window.location.reload()
             })
             .catch(() => {
                 setPasswordMessageType('error')
@@ -130,7 +156,7 @@ function Profile() {
                         <UserAvatar as="div" className="profile-avatar" name={user.name} program={user.program} />
                         <div className="profile-identity">
                             <h1>{user.name || 'User'}</h1>
-                            <p>{formatRole(user.role)}</p>
+                            <p>{formatProfileRole(user)}</p>
                             <span>{user.email || ''}</span>
                         </div>
                     </div>

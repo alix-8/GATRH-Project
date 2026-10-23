@@ -15,7 +15,7 @@ class AdminDashboardService
             'summary' => [
                 'user_accounts' => User::query()->count(),
                 'active_users' => User::query()->where('is_active', true)->count(),
-                'students' => Student::query()->count(),
+                'students' => Student::query()->active()->count(),
                 'programs' => Program::query()->count(),
                 'active_programs' => Program::query()->where('is_active', true)->count(),
             ],

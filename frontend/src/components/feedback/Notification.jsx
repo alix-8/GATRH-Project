@@ -232,6 +232,20 @@ function Notification() {
         return () => window.clearInterval(intervalId)
     }, [fetchNotifications])
 
+    useEffect(() => {
+        if (!isOpen) return
+
+        const seenIds = getSeenNotificationIds()
+        const unreadIds = items
+            .filter(item => item.tracksBellDot && !seenIds.has(String(item.id)))
+            .map(item => item.id)
+
+        if (unreadIds.length > 0) {
+            markNotificationIdsSeen(unreadIds)
+            setHasUnreadReminder(false)
+        }
+    }, [isOpen, items])
+
     const iconMap = {
         calendar: CalendarIcon,
         attendance: NotificationIcon,
