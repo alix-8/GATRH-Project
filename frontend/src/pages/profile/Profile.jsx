@@ -44,6 +44,23 @@ function Profile() {
             return
         }
 
+        // Keep only the small identity fields needed for client-side routing.
+        // Older builds may have cached the full /me response here.
+        try {
+            const cachedUser = JSON.parse(localStorage.getItem('user') || 'null')
+            if (cachedUser) {
+                localStorage.setItem('user', JSON.stringify({
+                    id: cachedUser.id,
+                    name: cachedUser.name,
+                    role: cachedUser.role,
+                }))
+            }
+        } catch {
+            localStorage.removeItem('user')
+            navigate('/', { replace: true })
+            return
+        }
+
         fetch(`${API_BASE_URL}/me`, {
             credentials: 'include',
             headers: {
@@ -54,7 +71,6 @@ function Profile() {
             .then(data => {
                 if (data?.user) {
                     setUser(data.user)
-                    localStorage.setItem('user', JSON.stringify(data.user))
                 }
             })
             .catch(() => { })
