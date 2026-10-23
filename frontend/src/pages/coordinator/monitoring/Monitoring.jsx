@@ -286,10 +286,10 @@ function CoordinatorMonitoring() {
                                                                     <span
                                                                         className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'}`}
                                                                         role="img"
-                                                                        aria-label={`${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status?.replace('_', ' ') || 'No report'}`}
+                                                                        aria-label={`${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status === 'no_report' || !itemStatus ? 'No response' : itemStatus.status}`}
                                                                         title={itemStatus
-                                                                            ? `${itemStatus.completed_students}/${itemStatus.total_students} students`
-                                                                            : 'No report'}
+                                                                            ? `${itemStatus.responded_students}/${itemStatus.total_students} students responded`
+                                                                            : '0 responses'}
                                                                     >
                                                                         <img
                                                                             src={itemStatus?.status === 'completed'
@@ -304,7 +304,10 @@ function CoordinatorMonitoring() {
                                                             )
                                                         })
                                                     })}
-                                                    <td className="monitoring-progress-cell">
+                                                    <td
+                                                        className="monitoring-progress-cell"
+                                                        title={`${course.progress.completed} out of ${course.progress.total} gathering attendance completed`}
+                                                    >
                                                         <span>{course.progress.completed}/{course.progress.total}</span>
                                                         <div className="monitoring-progress-track">
                                                             <span style={{ width: `${course.progress.percentage}%` }} />
@@ -344,7 +347,7 @@ function CoordinatorMonitoring() {
                                     <span className="monitoring-legend-icon monitoring-legend-no-report">
                                         <img src={NoReportsIcon} alt="" />
                                     </span>
-                                    No Report
+                                    No Response
                                 </span>
                             </div>
                         </div>
@@ -383,7 +386,10 @@ function CoordinatorMonitoring() {
                                         No students are currently enrolled in this year level.
                                     </p>
                                 )}
-                                <div className="monitoring-detail-progress">
+                                <div
+                                    className="monitoring-detail-progress"
+                                    title={`${currentDetails.progress.completed} out of ${currentDetails.progress.total} gathering attendance completed`}
+                                >
                                     <div>
                                         <span>Overall Progress</span>
                                         <span>{currentDetails.progress.completed}/{currentDetails.progress.total}</span>
@@ -473,7 +479,7 @@ function CoordinatorMonitoring() {
                                                         ? 'Completed'
                                                         : status === 'incomplete'
                                                             ? 'Incomplete'
-                                                            : 'No Report'}
+                                                            : 'No Response'}
                                                 </span>
                                                 <span>{entry?.remarks || '—'}</span>
                                             </div>

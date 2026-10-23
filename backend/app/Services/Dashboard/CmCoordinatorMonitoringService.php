@@ -184,10 +184,6 @@ class CmCoordinatorMonitoringService
         $entries = collect(self::GATHERING_TYPES)
             ->map(function (string $type) use ($weekRecords, $roster, $studentIds) {
                 $eventRecords = $weekRecords->where('gathering_type', $type);
-                if ($eventRecords->isEmpty()) {
-                    return null;
-                }
-
                 $summary = $this->getGatheringSummary($weekRecords, $studentIds, $type);
                 $dates = $eventRecords->pluck('day')
                     ->map(fn (Carbon $day) => $day->toDateString())
@@ -195,15 +191,18 @@ class CmCoordinatorMonitoringService
                     ->sort()
                     ->values()
                     ->all();
-                $recordedStudentIds = $eventRecords->pluck('student_id')->unique();
+                $respondedStudentIds = $eventRecords
+                    ->filter(fn ($record) => in_array($record->status ?? 'no_response', ['present', 'excused'], true))
+                    ->pluck('student_id')
+                    ->unique();
                 $missingStudents = $roster
-                    ->reject(fn (Student $student) => $recordedStudentIds->contains($student->id))
+                    ->reject(fn (Student $student) => $respondedStudentIds->contains($student->id))
                     ->map(fn (Student $student) => [
                         'id' => $student->id,
                         'name' => $student->name,
                     ])->values();
 
-                $allValidated = $eventRecords->every(fn ($record) =>
+                $allValidated = $eventRecords->isNotEmpty() && $eventRecords->every(fn ($record) =>
                     in_array($record->validation_status, ['validated', 'approved'], true)
                 );
                 $latestApproval = $eventRecords
@@ -214,7 +213,7 @@ class CmCoordinatorMonitoringService
                 return [
                     'gathering_type' => $type,
                     'gathering' => self::GATHERING_LABELS[$type] ?? ucfirst($type),
-                    'date' => $dates[0],
+                    'date' => $dates[0] ?? null,
                     'dates' => $dates,
                     'status' => $summary['status'],
                     'approval_status' => $allValidated ? 'approved' : 'pending',
@@ -222,14 +221,14 @@ class CmCoordinatorMonitoringService
                     'program_head' => $allValidated
                         ? $latestApproval?->validator?->name
                         : null,
-                    'recorded_students' => $summary['completed_students'],
+                    'recorded_students' => $summary['responded_students'],
+                    'responded_students' => $summary['responded_students'],
                     'total_students' => $summary['total_students'],
-                    'remarks' => $summary['completed_students'] . '/' . $summary['total_students'],
+                    'remarks' => $summary['responded_students'] . '/' . $summary['total_students'],
                     'missing_students' => $missingStudents,
                 ];
             })
-            ->filter()
-            ->sortBy(fn (array $entry) => $entry['date'] . '|' . $entry['gathering_type'])
+            ->sortBy(fn (array $entry) => ($entry['date'] ?? '9999-12-31') . '|' . $entry['gathering_type'])
             ->values();
         $latestApproval = $records
             ->filter(fn ($record) => in_array($record->validation_status, ['validated', 'approved'], true))
@@ -388,8 +387,10 @@ class CmCoordinatorMonitoringService
 
     private function getGatheringSummary(Collection $weekRecords, array $studentIds, string $type): array
     {
-        $submittedStudentCount = $weekRecords
+        $respondedStudentCount = $weekRecords
             ->where('gathering_type', $type)
+            ->filter(fn ($record) => in_array((int) $record->student_id, $studentIds, true))
+            ->filter(fn ($record) => in_array($record->status ?? 'no_response', ['present', 'excused'], true))
             ->pluck('student_id')
             ->unique()
             ->count();
@@ -397,11 +398,11 @@ class CmCoordinatorMonitoringService
 
         return [
             'status' => match (true) {
-                $submittedStudentCount === 0 => 'no_report',
-                $submittedStudentCount >= $totalStudents => 'completed',
+                $respondedStudentCount === 0 => 'no_report',
+                $totalStudents > 0 && $respondedStudentCount >= $totalStudents => 'completed',
                 default => 'incomplete',
             },
-            'completed_students' => min($submittedStudentCount, $totalStudents),
+            'responded_students' => min($respondedStudentCount, $totalStudents),
             'total_students' => $totalStudents,
         ];
     }
@@ -424,6 +425,7 @@ class CmCoordinatorMonitoringService
                         ],
                         'gathering_type' => $entry['gathering_type'] ?? $draft->gathering_type,
                         'day' => Carbon::parse($draft->day),
+                        'status' => $entry['status'] ?? 'no_response',
                         'validation_status' => 'unvalidated',
                         'validator' => null,
                         'updated_at' => $draft->updated_at,
