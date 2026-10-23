@@ -43,14 +43,14 @@ const hasWeeklySlots = text => /^\s*(?:PM|WS|TG)\s*:/im.test(text)
 function Import({ onGoToAttendance = () => {} }) {
     const location = useLocation()
     const templateRequestId = useRef(0)
-    const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
     const [form, setForm] = useState({
-        program: loggedInUser.program || '',
-        year_level: loggedInUser.year_level || '',
+        program: '',
+        year_level: '',
         gathering_type: location.state?.gathering_type || 'week',
         raw_text: '',
     })
     const [fieldWarning, setFieldWarning] = useState(null)
+    const [isLoadingProfile, setIsLoadingProfile] = useState(true)
     const [isGenerating, setIsGenerating] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [result, setResult] = useState(null)
@@ -67,6 +67,24 @@ function Import({ onGoToAttendance = () => {} }) {
     const [periods, setPeriods] = useState(null)
     const [isLoadingPeriods, setIsLoadingPeriods] = useState(true)
     const [weekPeriod, setWeekPeriod] = useState(null)
+
+    useEffect(() => {
+        let active = true
+        request('/me')
+            .then(data => {
+                if (!active) return
+                setForm(current => ({
+                    ...current,
+                    program: data.user?.program || '',
+                    year_level: data.user?.year_level || '',
+                }))
+            })
+            .catch(() => {
+                if (active) setFieldWarning('Unable to load your program and year level. Please refresh and try again.')
+            })
+            .finally(() => { if (active) setIsLoadingProfile(false) })
+        return () => { active = false }
+    }, [])
 
     useEffect(() => {
         let active = true
@@ -88,6 +106,10 @@ function Import({ onGoToAttendance = () => {} }) {
     }
 
     const openGenerateModal = () => {
+        if (isLoadingProfile) {
+            setFieldWarning('Loading your program and year level. Please wait a moment.')
+            return
+        }
         if (!form.program || !form.year_level) {
             setFieldWarning('Enter a program and year level first.')
             return
@@ -155,6 +177,11 @@ function Import({ onGoToAttendance = () => {} }) {
         const opts = (typeof eventOrOpts === 'object' && !eventOrOpts?.preventDefault) ? eventOrOpts : {}
         const isConfirmBlank = opts.confirm_blank !== undefined ? opts.confirm_blank : confirmBlankPending
         const isOverride = opts.override !== undefined ? opts.override : overridePending
+
+        if (isLoadingProfile) {
+            setFieldWarning('Loading your program and year level. Please wait a moment.')
+            return
+        }
 
         if (!form.program || !form.year_level || !form.raw_text.trim()) {
             setFieldWarning('Complete the program, year level, and attendance text.')
