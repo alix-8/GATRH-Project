@@ -12,7 +12,6 @@ import RecordProgramIcon from '../../../assets/icons/RecordProgramIcon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDay from '../../../components/RecordDay'
-import RecordDate from '../../../components/RecordDate'
 import SearchPill from '../../../components/search/SearchPill'
 import './SubmissionDrawer.css'
 
@@ -122,7 +121,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                     <>
                         <small className="ph-record-date-time">
                             <img src={RecordCalendarIcon} alt="" />
-                            <span>{detail.week_range?.label || submission.week_range?.label || <RecordDate value={detail.day || submission.date} />}</span>
+                            <span>{detail.submission_date || submission.submission_date || '—'}</span>
                             <img className="ph-record-clock-icon" src={RecordClockIcon} alt="" />
                             <span className="ph-record-time-value">
                                 {detail.time

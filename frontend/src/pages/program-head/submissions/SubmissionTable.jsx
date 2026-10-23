@@ -11,6 +11,7 @@ import CalendarFilter from '../../../components/Filters/CalendarFilter'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 
 const GATHERINGS = [
     { value: '', label: 'Gathering' },
@@ -49,21 +50,37 @@ export default function SubmissionTable() {
         return values.toString()
     }, [filters])
 
-    const loadSubmissions = useCallback(async (signal) => {
-        setLoading(true)
-        setError('')
+    const hasActiveFilters = Boolean(
+        filters.date ||
+        filters.gathering_type ||
+        filters.year_level ||
+        filters.status ||
+        filters.search.trim()
+    )
+
+    const loadSubmissions = useCallback(async (signal, silent = false) => {
+        if (!silent) {
+            setLoading(true)
+            setError('')
+        }
         try {
             const result = await request(`/program-head/submissions?${params}`, { signal })
             setRows(Array.isArray(result.data) ? result.data : [])
             setPendingCount(result.pending_count ?? 0)
+            setError('')
         } catch (err) {
             if (err.name !== 'AbortError') {
                 setError(err.message || 'Could not load submissions.')
             }
         } finally {
-            if (!signal?.aborted) setLoading(false)
+            if (!signal?.aborted && !silent) setLoading(false)
         }
     }, [params])
+
+    const refreshSubmissions = useCallback((signal) => (
+        activeSubmission ? Promise.resolve() : loadSubmissions(signal, true)
+    ), [activeSubmission, loadSubmissions])
+    useLiveRefresh(refreshSubmissions, 30_000)
 
     useEffect(() => {
         const controller = new AbortController()
@@ -159,7 +176,9 @@ export default function SubmissionTable() {
                                 ) : rows.length === 0 ? (
                                     <tr>
                                         <td className="ph-submissions-state" colSpan="7">
-                                            No submissions match these filters.
+                                            {hasActiveFilters
+                                                ? 'No submissions match the selected filters.'
+                                                : 'No pending submissions yet.'}
                                         </td>
                                     </tr>
                                 ) : rows.map((row) => (

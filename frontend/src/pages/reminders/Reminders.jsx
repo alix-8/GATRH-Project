@@ -17,6 +17,7 @@ import EditIcon from '../../assets/icons/edit-icon.svg'
 import AddReminderIcon from '../../assets/icons/add-reminder-icon.svg'
 import DeleteIcon from '../../assets/icons/delete-icon.svg'
 import { request } from '../../api/request'
+import useLiveRefresh from '../../hooks/useLiveRefresh'
 import Calendar from '../../components/Calendar/Calendar'
 import { TrashIcon } from '../../components/Icons/Reusables'
 import LoadingCircle from '../../components/feedback/LoadingCircle'
@@ -244,6 +245,11 @@ function Reminders() {
     const [error, setError] = useState('')
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [editingReminder, setEditingReminder] = useState(null)
+    useLiveRefresh(() => {
+        if (!attendanceDrawerOpen && !isAddOpen) {
+            setAttendanceRefreshTrigger((current) => current + 1)
+        }
+    }, 30_000)
     const location = useLocation()
     const [formData, setFormData] = useState(EMPTY_FORM)
     const [openMenu, setOpenMenu] = useState('')
@@ -264,6 +270,8 @@ function Reminders() {
     useEffect(() => () => escalationReportControllerRef.current?.abort(), [])
 
     useEffect(() => {
+        if (attendanceDrawerOpen || isAddOpen) return undefined
+
         if (!localStorage.getItem('user')) {
             return
         }
@@ -394,7 +402,7 @@ function Reminders() {
         fetchReminderData()
 
         return () => controller.abort()
-    }, [role, attendanceRefreshTrigger])
+    }, [role, attendanceRefreshTrigger, attendanceDrawerOpen, isAddOpen])
 
     useEffect(() => {
         const targetReminderId = location.state?.highlightReminderId

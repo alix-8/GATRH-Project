@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import { request } from '../../../api/request'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import ChancellorIcon from '../../../assets/icons/chancellor-icon.svg'
 import McgiCoordinatorIcon from '../../../assets/icons/mcgi-coordinator-icon.svg'
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
@@ -50,6 +51,11 @@ function UserRoles() {
     const [editingUser, setEditingUser] = useState(null)
     const [notice, setNotice] = useState('')
     const [error, setError] = useState('')
+    const [pollTick, setPollTick] = useState(0)
+
+    useLiveRefresh(() => {
+        if (!isAddUserOpen && !editingUser) setPollTick((current) => current + 1)
+    }, 30_000)
 
     useEffect(() => {
         const timeout = window.setTimeout(() => setSearchQuery(filters.search.trim()), 300)
@@ -57,28 +63,26 @@ function UserRoles() {
     }, [filters.search])
 
     useEffect(() => {
-        let active = true
+        const controller = new AbortController()
         const params = new URLSearchParams({ per_page: '100', page: String(page) })
         if (filters.role) params.set('role', filters.role)
         if (filters.program) params.set('program', filters.program)
         if (filters.status) params.set('status', filters.status)
         if (searchQuery) params.set('search', searchQuery)
 
-        request(`/admin/users?${params}`)
+        request(`/admin/users?${params}`, { signal: controller.signal })
             .then(data => {
-                if (active) {
-                    setPageData(data)
-                    setError('')
-                }
+                setPageData(data)
+                setError('')
             })
             .catch(error => {
-                if (active) setError(error.message || 'Unable to load role counts.')
+                if (error.name !== 'AbortError') setError(error.message || 'Unable to load role counts.')
             })
             .finally(() => {
-                if (active) setLoading(false)
+                if (!controller.signal.aborted) setLoading(false)
             })
-        return () => { active = false }
-    }, [filters.role, filters.program, filters.status, searchQuery, page, refreshVersion])
+        return () => controller.abort()
+    }, [filters.role, filters.program, filters.status, searchQuery, page, refreshVersion, pollTick])
 
     const summary = pageData?.summary
     const users = pageData?.users

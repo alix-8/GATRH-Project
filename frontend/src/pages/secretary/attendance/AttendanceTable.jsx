@@ -12,6 +12,7 @@ import Calendar from '../../../components/Calendar/Calendar'
 import './AttendanceTable.css'
 import ReviewDrawer from './ReviewDrawer'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 
 const STATUS_META = {
     validating: { label: 'Validating', dot: '#8c96a4' },
@@ -119,9 +120,11 @@ function AttendanceTable() {
         setSelectedDate(null)
     }
 
-    const fetchRecords = useCallback(async (signal) => {
-        setLoading(true)
-        setError(null)
+    const fetchRecords = useCallback(async (signal, silent = false) => {
+        if (!silent) {
+            setLoading(true)
+            setError(null)
+        }
         try {
             const params = new URLSearchParams()
             if (gathering) params.set('gathering_type', gathering)
@@ -148,9 +151,15 @@ function AttendanceTable() {
         } catch (err) {
             if (err.name !== 'AbortError') setError(err.message)
         } finally {
-            if (!signal?.aborted) setLoading(false)
+            if (!signal?.aborted && !silent) setLoading(false)
         }
     }, [gathering, selectedDate, sortBy])
+
+    const refreshRecords = useCallback((signal) => {
+        if (drawerOpen) return Promise.resolve()
+        return fetchRecords(signal, true)
+    }, [drawerOpen, fetchRecords])
+    useLiveRefresh(refreshRecords, 30_000)
 
     useEffect(() => {
         const controller = new AbortController()

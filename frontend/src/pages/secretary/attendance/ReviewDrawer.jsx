@@ -28,6 +28,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [unsubmitConfirm, setUnsubmitConfirm] = useState(false)
     const [duplicateConfirm, setDuplicateConfirm] = useState(null)
     const [editError, setEditError] = useState(null)
+    const [removedInactiveStudentIds, setRemovedInactiveStudentIds] = useState([])
     const [search, setSearch] = useState('')
     const [editing, setEditing] = useState(false)
     //for status filter
@@ -42,6 +43,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         setDraft(null)
         setDuplicateConfirm(null)
         setEditError(null)
+        setRemovedInactiveStudentIds([])
         setEditing(false)
         setUnsubmitConfirm(false)
         setUnsubmitting(false)
@@ -96,6 +98,20 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             }))
         )
         return validationErrors.length ? { ...details, format_errors: validationErrors } : details
+    }
+
+    const handleRemoveInactiveStudents = (inactiveStudents) => {
+        const ids = inactiveStudents.map((student) => Number(student.student_id)).filter(Number.isInteger)
+        if (!ids.length) return
+        const idSet = new Set(ids)
+        setDraft((current) => current ? {
+            ...current,
+            students: current.students.filter((student) => !idSet.has(Number(student.student_id))),
+        } : current)
+        setRemovedInactiveStudentIds((current) => [...new Set([...current, ...ids])])
+        setEditing(true)
+        setEditError(null)
+        setError(null)
     }
 
     const handleSubmit = async (opts = {}) => {
@@ -170,6 +186,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             const response = await request(`/attendance/drafts/${draft.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({
+                    remove_inactive_student_ids: removedInactiveStudentIds,
                     records: draft.students.map((student) => ({
                         student_id: student.student_id,
                         day: student.day_provided === false
@@ -192,6 +209,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 responded_count: response.data?.responded_count ?? current.responded_count,
                 no_response_count: response.data?.no_response_count ?? current.no_response_count,
             } : current)
+            setRemovedInactiveStudentIds([])
             setEditing(false)
         } catch (err) {
             setEditError({ message: err.message, details: normalizeServerErrors(err.details || {}) })
@@ -402,6 +420,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                     overlayClassName="attendance-edit-error-overlay"
                     errorMessage={editError.message}
                     errorDetails={editError.details}
+                    onRemoveInactiveStudents={handleRemoveInactiveStudents}
                     showRetryButton={false}
                     closeLabel="Back to editing"
                     onClose={() => {

@@ -11,6 +11,7 @@ import SubmittedIcon from '../../../assets/icons/SubmittedIcon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import './Dashboard.css'
 
 const metrics = [
@@ -42,24 +43,38 @@ function ProgramHeadDashboard() {
     const role = JSON.parse(localStorage.getItem('user') || 'null')?.role
     const submissionPath = role === 'program_secretary' ? '/program-secretary/submission' : '/program-head/submission'
 
-    const loadDashboard = useCallback(async () => {
-        setLoading(true)
-        setError('')
+    const loadDashboard = useCallback(async (signal, silent = false) => {
+        if (!silent) {
+            setLoading(true)
+            setError('')
+        }
         try {
-            const data = await request('/dashboard')
+            const data = await request('/dashboard', { signal })
             setSummary(data.summary ?? {})
             setPending(Array.isArray(data.pending_list) ? data.pending_list : [])
             setActivities(Array.isArray(data.recent_records) ? data.recent_records : [])
+            setError('')
         } catch (loadError) {
-            setPending([])
-            setActivities([])
-            setError(loadError.message || 'Unable to load dashboard data.')
+            if (loadError.name !== 'AbortError') {
+                if (!silent) {
+                    setPending([])
+                    setActivities([])
+                }
+                setError(loadError.message || 'Unable to load dashboard data.')
+            }
         } finally {
-            setLoading(false)
+            if (!signal?.aborted && !silent) setLoading(false)
         }
     }, [])
 
-    useEffect(() => { loadDashboard() }, [loadDashboard])
+    useEffect(() => {
+        const controller = new AbortController()
+        loadDashboard(controller.signal)
+        return () => controller.abort()
+    }, [loadDashboard])
+
+    const refreshDashboard = useCallback((signal) => loadDashboard(signal, true), [loadDashboard])
+    useLiveRefresh(refreshDashboard)
 
     const openReview = () => navigate(submissionPath)
 

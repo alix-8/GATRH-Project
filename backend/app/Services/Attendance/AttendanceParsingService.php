@@ -250,6 +250,20 @@ class AttendanceParsingService
             ->first(['id', 'name', 'program', 'year_level']);
     }
 
+    /** Finds an inactive student by the name supplied in an attendance import. */
+    private function findMatchingInactiveStudent(string $program, int $yearLevel, string $studentName): ?Student
+    {
+        $matches = Student::where('is_active', false)
+            ->where('name', 'LIKE', "%{$studentName}%")
+            ->get(['id', 'name', 'program', 'year_level']);
+
+        $sameSectionMatch = $matches->first(fn (Student $student) =>
+            $student->program === $program && (int) $student->year_level === $yearLevel
+        );
+
+        return $sameSectionMatch ?? ($matches->count() === 1 ? $matches->first() : null);
+    }
+
     /**
      * Finds students belonging to the section who were not mentioned at all in the parsed submissions.
      */
@@ -319,7 +333,13 @@ class AttendanceParsingService
 
         $formatErrors = [];
 
-        if (!$this->isValidBatchFormat($parts['raw_batch'])) {
+        if (mb_strlen((string) $parts['raw_batch']) > 10) {
+            $formatErrors[] = [
+                'field'  => 'batch',
+                'value'  => $parts['raw_batch'],
+                'reason' => 'Time must be 10 characters or fewer.',
+            ];
+        } elseif (!$this->isValidBatchFormat($parts['raw_batch'])) {
             $formatErrors[] = [
                 'field'  => 'batch',
                 'value'  => $parts['raw_batch'],
@@ -327,9 +347,23 @@ class AttendanceParsingService
             ];
         }
 
+        if (mb_strlen((string) $parts['venue']) > 25) {
+            $formatErrors[] = [
+                'field'  => 'venue',
+                'value'  => $parts['venue'],
+                'reason' => 'Venue must be 25 characters or fewer.',
+            ];
+        }
+
         $hasAnyDetails = !empty($parts['raw_batch']) || !empty($parts['venue']) || !empty($parts['raw_date']);
 
-        if (!empty($parts['raw_date'])) {
+        if (mb_strlen((string) $parts['raw_date']) > 10) {
+            $formatErrors[] = [
+                'field'  => 'day',
+                'value'  => $parts['raw_date'],
+                'reason' => 'Day must be 10 characters or fewer.',
+            ];
+        } elseif (!empty($parts['raw_date'])) {
             $range = $this->getApplicableWeekRange($gatheringType, $cycle, $rawText);
             $resolution = $this->resolveWeekdayToDate($parts['raw_date'], $range['start'], $range['end']);
             if ($resolution['success']) {
@@ -353,9 +387,16 @@ class AttendanceParsingService
         $student = $this->findMatchingStudent($program, $yearLevel, $parts['student_name']);
 
         if (!$student) {
+            $inactiveStudent = $this->findMatchingInactiveStudent($program, $yearLevel, $parts['student_name']);
             $outsideStudent = $this->findMatchingStudentOutsideSection($program, $yearLevel, $parts['student_name']);
             return [
                 'matched'        => false,
+                'inactive_student_data' => $inactiveStudent ? [
+                    'extracted_name' => $parts['student_name'],
+                    'student_name' => $inactiveStudent->name,
+                    'program' => $inactiveStudent->program,
+                    'year_level' => $inactiveStudent->year_level,
+                ] : null,
                 'out_of_course_data' => $outsideStudent ? [
                     'extracted_name' => $parts['student_name'],
                     'student_name' => $outsideStudent->name,
@@ -445,6 +486,7 @@ class AttendanceParsingService
         $result = ['pm' => [], 'ws' => [], 'tg' => []];
         $unmatchedLines = [];
         $outOfCourseStudents = [];
+        $inactiveStudents = [];
         $incompleteRecords = [];
         $formatErrorLines = [];
         $blankEntries = [];
@@ -454,8 +496,16 @@ class AttendanceParsingService
             $student = $this->findMatchingStudent($program, $yearLevel, $entry['name']);
 
             if (!$student) {
+                $inactiveStudent = $this->findMatchingInactiveStudent($program, $yearLevel, $entry['name']);
                 $outsideStudent = $this->findMatchingStudentOutsideSection($program, $yearLevel, $entry['name']);
-                if ($outsideStudent) {
+                if ($inactiveStudent) {
+                    $inactiveStudents[] = [
+                        'extracted_name' => $entry['name'],
+                        'student_name' => $inactiveStudent->name,
+                        'program' => $inactiveStudent->program,
+                        'year_level' => $inactiveStudent->year_level,
+                    ];
+                } elseif ($outsideStudent) {
                     $outOfCourseStudents[] = [
                         'extracted_name' => $entry['name'],
                         'student_name' => $outsideStudent->name,
@@ -517,11 +567,13 @@ class AttendanceParsingService
                 $hasTime = !empty($slot['time']);
                 $hasVenue = !empty($slot['venue']);
 
-                if ($hasTime && !$this->isValidBatchFormat($slot['time'])) {
+                if ($hasTime && (mb_strlen((string) $slot['time']) > 10 || !$this->isValidBatchFormat($slot['time']))) {
                     $timeErr = [
                         'field'  => 'time',
                         'value'  => $slot['time'],
-                        'reason' => 'Time must be in a valid format, e.g. "8AM" or "8:30 AM".',
+                        'reason' => mb_strlen((string) $slot['time']) > 10
+                            ? 'Time must be 10 characters or fewer.'
+                            : 'Time must be in a valid format, e.g. "8AM" or "8:30 AM".',
                     ];
                     $formatErrorLines[] = [
                         'student_name'   => $student->name,
@@ -534,6 +586,23 @@ class AttendanceParsingService
                     ];
                 }
 
+                if ($hasVenue && mb_strlen((string) $slot['venue']) > 25) {
+                    $venueErr = [
+                        'field' => 'venue',
+                        'value' => $slot['venue'],
+                        'reason' => 'Venue must be 25 characters or fewer.',
+                    ];
+                    $formatErrorLines[] = [
+                        'student_name' => $student->name,
+                        'gathering_type' => $type,
+                        'field' => 'venue',
+                        'value' => $slot['venue'],
+                        'reason' => $venueErr['reason'],
+                        'raw_line' => "{$student->name} (" . strtoupper($type) . "): {$slot['venue']}",
+                        'errors' => [$venueErr],
+                    ];
+                }
+
                 $range = $this->getApplicableWeekRange($type, $cycle, $rawText);
                 $resolvedDay = null;
 
@@ -541,7 +610,22 @@ class AttendanceParsingService
                     continue;
                 }
 
-                if ($hasDay) {
+                if ($hasDay && mb_strlen((string) $slot['day']) > 10) {
+                    $dayErr = [
+                        'field' => 'day',
+                        'value' => $slot['day'],
+                        'reason' => 'Day must be 10 characters or fewer.',
+                    ];
+                    $formatErrorLines[] = [
+                        'student_name' => $student->name,
+                        'gathering_type' => $type,
+                        'field' => 'day',
+                        'value' => $slot['day'],
+                        'reason' => $dayErr['reason'],
+                        'raw_line' => "{$student->name} (" . strtoupper($type) . "): {$slot['day']}",
+                        'errors' => [$dayErr],
+                    ];
+                } elseif ($hasDay) {
                     $resolution = $this->resolveWeekdayToDate($slot['day'], $range['start'], $range['end']);
                     if ($resolution['success']) {
                         $resolvedDay = $resolution['date'];
@@ -631,6 +715,7 @@ class AttendanceParsingService
             'records'                 => $result,
             'unmatched_lines'         => $unmatchedLines,
             'out_of_course_students' => $outOfCourseStudents,
+            'inactive_students'       => $inactiveStudents,
             'incomplete_records'      => $incompleteRecords,
             'format_errors'           => $formatErrorLines,
             'blank_entries'           => $blankEntries,

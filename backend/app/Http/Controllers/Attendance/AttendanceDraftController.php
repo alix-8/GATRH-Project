@@ -146,16 +146,27 @@ class AttendanceDraftController extends Controller
         }
 
         $validated = $request->validate([
-            'records' => 'required|array|min:1',
+            'records' => 'required|array',
             'records.*.student_id' => 'required|integer|exists:students,id',
             'records.*.day' => 'nullable|date_format:Y-m-d',
             'records.*.day_provided' => 'required|boolean',
-            'records.*.batch' => 'nullable|string|max:255',
-            'records.*.venue' => 'nullable|string|max:255',
+            'records.*.batch' => 'nullable|string|max:10',
+            'records.*.venue' => 'nullable|string|max:25',
+            'remove_inactive_student_ids' => 'sometimes|array',
+            'remove_inactive_student_ids.*' => 'integer|distinct',
         ]);
 
         $originalRecords = collect($draft->parsed_data ?? []);
-        $expectedIds = $originalRecords->pluck('student_id')->filter()->map(fn ($studentId) => (int) $studentId)->unique()->sort()->values();
+        $originalIds = $originalRecords->pluck('student_id')->filter()->map(fn ($studentId) => (int) $studentId)->unique()->sort()->values();
+        $requestedRemovalIds = collect($validated['remove_inactive_student_ids'] ?? [])->map(fn ($studentId) => (int) $studentId)->unique()->values();
+        $originalInactiveIds = Student::whereKey($originalIds->all())->where('is_active', false)->pluck('id')->map(fn ($studentId) => (int) $studentId);
+        if ($requestedRemovalIds->diff($originalInactiveIds)->isNotEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Only inactive students already in this attendance draft can be removed.',
+            ], 422);
+        }
+        $expectedIds = $originalIds->diff($requestedRemovalIds)->sort()->values();
         $submittedIds = collect($validated['records'])->pluck('student_id')->map(fn ($studentId) => (int) $studentId)->unique()->sort()->values();
 
         if ($expectedIds->all() !== $submittedIds->all() || $submittedIds->count() !== count($validated['records'])) {
@@ -163,6 +174,27 @@ class AttendanceDraftController extends Controller
                 'status' => 'error',
                 'message' => 'The attendance draft must contain each original student exactly once.',
             ], 422);
+        }
+
+        $inactiveStudents = Student::whereKey($submittedIds->all())
+            ->where('is_active', false)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Student $student) => ['student_id' => $student->id, 'student_name' => $student->name])
+            ->values();
+
+        if ($inactiveStudents->isNotEmpty()) {
+            $message = $inactiveStudents->count() === 1
+                ? "{$inactiveStudents->first()['student_name']} is already inactive and cannot be edited in this attendance draft."
+                : 'These students are already inactive and cannot be edited in this attendance draft: '
+                    . $inactiveStudents->pluck('student_name')->implode(', ')
+                    . '.';
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $message,
+                'inactive_students' => $inactiveStudents,
+            ], 403);
         }
 
         $accessibleStudentCount = Student::whereKey($submittedIds->all())
@@ -266,8 +298,11 @@ class AttendanceDraftController extends Controller
             ]);
         });
 
+        $action = $requestedRemovalIds->isNotEmpty()
+            ? 'Removed ' . $requestedRemovalIds->count() . ' inactive student(s) and edited attendance draft for ' . $draft->gathering_type
+            : "Edited attendance draft for {$draft->gathering_type}";
         $auditLogService->recordAction(
-            "Edited attendance draft for {$draft->gathering_type}",
+            $action,
             'attendance_drafts',
             (string) $draft->id,
             $request->user()

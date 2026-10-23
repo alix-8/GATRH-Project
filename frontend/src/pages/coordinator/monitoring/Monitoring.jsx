@@ -8,6 +8,7 @@ import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
 import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg'
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import RecordDate from '../../../components/RecordDate'
 import './Monitoring.css'
 
@@ -58,28 +59,36 @@ function CoordinatorMonitoring() {
     const [activeIncompleteEntry, setActiveIncompleteEntry] = useState(null)
     const [courseDetails, setCourseDetails] = useState(null)
     const [detailFailure, setDetailFailure] = useState(null)
+    const [pollTick, setPollTick] = useState(0)
+    useLiveRefresh(() => setPollTick((current) => current + 1), 30_000)
 
     useEffect(() => {
         const controller = new AbortController()
 
-        request('/monitoring', { signal: controller.signal })
-            .then((data) => {
-                if (controller.signal.aborted) return
-                setMonitoring(data)
-            })
-            .catch((loadError) => {
-                if (loadError.name !== 'AbortError') {
-                    setRequestError({
-                        message: loadError.message || 'Unable to load monitoring data.',
-                    })
-                }
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) setSettledQuery(true)
-            })
+        const loadMonitoring = () => {
+            request('/monitoring', { signal: controller.signal })
+                .then((data) => {
+                    if (controller.signal.aborted) return
+                    setMonitoring(data)
+                    setRequestError(null)
+                })
+                .catch((loadError) => {
+                    if (loadError.name !== 'AbortError') {
+                        setRequestError({
+                            message: loadError.message || 'Unable to load monitoring data.',
+                        })
+                    }
+                })
+                .finally(() => {
+                    if (!controller.signal.aborted) setSettledQuery(true)
+                })
+        }
+        loadMonitoring()
 
-        return () => controller.abort()
-    }, [])
+        return () => {
+            controller.abort()
+        }
+    }, [pollTick])
 
     const loading = !settledQuery
     const error = requestError?.message || ''

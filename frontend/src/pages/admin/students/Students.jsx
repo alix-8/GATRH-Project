@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import { request } from '../../../api/request'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import ActiveUsersIcon from '../../../assets/icons/active-users-icon.svg'
 import SecretariesIcon from '../../../assets/icons/secretaries-icon.svg'
 import InactiveClockIcon from '../../../assets/icons/in-progress-programs-icon.svg'
@@ -41,6 +42,11 @@ function Students() {
     const [editingStudent, setEditingStudent] = useState(null)
     const [notice, setNotice] = useState('')
     const [error, setError] = useState('')
+    const [pollTick, setPollTick] = useState(0)
+
+    useLiveRefresh(() => {
+        if (!isAddOpen && !isImportOpen && !editingStudent) setPollTick((current) => current + 1)
+    }, 30_000)
 
     useEffect(() => {
         const timeout = window.setTimeout(() => setSearchQuery(filters.search.trim()), 300)
@@ -48,26 +54,24 @@ function Students() {
     }, [filters.search])
 
     useEffect(() => {
-        let active = true
+        const controller = new AbortController()
         const params = new URLSearchParams({ per_page: '100', page: String(page) })
         if (filters.program) params.set('program', filters.program)
         if (filters.year_level) params.set('year_level', filters.year_level)
         if (filters.status) params.set('status', filters.status)
         if (searchQuery) params.set('search', searchQuery)
 
-        request(`/admin/students?${params}`)
+        request(`/admin/students?${params}`, { signal: controller.signal })
             .then(data => {
-                if (active) {
-                    setPageData(data)
-                    setError('')
-                }
+                setPageData(data)
+                setError('')
             })
             .catch(error => {
-                if (active) setError(error.message || 'Unable to load students.')
+                if (error.name !== 'AbortError') setError(error.message || 'Unable to load students.')
             })
-            .finally(() => { if (active) setLoading(false) })
-        return () => { active = false }
-    }, [filters.program, filters.year_level, filters.status, searchQuery, page, refreshVersion])
+            .finally(() => { if (!controller.signal.aborted) setLoading(false) })
+        return () => controller.abort()
+    }, [filters.program, filters.year_level, filters.status, searchQuery, page, refreshVersion, pollTick])
 
     const summary = pageData?.summary
     const students = pageData?.students

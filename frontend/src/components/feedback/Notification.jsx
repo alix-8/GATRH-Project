@@ -7,6 +7,7 @@ import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
 import { request } from '../../api/request'
 import RecordDate from '../RecordDate'
 import { getSeenNotificationIds, markNotificationIdsSeen } from './notificationReadState'
+import useLiveRefresh from '../../hooks/useLiveRefresh'
 import './Notification.css'
 
 function formatReminderTime(value) {
@@ -227,10 +228,7 @@ function Notification() {
         return () => window.removeEventListener('notifications:changed', fetchNotifications)
     }, [fetchNotifications])
 
-    useEffect(() => {
-        const intervalId = window.setInterval(fetchNotifications, 60_000)
-        return () => window.clearInterval(intervalId)
-    }, [fetchNotifications])
+    useLiveRefresh(fetchNotifications, 60_000)
 
     useEffect(() => {
         if (!isOpen) return

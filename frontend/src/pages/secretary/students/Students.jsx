@@ -11,6 +11,7 @@ import CalendarIcon from '../../../assets/icons/calendar-icon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import './Students.css'
 
 const SORT_OPTIONS = ['Sort by', 'Ascending', 'Descending']
@@ -42,6 +43,8 @@ function Students() {
     const [attendanceSession, setAttendanceSession] = useState(null)
     const [escalationWeekRange, setEscalationWeekRange] = useState(null)
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('user')))
+    const [pollTick, setPollTick] = useState(0)
+    useLiveRefresh(() => setPollTick((current) => current + 1), 30_000)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedSort, setSelectedSort] = useState(null)
     const [isSortOpen, setIsSortOpen] = useState(false)
@@ -68,26 +71,32 @@ function Students() {
             return
         }
 
+        const controller = new AbortController()
         fetch(`${API_BASE_URL}/students/attendance-snapshot`, {
             credentials: 'include',
+            signal: controller.signal,
             headers: {
                 Accept: 'application/json',
             },
         })
             .then(res => res.ok ? res.json() : [])
             .then(data => {
+                if (controller.signal.aborted) return
                 setStudents(Array.isArray(data.students) ? data.students : [])
                 setAttendanceSession(data.session || null)
                 setEscalationWeekRange(data.week_range || null)
                 setLoading(false)
             })
             .catch(() => {
+                if (controller.signal.aborted) return
                 setStudents([])
                 setAttendanceSession(null)
                 setEscalationWeekRange(null)
                 setLoading(false)
             })
-    }, [])
+
+        return () => controller.abort()
+    }, [pollTick])
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -376,8 +385,16 @@ function Students() {
                                         <td>{normalizedYear(student.year_level)}</td>
                                         <td>{student.program}</td>
                                         <td>
-                                            {student.response && (
+                                            {student.response ? (
                                                 <span className={`response-badge ${student.response === 'Responded' ? 'responded' : 'no-response'}`}>{student.response}</span>
+                                            ) : (
+                                                <span
+                                                    className="response-badge placeholder"
+                                                    aria-label="No escalation for this week yet"
+                                                    title="No escalation for this week yet"
+                                                >
+                                                    —
+                                                </span>
                                             )}
                                         </td>
                                         <td>

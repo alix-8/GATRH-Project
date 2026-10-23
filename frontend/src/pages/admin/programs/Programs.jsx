@@ -4,6 +4,7 @@ import Sidebar from '../../../components/layout/Sidebar'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import ModalSelect from '../dashboard/ModalSelect'
 import { request } from '../../../api/request'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import TotalProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
 import ProgramHeadsIcon from '../../../assets/icons/active-users-icon.svg'
 import ActiveProgramIcon from '../../../assets/icons/active-program-icon.svg'
@@ -32,6 +33,11 @@ function Programs() {
     const [loading, setLoading] = useState(true)
     const [notice, setNotice] = useState('')
     const [error, setError] = useState('')
+    const [pollTick, setPollTick] = useState(0)
+
+    useLiveRefresh(() => {
+        if (!isAddOpen && !editingProgram) setPollTick((current) => current + 1)
+    }, 30_000)
 
     useEffect(() => {
         const timeout = window.setTimeout(() => setSearchQuery(filters.search.trim()), 300)
@@ -39,26 +45,24 @@ function Programs() {
     }, [filters.search])
 
     useEffect(() => {
-        let active = true
+        const controller = new AbortController()
         const params = new URLSearchParams({ page: String(page) })
         if (filters.program) params.set('program', filters.program)
         if (filters.status) params.set('status', filters.status)
         if (searchQuery) params.set('search', searchQuery)
 
-        request(`/admin/programs?${params}`)
+        request(`/admin/programs?${params}`, { signal: controller.signal })
             .then(data => {
-                if (active) {
-                    setPageData(data)
-                    setError('')
-                }
+                setPageData(data)
+                setError('')
             })
             .catch(error => {
-                if (active) setError(error.message || 'Unable to load program counts.')
+                if (error.name !== 'AbortError') setError(error.message || 'Unable to load program counts.')
             })
-            .finally(() => { if (active) setLoading(false) })
+            .finally(() => { if (!controller.signal.aborted) setLoading(false) })
 
-        return () => { active = false }
-    }, [filters.program, filters.status, searchQuery, page, refreshVersion])
+        return () => controller.abort()
+    }, [filters.program, filters.status, searchQuery, page, refreshVersion, pollTick])
 
     const summary = pageData?.summary
     const programs = pageData?.programs

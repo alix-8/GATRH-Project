@@ -46,6 +46,7 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                                 <input
                                     aria-label={`Time for ${student.student_name}`}
                                     type="text"
+                                    maxLength={10}
                                     className={`${invalidTime ? 'drawer-edit-field-error' : ''} ${incomplete && !hasBatch ? 'drawer-edit-field-warning' : ''}`}
                                     value={editableValue(student.batch)}
                                     placeholder="Time"
@@ -59,6 +60,7 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                                 <input
                                     aria-label={`Day for ${student.student_name}`}
                                     type="text"
+                                    maxLength={10}
                                     className={`${invalidDay ? 'drawer-edit-field-error' : ''} ${incomplete && !hasDay ? 'drawer-edit-field-warning' : ''}`}
                                     value={student.day_provided === false ? '' : displayAttendanceDay(editableValue(student.day || day))}
                                     placeholder="Day"
@@ -72,6 +74,7 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                                 <input
                                     aria-label={`Venue for ${student.student_name}`}
                                     type="text"
+                                    maxLength={25}
                                     className={incomplete && !hasVenue ? 'drawer-edit-field-warning' : ''}
                                     value={editableValue(student.venue)}
                                     placeholder="Venue"

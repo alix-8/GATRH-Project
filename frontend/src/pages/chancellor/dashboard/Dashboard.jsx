@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
 import { request } from '../../../api/request'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import DropdownIcon from '../../../assets/icons/drop-down-icon.svg'
 import CompletedProgramsIcon from '../../../assets/icons/completed-programs-icon.svg'
 import InProgressProgramsIcon from '../../../assets/icons/in-progress-programs-icon.svg'
@@ -73,6 +74,8 @@ function ChancellorDashboard() {
     })
     const [loadError, setLoadError] = useState('')
     const [isYearOpen, setIsYearOpen] = useState(false)
+    const [pollTick, setPollTick] = useState(0)
+    useLiveRefresh(() => setPollTick((current) => current + 1), 30_000)
     const yearRef = useRef(null)
     const query = useMemo(() => {
         const params = new URLSearchParams({
@@ -111,8 +114,10 @@ function ChancellorDashboard() {
         }
 
         loadDashboard()
-        return () => controller.abort()
-    }, [query])
+        return () => {
+            controller.abort()
+        }
+    }, [query, pollTick])
 
     useEffect(() => {
         const closeOutside = (event) => {
