@@ -102,6 +102,7 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
 
                         <input
                             type="text"
+                            maxLength={10}
                             className={`preview-input ${fieldHasFormatError(s.name, 'batch', s.slot.batch) ? 'preview-input-error' : ''} ${incomplete && !s.slot.batch ? 'preview-input-warning' : ''}`}
                             placeholder="Time"
                             value={s.slot.batch}
@@ -109,6 +110,7 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                         />
                         <input
                             type="text"
+                            maxLength={25}
                             className={`preview-input ${incomplete && !s.slot.venue ? 'preview-input-warning' : ''}`}
                             placeholder="Venue"
                             value={s.slot.venue}
@@ -116,6 +118,7 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                         />
                         <input
                             type="text"
+                            maxLength={10}
                             className={`preview-input ${fieldHasFormatError(s.name, 'day', s.slot.day) ? 'preview-input-error' : ''} ${incomplete && !s.slot.day ? 'preview-input-warning' : ''}`}
                             placeholder="Day"
                             value={s.slot.day}

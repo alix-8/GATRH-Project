@@ -343,6 +343,17 @@
     background: #fff0f0;
 }
 
+.response-badge.placeholder {
+    margin-top: 4px;
+    border: 1px solid #d5dbe5;
+    color: #8994a5;
+    background: #f1f3f6;
+}
+
+.response-badge.placeholder::before {
+    content: none;
+}
+
 .response-badge::before {
     content: '●';
     font-size: 17px;

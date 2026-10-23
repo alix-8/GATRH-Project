@@ -4,6 +4,7 @@ import Sidebar from '../../../components/layout/Sidebar'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import ModalSelect from '../dashboard/ModalSelect'
 import { request } from '../../../api/request'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import TotalActivitiesIcon from '../../../assets/icons/total-activities-icon.svg'
 import TodayActivitiesIcon from '../../../assets/icons/today-activities-icon.svg'
 import UserRolesChangesIcon from '../../../assets/icons/user-roles-changes-icons.svg'
@@ -50,6 +51,9 @@ function ActivityLog() {
     const [searchInput, setSearchInput] = useState('')
     const [search, setSearch] = useState('')
     const [selectedActivity, setSelectedActivity] = useState(null)
+    const [pollTick, setPollTick] = useState(0)
+
+    useLiveRefresh(() => setPollTick((current) => current + 1), 30_000)
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
@@ -64,29 +68,28 @@ function ActivityLog() {
     }, [searchInput, search])
 
     useEffect(() => {
-        let active = true
+        const controller = new AbortController()
         const params = new URLSearchParams({ page: String(page) })
         if (search) params.set('search', search)
         if (filters.date) params.set('date', filters.date)
         if (filters.module) params.set('module', filters.module)
         if (filters.result) params.set('result', filters.result)
-        request(`/admin/activity-log?${params}`)
+        request(`/admin/activity-log?${params}`, { signal: controller.signal })
             .then(data => {
-                if (!active) return
                 setActivityLog(data.activity_log)
                 setSummary(data.summary)
                 setError('')
             })
             .catch(error => {
-                if (active) {
+                if (error.name !== 'AbortError') {
                     setActivityLog(null)
                     setSummary(null)
                     setError(error.message || 'Unable to load the activity log.')
                 }
             })
-            .finally(() => { if (active) setLoading(false) })
-        return () => { active = false }
-    }, [page, search, filters.date, filters.module, filters.result])
+            .finally(() => { if (!controller.signal.aborted) setLoading(false) })
+        return () => controller.abort()
+    }, [page, search, filters.date, filters.module, filters.result, pollTick])
 
     function updateFilter(name, value) {
         if (filters[name] === value) return

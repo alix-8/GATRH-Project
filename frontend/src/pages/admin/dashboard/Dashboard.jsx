@@ -4,6 +4,7 @@ import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import { request } from '../../../api/request'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import ActiveUsersIcon from '../../../assets/icons/active-users-icon.svg'
 import AdminStudentsIcon from '../../../assets/icons/admin-students-icon.svg'
 import ActiveProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
@@ -35,12 +36,23 @@ function AdminDashboard() {
     const [isAddUserOpen, setIsAddUserOpen] = useState(false)
     const [isAddStudentOpen, setIsAddStudentOpen] = useState(false)
     const [isAddProgramOpen, setIsAddProgramOpen] = useState(false)
+    const [pollTick, setPollTick] = useState(0)
+
+    useLiveRefresh(() => {
+        if (!isAddUserOpen && !isAddStudentOpen && !isAddProgramOpen) {
+            setPollTick((current) => current + 1)
+        }
+    })
 
     useEffect(() => {
-        request('/admin/dashboard')
+        const controller = new AbortController()
+        request('/admin/dashboard', { signal: controller.signal })
             .then(setDashboard)
-            .catch(error => setError(error.message || 'Unable to load the admin dashboard.'))
-    }, [])
+            .catch(error => {
+                if (error.name !== 'AbortError') setError(error.message || 'Unable to load the admin dashboard.')
+            })
+        return () => controller.abort()
+    }, [pollTick])
 
     const summary = dashboard?.summary
     const accountRows = dashboard ? [

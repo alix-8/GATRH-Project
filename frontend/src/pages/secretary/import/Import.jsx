@@ -188,7 +188,7 @@ function Import({ onGoToAttendance = () => {} }) {
             return
         }
 
-        const parseErrorKeys = ['unmatched_lines', 'out_of_course_students', 'missing_students', 'incomplete_records', 'format_errors', 'all_no_response_warning']
+        const parseErrorKeys = ['unmatched_lines', 'inactive_students', 'out_of_course_students', 'missing_students', 'incomplete_records', 'format_errors', 'all_no_response_warning']
         const getStructuredParseErrors = payload => {
             const nestedErrors = payload?.errors && typeof payload.errors === 'object' ? payload.errors : {}
             const directErrors = parseErrorKeys.reduce((errors, key) => {
@@ -398,8 +398,8 @@ function Import({ onGoToAttendance = () => {} }) {
                 />
 
                 <div className="import-content">
-                    {weekPeriod && periods?.[weekPeriod] && (
-                        <section className="import-period-banner" aria-live="polite">
+                    {weekPeriod && (periods?.[weekPeriod] || isLoadingPeriods) && (
+                        <section className="import-period-banner" aria-live="polite" aria-busy={isLoadingPeriods}>
                             <div className="import-period-summary">
                                 <svg className="import-period-calendar-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
@@ -416,9 +416,9 @@ function Import({ onGoToAttendance = () => {} }) {
                                     ['ws', 'Worship Service'],
                                     ['tg', 'Thanksgiving'],
                                 ].map(([type, label]) => {
-                                    const range = periods[weekPeriod][type]
-                                    const submitted = range.submitted
-                                    const upcoming = range.is_upcoming && !submitted
+                                    const range = periods?.[weekPeriod]?.[type]
+                                    const submitted = Boolean(range?.submitted)
+                                    const upcoming = Boolean(range?.is_upcoming && !submitted)
                                     const tooltip = submitted
                                         ? 'Attendance for this week cannot be edited anymore. Submitted attendance records are uneditable.'
                                         : 'Attendance for this gathering cannot be added yet because its scheduled date range has not begun.'
@@ -428,10 +428,10 @@ function Import({ onGoToAttendance = () => {} }) {
                                             className={`import-period-date-card ${submitted ? 'import-period-date-submitted' : upcoming ? 'import-period-date-upcoming' : ''}`}
                                             data-tooltip={submitted || upcoming ? tooltip : undefined}
                                             tabIndex={submitted || upcoming ? 0 : undefined}
-                                            aria-label={`${label}: ${range.label}${submitted || upcoming ? `. ${tooltip}` : ''}`}
+                                            aria-label={`${label}: ${range?.label || '—'}${submitted || upcoming ? `. ${tooltip}` : ''}`}
                                         >
                                             <div className="import-period-card-heading">{label}</div>
-                                            <div className="import-period-card-date">{range.label}</div>
+                                            <div className="import-period-card-date">{range?.label || '—'}</div>
                                         </div>
                                     )
                                 })}

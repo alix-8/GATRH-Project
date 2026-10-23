@@ -156,6 +156,7 @@ export default function PreviewImportPanel({ rawText, onChange, errors, onRowsPa
                                         <input
                                             key={field}
                                             type="text"
+                                            maxLength={field === 'venue' ? 25 : 10}
                                             className={`preview-input ${hasError ? 'preview-input-error' : ''} ${incomplete && !s[slotType][field] ? 'preview-input-warning' : ''}`}
                                             placeholder={field === 'day' ? 'Day' : field === 'time' ? 'Time' : 'Venue'}
                                             value={s[slotType][field]}

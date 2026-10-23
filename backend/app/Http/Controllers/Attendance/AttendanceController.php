@@ -594,6 +594,7 @@ class AttendanceController extends Controller
         $parsedSubmissions = [];
         $unmatchedLines = [];
         $outOfCourseStudents = [];
+        $inactiveStudents = [];
         $incompleteRecords = [];
         $formatErrorLines = [];
         $hasAnyAttendanceDetail = false;
@@ -655,7 +656,9 @@ class AttendanceController extends Controller
                     ];
                 }
             } elseif ($result['unmatched_data']) {
-                if (!empty($result['out_of_course_data'])) {
+                if (!empty($result['inactive_student_data'])) {
+                    $inactiveStudents[] = $result['inactive_student_data'];
+                } elseif (!empty($result['out_of_course_data'])) {
                     $outOfCourseStudents[] = $result['out_of_course_data'];
                 } else {
                     $unmatchedLines[] = $result['unmatched_data'];
@@ -685,6 +688,7 @@ class AttendanceController extends Controller
         $hasHardErrors = !empty($formatErrorLines)
             || !empty($incompleteRecords)
             || !empty($unmatchedLines)
+            || !empty($inactiveStudents)
             || !empty($outOfCourseStudents)
             || !empty($missingStudents);
 
@@ -746,6 +750,7 @@ class AttendanceController extends Controller
                 'message'                 => 'Attendance text contains errors. Please correct them before saving the draft.',
                 'metadata'                => $metadata,
                 'unmatched_lines'         => $unmatchedLines,
+                'inactive_students'       => $inactiveStudents,
                 'out_of_course_students' => $outOfCourseStudents,
                 'missing_students'        => $missingStudents,
                 'incomplete_records'      => $incompleteRecords,
@@ -760,6 +765,7 @@ class AttendanceController extends Controller
                 'message'                 => 'All students have blank attendance fields. Confirm to mark them as no response and continue.',
                 'metadata'                => $metadata,
                 'unmatched_lines'         => [],
+                'inactive_students'       => [],
                 'missing_students'        => [],
                 'incomplete_records'      => [],
                 'format_errors'           => [],
@@ -820,6 +826,7 @@ class AttendanceController extends Controller
                 'format_error_count'  => count($formatErrorLines),
             ],
             'unmatched_lines'    => $unmatchedLines,
+            'inactive_students'  => $inactiveStudents,
             'out_of_course_students' => $outOfCourseStudents,
             'missing_students'   => $missingStudents,
             'incomplete_records' => $incompleteRecords,
@@ -848,7 +855,11 @@ class AttendanceController extends Controller
         $confirmBlank = (bool) $request->boolean('confirm_blank');
         $isOverride = (bool) $request->boolean('override');
 
-        $hasHardErrors = !empty($parsed['unmatched_lines']) || !empty($parsed['out_of_course_students']) || !empty($parsed['format_errors']) || !empty($parsed['incomplete_records']);
+        $hasHardErrors = !empty($parsed['unmatched_lines'])
+            || !empty($parsed['inactive_students'])
+            || !empty($parsed['out_of_course_students'])
+            || !empty($parsed['format_errors'])
+            || !empty($parsed['incomplete_records']);
         $hasSoftWarnings = !empty($parsed['blank_entries']) || !empty($parsed['all_no_response_warning']);
 
         // Check for existing submissions in this week range FIRST
@@ -916,6 +927,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'message'                 => 'Weekly attendance text contains errors. Please correct them before saving the draft.',
                 'unmatched_lines'         => $parsed['unmatched_lines'],
+                'inactive_students'       => $parsed['inactive_students'] ?? [],
                 'out_of_course_students' => $parsed['out_of_course_students'] ?? [],
                 'incomplete_records'      => $parsed['incomplete_records'],
                 'format_errors'           => $parsed['format_errors'],
@@ -930,6 +942,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'message'                 => 'Some students have blank attendance fields. Confirm to mark them as no response and continue.',
                 'unmatched_lines'         => [],
+                'inactive_students'       => [],
                 'out_of_course_students' => [],
                 'incomplete_records'      => [],
                 'format_errors'           => [],
@@ -1017,6 +1030,7 @@ class AttendanceController extends Controller
             'drafts'    => $drafts,
             'summary'   => $summary,
             'unmatched' => $parsed['unmatched_lines'] ?? [],
+            'inactive_students' => $parsed['inactive_students'] ?? [],
         ], 200);
     }
 
@@ -1027,10 +1041,10 @@ class AttendanceController extends Controller
             'records'                  => 'required|array|min:1',
             'records.*.student_id'     => 'required|exists:students,id',
             'records.*.gathering_type' => 'required|in:pm,ws,tg',
-            'records.*.day'            => 'required|date',
+            'records.*.day'            => 'required|date_format:Y-m-d',
             'records.*.status'         => 'required|in:present,no_response,excused',
-            'records.*.batch'          => 'nullable|string',
-            'records.*.venue'          => 'nullable|string',
+            'records.*.batch'          => 'nullable|string|max:10',
+            'records.*.venue'          => 'nullable|string|max:25',
             'override'                 => 'nullable|boolean',
             'cycle'                    => 'nullable',
             'week_range'               => 'nullable',
@@ -1045,6 +1059,27 @@ class AttendanceController extends Controller
             ->count();
 
         if ($accessibleStudentCount !== $studentIds->count()) {
+            $inactiveStudents = Student::whereKey($studentIds->all())
+                ->where('is_active', false)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (Student $student) => ['student_id' => $student->id, 'student_name' => $student->name])
+                ->values();
+
+            if ($inactiveStudents->isNotEmpty()) {
+                $message = $inactiveStudents->count() === 1
+                    ? "{$inactiveStudents->first()['student_name']} is already inactive and cannot be included in this attendance submission."
+                    : 'These students are already inactive and cannot be included in this attendance submission: '
+                        . $inactiveStudents->pluck('student_name')->implode(', ')
+                        . '.';
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $message,
+                    'inactive_students' => $inactiveStudents,
+                ], 403);
+            }
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'You are not authorized to submit attendance for one or more students.',
@@ -1345,6 +1380,7 @@ class AttendanceController extends Controller
                 'gathering_type'    => $first->gathering_type,
                 'gathering'         => $this->gatheringLabel($first->gathering_type),
                 'day'               => $first->day->format('F j, Y'),
+                'submission_date'   => $first->created_at?->format('F j, Y') ?? '—',
                 'week_range'        => [
                     'start' => $weekRange['start']->toDateString(),
                     'end' => $weekRange['end']->toDateString(),

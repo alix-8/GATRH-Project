@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../../../api/request'
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
 import RecordDate from '../../../components/RecordDate'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 
 import PencilIcon from '../../../assets/icons/pencil-icon.svg'
 import EraserIcon from '../../../assets/icons/eraser-icon.svg'
@@ -60,6 +61,9 @@ function Dashboard() {
     const [attendanceDrawerOpen, setAttendanceDrawerOpen] = useState(false)
     const [activeAttendanceRecord, setActiveAttendanceRecord] = useState(null)
     const [attendanceRefreshTrigger, setAttendanceRefreshTrigger] = useState(0)
+    useLiveRefresh(() => {
+        if (!attendanceDrawerOpen) setAttendanceRefreshTrigger((current) => current + 1)
+    })
     const attendancePeriodDropdownRef = useRef(null)
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1)
     const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
@@ -84,6 +88,8 @@ function Dashboard() {
     }
 
     useEffect(() => {
+        if (attendanceDrawerOpen) return undefined
+
         if (!localStorage.getItem('user')) {
             setOverviewError('Please sign in to load attendance data.')
             setIsLoading(false)
@@ -95,9 +101,11 @@ function Dashboard() {
             year: String(calendarYear),
             attendance_period: attendancePeriod,
         })
+        const controller = new AbortController()
 
         fetch(`${API_BASE_URL}/dashboard?${params.toString()}`, {
             credentials: 'include',
+            signal: controller.signal,
             headers: {
                 Accept: 'application/json',
             },
@@ -117,6 +125,7 @@ function Dashboard() {
                 setCalendarMarks(data?.calendar_marks ?? defaultCalendar)
             })
             .catch(error => {
+                if (controller.signal.aborted) return
                 setOverview([])
                 setOverviewError(error.message || 'Unable to load attendance data.')
                 setMonthlySummary(null)
@@ -125,8 +134,11 @@ function Dashboard() {
                 setTasksAndReminders([])
                 setCalendarMarks(defaultCalendar)
             })
-            .finally(() => setIsLoading(false))
-    }, [calendarMonth, calendarYear, attendancePeriod, attendanceRefreshTrigger])
+            .finally(() => {
+                if (!controller.signal.aborted) setIsLoading(false)
+            })
+        return () => controller.abort()
+    }, [calendarMonth, calendarYear, attendancePeriod, attendanceRefreshTrigger, attendanceDrawerOpen])
 
     useEffect(() => {
         if (!isAttendancePeriodOpen) return undefined

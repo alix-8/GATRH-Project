@@ -11,6 +11,7 @@ const WarningIcon = () => (
 
 const errorLabels = {
     unmatched_lines: ['Unmatched Lines', 'Student names could not be matched'],
+    inactive_students: ['Inactive Students', 'These students are already inactive and cannot be included'],
     out_of_course_students: ['Students Not in Your Course', 'These students belong to another program or year level'],
     missing_students: ['Missing Students', 'Students were not included in the attendance text'],
     incomplete_records: ['Incomplete Records', 'Required attendance information is missing'],
@@ -22,6 +23,7 @@ const errorLabels = {
 const getErrorItems = (errorDetails = {}) => {
     return [
         ['unmatched_lines', errorDetails.unmatched_lines || []],
+        ['inactive_students', errorDetails.inactive_students || []],
         ['out_of_course_students', errorDetails.out_of_course_students || []],
         ['missing_students', flattenMissingStudents(errorDetails.missing_students)],
         ['incomplete_records', errorDetails.incomplete_records || []],
@@ -86,6 +88,19 @@ function ErrorItems({ type, items }) {
                 {item.year_level && ` Year ${item.year_level}`}
             </p>
         ))
+    }
+
+    if (type === 'inactive_students') {
+        return items.map((item, index) => {
+            const studentName = typeof item === 'string'
+                ? item
+                : item.student_name || item.extracted_name || 'Unknown student'
+
+            return <p className="import-error-item" key={`${type}-${index}`}>
+                <strong>{studentName}</strong>
+                {' — already inactive'}
+            </p>
+        })
     }
 
     if (type === 'format_errors') {
@@ -154,10 +169,13 @@ function ErrorModal({
     closeLabel = 'Close',
     retryLabel = 'Try again',
     overlayClassName = '',
+    onRemoveInactiveStudents,
     onClose,
 }) {
     const [expandedError, setExpandedError] = useState(null)
     const errorItems = getErrorItems(errorDetails || {})
+    const inactiveStudents = errorDetails?.inactive_students || []
+    const removableInactiveStudents = inactiveStudents.filter((student) => student && typeof student === 'object' && student.student_id)
 
     return (
         <div className={`import-modal-overlay ${overlayClassName}`} onClick={(event) => event.stopPropagation()}>
@@ -215,6 +233,15 @@ function ErrorModal({
                     <button className="import-clear-button" type="button" onClick={onClose}>
                         {closeLabel}
                     </button>
+                    {onRemoveInactiveStudents && removableInactiveStudents.length > 0 && (
+                        <button
+                            className="import-primary-button"
+                            type="button"
+                            onClick={() => onRemoveInactiveStudents(removableInactiveStudents)}
+                        >
+                            Remove inactive student{removableInactiveStudents.length === 1 ? '' : 's'}
+                        </button>
+                    )}
                     {!attendanceLocked && showRetryButton && (
                         <button className="import-primary-button" type="button" onClick={onClose}>
                             {retryLabel}

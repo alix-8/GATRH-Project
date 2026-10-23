@@ -11,6 +11,7 @@ import RecordDate from '../../../components/RecordDate'
 import SubmissionDrawer from '../submissions/SubmissionDrawer'
 import '../submissions/Submissions.css'
 import './RecordsTable.css'
+import useLiveRefresh from '../../../hooks/useLiveRefresh'
 
 const GATHERINGS = [
     { value: '', label: 'Gathering' },
@@ -42,20 +43,28 @@ export default function RecordsTable() {
         return values.toString()
     }, [filters])
 
-    const loadRecords = useCallback(async (signal) => {
-        setLoading(true)
-        setLoadError('')
+    const loadRecords = useCallback(async (signal, silent = false) => {
+        if (!silent) {
+            setLoading(true)
+            setLoadError('')
+        }
         try {
             const result = await request(`/program-head/records?${params}`, { signal })
             setRows(Array.isArray(result.data) ? result.data : [])
+            setLoadError('')
         } catch (err) {
             if (err.name !== 'AbortError') {
                 setLoadError(err.message || 'Could not load records.')
             }
         } finally {
-            if (!signal?.aborted) setLoading(false)
+            if (!signal?.aborted && !silent) setLoading(false)
         }
     }, [params])
+
+    const refreshRecords = useCallback((signal) => (
+        activeRecord ? Promise.resolve() : loadRecords(signal, true)
+    ), [activeRecord, loadRecords])
+    useLiveRefresh(refreshRecords, 30_000)
 
     useEffect(() => {
         const controller = new AbortController()
