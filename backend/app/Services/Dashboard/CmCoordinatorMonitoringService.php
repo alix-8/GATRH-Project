@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\AttendanceDraft;
 use App\Models\Program;
 use App\Models\Student;
+use App\Support\GatheringCycle;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -155,6 +156,8 @@ class CmCoordinatorMonitoringService
         }
 
         $weeks = $this->getWeeks($month);
+        $rangeStart = $weeks->first()['start'];
+        $rangeEnd = $weeks->last()['end'];
         $selectedWeek = (int) ($filters['week'] ?? 1);
         $week = $weeks->firstWhere('number', $selectedWeek);
 
@@ -166,12 +169,12 @@ class CmCoordinatorMonitoringService
             ->with(['validator:id,name'])
             ->whereIn('student_id', $roster->pluck('id'))
             ->whereIn('gathering_type', self::GATHERING_TYPES)
-            ->whereBetween('day', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->whereBetween('day', [$rangeStart, $rangeEnd])
             ->orderBy('day')
             ->get();
         $records = $records->concat($this->getDraftAttendanceRows(
-            $month->toDateString(),
-            $month->copy()->endOfMonth()->toDateString(),
+            $rangeStart,
+            $rangeEnd,
             $roster->pluck('id')->all()
         ));
 
@@ -182,9 +185,12 @@ class CmCoordinatorMonitoringService
 
         $studentIds = $roster->pluck('id')->all();
         $entries = collect(self::GATHERING_TYPES)
-            ->map(function (string $type) use ($weekRecords, $roster, $studentIds) {
-                $eventRecords = $weekRecords->where('gathering_type', $type);
-                $summary = $this->getGatheringSummary($weekRecords, $studentIds, $type);
+            ->map(function (string $type) use ($weekRecords, $roster, $studentIds, $week) {
+                $gatheringRange = $week['gathering_ranges'][$type];
+                $eventRecords = $weekRecords->where('gathering_type', $type)
+                    ->filter(fn ($record) => $record->day->toDateString() >= $gatheringRange['start']
+                        && $record->day->toDateString() <= $gatheringRange['end']);
+                $summary = $this->getGatheringSummary($weekRecords, $studentIds, $type, $gatheringRange);
                 $dates = $eventRecords->pluck('day')
                     ->map(fn (Carbon $day) => $day->toDateString())
                     ->unique()
@@ -241,7 +247,12 @@ class CmCoordinatorMonitoringService
             );
 
             return collect(self::GATHERING_TYPES)
-                ->filter(fn (string $type) => $this->getGatheringSummary($recordsForWeek, $studentIds, $type)['status'] === 'completed')
+                ->filter(fn (string $type) => $this->getGatheringSummary(
+                    $recordsForWeek,
+                    $studentIds,
+                    $type,
+                    $monthWeek['gathering_ranges'][$type]
+                )['status'] === 'completed')
                 ->count();
         });
         $monthlyEventTotal = $weeks->count() * count(self::GATHERING_TYPES);
@@ -318,15 +329,17 @@ class CmCoordinatorMonitoringService
         }
 
         $weeks = $this->getWeeks($month);
+        $rangeStart = $weeks->first()['start'];
+        $rangeEnd = $weeks->last()['end'];
         $records = AttendanceRecord::query()
             ->with('student:id,program,year_level')
             ->whereIn('gathering_type', self::GATHERING_TYPES)
-            ->whereBetween('day', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->whereBetween('day', [$rangeStart, $rangeEnd])
             ->whereHas('student', fn ($query) => $query->whereIn('program', $programCodes))
             ->get();
         $records = $records->concat($this->getDraftAttendanceRows(
-            $month->toDateString(),
-            $month->copy()->endOfMonth()->toDateString()
+            $rangeStart,
+            $rangeEnd
         ));
 
         return $students->map(function (Collection $roster, string $key) use ($records, $weeks) {
@@ -343,10 +356,11 @@ class CmCoordinatorMonitoringService
                     && $record->day->toDateString() <= $week['end']
                 );
 
-                $gatherings = collect(self::GATHERING_TYPES)->map(function (string $type) use ($recordsForWeek, $studentIds) {
+                $gatherings = collect(self::GATHERING_TYPES)->map(function (string $type) use ($recordsForWeek, $studentIds, $week) {
+                    $gatheringRange = $week['gathering_ranges'][$type];
                     return [
                         'type' => $type,
-                        ...$this->getGatheringSummary($recordsForWeek, $studentIds, $type),
+                        ...$this->getGatheringSummary($recordsForWeek, $studentIds, $type, $gatheringRange),
                     ];
                 })->values();
 
@@ -385,11 +399,15 @@ class CmCoordinatorMonitoringService
         })->map(fn ($course) => (array) $course)->values();
     }
 
-    private function getGatheringSummary(Collection $weekRecords, array $studentIds, string $type): array
+    private function getGatheringSummary(Collection $weekRecords, array $studentIds, string $type, ?array $gatheringRange = null): array
     {
-        $respondedStudentCount = $weekRecords
+        $attendanceRows = $weekRecords
             ->where('gathering_type', $type)
-            ->filter(fn ($record) => in_array((int) $record->student_id, $studentIds, true))
+            ->filter(fn ($record) => $gatheringRange === null
+                || ($record->day->toDateString() >= $gatheringRange['start']
+                    && $record->day->toDateString() <= $gatheringRange['end']))
+            ->filter(fn ($record) => in_array((int) $record->student_id, $studentIds, true));
+        $respondedStudentCount = $attendanceRows
             ->filter(fn ($record) => in_array($record->status ?? 'no_response', ['present', 'excused'], true))
             ->pluck('student_id')
             ->unique()
@@ -402,6 +420,7 @@ class CmCoordinatorMonitoringService
                 $totalStudents > 0 && $respondedStudentCount >= $totalStudents => 'completed',
                 default => 'incomplete',
             },
+            'has_attendance' => $attendanceRows->isNotEmpty(),
             'responded_students' => min($respondedStudentCount, $totalStudents),
             'total_students' => $totalStudents,
         ];
@@ -436,23 +455,30 @@ class CmCoordinatorMonitoringService
 
     private function getWeeks(Carbon $month): Collection
     {
-        $daysInMonth = $month->daysInMonth;
-        $weekCount = (int) ceil($daysInMonth / 7);
+        $weekStart = $month->copy()->startOfWeek(Carbon::MONDAY);
+        $lastWeekStart = $month->copy()->endOfMonth()->startOfWeek(Carbon::MONDAY);
+        $weeks = collect();
 
-        return collect(range(1, $weekCount))->map(function (int $number) use ($month, $daysInMonth) {
-            $startDay = (($number - 1) * 7) + 1;
-            $endDay = min($number * 7, $daysInMonth);
-            $ordinal = match ($number) {
-                1 => '1st', 2 => '2nd', 3 => '3rd', default => $number . 'th',
-            };
+        for ($number = 1; $weekStart->lessThanOrEqualTo($lastWeekStart); $number++, $weekStart->addWeek()) {
+            $weekEnd = $weekStart->copy()->addDays(6);
+            $gatheringRanges = collect(GatheringCycle::getRangesForWeekStart($weekStart))
+                ->map(fn (array $range) => [
+                    'start' => $range['start']->toDateString(),
+                    'end' => $range['end']->toDateString(),
+                ])->all();
 
-            return [
+            $weeks->push([
                 'number' => $number,
                 'label' => "Week {$number}",
-                'description' => "{$ordinal} week of {$month->format('F')}",
-                'start' => $month->copy()->day($startDay)->toDateString(),
-                'end' => $month->copy()->day($endDay)->toDateString(),
-            ];
-        });
+                'description' => $weekStart->format('M j') . ' – ' . $weekEnd->format(
+                    $weekStart->isSameMonth($weekEnd) ? 'j, Y' : 'M j, Y'
+                ),
+                'start' => $weekStart->toDateString(),
+                'end' => $weekEnd->toDateString(),
+                'gathering_ranges' => $gatheringRanges,
+            ]);
+        }
+
+        return $weeks;
     }
 }

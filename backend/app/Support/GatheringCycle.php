@@ -211,6 +211,13 @@ class GatheringCycle
     {
         $offset = $period === 'last' ? -7 : 0;
         $weekStart = Carbon::today()->startOfWeek(Carbon::MONDAY)->addDays($offset);
+        return self::getRangesForWeekStart($weekStart);
+    }
+
+    /** Returns the configured gathering windows for a Monday-to-Sunday reporting week. */
+    public static function getRangesForWeekStart(Carbon $weekStart): array
+    {
+        $weekStart = $weekStart->copy()->startOfWeek(Carbon::MONDAY);
         $ranges = [];
         foreach (['pm', 'ws', 'tg'] as $type) {
             $start = $weekStart->copy()->addDays(match ($type) { 'pm' => 2, default => 5 });

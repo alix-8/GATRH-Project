@@ -357,6 +357,40 @@
 .monitoring-status-cell {
     padding: 3px 2px;
     text-align: center;
+    position: relative;
+}
+
+.monitoring-status-cell-tooltip::after {
+    position: absolute;
+    z-index: 20;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    padding: 6px 9px;
+    border: 1px solid #d4dce7;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #344054;
+    content: attr(data-tooltip);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 150ms ease, visibility 0s linear 350ms;
+}
+
+.monitoring-status-cell-tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 350ms, 0s;
+}
+
+.monitoring-status-cell-tooltip[data-tooltip-tone='error']::after {
+    border-color: #f3b4b0;
+    color: #c9362b;
 }
 
 .monitoring-status {
