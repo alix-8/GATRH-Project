@@ -6,6 +6,9 @@ use App\Models\Reminder;
 use App\Models\AttendanceRecord;
 use App\Models\User;
 use App\Support\SystemTimezone;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ReminderGenerationService
 {
@@ -31,39 +34,60 @@ class ReminderGenerationService
             ->delete();
         
         $created = 0;
-
-
-        User::where('role', 'secretary')
+        $secretaries = User::where('role', 'secretary')
             ->whereNotNull('program')
             ->whereNotNull('year_level')
             ->when($onlyUser, fn ($query) => $query->whereKey($onlyUser->id))
-            ->each(function (User $secretary) use (&$created): void {
-                foreach (['pm', 'ws', 'tg'] as $type) {
-                    $gatheringDate = $this->gatheringService->nextDate($type);
+            ->get(['id', 'program', 'year_level']);
 
-                    // Do not recreate a gathering reminder after this secretary
-                    // has already submitted attendance for that gathering date.
-                    $alreadyRecorded = AttendanceRecord::query()
-                        ->where('submitted_by', $secretary->id)
-                        ->where('gathering_type', $type)
-                        ->whereDate('day', $gatheringDate)
-                        ->exists();
+        $gatheringDates = collect(['pm', 'ws', 'tg'])
+            ->mapWithKeys(fn (string $type) => [$type => $this->gatheringService->nextDate($type)]);
+        $secretaryIds = $secretaries->pluck('id');
 
-                    if ($alreadyRecorded) {
-                        continue;
-                    }
+        // Load existing attendance and reminders once, instead of checking each
+        // secretary/type pair with separate EXISTS queries.
+        $attendanceKeys = AttendanceRecord::query()
+            ->whereIn('submitted_by', $secretaryIds)
+            ->where(function ($query) use ($gatheringDates): void {
+                foreach ($gatheringDates as $type => $date) {
+                    $query->orWhere(function ($pair) use ($type, $date): void {
+                        $pair->where('gathering_type', $type)->whereDate('day', $date);
+                    });
+                }
+            })
+            ->get(['submitted_by', 'gathering_type', 'day'])
+            ->mapWithKeys(fn (AttendanceRecord $record) => [
+                $this->gatheringKey($record->submitted_by, $record->gathering_type, $record->day) => true,
+            ]);
 
-                    $alreadyReminded = Reminder::query()
-                        ->where('user_id', $secretary->id)
-                        ->where('reminder_type', 'gathering')
-                        ->where('gathering_type', $type)
-                        ->whereDate('gathering_date', $gatheringDate)
-                        ->exists();
+        $reminderKeys = Reminder::query()
+            ->whereIn('user_id', $secretaryIds)
+            ->where('reminder_type', 'gathering')
+            ->where(function ($query) use ($gatheringDates): void {
+                foreach ($gatheringDates as $type => $date) {
+                    $query->orWhere(function ($pair) use ($type, $date): void {
+                        $pair->where('gathering_type', $type)->whereDate('gathering_date', $date);
+                    });
+                }
+            })
+            ->get(['user_id', 'gathering_type', 'gathering_date'])
+            ->mapWithKeys(fn (Reminder $reminder) => [
+                $this->gatheringKey($reminder->user_id, $reminder->gathering_type, $reminder->gathering_date) => true,
+            ]);
 
-                    if ($alreadyReminded) {
-                        continue;
-                    }
+        $staleRemindersDeleted = false;
+        foreach ($secretaries as $secretary) {
+            foreach ($gatheringDates as $type => $gatheringDate) {
+                $key = $this->gatheringKey($secretary->id, $type, $gatheringDate);
 
+                // Do not recreate a gathering reminder after attendance was submitted.
+                if ($attendanceKeys->has($key) || $reminderKeys->has($key)) {
+                    continue;
+                }
+
+                // Preserve the existing cleanup, but run it only once when at
+                // least one new reminder is actually going to be created.
+                if (! $staleRemindersDeleted) {
                     $currentWeekStart = SystemTimezone::today()->startOfWeek();
                     $currentWeekEnd = $currentWeekStart->copy()->endOfWeek();
 
@@ -75,22 +99,25 @@ class ReminderGenerationService
                         ])
                         ->delete();
 
-                    Reminder::create([
-                        'user_id'        => $secretary->id,
-                        'reminder_type'  => 'gathering',
-                        'gathering_type' => $type,
-                        'program'        => strtoupper($secretary->program),
-                        'year_level'     => $secretary->year_level,
-                        'gathering_date' => $gatheringDate,
-                        'title'          => ucfirst($this->gatheringService->label($type)),
-                        'description'    => strtoupper($secretary->program) . '-' . $secretary->year_level,
-                        'due_date'       => $gatheringDate,
-                        'status'         => 'upcoming',
-                    ]);
-
-                    $created++;
+                    $staleRemindersDeleted = true;
                 }
-            });
+
+                Reminder::create([
+                    'user_id'        => $secretary->id,
+                    'reminder_type'  => 'gathering',
+                    'gathering_type' => $type,
+                    'program'        => strtoupper($secretary->program),
+                    'year_level'     => $secretary->year_level,
+                    'gathering_date' => $gatheringDate,
+                    'title'          => ucfirst($this->gatheringService->label($type)),
+                    'description'    => strtoupper($secretary->program) . '-' . $secretary->year_level,
+                    'due_date'       => $gatheringDate,
+                    'status'         => 'upcoming',
+                ]);
+
+                $created++;
+            }
+        }
 
         return $created;
     }
@@ -107,7 +134,17 @@ class ReminderGenerationService
             ->whereDoesntHave('children') // no submission reminder spawned yet
             ->get();
 
+        [$totalCounts, $respondedCounts] = $this->submissionProgressCounts($dueGatherings);
+
         foreach ($dueGatherings as $gathering) {
+            $total = $totalCounts->get($this->progressKey($gathering->program, $gathering->year_level), 0);
+            $responded = $respondedCounts->get($this->progressKey(
+                $gathering->program,
+                $gathering->year_level,
+                $gathering->gathering_type,
+                $gathering->gathering_date->toDateString()
+            ), 0);
+
             Reminder::create([
                 'user_id'             => $gathering->user_id,
                 'reminder_type'       => 'submission_countdown',
@@ -117,7 +154,7 @@ class ReminderGenerationService
                 'year_level'          => $gathering->year_level,
                 'gathering_date'      => $gathering->gathering_date,
                 'title'               => 'Attendance record ready for submission',
-                'description'         => $this->buildSubmissionDescription($gathering),
+                'description'         => $this->buildSubmissionDescription($gathering, $responded, $total),
                 'due_date'            => $gathering->gathering_date->copy()->addDays($submissionWindowDays),
                 'status'              => 'needs_action',
             ]);
@@ -133,16 +170,36 @@ class ReminderGenerationService
             ->where('status', '!=', 'completed')
             ->get();
 
+        if ($activeReminders->isEmpty()) {
+            return;
+        }
+
+        [$totalCounts, $respondedCounts] = $this->submissionProgressCounts($activeReminders);
+
+        $updates = [];
+
         foreach ($activeReminders as $reminder) {
-            $responded = $reminder->respondedCount();
-            $total = $reminder->totalStudents();
+            $total = $totalCounts->get($this->progressKey($reminder->program, $reminder->year_level), 0);
+            $responded = $respondedCounts->get($this->progressKey(
+                $reminder->program,
+                $reminder->year_level,
+                $reminder->gathering_type,
+                $reminder->gathering_date->toDateString()
+            ), 0);
             $isComplete = $total > 0 && $responded >= $total;
 
-            $reminder->update([
+            $updates[] = [
+                'id'           => $reminder->id,
                 'description'  => $this->buildSubmissionDescription($reminder, $responded, $total),
                 'status'       => $isComplete ? 'completed' : 'needs_action',
                 'completed_at' => $isComplete ? SystemTimezone::now() : null,
-            ]);
+                'updated_at'   => SystemTimezone::now(),
+            ];
+        }
+
+        // One statement refreshes all reminder rows while retaining per-row values.
+        if ($updates !== []) {
+            Reminder::upsert($updates, ['id'], ['description', 'status', 'completed_at', 'updated_at']);
         }
     }
 
@@ -204,6 +261,84 @@ class ReminderGenerationService
             $responded,
             $total
         );
+    }
+
+    private function gatheringKey(int $userId, string $type, mixed $date): string
+    {
+        return $userId . '|' . $type . '|' . Carbon::parse($date)->toDateString();
+    }
+
+    private function progressKey(string $program, string $yearLevel, ?string $type = null, mixed $date = null): string
+    {
+        $key = strtoupper(trim($program)) . '|' . $yearLevel;
+
+        if ($type !== null) {
+            $key .= '|' . $type . '|' . Carbon::parse($date)->toDateString();
+        }
+
+        return $key;
+    }
+
+    /** Load reminder response totals in two grouped queries for a collection of reminders. */
+    private function submissionProgressCounts(Collection $reminders): array
+    {
+        if ($reminders->isEmpty()) {
+            return [collect(), collect()];
+        }
+
+        $programs = $reminders->pluck('program')->unique()->values();
+        $yearLevels = $reminders->pluck('year_level')->unique()->values();
+        $gatheringTypes = $reminders->pluck('gathering_type')->unique()->values();
+        $gatheringDates = $reminders->pluck('gathering_date')
+            ->map(fn ($date) => Carbon::parse($date)->toDateString())
+            ->unique()
+            ->values();
+
+        $totalCounts = DB::table('students')
+            ->select('program', 'year_level')
+            ->selectRaw('COUNT(*) AS total')
+            ->where('is_active', true)
+            ->whereIn('program', $programs)
+            ->whereIn('year_level', $yearLevels)
+            ->groupBy('program', 'year_level')
+            ->get()
+            ->reduce(function ($counts, $row) {
+                $key = $this->progressKey($row->program, $row->year_level);
+                $counts[$key] = ($counts[$key] ?? 0) + (int) $row->total;
+
+                return $counts;
+            }, collect());
+
+        $respondedCounts = DB::table('attendance_records')
+            ->join('students', 'students.id', '=', 'attendance_records.student_id')
+            ->select(
+                'students.program',
+                'students.year_level',
+                'attendance_records.gathering_type',
+                'attendance_records.day'
+            )
+            ->selectRaw('COUNT(*) AS responded')
+            ->where('students.is_active', true)
+            ->whereIn('students.program', $programs)
+            ->whereIn('students.year_level', $yearLevels)
+            ->whereIn('attendance_records.gathering_type', $gatheringTypes)
+            ->whereIn('attendance_records.day', $gatheringDates)
+            ->whereIn('attendance_records.status', ['present', 'excused'])
+            ->groupBy(
+                'students.program',
+                'students.year_level',
+                'attendance_records.gathering_type',
+                'attendance_records.day'
+            )
+            ->get()
+            ->reduce(function ($counts, $row) {
+                $key = $this->progressKey($row->program, $row->year_level, $row->gathering_type, $row->day);
+                $counts[$key] = ($counts[$key] ?? 0) + (int) $row->responded;
+
+                return $counts;
+            }, collect());
+
+        return [$totalCounts, $respondedCounts];
     }
 
 }
