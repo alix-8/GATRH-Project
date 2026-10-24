@@ -126,7 +126,9 @@ class ReminderController extends Controller
                 'completed'    => (int) $reminderSummary->completed,
                 'escalation_count' => $alertLevel
                     ? $escalationAlerts->count()
-                    : Escalation::query()->visibleTo($user)->count(),
+                    : ($user->role === 'program_secretary'
+                        ? 0
+                        : Escalation::query()->visibleTo($user)->count()),
             ],
             'data' => $reminders,
             'escalations' => $escalationAlerts,
