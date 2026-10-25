@@ -52,9 +52,7 @@ class AdminActivityLogController extends Controller
                 $query->where('created_at', '>=', $from);
             })
             ->when($filters['module'] ?? null, fn (Builder $query, string $module) => $this->filterModule($query, $module))
-            // Failed actions are not currently written to audit_logs. Keep the filter
-            // explicit so it returns no rows until failure auditing is implemented.
-            ->when(($filters['result'] ?? null) === 'failed', fn (Builder $query) => $query->whereRaw('1 = 0'))
+            ->when($filters['result'] ?? null, fn (Builder $query, string $result) => $query->where('result', $result))
             ->with('actor:id,name,email')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -81,6 +79,7 @@ class AdminActivityLogController extends Controller
             'performed_by' => $log->actor?->name ?? 'Unknown user',
             'performed_by_email' => $log->actor?->email,
             'result' => $log->resultLabel(),
+            'details' => $log->details,
             'created_at' => $log->created_at?->toIso8601String(),
         ]);
 

@@ -54,6 +54,26 @@ body {
   margin: 0;
 }
 
+* {
+  scrollbar-color: #aebbd0 #f1f4f8;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  border-radius: 8px;
+  background: #f1f4f8;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid #f1f4f8;
+  border-radius: 8px;
+  background: #aebbd0;
+}
+
 .screen-size-notice {
   display: grid;
   box-sizing: border-box;

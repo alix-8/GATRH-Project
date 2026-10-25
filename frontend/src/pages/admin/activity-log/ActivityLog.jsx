@@ -33,7 +33,8 @@ function ActivityDetails({ activity, onClose }) {
                 <div><dt>Activity</dt><dd>{activity.action}</dd></div>
                 <div><dt>Affected Record</dt><dd>{activity.affected_record}</dd></div>
                 <div><dt>Performed By</dt><dd>Administrator{activity.performed_by_email ? ` · ${activity.performed_by_email}` : ` · ${activity.performed_by}`}</dd></div>
-                <div><dt>Result</dt><dd className="admin-activity-history-success">{activity.result}</dd></div>
+                <div><dt>Result</dt><dd className={activity.result === 'Failed' ? 'admin-activity-history-failure' : 'admin-activity-history-success'}>{activity.result}</dd></div>
+                {activity.result === 'Failed' && activity.details && <div><dt>Failure Details</dt><dd className="admin-activity-history-failure-detail">{activity.details}</dd></div>}
             </dl>
             <button className="admin-activity-history-done" type="button" onClick={onClose}>Close</button>
         </section>
@@ -175,7 +176,7 @@ function ActivityLog() {
                                                     <td><span className="admin-activity-history-main">{activity.action}</span><small>{activity.affected_record}</small></td>
                                                     <td>{activity.module}</td>
                                                     <td><span className="admin-activity-history-main">{activity.performed_by}</span><small>{activity.performed_by_email || '—'}</small></td>
-                                                    <td><span className="admin-activity-history-success">{activity.result}</span></td>
+                                                    <td><span className={activity.result === 'Failed' ? 'admin-activity-history-failure' : 'admin-activity-history-success'}>{activity.result}</span></td>
                                                     <td><button type="button" className="admin-activity-history-details-link" onClick={() => setSelectedActivity(activity)}>View details</button></td>
                                                 </tr>
                                             })}

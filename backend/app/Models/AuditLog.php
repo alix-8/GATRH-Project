@@ -15,6 +15,8 @@ class AuditLog extends Model
         'action',
         'target_table',
         'target_id',
+        'result',
+        'details',
     ];
 
     // The user who executed the action
@@ -59,8 +61,7 @@ class AuditLog extends Model
 
     public function resultLabel(): string
     {
-        // The audit_logs table currently stores successful actions only.
-        return 'Success';
+        return ucfirst($this->result ?: 'success');
     }
 
 }

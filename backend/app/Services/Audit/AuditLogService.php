@@ -18,7 +18,9 @@ class AuditLogService
         string $action,
         string $targetTable,
         string $targetId,
-        ?User $actor = null
+        ?User $actor = null,
+        string $result = 'success',
+        ?string $details = null
     ): void {
         $actor ??= Auth::user();
 
@@ -32,6 +34,18 @@ class AuditLogService
             'action' => $action,
             'target_table' => $targetTable,
             'target_id' => $targetId,
+            'result' => $result,
+            'details' => $details,
         ]);
+    }
+
+    public function recordFailure(
+        string $action,
+        string $targetTable,
+        string $targetId,
+        string $details,
+        ?User $actor = null
+    ): void {
+        $this->recordAction($action, $targetTable, $targetId, $actor, 'failed', $details);
     }
 }

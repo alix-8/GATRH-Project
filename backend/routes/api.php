@@ -17,6 +17,7 @@ use App\Http\Controllers\ProgramHead\ProgramHeadSubmissionController;
 use App\Http\Controllers\Reminders\ReminderController;
 use App\Http\Controllers\Students\StudentController;
 use App\Http\Middleware\ApplySystemTimezone;
+use App\Http\Middleware\LogFailedAdminActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -95,7 +96,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
     Route::delete('/attendance/drafts', [AttendanceDraftController::class, 'destroyMany']);
 
     /* Administrator */
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware(['role:admin', LogFailedAdminActivity::class])->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
         Route::get('/admin/activity-log', [AdminActivityLogController::class, 'index']);
         Route::get('/admin/settings/general', [AdminSystemSettingController::class, 'show']);

@@ -321,6 +321,14 @@
     color: #11a349;
 }
 
+.admin-activity-history-failure {
+    color: #c83c3c;
+}
+
+.admin-activity-history-failure-detail {
+    color: #c83c3c !important;
+}
+
 .admin-activity-history-details-link {
     border: 0;
     background: none;
@@ -472,6 +480,10 @@
 
 .admin-activity-history-dialog dd.admin-activity-history-success {
     color: #11a349;
+}
+
+.admin-activity-history-dialog dd.admin-activity-history-failure {
+    color: #c83c3c;
 }
 
 .admin-activity-history-done {
