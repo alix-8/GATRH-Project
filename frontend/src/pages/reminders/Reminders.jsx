@@ -62,12 +62,12 @@ const ATTENDANCE_TASK_STATUS = {
         action: 'Review',
     },
     pending: {
-        label: 'Attendance record ready for submission',
-        tone: 'needs-action',
+        label: 'Attendance record recorded',
+        tone: 'completed',
         action: 'Review',
     },
     approved: {
-        label: 'Attendance record recorded',
+        label: 'Attendance record approved',
         tone: 'completed',
         action: 'view',
     },
@@ -203,6 +203,14 @@ function toTimeLabel(value) {
     return `${displayHour}:${minute} ${period}`
 }
 
+function getNextAvailableReminderTime(now = new Date()) {
+    const nextMinute = new Date(now)
+    nextMinute.setSeconds(0, 0)
+    nextMinute.setMinutes(nextMinute.getMinutes() + 1)
+
+    return `${String(nextMinute.getHours()).padStart(2, '0')}:${String(nextMinute.getMinutes()).padStart(2, '0')}`
+}
+
 function notifyRemindersChanged() {
     window.dispatchEvent(new Event('reminders:changed'))
 }
@@ -333,13 +341,17 @@ function Reminders() {
                         .map(record => {
                             const meta = ATTENDANCE_TASK_STATUS[record.status]
                             const deadlineKey = `${record.gathering_type}:${record.day_iso}`
+                            const isSubmittedRecord = record.source === 'record'
+                                || ['pending', 'approved'].includes(record.status)
 
                             return {
                                 id: `attendance-${record.id}`,
                                 reminderId: record.id,
                                 type: 'attendance',
                                 sourceRecord: record,
-                                title: meta.label,
+                                title: isSubmittedRecord
+                                    ? 'Attendance record submitted'
+                                    : meta.label,
                                 description: buildDateTime({
                                     date: record.gathering,
                                     time: record.time,
@@ -406,12 +418,16 @@ function Reminders() {
 
     useEffect(() => {
         const targetReminderId = location.state?.highlightReminderId
+            ?? new URLSearchParams(location.search).get('highlightReminderId')
         const targetEscalationId = location.state?.highlightEscalationId
         const targetAttendanceId = location.state?.highlightAttendanceId
         const targetDeadlineId = location.state?.highlightDeadlineId
         if ((targetReminderId == null && targetEscalationId == null && targetAttendanceId == null && targetDeadlineId == null) || loading) return
 
         const targetReminder = reminders.find(reminder => String(reminder.id) === String(targetReminderId))
+        const targetReminderParent = targetReminder?.reminder_type === 'submission_countdown'
+            ? reminders.find(reminder => String(reminder.id) === String(targetReminder.parent_reminder_id))
+            : targetReminder
         const targetDeadline = reminders.find(reminder => reminder.reminder_type === 'submission_countdown'
             && String(reminder.id) === String(targetDeadlineId))
         const targetEscalation = escalations.find(escalation => String(escalation.id) === String(targetEscalationId))
@@ -419,19 +435,36 @@ function Reminders() {
             String(item.sourceRecord?.id) === String(targetAttendanceId)
             || String(item.sourceRecord?.ref_id) === String(targetAttendanceId)
         ))
-        if (targetReminder || targetEscalation || targetAttendance || targetDeadline) {
-            setHighlightedReminderId(targetEscalation
+        // Keep the navigation target until its data arrives. Dashboard polling
+        // and the reminders request can finish in either order; consuming the
+        // target while the corresponding list is stale makes highlighting fail.
+        if (targetReminderId != null && !targetReminder) return
+        if (targetEscalationId != null && !targetEscalation) return
+        if (targetAttendanceId != null && !targetAttendance) return
+        if (targetDeadlineId != null && !targetDeadline) return
+
+        const targetReminderHighlightId = targetReminderParent
+            ? String(targetReminderParent.id)
+            : targetReminder?.reminder_type === 'submission_countdown'
+                ? `deadline-${targetReminder.parent_reminder_id ?? targetReminder.id}`
+                : targetReminder
+                    ? String(targetReminder.id)
+                    : null
+        const highlightId = targetEscalation
                 ? `escalation-${targetEscalation.id}`
                 : targetAttendance
                     ? String(targetAttendance.reminderId)
                     : targetDeadline
                         ? `deadline-${targetDeadline.parent_reminder_id ?? targetDeadline.id}`
-                        : String(targetReminder.id))
-            setActiveFilter('all')
-        }
+                        : targetReminderHighlightId
+
+        if (!highlightId) return
+
+        setHighlightedReminderId(highlightId)
+        setActiveFilter('all')
 
         navigate(location.pathname, { replace: true, state: null })
-    }, [location.pathname, location.state, loading, reminders, escalations, attendanceTasks, navigate])
+    }, [location.pathname, location.search, location.state, loading, reminders, escalations, attendanceTasks, navigate])
 
     useEffect(() => {
         if (!highlightedReminderId || loading) return
@@ -552,6 +585,27 @@ function Reminders() {
             action: 'Add attendance',
         }))
 
+    const upcomingDeadlineFallbackItems = reminders
+        .filter(reminder => reminder.reminder_type === 'submission_countdown'
+            && reminder.status !== 'completed'
+            && reminder.due_date
+            && new Date(reminder.due_date).getTime() > countdownNow
+            && !reminders.some(parent => String(parent.id) === String(reminder.parent_reminder_id)))
+        .map(reminder => ({
+            id: `deadline-${reminder.parent_reminder_id ?? reminder.id}`,
+            reminderId: `deadline-${reminder.parent_reminder_id ?? reminder.id}`,
+            sourceReminder: reminder,
+            type: 'deadline',
+            icon: NotificationIcon,
+            title: 'Attendance submission deadline',
+            description: reminder.description || GATHERING_LABELS[reminder.gathering_type] || 'Attendance is due',
+            status: 'upcoming',
+            statusLabel: 'Upcoming',
+            tone: 'upcoming',
+            isToday: dateKeyInLocalTime(reminder.due_date) === todayKey,
+            action: null,
+        }))
+
     const escalationItems = escalations.map(escalation => ({
         id: `escalation-${escalation.id}`,
         reminderId: `escalation-${escalation.id}`,
@@ -566,7 +620,7 @@ function Reminders() {
         action: 'View',
     }))
 
-    const allItems = [...reminderItems, ...deadlineItems, ...escalationItems, ...attendanceTasks]
+    const allItems = [...reminderItems, ...upcomingDeadlineFallbackItems, ...deadlineItems, ...escalationItems, ...attendanceTasks]
         .map((item, index) => ({ item, index }))
         .sort((left, right) => {
             const getOrder = ({ item }) => {
@@ -592,6 +646,8 @@ function Reminders() {
 
     const selectedTypeLabel = REMINDER_TYPES.find(option => option.value === formData.type)?.label ?? 'Select Type'
     const selectedGatheringLabel = GATHERING_OPTIONS.find(option => option.value === formData.gathering)?.label ?? 'Select Gathering'
+    const todayDateValue = toDateValue(new Date(countdownNow))
+    const minimumReminderTime = getNextAvailableReminderTime(new Date(countdownNow))
 
     const openTimePicker = () => {
         if (timeInputRef.current?.showPicker) {
@@ -715,6 +771,17 @@ function Reminders() {
             return
         }
 
+        if (!editingReminder) {
+            const [year, month, day] = toDateValue(formData.date).split('-').map(Number)
+            const [hour, minute] = formData.time.split(':').map(Number)
+            const selectedDateTime = new Date(year, month - 1, day, hour, minute)
+            if (selectedDateTime.getTime() <= Date.now()) {
+                setError('Choose a time later than now for a new reminder.')
+                setSaving(false)
+                return
+            }
+        }
+
         const payload = {
             title: formData.title,
             description: formData.description || null,
@@ -768,7 +835,7 @@ function Reminders() {
             })
             const updated = response.data
 
-            setReminders(prev => prev.map(item => item.id === reminder.id ? { ...item, ...updated } : item))
+            setReminders(prev => prev.map(item => String(item.id) === String(reminder.id) ? { ...item, ...updated } : item))
             markNotificationIdsSeen([`my-reminder-due-${reminder.id}`])
             setSummary(prev => ({
                 ...prev,
@@ -937,7 +1004,11 @@ function Reminders() {
                                                 onClick={() => handleCompleteReminder(item.sourceReminder)}
                                                 disabled={completingReminderId === item.sourceReminder.id}
                                             >
-                                                {completingReminderId === item.sourceReminder.id ? '…' : '✓'}
+                                                {completingReminderId === item.sourceReminder.id ? '…' : (
+                                                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                                                        <path d="m3.5 8.2 3 3 6-6.4" />
+                                                    </svg>
+                                                )}
                                             </button>
                                             <button type="button" className="task-action-btn" title="Edit reminder" onClick={() => handleEditReminder(item.sourceReminder)}>
                                                 <img src={EditIcon} alt="Edit" />
@@ -1145,9 +1216,15 @@ function Reminders() {
                                     <div className="reminder-calendar-popover">
                                         <Calendar
                                             value={formData.date}
-                                            minDate={new Date()}
+                                            minDate={new Date(countdownNow)}
                                             onChange={date => {
-                                                setFormData(prev => ({ ...prev, date }))
+                                                setFormData(prev => {
+                                                    const selectedDateIsToday = !editingReminder && toDateValue(date) === todayDateValue
+                                                    const selectedTimeIsTooEarly = selectedDateIsToday
+                                                        && prev.time
+                                                        && prev.time < minimumReminderTime
+                                                    return { ...prev, date, time: selectedTimeIsTooEarly ? '' : prev.time }
+                                                })
                                                 setOpenMenu('')
                                             }}
                                             initialMonth={formData.date ?? new Date()}
@@ -1167,6 +1244,8 @@ function Reminders() {
                                         ref={timeInputRef}
                                         type="time"
                                         value={formData.time}
+                                        min={!editingReminder && formData.date && toDateValue(formData.date) === todayDateValue ? minimumReminderTime : undefined}
+                                        step="60"
                                         onChange={event => setFormData(prev => ({ ...prev, time: event.target.value }))}
                                         required
                                     />

@@ -42,6 +42,9 @@ function ProgramHeadDashboard() {
     const navigate = useNavigate()
     const role = JSON.parse(localStorage.getItem('user') || 'null')?.role
     const submissionPath = role === 'program_secretary' ? '/program-secretary/submission' : '/program-head/submission'
+    const visibleMetrics = role === 'program_secretary'
+        ? metrics.filter(metric => metric.key !== 'escalation_count')
+        : metrics
 
     const loadDashboard = useCallback(async (signal, silent = false) => {
         if (!silent) {
@@ -84,8 +87,8 @@ function ProgramHeadDashboard() {
             <main className="ph-dashboard-main">
                 <Header title="Dashboard" subtitle="Review attendance submissions for your program." className="ph-dashboard-header" />
                 <div className="ph-dashboard-content">
-                    <section className="ph-metrics" aria-label="Submission summary">
-                        {metrics.map((metric) => (
+                    <section className={`ph-metrics${role === 'program_secretary' ? ' ph-metrics-program-secretary' : ''}`} aria-label="Submission summary">
+                        {visibleMetrics.map((metric) => (
                             <article className="ph-metric-card" key={metric.key}>
                                 <img className={`ph-metric-icon${metric.key === 'escalation_count' ? ' ph-metric-escalation-icon' : ''}`} src={metric.icon} alt="" aria-hidden="true" />
                                 <div className="ph-metric-copy">

@@ -17,6 +17,7 @@ use App\Http\Controllers\ProgramHead\ProgramHeadSubmissionController;
 use App\Http\Controllers\Reminders\ReminderController;
 use App\Http\Controllers\Students\StudentController;
 use App\Http\Middleware\ApplySystemTimezone;
+use App\Http\Middleware\LogFailedAdminActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -95,7 +96,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
     Route::delete('/attendance/drafts', [AttendanceDraftController::class, 'destroyMany']);
 
     /* Administrator */
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware(['role:admin', LogFailedAdminActivity::class])->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
         Route::get('/admin/activity-log', [AdminActivityLogController::class, 'index']);
         Route::get('/admin/settings/general', [AdminSystemSettingController::class, 'show']);
@@ -112,6 +113,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::get('/admin/users', [AdminUserController::class, 'index']);
         Route::post('/admin/users', [AdminUserController::class, 'store']);
         Route::patch('/admin/users/{user}', [AdminUserController::class, 'update']);
+        Route::post('/admin/students/import/preview', [AdminStudentController::class, 'previewImport']);
         Route::post('/admin/students/import', [AdminStudentController::class, 'import']);
         Route::get('/admin/students', [AdminStudentController::class, 'index']);
         Route::get('/admin/students/school-year-rollover', [AdminStudentController::class, 'schoolYearRolloverStatus']);

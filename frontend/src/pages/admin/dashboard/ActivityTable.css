@@ -72,6 +72,11 @@
     text-align: center;
 }
 
+.admin-activity-result.failed {
+    background: #fde8e8;
+    color: #b42318;
+}
+
 .admin-activity-table td.admin-activity-empty {
     padding: 24px 15px;
     color: #8390a5;

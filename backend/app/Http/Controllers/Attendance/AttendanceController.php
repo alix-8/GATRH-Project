@@ -1336,7 +1336,7 @@ class AttendanceController extends Controller
         $user = $request->user();
 
         $query = AttendanceRecord::query()
-            ->with('student')
+            ->with(['student', 'validator:id,name,role,program,year_level'])
             ->whereHas('student', fn ($q) => $q->accessibleTo($user));
 
         // batchKey is either a real batch_id (UUID) or our legacy fallback "type|day|submittedBy"
@@ -1388,6 +1388,11 @@ class AttendanceController extends Controller
                     'name' => $submitter?->name ?? 'Unknown',
                     'role' => trim(strtoupper($submitter?->program ?? '') . ' ' . $this->ordinalYear($submitter?->year_level)),
                 ],
+                'approved_by'       => $first->validator ? [
+                    'name' => $first->validator->name,
+                    'role' => $first->validator->role,
+                    'program' => $first->validator->program,
+                ] : null,
                 'total_students'    => $students->count(),
                 'responded_count'   => $students->where('status', 'present')->count(),
                 'students'          => $students,

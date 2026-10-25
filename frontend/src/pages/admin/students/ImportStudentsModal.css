@@ -7,6 +7,42 @@
     margin: 2px 0 13px;
 }
 
+.admin-import-detected-label {
+    display: block;
+    margin-bottom: 4px;
+    color: #087fd2;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.admin-import-duplicate-list {
+    max-height: 132px;
+    overflow-y: auto;
+    list-style: disc outside;
+    margin: -3px 0 12px;
+    padding: 9px 12px 9px 29px;
+    border: 1px solid #f3caca;
+    border-radius: 6px;
+    background: #fff7f7;
+    color: #bc3030;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.admin-import-duplicate-list li {
+    padding: 2px 0;
+    overflow-wrap: anywhere;
+}
+
+.admin-import-duplicate-list li::marker {
+    color: #bc3030;
+}
+
+.admin-import-duplicate-list li.more-students {
+    margin-top: 3px;
+    font-weight: 600;
+}
+
 .admin-import-file-input {
     display: none !important;
 }

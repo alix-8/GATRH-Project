@@ -17,7 +17,7 @@ function ActivityTable({ activities, loading = false }) {
                         <td>{isValidDate ? timeFormatter.format(date).replace(/\s/g, '').toLowerCase() : '—'}</td>
                         <td>{activity.module}</td>
                         <td className="admin-activity-actor">{activity.performed_by}</td>
-                        <td><span className="admin-activity-result">{activity.result}</span></td>
+                        <td><span className={`admin-activity-result${activity.result === 'Failed' ? ' failed' : ''}`}>{activity.result}</span></td>
                     </tr>
                 })}
                 {!loading && activities?.length === 0 && <tr><td className="admin-activity-empty" colSpan="5">No activity has been recorded yet.</td></tr>}

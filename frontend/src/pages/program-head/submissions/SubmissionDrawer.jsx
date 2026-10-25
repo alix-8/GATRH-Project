@@ -99,25 +99,30 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
         }
     }
 
-    const renderSubmittedBy = () => (
+    const renderSubmittedBy = () => {
+        const isApproved = submission.status === 'approved'
+        const displayedUser = isApproved ? detail.approved_by : detail.submitted_by
+        const displayedName = displayedUser?.name || (isApproved ? 'Unknown' : submission.secretary)
+
+        return (
         <div className="ph-drawer-submitter">
             <UserAvatar
                 as="div"
                 className="ph-drawer-user-avatar"
-                name={detail.submitted_by?.name || submission.secretary}
-                program={submission.program}
+                name={displayedName}
+                program={isApproved ? displayedUser?.program : submission.program}
             />
             <section>
-                {submission.status === 'approved' && (
+                {isApproved && (
                     <strong>{detail.gathering || submission.gathering}</strong>
                 )}
-                {submission.status === 'approved' ? (
-                    <span>Passed by: {detail.submitted_by?.name || submission.secretary}</span>
+                {isApproved ? (
+                    <span>Approved by: {displayedName}</span>
                 ) : (
-                    <strong>{detail.submitted_by?.name || submission.secretary}</strong>
+                    <strong>{displayedName}</strong>
                 )}
 
-                {submission.status === 'approved' ? (
+                {isApproved ? (
                     <>
                         <small className="ph-record-date-time">
                             <img src={RecordCalendarIcon} alt="" />
@@ -141,7 +146,8 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                 )}
             </section>
         </div>
-    )
+        )
+    }
 
     return (
         <div
