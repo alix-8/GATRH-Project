@@ -150,6 +150,50 @@ class AdminStudentController extends Controller
             throw ValidationException::withMessages(['file' => ['The file has no student rows.']]);
         }
 
+        $studentNames = array_values(array_unique(array_column($students, 'name')));
+        $studentPrograms = array_values(array_unique(array_column($students, 'program')));
+        $studentYearLevels = array_values(array_unique(array_column($students, 'year_level')));
+        $existingStudents = Student::query()
+            ->whereIn('name', $studentNames)
+            ->whereIn('program', $studentPrograms)
+            ->whereIn('year_level', $studentYearLevels)
+            ->get(['name', 'program', 'year_level']);
+
+        $duplicateKeys = [];
+        foreach ($existingStudents as $existingStudent) {
+            $duplicateKeys[$this->studentImportKey(
+                $existingStudent->name,
+                $existingStudent->program,
+                $existingStudent->year_level
+            )] = true;
+        }
+
+        $seenImportKeys = [];
+        $duplicateStudents = [];
+        foreach ($students as $student) {
+            $key = $this->studentImportKey($student['name'], $student['program'], $student['year_level']);
+            if (isset($duplicateKeys[$key]) || isset($seenImportKeys[$key])) {
+                $duplicateStudents[$key] = sprintf(
+                    'Student "%s" already exists in %s Year %s.',
+                    $student['name'],
+                    $student['program'],
+                    $student['year_level']
+                );
+            }
+            $seenImportKeys[$key] = true;
+        }
+
+        if ($duplicateStudents !== []) {
+            $duplicateNames = array_values($duplicateStudents);
+            $shownNames = array_slice($duplicateNames, 0, 5);
+            $remainingCount = count($duplicateNames) - count($shownNames);
+            if ($remainingCount > 0) {
+                $shownNames[] = "(and {$remainingCount} more students)";
+            }
+
+            throw ValidationException::withMessages(['name' => $shownNames]);
+        }
+
         DB::transaction(function () use ($students): void {
             foreach ($students as $student) {
                 $this->studentService->create($student);
@@ -183,6 +227,11 @@ class AdminStudentController extends Controller
         return response()->json([
             'message' => 'Student marked as inactive successfully.',
         ]);
+    }
+
+    private function studentImportKey(string $name, string $program, string $yearLevel): string
+    {
+        return mb_strtolower(trim($name)) . '|' . strtoupper(trim($program)) . '|' . trim($yearLevel);
     }
 
     public function rolloverSchoolYear(Request $request): JsonResponse

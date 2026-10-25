@@ -115,7 +115,7 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
         } catch (error) {
             const validationErrors = error.details?.errors ?? {}
             setSubmitError(validationErrors.name?.length
-                ? 'Duplicate student detected:'
+                ? 'Duplicate students detected:'
                 : error.message || 'Unable to import students.')
             setFieldErrors(validationErrors)
             setIsSubmitting(false)
@@ -165,7 +165,15 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
                 <div><button type="button" role="switch" aria-checked={isActive} aria-label="Imported students active" className={`admin-add-user-switch${isActive ? ' active' : ''}`} onClick={() => setIsActive(current => !current)}><span /></button><span className={isActive ? 'active' : 'inactive'}>{isActive ? 'Active' : 'Inactive'}</span></div>
             </div>
             {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
-            {fieldErrors.name?.[0] && <small className="admin-add-user-field-error" role="alert">{fieldErrors.name[0]}</small>}
+            {fieldErrors.name?.length > 0 && (
+                <ul className="admin-import-duplicate-list" role="alert" aria-label="Duplicate students">
+                    {fieldErrors.name.map((duplicate, index) => (
+                        <li key={`${duplicate}-${index}`} className={index === fieldErrors.name.length - 1 && duplicate.startsWith('(and ') ? 'more-students' : ''}>
+                            {duplicate}
+                        </li>
+                    ))}
+                </ul>
+            )}
             <button className="admin-add-user-submit" type="submit" disabled={isSubmitting || isDetectingFile}>{isSubmitting ? 'Importing Students…' : isDetectingFile ? 'Reading File…' : 'Import Students'}</button>
             <div className="admin-add-user-note permissions"><span aria-hidden="true">i</span><p><strong>File Format</strong><br />Upload an .xlsx or .csv file with a Full Name column. All imported students receive the selected program, year level, and status.</p></div>
         </form>
