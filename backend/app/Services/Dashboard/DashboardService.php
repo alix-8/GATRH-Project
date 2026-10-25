@@ -219,11 +219,19 @@ class DashboardService
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->whereBetween('day', [$dateRange['start'], $dateRange['end']]);
 
-        $pendingReview = (clone $baseQuery)
+        $pendingRecordsQuery = (clone $baseQuery)
             ->where(function ($query) {
                 $query->whereNull('validation_status')
                     ->orWhere('validation_status', 'unvalidated');
-            })
+            });
+
+        $submissionGroup = "CASE WHEN batch_id IS NOT NULL AND batch_id <> '' "
+            . "THEN CONCAT('batch:', batch_id) "
+            . "ELSE CONCAT('legacy:', gathering_type, '|', DATE_FORMAT(day, '%Y-%m-%d'), '|', submitted_by) END";
+        $pendingReview = $pendingRecordsQuery
+            ->selectRaw("{$submissionGroup} AS submission_group")
+            ->groupByRaw($submissionGroup)
+            ->get()
             ->count();
 
         // Attendance records store the approved state as `validated`.
