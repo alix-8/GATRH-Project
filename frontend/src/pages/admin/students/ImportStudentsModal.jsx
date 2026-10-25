@@ -75,8 +75,11 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
             const result = await request('/admin/students/import', { method: 'POST', body: formData })
             onImported(result.message)
         } catch (error) {
-            setSubmitError(error.message || 'Unable to import students.')
-            setFieldErrors(error.details?.errors ?? {})
+            const validationErrors = error.details?.errors ?? {}
+            setSubmitError(validationErrors.name?.length
+                ? 'Duplicate student detected:'
+                : error.message || 'Unable to import students.')
+            setFieldErrors(validationErrors)
             setIsSubmitting(false)
         }
     }
@@ -94,8 +97,8 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
         <form onSubmit={handleSubmit}>
             <div className="admin-add-user-field admin-import-file-field">
                 <label htmlFor="admin-import-students-file">Attach an Excel File<span>*</span></label>
-                <input ref={fileRef} id="admin-import-students-file" className="admin-import-file-input" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange={event => selectFile(event.target.files?.[0])} />
-                <button className={`admin-import-drop-zone${isDragging ? ' is-dragging' : ''}`} type="button" onClick={() => fileRef.current?.click()} onDragOver={event => { event.preventDefault(); setIsDragging(true) }} onDragLeave={() => setIsDragging(false)} onDrop={event => { event.preventDefault(); setIsDragging(false); selectFile(event.dataTransfer.files?.[0]) }}>
+                <input ref={fileRef} id="admin-import-students-file" className="admin-import-file-input" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onClick={event => event.stopPropagation()} onChange={event => selectFile(event.target.files?.[0])} />
+                <button className={`admin-import-drop-zone${isDragging ? ' is-dragging' : ''}`} type="button" onClick={event => { event.stopPropagation(); fileRef.current?.click() }} onDragOver={event => { event.preventDefault(); setIsDragging(true) }} onDragLeave={() => setIsDragging(false)} onDrop={event => { event.preventDefault(); setIsDragging(false); selectFile(event.dataTransfer.files?.[0]) }}>
                     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 2.5h6l4 4v10.5H5zM11 2.5v4h4M10 9v5m-2.5-2.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     <span>{file ? file.name : 'Add a File'}</span>
                 </button>
@@ -122,6 +125,7 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
                 <div><button type="button" role="switch" aria-checked={isActive} aria-label="Imported students active" className={`admin-add-user-switch${isActive ? ' active' : ''}`} onClick={() => setIsActive(current => !current)}><span /></button><span className={isActive ? 'active' : 'inactive'}>{isActive ? 'Active' : 'Inactive'}</span></div>
             </div>
             {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
+            {fieldErrors.name?.[0] && <small className="admin-add-user-field-error" role="alert">{fieldErrors.name[0]}</small>}
             <button className="admin-add-user-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Importing Students…' : 'Import Students'}</button>
             <div className="admin-add-user-note permissions"><span aria-hidden="true">i</span><p><strong>File Format</strong><br />Upload an .xlsx or .csv file with a Full Name column. All imported students receive the selected program, year level, and status.</p></div>
         </form>

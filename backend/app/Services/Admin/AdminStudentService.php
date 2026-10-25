@@ -507,7 +507,12 @@ class AdminStudentService
 
         if ($duplicate) {
             throw ValidationException::withMessages([
-                'name' => ['A student with this name, program, and year level already exists.'],
+                'name' => [sprintf(
+                    'Student "%s" already exists in %s Year %s.',
+                    $name,
+                    $program,
+                    $yearLevel
+                )],
             ]);
         }
     }
