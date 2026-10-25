@@ -173,7 +173,7 @@ class ReminderController extends Controller
             'description' => 'nullable|string|max:100',
             'custom_type' => 'required|in:submission,gathering,general',
             'gathering_type' => 'required|in:pm,ws,tg',
-            'due_date'    => 'required|date|after_or_equal:today',
+            'due_date'    => 'required|date|after:now',
             'status'      => 'nullable|in:upcoming,needs_action,completed',
         ]);
 
