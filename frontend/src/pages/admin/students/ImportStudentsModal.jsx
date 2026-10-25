@@ -21,8 +21,11 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
     const [isActive, setIsActive] = useState(true)
     const [isDragging, setIsDragging] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isDetectingFile, setIsDetectingFile] = useState(false)
+    const [detectedFields, setDetectedFields] = useState({ program: false, year_level: false })
     const [submitError, setSubmitError] = useState('')
     const [fieldErrors, setFieldErrors] = useState({})
+    const previewRequestId = useRef(0)
 
     useEffect(() => {
         const dialog = dialogRef.current
@@ -35,21 +38,56 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
         }
     }, [])
 
-    function selectFile(selected) {
+    async function selectFile(selected) {
         if (!selected) return
+        const requestId = ++previewRequestId.current
+        setDetectedFields({ program: false, year_level: false })
         if (!/\.(xlsx|csv)$/i.test(selected.name)) {
             setFile(null)
+            setIsDetectingFile(false)
             setFieldErrors(current => ({ ...current, file: ['Choose an .xlsx or .csv file.'] }))
             return
         }
         if (selected.size > 2 * 1024 * 1024) {
             setFile(null)
+            setIsDetectingFile(false)
             setFieldErrors(current => ({ ...current, file: ['The file must be 2 MB or smaller.'] }))
             return
         }
         setFile(selected)
         setFieldErrors(current => ({ ...current, file: undefined }))
         setSubmitError('')
+
+        const previewData = new FormData()
+        previewData.append('file', selected)
+        setIsDetectingFile(true)
+        try {
+            const detected = await request('/admin/students/import/preview', {
+                method: 'POST',
+                body: previewData,
+            })
+            if (requestId !== previewRequestId.current) return
+
+            const detectedProgram = programs.find(item => item.code.toUpperCase() === String(detected.program || '').toUpperCase())
+            const detectedYear = String(detected.year_level || '')
+            const effectiveProgram = detectedProgram?.code ?? program
+            const yearsForProgram = effectiveProgram === 'ACT' ? years.slice(0, 2) : years
+            const validDetectedYear = yearsForProgram.some(year => year.value === detectedYear)
+
+            if (detectedProgram) {
+                setProgram(detectedProgram.code)
+                if (detectedProgram.code === 'ACT' && Number(yearLevel) > 2) setYearLevel('')
+            }
+            if (validDetectedYear) setYearLevel(detectedYear)
+            setDetectedFields({
+                program: Boolean(detectedProgram),
+                year_level: validDetectedYear,
+            })
+        } catch {
+            // The admin can still select these fields manually if detection fails.
+        } finally {
+            if (requestId === previewRequestId.current) setIsDetectingFile(false)
+        }
     }
 
     async function handleSubmit(event) {
@@ -105,6 +143,7 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
                 {fieldErrors.file && <small className="admin-add-user-field-error">{fieldErrors.file[0]}</small>}
             </div>
             <div className="admin-add-user-field">
+                {detectedFields.program && <small className="admin-import-detected-label">Program detected</small>}
                 <label htmlFor="admin-import-students-program">Program<span>*</span></label>
                 <ModalSelect id="admin-import-students-program" value={program} onChange={event => { const value = event.target.value; setProgram(value); if (value === 'ACT' && Number(yearLevel) > 2) setYearLevel(''); setFieldErrors(current => ({ ...current, program: undefined })) }} aria-invalid={Boolean(fieldErrors.program)}>
                     <option value="">Select Program</option>
@@ -113,6 +152,7 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
                 {fieldErrors.program && <small className="admin-add-user-field-error">{fieldErrors.program[0]}</small>}
             </div>
             <div className="admin-add-user-field">
+                {detectedFields.year_level && <small className="admin-import-detected-label">Year level detected</small>}
                 <label htmlFor="admin-import-students-year">Year Level<span>*</span></label>
                 <ModalSelect id="admin-import-students-year" value={yearLevel} onChange={event => { setYearLevel(event.target.value); setFieldErrors(current => ({ ...current, year_level: undefined })) }} aria-invalid={Boolean(fieldErrors.year_level)}>
                     <option value="">Select Year Level</option>
@@ -126,7 +166,7 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
             </div>
             {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
             {fieldErrors.name?.[0] && <small className="admin-add-user-field-error" role="alert">{fieldErrors.name[0]}</small>}
-            <button className="admin-add-user-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Importing Students…' : 'Import Students'}</button>
+            <button className="admin-add-user-submit" type="submit" disabled={isSubmitting || isDetectingFile}>{isSubmitting ? 'Importing Students…' : isDetectingFile ? 'Reading File…' : 'Import Students'}</button>
             <div className="admin-add-user-note permissions"><span aria-hidden="true">i</span><p><strong>File Format</strong><br />Upload an .xlsx or .csv file with a Full Name column. All imported students receive the selected program, year level, and status.</p></div>
         </form>
     </dialog>

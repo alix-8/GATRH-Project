@@ -113,6 +113,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::get('/admin/users', [AdminUserController::class, 'index']);
         Route::post('/admin/users', [AdminUserController::class, 'store']);
         Route::patch('/admin/users/{user}', [AdminUserController::class, 'update']);
+        Route::post('/admin/students/import/preview', [AdminStudentController::class, 'previewImport']);
         Route::post('/admin/students/import', [AdminStudentController::class, 'import']);
         Route::get('/admin/students', [AdminStudentController::class, 'index']);
         Route::get('/admin/students/school-year-rollover', [AdminStudentController::class, 'schoolYearRolloverStatus']);

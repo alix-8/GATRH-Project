@@ -62,6 +62,38 @@ class AdminStudentController extends Controller
         ], 201);
     }
     
+    public function previewImport(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'extensions:csv,xlsx', 'max:2048'],
+        ]);
+
+        $rows = $this->importFileReader->read($validated['file']);
+        $headers = array_shift($rows);
+        if (! is_array($headers)) {
+            throw ValidationException::withMessages(['file' => ['The file is empty.']]);
+        }
+
+        $headers = array_map(fn ($header) => strtolower(trim((string) $header, " \t\n\r\0\x0B\xEF\xBB\xBF")), $headers);
+        $columns = array_flip($headers);
+        $programColumn = $columns['program'] ?? null;
+        $yearColumn = $columns['year_level'] ?? $columns['year level'] ?? null;
+        $programValues = [];
+        $yearValues = [];
+
+        foreach ($rows as $values) {
+            $programValue = $programColumn === null ? '' : strtoupper(trim((string) ($values[$programColumn] ?? '')));
+            $yearValue = $yearColumn === null ? '' : trim((string) ($values[$yearColumn] ?? ''));
+            if ($programValue !== '') $programValues[$programValue] = true;
+            if ($yearValue !== '') $yearValues[$yearValue] = true;
+        }
+
+        return response()->json([
+            'program' => count($programValues) === 1 ? array_key_first($programValues) : null,
+            'year_level' => count($yearValues) === 1 ? array_key_first($yearValues) : null,
+        ]);
+    }
+
     public function import(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -80,8 +112,10 @@ class AdminStudentController extends Controller
         $headers = array_map(fn ($header) => strtolower(trim((string) $header, " \t\n\r\0\x0B\xEF\xBB\xBF")), $headers);
         $columns = array_flip($headers);
         $nameColumn = $columns['full_name'] ?? $columns['full name'] ?? $columns['name'] ?? null;
+        $programColumn = $columns['program'] ?? null;
+        $yearColumn = $columns['year_level'] ?? $columns['year level'] ?? null;
         if ($nameColumn === null || (! isset($validated['program']) && ! isset($columns['program']))
-            || (! isset($validated['year_level']) && ! isset($columns['year_level']))) {
+            || (! isset($validated['year_level']) && $yearColumn === null)) {
             throw ValidationException::withMessages(['file' => ['Include a Full Name column. If Program and Year Level are not selected, the file must also have program and year_level columns.']]);
         }
 
@@ -93,8 +127,8 @@ class AdminStudentController extends Controller
             }
 
             $name = trim((string) ($values[$nameColumn] ?? ''));
-            $program = strtoupper(trim((string) ($validated['program'] ?? $values[$columns['program']] ?? '')));
-            $yearLevel = trim((string) ($validated['year_level'] ?? $values[$columns['year_level']] ?? ''));
+            $program = strtoupper(trim((string) ($validated['program'] ?? ($programColumn === null ? '' : ($values[$programColumn] ?? '')))));
+            $yearLevel = trim((string) ($validated['year_level'] ?? ($yearColumn === null ? '' : ($values[$yearColumn] ?? ''))));
             $status = strtolower(trim((string) ($values[$columns['status'] ?? -1] ?? 'active')));
             if ($name === '' || mb_strlen($name) > 255 || ! in_array($program, $validPrograms, true)
                 || ! in_array($yearLevel, $program === 'ACT' ? ['1', '2'] : ['1', '2', '3', '4'], true)
