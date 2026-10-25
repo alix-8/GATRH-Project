@@ -62,6 +62,8 @@ class AdminDashboardService
                 'action' => $log->action,
                 'target' => $log->target_table,
                 'target_id' => $log->target_id,
+                'module' => $log->moduleLabel(),
+                'result' => $log->resultLabel(),
                 'performed_by' => $log->actor?->name ?? 'Unknown user',
                 'created_at' => $log->created_at?->toIso8601String(),
             ])

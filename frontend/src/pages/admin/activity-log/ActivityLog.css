@@ -140,7 +140,7 @@
 
 .admin-activity-history {
     min-width: 0;
-    padding: 20px;
+    padding: 14px;
     border: 1px solid #d7dee8;
     border-radius: 7px;
     background: #fff;
@@ -155,7 +155,7 @@
 }
 
 .admin-activity-history-heading p {
-    margin: 4px 0 16px;
+    margin: 3px 0 11px;
     color: #74829b;
     font-size: 11px;
     text-align: left;
@@ -163,15 +163,15 @@
 
 .admin-activity-history-filters {
     display: grid;
-    grid-template-columns: 142px 167px 148px 200px;
-    gap: 14px;
-    margin-bottom: 18px;
+    grid-template-columns: minmax(180px, 1.7fr) repeat(3, minmax(110px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
 }
 
 .admin-activity-history-filters select,
 .admin-activity-history-search {
     width: 100%;
-    height: 45px;
+    height: 27px;
     box-sizing: border-box;
     border: 1px solid #cbd5e3;
     border-radius: 6px;
@@ -183,7 +183,7 @@
 }
 
 .admin-activity-history-filters select {
-    padding: 0 34px 0 12px;
+    padding: 0 26px 0 9px;
     appearance: none;
     cursor: pointer;
 }
@@ -195,21 +195,21 @@
 }
 
 .admin-activity-history-select .admin-modal-select-chevron {
-    right: 12px;
+    right: 8px;
     color: #64748f;
 }
 
 .admin-activity-history-search {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 11px;
+    gap: 6px;
+    padding: 0 8px;
 }
 
 .admin-activity-history-search svg {
-    width: 15px;
-    height: 15px;
-    flex: 0 0 15px;
+    width: 12px;
+    height: 12px;
+    flex: 0 0 12px;
 }
 
 .admin-activity-history-search input {
@@ -238,7 +238,6 @@
 .admin-activity-history-table-wrap {
     min-width: 0;
     overflow-x: auto;
-    border: 1px solid #cbd4df;
     border-radius: 6px;
 }
 
@@ -255,8 +254,8 @@
 }
 
 .admin-activity-history-table th {
-    padding: 12px 16px;
-    background: #f1f6fc;
+    padding: 8px 10px;
+    background: #f3f7fc;
     color: #172b4d;
     font-size: 12px;
     font-weight: 600;
@@ -265,9 +264,9 @@
 }
 
 .admin-activity-history-table td {
-    height: 64px;
+    height: 43px;
     box-sizing: border-box;
-    padding: 10px 16px;
+    padding: 6px 10px;
     border-bottom: 1px solid #e5eaf1;
     color: #233b62;
     vertical-align: middle;
@@ -301,15 +300,20 @@
     display: block;
     color: #172b4d;
     font-weight: 500;
+    font-size: 11px;
+    line-height: 2;
+    text-align  : left;
 }
 
 .admin-activity-history-table small {
     display: block;
-    margin-top: 6px;
+    margin-top: 0;
     overflow: hidden;
     color: #74829b;
     font-size: 10px;
+    line-height: 2;
     text-overflow: ellipsis;
+    text-align  : left;
     white-space: nowrap;
 }
 
@@ -342,13 +346,13 @@
 .admin-activity-history-footer {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 14px;
-    padding-top: 16px;
+    align-items: center;
+    gap: 10px;
+    padding-top: 8px;
 }
 
 .admin-activity-history-footer p {
-    margin: 10px 0;
+    margin: 3px 0 5px;
     color: #74829b;
     font-size: 11px;
     text-align: left;
@@ -361,13 +365,13 @@
 
 .admin-activity-history-pagination {
     display: flex;
-    gap: 7px;
+    gap: 5px;
 }
 
 .admin-activity-history-pagination button {
-    min-width: 32px;
-    height: 34px;
-    padding: 0 12px;
+    min-width: 22px;
+    height: 24px;
+    padding: 0 8px;
     border: 1px solid #d9e1eb;
     border-radius: 5px;
     background: #fff;
@@ -400,36 +404,39 @@
 
 .admin-activity-history-dialog {
     position: relative;
-    width: min(100%, 500px);
+    width: min(100%, 600px);
     max-height: min(90vh, 700px);
     overflow-y: auto;
     box-sizing: border-box;
-    padding: 24px;
-    border-radius: 10px;
+    padding: 28px 32px 32px;
+    border: 1px solid #d5dce7;
+    border-radius: 14px;
     background: #fff;
-    box-shadow: 0 18px 55px #172b4d33;
+    box-shadow: 0 18px 55px #172b4d44;
+    text-align: left;
 }
 
 .admin-activity-history-dialog h2 {
     margin: 0;
     color: #172b4d;
-    font-size: 20px;
+    font-size: 25px;
+    line-height: 1.25;
 }
 
 .admin-activity-history-dialog-intro {
-    margin: 5px 0 20px;
+    margin: 5px 0 24px;
     color: #74829b;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .admin-activity-history-close {
     position: absolute;
-    top: 12px;
-    right: 16px;
+    top: 16px;
+    right: 20px;
     border: 0;
     background: none;
     color: #62718d;
-    font-size: 25px;
+    font-size: 22px;
     cursor: pointer;
 }
 
@@ -439,21 +446,22 @@
 
 .admin-activity-history-dialog dl>div {
     display: grid;
-    grid-template-columns: 135px minmax(0, 1fr);
-    gap: 12px;
-    padding: 11px 0;
-    border-bottom: 1px solid #edf0f5;
-    font-size: 12px;
+    gap: 4px;
+    margin-bottom: 23px;
 }
 
 .admin-activity-history-dialog dt {
     color: #74829b;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .admin-activity-history-dialog dd {
     margin: 0;
     overflow-wrap: anywhere;
     color: #172b4d;
+    font-size: 15px;
+    line-height: 1.5;
 }
 
 .admin-activity-history-dialog dd small {
@@ -468,15 +476,23 @@
 
 .admin-activity-history-done {
     display: block;
-    margin: 20px 0 0 auto;
-    padding: 9px 18px;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 10px 18px;
     border: 0;
     border-radius: 5px;
-    background: #159efa;
+    background: #172b4d;
     color: #fff;
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
+    text-align: center;
+}
+
+.admin-activity-history-done:hover {
+    background: #233d68;
 }
 
 .admin-activity-log-error {
@@ -485,4 +501,29 @@
     background: #fff0f0;
     color: #9f2d2d;
     font-size: 13px;
+}
+
+@media (max-width: 760px) {
+    .admin-activity-history-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-activity-history-search {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 520px) {
+    .admin-activity-log-content {
+        padding: 14px 12px 18px;
+    }
+
+    .admin-activity-history {
+        padding: 10px;
+    }
+
+    .admin-activity-history-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }

@@ -63,6 +63,12 @@ function UserRoles() {
     }, [filters.search])
 
     useEffect(() => {
+        if (!notice) return undefined
+        const timeout = window.setTimeout(() => setNotice(''), 5000)
+        return () => window.clearTimeout(timeout)
+    }, [notice])
+
+    useEffect(() => {
         const controller = new AbortController()
         const params = new URLSearchParams({ per_page: '100', page: String(page) })
         if (filters.role) params.set('role', filters.role)

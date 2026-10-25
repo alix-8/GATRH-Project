@@ -26,15 +26,14 @@ function ActivityDetails({ activity, onClose }) {
         <section className="admin-activity-history-dialog" role="dialog" aria-modal="true" aria-labelledby="activity-details-title">
             <button className="admin-activity-history-close" type="button" onClick={onClose} aria-label="Close activity details" autoFocus>×</button>
             <h2 id="activity-details-title">Activity Details</h2>
-            <p className="admin-activity-history-dialog-intro">Recorded administrator action</p>
+            <p className="admin-activity-history-dialog-intro">LOG-{String(activity.id).padStart(4, '0')} · Read-only activity record</p>
             <dl>
-                <div><dt>Activity</dt><dd>{activity.action}</dd></div>
-                <div><dt>Date & Time</dt><dd>{when && !Number.isNaN(when.getTime()) ? `${dateFormatter.format(when)} at ${timeFormatter.format(when)}` : '—'}</dd></div>
-                <div><dt>Affected Record</dt><dd>{activity.affected_record}</dd></div>
+                <div><dt>Date & Time</dt><dd>{when && !Number.isNaN(when.getTime()) ? `${dateFormatter.format(when)} · ${timeFormatter.format(when)}` : '—'}</dd></div>
                 <div><dt>Module</dt><dd>{activity.module}</dd></div>
-                <div><dt>Performed By</dt><dd>{activity.performed_by}{activity.performed_by_email && <small>{activity.performed_by_email}</small>}</dd></div>
+                <div><dt>Activity</dt><dd>{activity.action}</dd></div>
+                <div><dt>Affected Record</dt><dd>{activity.affected_record}</dd></div>
+                <div><dt>Performed By</dt><dd>Administrator{activity.performed_by_email ? ` · ${activity.performed_by_email}` : ` · ${activity.performed_by}`}</dd></div>
                 <div><dt>Result</dt><dd className="admin-activity-history-success">{activity.result}</dd></div>
-                <div><dt>Record Reference</dt><dd>{activity.target_table} #{activity.target_id}</dd></div>
             </dl>
             <button className="admin-activity-history-done" type="button" onClick={onClose}>Close</button>
         </section>
@@ -147,6 +146,10 @@ function ActivityLog() {
                             <p>A record of account, student, program, settings and security actions.</p>
                         </div>
                         <div className="admin-activity-history-filters">
+                            <label className="admin-activity-history-search">
+                                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.3" stroke="currentColor" strokeWidth="1.6" /><path d="m12.7 12.7 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+                                <input type="search" aria-label="Search activity, administrator or record" placeholder="Search activity, admin or record..." value={searchInput} onChange={event => setSearchInput(event.target.value)} maxLength={100} />
+                            </label>
                             <span className="admin-activity-history-select"><ModalSelect aria-label="Filter by date" value={filters.date} onChange={event => updateFilter('date', event.target.value)}>
                                 <option value="">All Dates</option><option value="today">Today</option><option value="7days">Last 7 Days</option><option value="30days">Last 30 Days</option>
                             </ModalSelect></span>
@@ -156,10 +159,6 @@ function ActivityLog() {
                             <span className="admin-activity-history-select"><ModalSelect aria-label="Filter by result" value={filters.result} onChange={event => updateFilter('result', event.target.value)}>
                                 <option value="">All Results</option><option value="success">Success</option><option value="failed">Failed</option>
                             </ModalSelect></span>
-                            <label className="admin-activity-history-search">
-                                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.3" stroke="currentColor" strokeWidth="1.6" /><path d="m12.7 12.7 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
-                                <input type="search" aria-label="Search activity, administrator or record" placeholder="Search activity, admin or record..." value={searchInput} onChange={event => setSearchInput(event.target.value)} maxLength={100} />
-                            </label>
                         </div>
                         <div className="admin-activity-history-table-wrap" role="region" aria-label="Activity history table" tabIndex="0" aria-busy={loading}>
                             <table className="admin-activity-history-table">
