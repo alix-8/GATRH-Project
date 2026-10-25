@@ -114,9 +114,14 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
             onImported(result.message)
         } catch (error) {
             const validationErrors = error.details?.errors ?? {}
-            setSubmitError(validationErrors.name?.length
+            const fieldMessages = Object.values(validationErrors).flat()
+            const isDuplicateError = Boolean(validationErrors.name?.length)
+            const generalMessage = error.message || 'Unable to import students.'
+            setSubmitError(isDuplicateError
                 ? 'Duplicate students detected:'
-                : error.message || 'Unable to import students.')
+                : fieldMessages.includes(generalMessage)
+                    ? ''
+                    : generalMessage)
             setFieldErrors(validationErrors)
             setIsSubmitting(false)
         }
