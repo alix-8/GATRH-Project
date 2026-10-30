@@ -112,21 +112,32 @@ class AdminStudentController extends Controller
         $headers = array_map(fn ($header) => strtolower(trim((string) $header, " \t\n\r\0\x0B\xEF\xBB\xBF")), $headers);
         $columns = array_flip($headers);
         $nameColumn = $columns['full_name'] ?? $columns['full name'] ?? $columns['name'] ?? null;
+        $lastNameColumn = $columns['lname'] ?? $columns['last_name'] ?? $columns['last name'] ?? $columns['lastname'] ?? $columns['surname'] ?? null;
+        $firstNameColumn = $columns['fname'] ?? $columns['first_name'] ?? $columns['first name'] ?? $columns['firstname'] ?? $columns['given_name'] ?? $columns['given name'] ?? null;
+        $hasSeparateNames = $lastNameColumn !== null && $firstNameColumn !== null;
         $programColumn = $columns['program'] ?? null;
         $yearColumn = $columns['year_level'] ?? $columns['year level'] ?? null;
-        if ($nameColumn === null || (! isset($validated['program']) && ! isset($columns['program']))
+        if (($nameColumn === null && !$hasSeparateNames) || (! isset($validated['program']) && ! isset($columns['program']))
             || (! isset($validated['year_level']) && $yearColumn === null)) {
-            throw ValidationException::withMessages(['file' => ['Include a Full Name column. If Program and Year Level are not selected, the file must also have program and year_level columns.']]);
+            throw ValidationException::withMessages(['file' => ['Include a Full Name column or both Last Name (lname) and First Name (fname) columns. If Program and Year Level are not selected, the file must also have program and year_level columns.']]);
         }
 
         $validPrograms = Program::query()->pluck('code')->all();
         $students = [];
         foreach ($lines as $index => $values) {
-            if (count($values) === 1 && trim((string) $values[0]) === '') {
+            if (collect($values)->every(fn ($value) => trim((string) $value) === '')) {
                 continue;
             }
 
-            $name = trim((string) ($values[$nameColumn] ?? ''));
+            $name = $nameColumn === null ? '' : trim((string) ($values[$nameColumn] ?? ''));
+            if ($name === '' && $hasSeparateNames) {
+                $lastName = preg_replace('/\s+/u', ' ', trim((string) ($values[$lastNameColumn] ?? '')));
+                $firstName = preg_replace('/\s+/u', ' ', trim((string) ($values[$firstNameColumn] ?? '')));
+                if ($lastName === '' || $firstName === '') {
+                    throw ValidationException::withMessages(['file' => ['Missing first or last name on row '.($index + 2).'. Provide both lname and fname, or a Full Name.']]);
+                }
+                $name = $lastName.', '.$firstName;
+            }
             $program = strtoupper(trim((string) ($validated['program'] ?? ($programColumn === null ? '' : ($values[$programColumn] ?? '')))));
             $yearLevel = trim((string) ($validated['year_level'] ?? ($yearColumn === null ? '' : ($values[$yearColumn] ?? ''))));
             $status = strtolower(trim((string) ($values[$columns['status'] ?? -1] ?? 'active')));

@@ -62,6 +62,7 @@ Route::post('/internal/scheduler/run', function (Request $request) {
 })->middleware('throttle:10,1');
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/branding', [AdminSystemSettingController::class, 'branding']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-reset-code', [AuthController::class, 'verifyPasswordResetCode']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);

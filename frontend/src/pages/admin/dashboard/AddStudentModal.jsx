@@ -15,7 +15,7 @@ const yearOptions = [
 
 function AddStudentModal({ onClose, onCreated }) {
     const dialogRef = useRef(null)
-    const [form, setForm] = useState({ name: '', program: '', year_level: '', is_active: true })
+    const [form, setForm] = useState({ lname: '', fname: '', program: '', year_level: '', is_active: true })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const [fieldErrors, setFieldErrors] = useState({})
@@ -33,13 +33,19 @@ function AddStudentModal({ onClose, onCreated }) {
 
     function updateField(field, value) {
         setForm(current => ({ ...current, [field]: value, ...(field === 'program' && value === 'ACT' && Number(current.year_level) > 2 ? { year_level: '' } : {}) }))
-        setFieldErrors(current => ({ ...current, [field]: undefined }))
+        setFieldErrors(current => ({ ...current, [field]: undefined, ...(['lname', 'fname'].includes(field) ? { name: undefined } : {}) }))
         setSubmitError('')
     }
 
     async function handleSubmit(event) {
         event.preventDefault()
         const errors = {}
+        const lastName = form.lname.trim().replace(/\s+/g, ' ')
+        const firstName = form.fname.trim().replace(/\s+/g, ' ')
+        const name = `${lastName}, ${firstName}`
+        if (!lastName) errors.lname = ['Enter the last name.']
+        if (!firstName) errors.fname = ['Enter the first name.']
+        if (name.length > 255) errors.name = ['The combined name must be 255 characters or fewer.']
         if (!form.program) errors.program = ['Select a program.']
         if (!form.year_level) errors.year_level = ['Select a year level.']
         if (Object.keys(errors).length) {
@@ -53,8 +59,10 @@ function AddStudentModal({ onClose, onCreated }) {
             const result = await request('/admin/students', {
                 method: 'POST',
                 body: JSON.stringify({
-                    ...form,
-                    name: form.name.trim(),
+                    name,
+                    program: form.program,
+                    year_level: form.year_level,
+                    is_active: form.is_active,
                 }),
             })
             onCreated(result.message)
@@ -78,8 +86,14 @@ function AddStudentModal({ onClose, onCreated }) {
         <p id="admin-add-student-description" className="admin-add-user-description">Create a new student record and assign a program.</p>
         <form onSubmit={handleSubmit}>
             <div className="admin-add-user-field">
-                <label htmlFor="admin-add-student-name">Full Name<span>*</span></label>
-                <input id="admin-add-student-name" name="name" autoFocus required maxLength={255} placeholder="Enter full name" value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
+                <label htmlFor="admin-add-student-lname">Last Name<span>*</span></label>
+                <input id="admin-add-student-lname" name="lname" autoFocus required maxLength={255} placeholder="Enter last name" value={form.lname} onChange={event => updateField('lname', event.target.value)} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
+                {fieldErrors.lname && <small className="admin-add-user-field-error">{fieldErrors.lname[0]}</small>}
+            </div>
+            <div className="admin-add-user-field">
+                <label htmlFor="admin-add-student-fname">First Name<span>*</span></label>
+                <input id="admin-add-student-fname" name="fname" required maxLength={255} placeholder="Enter first name" value={form.fname} onChange={event => updateField('fname', event.target.value)} aria-invalid={Boolean(fieldErrors.fname || fieldErrors.name)} />
+                {fieldErrors.fname && <small className="admin-add-user-field-error">{fieldErrors.fname[0]}</small>}
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
             </div>
             <div className="admin-add-user-field">

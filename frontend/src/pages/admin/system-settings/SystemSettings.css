@@ -593,3 +593,19 @@
         gap: 16px;
     }
 }
+
+
+.admin-settings-year-display {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 35px;
+    box-sizing: border-box;
+    padding: 0 10px;
+    border: 1px solid #d5dce7;
+    border-radius: 4px;
+    background: #fff;
+    color: #172b4d;
+    font-size: 11px;
+}

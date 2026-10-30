@@ -17,6 +17,8 @@
 }
 
 .login-title {
+    max-width: min(360px, calc(100vw - 180px));
+    overflow-wrap: anywhere;
     position: absolute;
     color: #172B4D;
     font-weight: 600;

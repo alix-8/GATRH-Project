@@ -76,13 +76,20 @@ function AddUserModal({ onClose, onCreated }) {
 
     async function handleSubmit(event) {
         event.preventDefault()
+        const email = form.email.trim().toLowerCase()
+        const domain = email.slice(email.lastIndexOf('@') + 1)
+        if (!/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*laverdad\.edu\.ph$/.test(domain)) {
+            setFieldErrors({ email: ['Use a La Verdad email address, such as name@laverdad.edu.ph or name@student.laverdad.edu.ph.'] })
+            setSubmitError('')
+            return
+        }
         setIsSubmitting(true)
         setSubmitError('')
         setFieldErrors({})
 
         const payload = {
             name: form.name.trim(),
-            email: form.email.trim(),
+            email,
             role: form.role,
             is_active: form.is_active,
             ...(needsProgram ? { program: form.program } : {}),

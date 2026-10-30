@@ -180,7 +180,7 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
                 </ul>
             )}
             <button className="admin-add-user-submit" type="submit" disabled={isSubmitting || isDetectingFile}>{isSubmitting ? 'Importing Students…' : isDetectingFile ? 'Reading File…' : 'Import Students'}</button>
-            <div className="admin-add-user-note permissions"><span aria-hidden="true">i</span><p><strong>File Format</strong><br />Upload an .xlsx or .csv file with a Full Name column. All imported students receive the selected program, year level, and status.</p></div>
+            <div className="admin-add-user-note permissions"><span aria-hidden="true">i</span><p><strong>File Format</strong><br />Upload an .xlsx or .csv file with a Full Name column, or separate Last Name (lname) and First Name (fname) columns. Separate names are saved as Last Name, First Name. All imported students receive the selected program, year level, and status.</p></div>
         </form>
     </dialog>
 }

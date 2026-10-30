@@ -37,6 +37,13 @@ class AdminSystemSettingController extends Controller
         ]);
     }
 
+    public function branding(): JsonResponse
+    {
+        return response()->json([
+            'system_name' => SystemSetting::whereKey(1)->value('system_name') ?: SystemSetting::DEFAULT_SYSTEM_NAME,
+        ])->header('Cache-Control', 'no-store');
+    }
+
     public function update(Request $request): JsonResponse
     {
         if ($request->has('academic_year')
@@ -47,15 +54,14 @@ class AdminSystemSettingController extends Controller
         }
         $request->request->remove('academic_year');
 
+        if (is_string($request->input('system_name'))) {
+            $request->merge(['system_name' => trim(preg_replace('/\s+/u', ' ', $request->input('system_name')))]);
+        }
+
         $validated = $request->validate([
-            'institution_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'system_name' => ['sometimes', 'required', 'string', 'max:120'],
             'academic_year' => ['sometimes', 'required', 'string', 'regex:/^\d{4}-\d{4}$/'],
             'timezone' => ['sometimes', 'required', 'string', 'timezone'],
-            'date_format' => ['sometimes', 'required', Rule::in([
-                'MM/DD/YYYY',
-                'DD/MM/YYYY',
-                'YYYY-MM-DD',
-            ])],
         ]);
 
         $settings = $this->settingService->updateGeneralSettings(

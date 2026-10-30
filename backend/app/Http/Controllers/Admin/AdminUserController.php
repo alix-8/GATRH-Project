@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Program;
 use App\Models\User;
+use App\Rules\LaVerdadEmail;
 use App\Services\Admin\AdminUserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,9 +39,12 @@ class AdminUserController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => strtolower(trim($request->input('email')))]);
+        }
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['bail', 'required', 'email', 'max:255', new LaVerdadEmail(), 'unique:users,email'],
             'role' => ['required', Rule::in(User::ROLES)],
             'contact_number' => ['nullable', 'string', 'regex:/^09\d{9}$/'],
             'password' => ['prohibited'],

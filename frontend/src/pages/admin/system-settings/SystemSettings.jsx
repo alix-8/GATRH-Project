@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
-import ModalSelect from '../dashboard/ModalSelect'
 import { request } from '../../../api/request'
 import GeneralIcon from '../../../assets/icons/system-settings-icon.svg'
 import SecurityIcon from '../../../assets/icons/system-status-icon.svg'
@@ -11,7 +10,7 @@ import SecuritySettingsForm from './SecuritySettingsForm'
 import '../dashboard/AddUserModal.css'
 import './SystemSettings.css'
 
-const dateFormats = ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD']
+const normalizeSystemName = value => value.replace(/\s+/g, ' ').trim()
 
 function SystemSettings() {
     const [activeSection, setActiveSection] = useState('general')
@@ -35,9 +34,7 @@ function SystemSettings() {
                 if (!active) return
                 setSettings(data.settings)
                 setForm({
-                    institution_name: data.settings.institution_name ?? '',
-                    academic_year: data.settings.academic_year ?? '',
-                    date_format: data.settings.date_format ?? 'MM/DD/YYYY',
+                    system_name: data.settings.system_name ?? '',
                 })
                 setError('')
                 request('/admin/students/school-year-rollover')
@@ -83,13 +80,7 @@ function SystemSettings() {
         return () => window.clearTimeout(timeout)
     }, [rolloverError])
 
-    const currentSchoolYear = settings?.academic_year || form?.academic_year || ''
-    const configuredStartYear = Number(currentSchoolYear.slice(0, 4)) || new Date().getFullYear()
-    const academicYears = Array.from({ length: 8 }, (_, index) => {
-        const year = configuredStartYear - 2 + index
-        return `${year}-${year + 1}`
-    })
-
+    const currentSchoolYear = settings?.academic_year || ''
     function updateField(name, value) {
         setForm(current => ({ ...current, [name]: value }))
         setNotice('')
@@ -99,6 +90,10 @@ function SystemSettings() {
     async function saveSettings(event) {
         event.preventDefault()
         if (!form || saving) return
+        if (!normalizeSystemName(form.system_name)) {
+            setError('System name is required.')
+            return
+        }
         setSaving(true)
         setError('')
         setNotice('')
@@ -106,16 +101,12 @@ function SystemSettings() {
             const data = await request('/admin/settings/general', {
                 method: 'PATCH',
                 body: JSON.stringify({
-                    institution_name: form.institution_name.trim(),
-                    academic_year: form.academic_year,
-                    date_format: form.date_format,
+                    system_name: normalizeSystemName(form.system_name),
                 }),
             })
             setSettings(data.settings)
             setForm({
-                institution_name: data.settings.institution_name,
-                academic_year: data.settings.academic_year,
-                date_format: data.settings.date_format,
+                system_name: data.settings.system_name,
             })
             setNotice('General settings saved successfully.')
         } catch (error) {
@@ -193,7 +184,7 @@ function SystemSettings() {
         return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`
     }
 
-    const unchanged = settings && form && form.institution_name === settings.institution_name && form.academic_year === settings.academic_year && form.date_format === settings.date_format
+    const unchanged = settings && form && form.system_name === settings.system_name
 
     return (
         <div className="admin-system-settings">
@@ -209,16 +200,15 @@ function SystemSettings() {
                         {activeSection === 'general' ? <>
                             <div className="admin-settings-panel-heading">
                             <h2 id="admin-settings-general-title">General</h2>
-                            <p>Update your institution details and default settings.</p>
+                            <p>Update your system name and general settings.</p>
                             </div>
                         {loading ? <div className="admin-settings-loading"><LoadingCircle label="Loading general settings..." /></div>
                             : !form ? <div className="admin-settings-load-error" role="alert"><p>{error || 'Unable to load system settings.'}</p><button type="button" onClick={() => { setLoading(true); setError(''); setLoadAttempt(current => current + 1) }}>Try again</button></div>
                                 : <form className="admin-settings-form" onSubmit={saveSettings}>
                                     <div className="admin-settings-fields">
-                                        <label className="admin-settings-field"><span>Institution Name</span><input type="text" name="institution_name" value={form.institution_name} onChange={event => updateField('institution_name', event.target.value)} maxLength={255} required disabled={saving} /></label>
+                                        <label className="admin-settings-field"><span>System Name</span><input type="text" name="system_name" value={form.system_name} onChange={event => updateField('system_name', event.target.value)} maxLength={120} required disabled={saving} /></label>
                                         <div className="admin-settings-field-row">
-                                            <label className="admin-settings-field"><span>Academic Year</span><ModalSelect name="academic_year" value={form.academic_year} onChange={event => updateField('academic_year', event.target.value)} disabled={saving} required>{academicYears.map(year => <option key={year} value={year} disabled={year !== currentSchoolYear}>{year}</option>)}</ModalSelect></label>
-                                            <label className="admin-settings-field"><span>Date Format</span><ModalSelect name="date_format" value={form.date_format} onChange={event => updateField('date_format', event.target.value)} disabled={saving} required>{dateFormats.map(format => <option key={format} value={format}>{format}</option>)}</ModalSelect></label>
+                                            <div className="admin-settings-field"><span>Academic Year</span><p className="admin-settings-year-display">{currentSchoolYear}</p></div>
                                         </div>
                                     </div>
                                     <section className="admin-rollover-panel" aria-labelledby="admin-rollover-title">

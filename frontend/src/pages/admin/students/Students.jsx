@@ -94,7 +94,11 @@ function Students() {
     ]
 
     function updateFilter(field, value) {
-        setFilters(current => ({ ...current, [field]: value }))
+        setFilters(current => ({
+            ...current,
+            [field]: value,
+            ...(field === 'program' && value === 'ACT' && Number(current.year_level) > 2 ? { year_level: '' } : {}),
+        }))
         setPage(1)
         setLoading(true)
     }
@@ -132,7 +136,7 @@ function Students() {
                         <div className="admin-students-filter-bar">
                             <div className="admin-students-filter-controls">
                                 <div className="admin-students-select program"><ModalSelect aria-label="Filter by program" value={filters.program} onChange={event => updateFilter('program', event.target.value)}><option value="">All Programs</option>{orderedPrograms.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}</ModalSelect></div>
-                                <div className="admin-students-select year"><ModalSelect aria-label="Filter by year level" value={filters.year_level} onChange={event => updateFilter('year_level', event.target.value)}><option value="">All Year Levels</option>{yearLevels.map(year => <option key={year} value={year}>{yearLabel(year)}</option>)}</ModalSelect></div>
+                                <div className="admin-students-select year"><ModalSelect aria-label="Filter by year level" value={filters.year_level} onChange={event => updateFilter('year_level', event.target.value)}><option value="">All Year Levels</option>{(filters.program === 'ACT' ? ['1', '2'] : yearLevels).map(year => <option key={year} value={year}>{yearLabel(year)}</option>)}</ModalSelect></div>
                                 <div className="admin-students-select status"><ModalSelect aria-label="Filter by status" value={filters.status} onChange={event => updateFilter('status', event.target.value)}><option value="">All Statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></ModalSelect></div>
                                 <label className="admin-students-search"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.3" stroke="currentColor" strokeWidth="1.6" /><path d="m12.7 12.7 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg><input type="search" aria-label="Search students by full name" placeholder="Search full name..." value={filters.search} onChange={event => updateFilter('search', event.target.value)} /></label>
                             </div>
