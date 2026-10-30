@@ -253,7 +253,7 @@ class ProgramHeadAttendanceWorkbookService
                 }
                 $present = $record?->status === 'present';
                 $value = $present ? $this->attendanceDetails($record) : 'No Response';
-                $style = $present ? $this->gatheringStyle($slot['type']) : 7;
+                $style = $present ? $this->attendanceStyle($record) : 7;
                 $cells[] = $this->cell($this->columnName($slot['column']) . $rowNumber, $value, $style);
             }
 
@@ -403,7 +403,7 @@ class ProgramHeadAttendanceWorkbookService
         foreach ($records as $record) {
             $rowNumber = count($rows) + 1;
             $present = $record->status === 'present';
-            $style = $present ? $this->gatheringStyle($record->gathering_type) : 7;
+            $style = $present ? $this->attendanceStyle($record) : 7;
             $student = $record->student;
             $escalationLevel = $student?->escalation?->escalation_level ?? 'None';
 
@@ -445,6 +445,13 @@ class ProgramHeadAttendanceWorkbookService
             'pm' => 'PM',
             default => strtoupper((string) $type),
         };
+    }
+
+    private function attendanceStyle(object $record): int
+    {
+        return strcasecmp(trim((string) ($record->venue ?? '')), 'Special') === 0
+            ? 18
+            : $this->gatheringStyle($record->gathering_type);
     }
 
     private function gatheringStyle(?string $type): int
@@ -582,7 +589,7 @@ class ProgramHeadAttendanceWorkbookService
             . '<border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border>'
             . '</borders>'
             . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            . '<cellXfs count="18">'
+            . '<cellXfs count="19">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             . '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>'
@@ -601,6 +608,7 @@ class ProgramHeadAttendanceWorkbookService
             . '<xf numFmtId="0" fontId="6" fillId="13" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="7" fillId="5" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '<xf numFmtId="0" fontId="8" fillId="13" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            . '<xf numFmtId="0" fontId="7" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '</cellXfs>'
             . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
             . '</styleSheet>';
