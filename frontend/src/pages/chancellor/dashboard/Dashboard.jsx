@@ -164,7 +164,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">Completed</span>
                             <strong>{summary.completed}</strong>
-                            <p>Programs with full reports</p>
+                            <p>Programs with full reports this month</p>
                         </div>
                     </article>
                     <article className="chancellor-summary-card chancellor-summary-card--in-progress">
@@ -174,7 +174,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">In Progress</span>
                             <strong>{summary.incomplete}</strong>
-                            <p>Programs with partial reports</p>
+                            <p>Programs with partial reports this month</p>
                         </div>
                     </article>
                     <article className="chancellor-summary-card chancellor-summary-card--no-report">
@@ -184,7 +184,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">No Report</span>
                             <strong>{summary.no_report}</strong>
-                            <p>Programs with no submission</p>
+                            <p>Programs with no responses this month</p>
                         </div>
                     </article>
                     
@@ -205,7 +205,7 @@ function ChancellorDashboard() {
                         <section className="chancellor-overall-progress" aria-labelledby="chancellor-overall-progress-title">
                             <div className="chancellor-overall-progress-heading">
                                 <h2 id="chancellor-overall-progress-title">Overall Reporting Progress</h2>
-                                <p>Total attendance reports from all programs.</p>
+                                <p>Monthly reporting progress across all programs.</p>
                             </div>
                             <div className="chancellor-overall-progress-value">
                                 <strong>{progressPercentage}%</strong>
@@ -227,7 +227,7 @@ function ChancellorDashboard() {
                             <div className="chancellor-programs-attention-header">
                                 <div>
                                     <h2 id="chancellor-programs-attention-title">Programs Needing Attention</h2>
-                                    <p>Programs with incomplete or missing reports.</p>
+                                    <p>Monthly status with a weekly reporting breakdown.</p>
                                 </div>
                                 <div className="chancellor-year-filter" ref={yearRef}>
                                     <span>Program year</span>
@@ -402,7 +402,7 @@ function ChancellorDashboard() {
                         </section>
                         <section className="chancellor-program-completion-overview" aria-labelledby="chancellor-program-completion-overview-title">
                             <h2 id="chancellor-program-completion-overview-title">Program Completion Overview</h2>
-                            <p>Completion rate per program</p>
+                            <p>Monthly completion rate per program</p>
                             <ul className="chancellor-program-completion-list">
                                 {completionOverview.map((program) => (
                                     <li key={program.code} className="chancellor-program-completion-row">

@@ -659,21 +659,6 @@ class DashboardService
                 ->values();
         }
 
-        // Records for the currently selected reporting period.
-        $records = AttendanceRecord::query()
-            ->with('student:id,program,year_level')
-            ->inReportingRange([
-                $dateRange['start'],
-                $dateRange['end'],
-            ])
-            ->get();
-
-        $draftRecords = $this->getDraftAttendanceRows(
-            $dateRange['start'],
-            $dateRange['end']
-        );
-        $records = $records->concat($draftRecords);
-
         // The table and chart share the month's Wednesday-to-Tuesday weeks.
         $reportingWeeksStart = Carbon::parse($reportingWeeks->first()['week_start']);
         $reportingWeeksEnd = Carbon::parse($reportingWeeks->last()['week_end'])->endOfDay();
@@ -708,20 +693,33 @@ class DashboardService
             return [
                 'status' => $completed === $slots->count() ? 'completed' : ($hasResponses ? 'incomplete' : 'no_report'),
                 'percentage' => (int) round($completed / max(1, $slots->count()) * 100),
+                'completed_slots' => $completed,
+                'total_slots' => $slots->count(),
+                'has_responses' => $hasResponses,
             ];
         };
         $getProgramStatus = fn ($code, $rows, $year = null, $start = null): string => $summarizeProgram($code, $rows, $year, $start)['status'];
-        $getCompletionPercentage = fn ($code, $rows, $year = null): int => $summarizeProgram($code, $rows, $year)['percentage'];
+        $summarizeMonth = function ($code, $year = null) use ($reportingWeeks, $reportingWeekRecords, $summarizeProgram): array {
+            $weeks = $reportingWeeks->map(fn ($week) => $summarizeProgram(
+                $code, $reportingWeekRecords, $year, Carbon::parse($week['week_start'])
+            ));
+            $completed = $weeks->sum('completed_slots');
+            $total = $weeks->sum('total_slots');
+            $hasResponses = $weeks->contains(fn ($week) => $week['has_responses']);
+            return [
+                'status' => $total > 0 && $completed === $total ? 'completed' : ($hasResponses ? 'incomplete' : 'no_report'),
+                'percentage' => (int) round($completed / max(1, $total) * 100),
+            ];
+        };
 
         // Data for the Programs Needing Attention table
         // and Program Completion Overview.
         $programReporting = $programs->map(
             function ($programCode) use (
-                $records,
                 $reportingWeekRecords,
                 $reportingWeeks,
                 $getProgramStatus,
-                $getCompletionPercentage,
+                $summarizeMonth,
                 $programNames
             ) {
                 $weeklyStatuses = $reportingWeeks
@@ -745,14 +743,12 @@ class DashboardService
                     ->values()
                     ->toArray();
 
+                $monthly = $summarizeMonth($programCode);
                 return [
                     'code' => $programCode,
                     'name' => $programNames[$programCode] ?? $programCode,
-                    'status' => $getProgramStatus($programCode, $records),
-                    'completion' => $getCompletionPercentage(
-                        $programCode,
-                        $records
-                    ),
+                    'status' => $monthly['status'],
+                    'completion' => $monthly['percentage'],
 
                     // Indexed in the same order as reporting_weeks.
                     'weekly_statuses' => $weeklyStatuses,
@@ -766,17 +762,15 @@ class DashboardService
             $yearPrograms = (int) $selectedYearLevel > 2
                 ? $programs->reject(fn ($programCode) => $programCode === 'ACT')->values()
                 : $programs;
-            $yearRecords = $records;
             $reportingWeekYearRecords = $reportingWeekRecords;
 
             $programYearReporting = $yearPrograms->map(
                 function ($programCode) use (
-                    $yearRecords,
                     $reportingWeekYearRecords,
                     $reportingWeeks,
                     $selectedYearLevel,
                     $getProgramStatus,
-                    $getCompletionPercentage,
+                    $summarizeMonth,
                     $programNames
                 ) {
                     $weeklyStatuses = $reportingWeeks
@@ -800,12 +794,13 @@ class DashboardService
                         ->values()
                         ->toArray();
 
+                    $monthly = $summarizeMonth($programCode, $selectedYearLevel);
                     return [
                         'code' => $programCode,
                         'name' => $programNames[$programCode] ?? $programCode,
                         'year_level' => (int) $selectedYearLevel,
-                        'status' => $getProgramStatus($programCode, $yearRecords, $selectedYearLevel),
-                        'completion' => $getCompletionPercentage($programCode, $yearRecords, $selectedYearLevel),
+                        'status' => $monthly['status'],
+                        'completion' => $monthly['percentage'],
                         'weekly_statuses' => $weeklyStatuses,
                     ];
                 }
