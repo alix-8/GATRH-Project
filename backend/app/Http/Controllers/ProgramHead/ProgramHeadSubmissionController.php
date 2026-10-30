@@ -9,6 +9,7 @@ use App\Models\Program;
 use App\Services\ProgramHead\ProgramHeadAttendanceWorkbookService;
 use App\Services\ProgramHead\ProgramHeadRecordsExportService;
 use App\Support\GatheringCycle;
+use App\Support\AttendanceReportingPeriod;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -47,6 +48,7 @@ class ProgramHeadSubmissionController extends Controller
                 ]))
             ->map(function ($group, $key) {
                 $first = $group->first();
+                $reportingDay = AttendanceReportingPeriod::day($group);
                 $status = $group->every(fn ($record) => $record->validation_status === 'validated') ? 'approved' : 'pending';
 
                 return [
@@ -57,8 +59,8 @@ class ProgramHeadSubmissionController extends Controller
                     'program' => $first->program ?? $first->student?->program ?? 'N/A',
                     'year_level' => $first->year_level ?? $first->student?->year_level,
                     'year_label' => $this->ordinalYear($first->year_level ?? $first->student?->year_level),
-                    'date' => Carbon::parse($first->day)->format('M j, Y'),
-                    'date_iso' => Carbon::parse($first->day)->toDateString(),
+                    'date' => $reportingDay->format('M j, Y'),
+                    'date_iso' => $reportingDay->toDateString(),
                     'status' => $status,
                     'status_label' => $status === 'approved' ? 'Approved' : 'Pending',
                     'student_count' => $group->count(),
@@ -136,6 +138,7 @@ class ProgramHeadSubmissionController extends Controller
             ->map(function ($group, $key) {
                 $first = $group->first();
                 $year = (int) ($first->year_level ?? $first->student?->year_level ?? 0);
+                $reportingDay = AttendanceReportingPeriod::day($group);
                 return [
                     'id' => $key,
                     'batch_key' => $first->batch_id ?: implode('|', [$first->gathering_type, Carbon::parse($first->day)->toDateString(), $first->submitted_by]),
@@ -145,8 +148,8 @@ class ProgramHeadSubmissionController extends Controller
                     'program' => $first->program ?? $first->student?->program ?? 'N/A',
                     'year_level' => $year,
                     'year_label' => $this->ordinalYear($year),
-                    'date' => Carbon::parse($first->day)->format('M j, Y'),
-                    'date_iso' => Carbon::parse($first->day)->toDateString(),
+                    'date' => $reportingDay->format('M j, Y'),
+                    'date_iso' => $reportingDay->toDateString(),
                     'status' => 'approved',
                     'status_label' => 'Approved',
                     'student_count' => $group->count(),
@@ -251,7 +254,7 @@ class ProgramHeadSubmissionController extends Controller
                 $yearLevel = $firstRecord->year_level ?? $firstRecord->student?->year_level ?? 'Year';
                 $gatheringType = strtolower((string) $firstRecord->gathering_type);
                 $gathering = $this->gatheringLabel($gatheringType);
-                $day = Carbon::parse($firstRecord->day);
+                $day = AttendanceReportingPeriod::day($records);
                 $ranges = GatheringCycle::getRangesForWeekStart(GatheringCycle::weekStartForDate($day));
                 $range = $ranges[$gatheringType] ?? ['start' => $day, 'end' => $day];
                 $rangeLabel = GatheringCycle::formatRangeLabel($range['start'], $range['end']);

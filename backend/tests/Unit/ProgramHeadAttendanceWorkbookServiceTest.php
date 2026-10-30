@@ -26,7 +26,7 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         }
     }
 
-    public function test_it_builds_week_and_month_exports_for_the_saturday_reporting_cycle(): void
+    public function test_it_builds_week_and_month_exports_for_the_wednesday_reporting_cycle(): void
     {
         $service = new ProgramHeadAttendanceWorkbookService();
         $selectedDate = CarbonImmutable::parse('2026-09-20');
@@ -35,12 +35,12 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         [$fifthWeekStart, $fifthWeekEnd] = $service->periodBounds($selectedDate, 'week', 5);
         [$monthStart, $monthEnd] = $service->periodBounds($selectedDate, 'month');
 
-        $this->assertSame('2026-09-19', $weekStart->toDateString());
-        $this->assertSame('2026-09-23', $weekEnd->toDateString());
-        $this->assertSame('2026-09-26', $fifthWeekStart->toDateString());
-        $this->assertSame('2026-09-30', $fifthWeekEnd->toDateString());
-        $this->assertSame('2026-08-29', $monthStart->toDateString());
-        $this->assertSame('2026-09-30', $monthEnd->toDateString());
+        $this->assertSame('2026-09-16', $weekStart->toDateString());
+        $this->assertSame('2026-09-22', $weekEnd->toDateString());
+        $this->assertSame('2026-09-23', $fifthWeekStart->toDateString());
+        $this->assertSame('2026-09-29', $fifthWeekEnd->toDateString());
+        $this->assertSame('2026-08-26', $monthStart->toDateString());
+        $this->assertSame('2026-10-06', $monthEnd->toDateString());
 
         $path = $service->createPeriod(new Collection(), $selectedDate, 'month', 'BSIS', 2);
 

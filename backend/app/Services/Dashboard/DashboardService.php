@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Models\Reminder;
 use App\Services\Reminders\GatheringService;
 use App\Support\GatheringCycle;
+use App\Support\AttendanceReportingPeriod;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -93,7 +94,7 @@ class DashboardService
                 'student',
                 fn ($query) => $query->accessibleTo($user)
             )
-            ->whereBetween('day', [
+            ->inReportingRange([
                 $month->copy()->startOfMonth(),
                 $month->copy()->endOfMonth(),
             ]);
@@ -118,7 +119,7 @@ class DashboardService
                 'student',
                 fn ($query) => $query->accessibleTo($user)
             )
-            ->whereBetween('day', [
+            ->inReportingRange([
                 $weekRange['start'],
                 $weekRange['end'],
             ]);
@@ -128,7 +129,7 @@ class DashboardService
         $weekDraftResponses = AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->whereIn('status', ['draft', 'pending'])
-            ->whereBetween('day', [
+            ->inReportingRange([
                 $weekRange['start'],
                 $weekRange['end'],
             ])
@@ -217,7 +218,7 @@ class DashboardService
     {
         $baseQuery = AttendanceRecord::query()
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->whereBetween('day', [$dateRange['start'], $dateRange['end']]);
+            ->inReportingRange([$dateRange['start'], $dateRange['end']]);
 
         $pendingRecordsQuery = (clone $baseQuery)
             ->where(function ($query) {
@@ -250,7 +251,7 @@ class DashboardService
     {
         $baseQuery = AttendanceRecord::query()
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->whereBetween('day', [$dateRange['start'], $dateRange['end']]);
+            ->inReportingRange([$dateRange['start'], $dateRange['end']]);
 
         $presents = (clone $baseQuery)->where('status', 'present')->count();
         $absents = (clone $baseQuery)->where('status', 'no_response')->count();
@@ -267,14 +268,14 @@ class DashboardService
         $records = AttendanceRecord::query()
             ->select('gathering_type', 'status', DB::raw('COUNT(*) as total'))
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
+            ->inReportingRange([$dateRange['start'], $dateRange['end']])
             ->groupBy('gathering_type', 'status')
             ->get();
 
         $draftsByType = AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->whereIn('status', ['draft', 'pending'])
-            ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
+            ->inReportingRange([$dateRange['start'], $dateRange['end']])
             ->get()
             ->groupBy('gathering_type');
 
@@ -335,7 +336,7 @@ class DashboardService
         $records = AttendanceRecord::query()
             ->with(['student', 'submitter'])
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
+            ->inReportingRange([$dateRange['start'], $dateRange['end']])
             ->where(function ($query) {
                 $query->whereNull('validation_status')
                     ->orWhere('validation_status', 'unvalidated');
@@ -353,7 +354,7 @@ class DashboardService
                     'gathering'    => $this->formatGatheringName($first->gathering_type),
                     'program'      => $first->program ?? $first->student?->program ?? 'N/A',
                     'year_level'   => $first->year_level ?? $first->student?->year_level ?? 'N/A',
-                    'date'         => Carbon::parse($first->day)->format('M d, Y'),
+                    'date'         => AttendanceReportingPeriod::day($group)->format('M d, Y'),
                     'student_count'=> $group->count(),
                     'status'       => 'Pending',
                     'status_label' => 'Pending',
@@ -414,9 +415,7 @@ class DashboardService
             })
             ->map(function ($group) use ($totalManagedStudents) {
                 $first = $group->first();
-                $dayCarbon = $first->day instanceof Carbon
-                    ? $first->day
-                    : Carbon::parse($first->day);
+                $dayCarbon = AttendanceReportingPeriod::day($group);
 
                 $presentCount = $group->where('status', 'present')->count();
                 $status = $this->aggregateRecordStatus($group);
@@ -471,21 +470,21 @@ class DashboardService
         $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
 
         $responsesByGathering = AttendanceRecord::query()
-            ->select('gathering_type', 'student_id', 'day')
+            ->select('gathering_type', 'student_id', 'day', 'reporting_day')
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->where('status', 'present')
-            ->whereBetween('day', [$monthStart, $monthEnd])
+            ->inReportingRange([$monthStart, $monthEnd])
             ->get()
             ->groupBy('gathering_type')
             ->map(fn ($group) => $group->map(fn ($record) => [
                 'student_id' => (int) $record->student_id,
-                'day' => Carbon::parse($record->day)->toDateString(),
+                'day' => Carbon::parse($record->reporting_day ?? $record->day)->toDateString(),
             ]));
 
         $draftResponsesByGathering = AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->whereIn('status', ['draft', 'pending'])
-            ->whereBetween('day', [$monthStart, $monthEnd])
+            ->inReportingRange([$monthStart, $monthEnd])
             ->get()
             ->flatMap(fn (AttendanceDraft $draft) => collect($draft->parsed_data ?? [])
                 ->filter(fn (array $entry) => ($entry['status'] ?? null) === 'present'
@@ -493,7 +492,7 @@ class DashboardService
                 ->map(fn (array $entry) => [
                     'gathering_type' => $entry['gathering_type'] ?? $draft->gathering_type,
                     'student_id' => (int) $entry['student_id'],
-                    'day' => Carbon::parse($entry['day'] ?? $draft->day)->toDateString(),
+                    'day' => Carbon::parse($draft->day)->toDateString(),
                 ]))
             ->groupBy('gathering_type')
             ->map(fn ($group) => $group->map(fn ($entry) => [
@@ -529,7 +528,7 @@ class DashboardService
         $records = AttendanceRecord::query()
             ->with(['student', 'submitter'])
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->whereBetween('day', [$dateRange['start'], $dateRange['end']])
+            ->inReportingRange([$dateRange['start'], $dateRange['end']])
             ->orderBy('updated_at', 'desc')
             ->get();
 
@@ -649,7 +648,7 @@ class DashboardService
         // Records for the currently selected reporting period.
         $records = AttendanceRecord::query()
             ->with('student:id,program,year_level')
-            ->whereBetween('day', [
+            ->inReportingRange([
                 $dateRange['start'],
                 $dateRange['end'],
             ])
@@ -671,7 +670,7 @@ class DashboardService
 
         $fourWeekRecords = AttendanceRecord::query()
             ->with('student:id,program,year_level')
-            ->whereBetween('day', [
+            ->inReportingRange([
                 $weekFourStart,
                 $weekFourEnd,
             ])
@@ -739,7 +738,7 @@ class DashboardService
                         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
 
                         $recordsForWeek = $fourWeekRecords->filter(
-                            fn ($record) => $record->day->betweenIncluded(
+                            fn ($record) => ($record->reporting_day ?? $record->day)->betweenIncluded(
                                 $weekStart,
                                 $weekEnd
                             )
@@ -801,7 +800,7 @@ class DashboardService
 
                             $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
                             $recordsForWeek = $fourWeekYearRecords->filter(
-                                fn ($record) => $record->day->betweenIncluded(
+                                fn ($record) => ($record->reporting_day ?? $record->day)->betweenIncluded(
                                     $weekStart,
                                     $weekEnd
                                 )
@@ -857,7 +856,7 @@ class DashboardService
                 $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
 
                 $recordsForWeek = $fourWeekRecords->filter(
-                    fn ($record) => $record->day->betweenIncluded(
+                    fn ($record) => ($record->reporting_day ?? $record->day)->betweenIncluded(
                         $weekStart,
                         $weekEnd
                     )
@@ -938,7 +937,7 @@ class DashboardService
     {
         return AttendanceDraft::query()
             ->whereIn('status', ['draft', 'pending'])
-            ->whereBetween('day', [$start, $end])
+            ->inReportingRange([$start, $end])
             ->get()
             ->flatMap(function (AttendanceDraft $draft) {
                 return collect($draft->parsed_data ?? [])

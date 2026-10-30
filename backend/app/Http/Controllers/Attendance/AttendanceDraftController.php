@@ -67,9 +67,9 @@ class AttendanceDraftController extends Controller
         $total = $students->count();
 
         $type = (string) $draft->gathering_type;
-        $range = $parsingService->getApplicableWeekRange($type, null, $draft->raw_text);
+        $range = GatheringCycle::getRangesForWeekStart(\Carbon\Carbon::parse($draft->day))[$type];
         $existingQuery = AttendanceRecord::where('gathering_type', $type)
-            ->whereBetween('day', [$range['start']->toDateString(), $range['end']->toDateString()])
+            ->inReportingRange([$range['start']->toDateString(), $range['end']->toDateString()])
             ->whereHas('student', function ($query) use ($request) {
                 $query->where('program', $request->user()->program)
                     ->where('year_level', $request->user()->year_level);
@@ -79,7 +79,7 @@ class AttendanceDraftController extends Controller
         $existingDraftCount = AttendanceDraft::where('gathering_type', $type)
             ->where('status', 'draft')
             ->where('id', '!=', $draft->id)
-            ->whereBetween('day', [$range['start']->toDateString(), $range['end']->toDateString()])
+            ->inReportingRange([$range['start']->toDateString(), $range['end']->toDateString()])
             ->whereHas('user', function ($query) use ($request) {
                 $query->where('program', $request->user()->program)
                     ->where('year_level', $request->user()->year_level);
@@ -208,11 +208,7 @@ class AttendanceDraftController extends Controller
             ], 403);
         }
 
-        $range = $parsingService->getApplicableWeekRange(
-            (string) $draft->gathering_type,
-            null,
-            $draft->raw_text
-        );
+        $range = GatheringCycle::getRangesForWeekStart(\Carbon\Carbon::parse($draft->day))[(string) $draft->gathering_type];
         $formatErrors = [];
         $incompleteRecords = [];
         $parsedRecords = [];
@@ -242,15 +238,17 @@ class AttendanceDraftController extends Controller
                 ];
             }
 
-            if ($dayProvided && (!$day || $day < $range['start']->toDateString() || $day > $range['end']->toDateString())) {
+            $dayResolution = $dayProvided
+                ? $parsingService->resolveWeekdayToDate($day, $range['start'], $range['end'], $venue)
+                : null;
+            if ($dayProvided && !$dayResolution['success']) {
                 $formatErrors[] = [
                     'student_name' => $original['student_name'] ?? 'Unknown student',
                     'raw_line' => $original['student_name'] ?? 'Unknown student',
                     'errors' => [[
                         'field' => 'day',
                         'value' => $day,
-                        'reason' => 'Day must resolve to a date within the applicable week range ('
-                            . $range['start']->toDateString() . ' to ' . $range['end']->toDateString() . ').',
+                        'reason' => $dayResolution['error'],
                     ]],
                 ];
             }

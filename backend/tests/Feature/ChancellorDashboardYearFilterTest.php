@@ -40,6 +40,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $table->string('name');
             $table->string('program');
             $table->string('year_level');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
 
@@ -48,6 +49,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $table->unsignedBigInteger('student_id');
             $table->string('gathering_type');
             $table->date('day');
+            $table->date('reporting_day')->nullable();
             $table->string('status');
             $table->string('validation_status');
             $table->unsignedBigInteger('submitted_by');
@@ -61,11 +63,18 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $table->unsignedInteger('no_response_count');
             $table->timestamps();
         });
+        Schema::create('attendance_drafts', function (Blueprint $table): void {
+            $table->id();
+            $table->string('gathering_type');
+            $table->string('status');
+            $table->date('day');
+            $table->text('parsed_data')->nullable();
+        });
     }
 
     protected function tearDown(): void
     {
-        foreach (['escalations', 'attendance_records', 'students', 'programs', 'users'] as $table) {
+        foreach (['attendance_drafts', 'escalations', 'attendance_records', 'students', 'programs', 'users'] as $table) {
             Schema::dropIfExists($table);
         }
 
@@ -151,7 +160,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
         AttendanceRecord::create([
             'student_id' => $student->id,
             'gathering_type' => $gatheringType,
-            'day' => '2026-10-06',
+            'day' => $gatheringType === 'pm' ? '2026-10-07' : '2026-10-10',
             'status' => 'present',
             'validation_status' => 'validated',
             'submitted_by' => $submitter->id,

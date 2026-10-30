@@ -72,13 +72,16 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         if (!draft) return []
         return draft.students.filter((s) => {
             const matchesSearch = s.student_name.toLowerCase().includes(search.toLowerCase())
+            const attendanceStatus = editing || record.source === 'draft'
+                ? getAutomaticAttendanceStatus(s, draft.week_range)
+                : s.status
             const matchesStatus =
                 statusFilter === 'all' ||
-                (statusFilter === 'present' && getAutomaticAttendanceStatus(s, draft.week_range) === 'present') ||
-                (statusFilter === 'absent' && getAutomaticAttendanceStatus(s, draft.week_range) !== 'present')
+                (statusFilter === 'present' && attendanceStatus === 'present') ||
+                (statusFilter === 'absent' && attendanceStatus !== 'present')
             return matchesSearch && matchesStatus
         }).sort((a, b) => a.student_name.localeCompare(b.student_name, undefined, { sensitivity: 'base' }))
-    }, [draft, search, statusFilter])
+    }, [draft, search, statusFilter, editing, record])
 
     const handleStudentChange = (student, field, value) => {
         setDraft((current) => current ? {
@@ -191,12 +194,12 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                         student_id: student.student_id,
                         day: student.day_provided === false
                             ? null
-                            : resolveAttendanceDay(student.day, draft.week_range),
+                            : resolveAttendanceDay(student.day, draft.week_range, student.venue),
                         day_provided: Boolean(
                             student.day_provided !== false
                             && student.day
                             && student.day !== '---'
-                            && resolveAttendanceDay(student.day, draft.week_range)
+                            && resolveAttendanceDay(student.day, draft.week_range, student.venue)
                         ),
                         batch: student.batch === '---' ? '' : student.batch,
                         venue: student.venue === '---' ? '' : student.venue,

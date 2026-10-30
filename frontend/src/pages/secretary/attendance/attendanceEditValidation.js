@@ -29,28 +29,53 @@ function isoDateIsValid(value) {
     return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
 }
 
-export function resolveAttendanceDay(value, weekRange) {
+export function isSpecialVenue(venue) {
+    return String(venue ?? '').trim().toLowerCase() === 'special'
+}
+
+function todayIso() {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date())
+}
+
+export function resolveAttendanceDay(value, weekRange, venue) {
     const day = String(value ?? '').trim()
-    if (!day || !weekRange?.start || !weekRange?.end) return null
+    if (!day) return null
 
     if (isoDateIsValid(day)) {
-        return day >= weekRange.start && day <= weekRange.end ? day : null
+        if (day > todayIso()) return null
+        return isSpecialVenue(venue) || (day >= weekRange?.start && day <= weekRange?.end) ? day : null
     }
+
+    if (!weekRange?.start || !weekRange?.end) return null
 
     const targetWeekday = WEEKDAYS[day.toLowerCase().replace(/\.$/, '')]
     if (targetWeekday === undefined) return null
 
     const matches = []
     const start = new Date(`${weekRange.start}T00:00:00Z`)
-    const end = new Date(`${weekRange.end}T00:00:00Z`)
+    let end = new Date(`${weekRange.end}T00:00:00Z`)
+    if (isSpecialVenue(venue)) {
+        start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7)
+        end = new Date(start.getTime() + 6 * 86400000)
+    }
     for (let current = start; current <= end; current = new Date(current.getTime() + 86400000)) {
         if (current.getUTCDay() === targetWeekday) matches.push(toIsoDate(current))
     }
 
-    return matches.length === 1 ? matches[0] : null
+    return matches.length === 1 && matches[0] <= todayIso() ? matches[0] : null
 }
 
-export function displayAttendanceDay(value) {
+export function attendanceDayError(value, weekRange, venue) {
+    if (resolveAttendanceDay(value, weekRange, venue)) return ''
+    return isSpecialVenue(venue)
+        ? 'Enter a valid date (YYYY-MM-DD) or weekday in the selected calendar week. Future dates are not allowed.'
+        : `Day must be a weekday or date within the applicable week range (${weekRange?.start || '—'} to ${weekRange?.end || '—'}). Future dates are not allowed.`
+}
+
+export function displayAttendanceDay(value, venue) {
+    if (isSpecialVenue(venue)) return value || ''
     if (isoDateIsValid(String(value ?? ''))) {
         const [year, month, day] = String(value).split('-').map(Number)
         return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })
@@ -60,7 +85,7 @@ export function displayAttendanceDay(value) {
 
 export function getAutomaticAttendanceStatus(student, weekRange) {
     const validTime = hasValue(student.batch) && ATTENDANCE_TIME_RE.test(String(student.batch).trim())
-    const validDay = hasProvidedDay(student) && Boolean(resolveAttendanceDay(student.day, weekRange))
+    const validDay = hasProvidedDay(student) && Boolean(resolveAttendanceDay(student.day, weekRange, student.venue))
     return validDay && validTime && hasValue(student.venue) ? 'present' : 'no_response'
 }
 
@@ -90,13 +115,13 @@ export function getAttendanceEditErrors(students, weekRange) {
             })
         }
 
-        if (hasDay && !resolveAttendanceDay(student.day, weekRange)) {
+        if (hasDay && !resolveAttendanceDay(student.day, weekRange, student.venue)) {
             formatErrors.push({
                 raw_line: student.student_name,
                 errors: [{
                     field: 'day',
                     value: student.day,
-                    reason: `Day must be a weekday or date within the applicable week range (${weekRange.start} to ${weekRange.end}).`,
+                    reason: attendanceDayError(student.day, weekRange, student.venue),
                 }],
             })
         }

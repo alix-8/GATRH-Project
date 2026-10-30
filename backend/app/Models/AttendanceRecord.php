@@ -18,6 +18,7 @@ class AttendanceRecord extends Model
         'year_level',
         'gathering_type',    // 'pm', 'ws', 'tg'
         'day',               // date of gathering
+        'reporting_day',      // stable gathering period, independent of special attendance dates
         'batch',
         'venue',
         'status',            // 'present', 'no_response'
@@ -29,8 +30,15 @@ class AttendanceRecord extends Model
 
     protected $casts = [
         'day' => 'date',
+        'reporting_day' => 'date',
         'approved_at' => 'datetime',
     ];
+
+    public function scopeInReportingRange($query, array $range)
+    {
+        $dates = array_map(fn ($date) => \Carbon\Carbon::parse($date)->toDateString(), $range);
+        return $query->whereRaw('DATE(COALESCE(reporting_day, day)) BETWEEN ? AND ?', $dates);
+    }
 
     // The Secretary who submitted this record
     public function submitter()

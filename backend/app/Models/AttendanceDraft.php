@@ -30,4 +30,9 @@ class AttendanceDraft extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function scopeInReportingRange($query, array $range)
+    {
+        return $query->whereBetween('day', $range);
+    }
 }

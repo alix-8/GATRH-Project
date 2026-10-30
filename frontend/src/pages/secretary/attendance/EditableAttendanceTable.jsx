@@ -1,6 +1,7 @@
 import RecordDay from '../../../components/RecordDay'
 import {
     ATTENDANCE_TIME_RE,
+    attendanceDayError,
     displayAttendanceDay,
     getAutomaticAttendanceStatus,
     resolveAttendanceDay,
@@ -25,17 +26,17 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
             </thead>
             <tbody>
                 {students.map((student, index) => {
-                    const status = getAutomaticAttendanceStatus(student, weekRange)
+                    const status = editing ? getAutomaticAttendanceStatus(student, weekRange) : (student.status || getAutomaticAttendanceStatus(student, weekRange))
                     const hasDay = student.day_provided === false ? false : Boolean(student.day && student.day !== '---')
                     const hasBatch = Boolean(student.batch && student.batch !== '---')
                     const hasVenue = Boolean(student.venue && student.venue !== '---')
                     const hasAnyAttendanceValue = hasDay || hasBatch || hasVenue
                     const incomplete = hasAnyAttendanceValue && (!hasDay || !hasBatch || !hasVenue)
                     const invalidTime = hasBatch && !ATTENDANCE_TIME_RE.test(student.batch.trim())
-                    const invalidDay = hasDay && !resolveAttendanceDay(student.day, weekRange)
+                    const invalidDay = hasDay && !resolveAttendanceDay(student.day, weekRange, student.venue)
                     const timeError = invalidTime ? 'Batch time must be in a valid time format, e.g. "8AM" or "8:30 AM".' : ''
                     const dayError = invalidDay
-                        ? `Day must be a weekday or date within the applicable week range (${weekRange?.start || '—'} to ${weekRange?.end || '—'}).`
+                        ? attendanceDayError(student.day, weekRange, student.venue)
                         : ''
 
                     return (
@@ -62,12 +63,12 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                                     type="text"
                                     maxLength={10}
                                     className={`${invalidDay ? 'drawer-edit-field-error' : ''} ${incomplete && !hasDay ? 'drawer-edit-field-warning' : ''}`}
-                                    value={student.day_provided === false ? '' : displayAttendanceDay(editableValue(student.day || day))}
+                                    value={student.day_provided === false ? '' : displayAttendanceDay(editableValue(student.day || day), student.venue)}
                                     placeholder="Day"
                                     title={dayError || (incomplete && !hasDay ? 'Day is required when any attendance details are entered.' : '')}
                                     onChange={(event) => onStudentChange(student, 'day', event.target.value)}
                                 />
-                            ) : <RecordDay value={resolveAttendanceDay(student.day, weekRange) || day} status={status} />}
+                            ) : <RecordDay value={student.day || day} status={status} />}
                         </td>
                         <td>
                             {editing ? (
