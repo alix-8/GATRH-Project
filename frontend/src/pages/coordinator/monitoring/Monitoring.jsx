@@ -9,6 +9,7 @@ import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import backendPercentage from '../../../utils/backendPercentage'
 import RecordDate from '../../../components/RecordDate'
 import './Monitoring.css'
 
@@ -318,9 +319,9 @@ function CoordinatorMonitoring() {
                                                         className="monitoring-progress-cell"
                                                         title={`${course.progress.completed} out of ${course.progress.total} gathering attendance completed`}
                                                     >
-                                                        <span>{course.progress.completed}/{course.progress.total}</span>
-                                                        <div className="monitoring-progress-track">
-                                                            <span style={{ width: `${course.progress.percentage}%` }} />
+                                                        <span>{backendPercentage(course.progress.percentage)}%</span>
+                                                        <div className="monitoring-progress-track" role="progressbar" aria-label={`${course.label} completed gathering attendance`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={backendPercentage(course.progress.percentage)}>
+                                                            <span style={{ width: `${backendPercentage(course.progress.percentage)}%` }} />
                                                         </div>
                                                     </td>
                                                     <td className="monitoring-action-cell">
@@ -402,10 +403,10 @@ function CoordinatorMonitoring() {
                                 >
                                     <div>
                                         <span>Overall Progress</span>
-                                        <span>{currentDetails.progress.completed}/{currentDetails.progress.total}</span>
+                                        <span>{backendPercentage(currentDetails.progress.percentage)}%</span>
                                     </div>
-                                    <span className="monitoring-detail-progress-track">
-                                        <span style={{ width: `${currentDetails.progress.percentage}%` }} />
+                                    <span className="monitoring-detail-progress-track" role="progressbar" aria-label="Completed gathering attendance" aria-valuemin="0" aria-valuemax="100" aria-valuenow={backendPercentage(currentDetails.progress.percentage)}>
+                                        <span style={{ width: `${backendPercentage(currentDetails.progress.percentage)}%` }} />
                                     </span>
                                 </div>
 

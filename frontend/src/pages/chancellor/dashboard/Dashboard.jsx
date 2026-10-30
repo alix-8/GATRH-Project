@@ -3,6 +3,7 @@ import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import backendPercentage from '../../../utils/backendPercentage'
 import DropdownIcon from '../../../assets/icons/drop-down-icon.svg'
 import CompletedProgramsIcon from '../../../assets/icons/completed-programs-icon.svg'
 import InProgressProgramsIcon from '../../../assets/icons/in-progress-programs-icon.svg'
@@ -139,7 +140,7 @@ function ChancellorDashboard() {
         }
     }, [])
 
-    const progressPercentage = Math.min(100, Math.max(0, Number(overallProgress.percentage) || 0))
+    const progressPercentage = backendPercentage(overallProgress.percentage)
     const completionOverview = programReporting
     const weeklyChartScale = getWeeklyChartScale(weeklyProgress)
     const weeklyChartTicks = Array.from(
@@ -219,7 +220,7 @@ function ChancellorDashboard() {
                                 aria-valuemin="0"
                                 aria-valuemax="100"
                                 aria-valuenow={progressPercentage}
-                                aria-valuetext={`${progressPercentage}% complete; ${overallProgress.tally}`}
+                                aria-valuetext={`${progressPercentage}% of expected student responses recorded; ${overallProgress.tally}`}
                             >
                                 <span style={{ width: `${progressPercentage}%` }} />
                             </div>
@@ -402,17 +403,17 @@ function ChancellorDashboard() {
                             </svg>
                         </section>
                         <section className="chancellor-program-completion-overview" aria-labelledby="chancellor-program-completion-overview-title">
-                            <h2 id="chancellor-program-completion-overview-title">Program Completion Overview</h2>
+                            <h2 id="chancellor-program-completion-overview-title">Program Response Overview</h2>
                             <p>Monthly student responses per program for the selected year</p>
                             <ul className="chancellor-program-completion-list">
                                 {completionOverview.map((program) => (
                                     <li key={program.code} className="chancellor-program-completion-row">
                                         <div className="chancellor-program-completion-header">
                                             <span>{PROGRAM_DISPLAY_NAMES[program.code] || program.name || program.code}</span>
-                                            <strong>{program.completion || 0}%</strong>
+                                            <strong>{backendPercentage(program.completion)}%</strong>
                                         </div>
-                                        <div className="chancellor-program-completion-track">
-                                            <span style={{ width: `${program.completion || 0}%` }} />
+                                        <div className="chancellor-program-completion-track" role="progressbar" aria-label={`${program.code} student response rate`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={backendPercentage(program.completion)}>
+                                            <span style={{ width: `${backendPercentage(program.completion)}%` }} />
                                         </div>
                                     </li>
                                 ))}
