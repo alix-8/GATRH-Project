@@ -91,7 +91,8 @@
     min-height: 40px;
     align-items: center;
     gap: 24px;
-    padding: 0 16px;
+    flex-wrap: wrap;
+    padding: 8px 16px;
     border-top: 1px solid #e1e7ef;
     color: #536580;
     font-size: 11px;

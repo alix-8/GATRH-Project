@@ -5,6 +5,7 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import CompletedIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
+import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
 import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg'
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
@@ -305,7 +306,8 @@ function CoordinatorMonitoring() {
                                                         const courseWeek = course.weeks.find((entry) => entry.number === item.number)
                                                         return gatheringTypes.map((type) => {
                                                             const itemStatus = courseWeek?.gatherings.find((entry) => entry.type === type)
-                                                            const noAttendanceRecorded = itemStatus?.status === 'no_report' && !itemStatus?.has_attendance
+                                                            const recordedNoResponses = itemStatus?.status === 'no_report' && itemStatus.has_attendance
+                                                            const noAttendanceRecorded = !itemStatus || (itemStatus.status === 'no_report' && !itemStatus.has_attendance)
                                                             const statusTooltip = noAttendanceRecorded
                                                                 ? 'No attendance recorded yet'
                                                                 : `${itemStatus?.responded_students ?? 0}/${itemStatus?.total_students ?? course.students_count} students responded`
@@ -314,13 +316,15 @@ function CoordinatorMonitoring() {
                                                                     key={`${course.label}-${item.number}-${type}`}
                                                                     className={`monitoring-status-cell monitoring-status-cell-tooltip ${type === gatheringTypes[gatheringTypes.length - 1] ? 'monitoring-week-end' : ''}`}
                                                                     data-tooltip={statusTooltip}
-                                                                    data-tooltip-tone={noAttendanceRecorded ? 'error' : undefined}
+                                                                    data-tooltip-tone={noAttendanceRecorded || recordedNoResponses ? 'error' : undefined}
                                                                 >
                                                                     <span
                                                                         className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'} ${noAttendanceRecorded ? 'monitoring-status-no-attendance' : ''}`}
                                                                         role="img"
                                                                         aria-label={noAttendanceRecorded
                                                                             ? `${item.label} ${GATHERING_LABELS[type]}: No attendance recorded yet`
+                                                                            : recordedNoResponses
+                                                                                ? `${item.label} ${GATHERING_LABELS[type]}: Attendance recorded, 0 students responded`
                                                                             : `${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status === 'no_report' || !itemStatus ? 'No response' : itemStatus.status}`}
                                                                     >
                                                                         <img
@@ -328,7 +332,7 @@ function CoordinatorMonitoring() {
                                                                                 ? CompletedIcon
                                                                                 : itemStatus?.status === 'incomplete'
                                                                                     ? IncompleteIcon
-                                                                                    : NoReportsIcon}
+                                                                                    : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
                                                                             alt=""
                                                                         />
                                                                     </span>
@@ -376,10 +380,16 @@ function CoordinatorMonitoring() {
                                     Incomplete
                                 </span>
                                 <span>
+                                    <span className="monitoring-legend-icon monitoring-legend-recorded-no-response">
+                                        <img src={RecordedNoResponseIcon} alt="" />
+                                    </span>
+                                    Zero Response
+                                </span>
+                                <span>
                                     <span className="monitoring-legend-icon monitoring-legend-no-report">
                                         <img src={NoReportsIcon} alt="" />
                                     </span>
-                                    No Response
+                                    No Report
                                 </span>
                             </div>
                         </div>
@@ -496,6 +506,7 @@ function CoordinatorMonitoring() {
                                             (item) => item.gathering_type === gatheringItem.type
                                         )
                                         const status = entry?.status || 'no_report'
+                                        const recordedNoResponses = status === 'no_report' && entry?.has_attendance
                                         const gatheringDates = entry?.dates?.length ? entry.dates : entry?.date ? [entry.date] : []
                                         const scheduledRange = currentDetails.week.gathering_ranges?.[gatheringItem.type]
                                         const gatheringDateRange = gatheringDates.length
@@ -511,7 +522,7 @@ function CoordinatorMonitoring() {
                                                             ? CompletedIcon
                                                             : status === 'incomplete'
                                                                 ? IncompleteIcon
-                                                                : NoReportsIcon}
+                                                            : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
                                                         alt=""
                                                     />
                                                     {status === 'completed'
