@@ -696,6 +696,8 @@ class DashboardService
                 'completed_slots' => $completed,
                 'total_slots' => $slots->count(),
                 'has_responses' => $hasResponses,
+                'responded_students' => $slots->sum('responded_students'),
+                'expected_responses' => $slots->sum('total_students'),
             ];
         };
         $getProgramStatus = fn ($code, $rows, $year = null, $start = null): string => $summarizeProgram($code, $rows, $year, $start)['status'];
@@ -706,9 +708,13 @@ class DashboardService
             $completed = $weeks->sum('completed_slots');
             $total = $weeks->sum('total_slots');
             $hasResponses = $weeks->contains(fn ($week) => $week['has_responses']);
+            $responded = $weeks->sum('responded_students');
+            $expected = $weeks->sum('expected_responses');
             return [
                 'status' => $total > 0 && $completed === $total ? 'completed' : ($hasResponses ? 'incomplete' : 'no_report'),
-                'percentage' => (int) round($completed / max(1, $total) * 100),
+                'percentage' => (int) round($responded / max(1, $expected) * 100),
+                'responded_students' => $responded,
+                'expected_responses' => $expected,
             ];
         };
 
@@ -749,6 +755,8 @@ class DashboardService
                     'name' => $programNames[$programCode] ?? $programCode,
                     'status' => $monthly['status'],
                     'completion' => $monthly['percentage'],
+                    'responded_students' => $monthly['responded_students'],
+                    'expected_responses' => $monthly['expected_responses'],
 
                     // Indexed in the same order as reporting_weeks.
                     'weekly_statuses' => $weeklyStatuses,
@@ -801,11 +809,19 @@ class DashboardService
                         'year_level' => (int) $selectedYearLevel,
                         'status' => $monthly['status'],
                         'completion' => $monthly['percentage'],
+                        'responded_students' => $monthly['responded_students'],
+                        'expected_responses' => $monthly['expected_responses'],
                         'weekly_statuses' => $weeklyStatuses,
                     ];
                 }
             )->values();
         }
+
+        // Every Chancellor graph and card follows the selected program year.
+        $programReporting = $programYearReporting;
+        $scopedPrograms = $programReporting->pluck('code');
+        $respondedResponses = $programReporting->sum('responded_students');
+        $expectedResponses = $programReporting->sum('expected_responses');
 
         $completed = $programReporting
             ->where('status', 'completed')
@@ -821,15 +837,16 @@ class DashboardService
 
         $totalPrograms = $programReporting->count();
 
-        $completionRate = $totalPrograms > 0
-            ? (int) round(($completed / $totalPrograms) * 100)
+        $completionRate = $expectedResponses > 0
+            ? (int) round(($respondedResponses / $expectedResponses) * 100)
             : 0;
 
         // Data for the Progress by Week stacked bar chart.
         $weeklyProgress = $reportingWeeks
             ->map(function (array $week) use (
                 $reportingWeekRecords,
-                $programs,
+                $scopedPrograms,
+                $selectedYearLevel,
                 $getProgramStatus
             ) {
                 $weekStart = Carbon::parse($week['week_start']);
@@ -842,11 +859,11 @@ class DashboardService
                     )
                 );
 
-                $statuses = $programs->map(
+                $statuses = $scopedPrograms->map(
                     fn ($programCode) => $getProgramStatus(
                         $programCode,
                         $recordsForWeek,
-                        null,
+                        $selectedYearLevel,
                         $weekStart
                     )
                 );
@@ -875,7 +892,7 @@ class DashboardService
                 'completed' => $completed,
                 'incomplete' => $incomplete,
                 'no_report' => $noReport,
-                'total_programs' => $totalPrograms,
+                'total_programs' => Program::query()->where('is_active', true)->count(),
                 'completion_rate' => $completionRate,
                 'escalation_count' => Escalation::query()->visibleTo($user)->count(),
             ],
@@ -885,7 +902,9 @@ class DashboardService
                 'percentage' => $completionRate,
                 'completed_programs' => $completed,
                 'total_programs' => $totalPrograms,
-                'tally' => "{$completed} of {$totalPrograms} programs completed",
+                'responded_students' => $respondedResponses,
+                'expected_responses' => $expectedResponses,
+                'tally' => "{$respondedResponses} of {$expectedResponses} expected responses recorded",
             ],
 
             // Programs Needing Attention table

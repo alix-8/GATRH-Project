@@ -69,7 +69,7 @@ function ChancellorDashboard() {
     })
     const [overallProgress, setOverallProgress] = useState({
         percentage: 0,
-        tally: '0 of 0 programs completed',
+        tally: '0 of 0 expected responses recorded',
     })
     const [loadError, setLoadError] = useState('')
     const [isYearOpen, setIsYearOpen] = useState(false)
@@ -100,7 +100,7 @@ function ChancellorDashboard() {
                 })
                 setOverallProgress(data.overall_progress || {
                     percentage: 0,
-                    tally: '0 of 0 programs completed',
+                    tally: '0 of 0 expected responses recorded',
                 })
                 setProgramReporting(data.program_reporting || [])
                 setProgramYearReporting(data.program_year_reporting || [])
@@ -196,6 +196,7 @@ function ChancellorDashboard() {
                             <span className="chancellor-summary-label">Total Programs</span>
                             <strong>{summary.total_programs}</strong>
                             <p>Across all departments</p>
+
                         </div>
                     </article>
                    
@@ -205,7 +206,7 @@ function ChancellorDashboard() {
                         <section className="chancellor-overall-progress" aria-labelledby="chancellor-overall-progress-title">
                             <div className="chancellor-overall-progress-heading">
                                 <h2 id="chancellor-overall-progress-title">Overall Reporting Progress</h2>
-                                <p>Monthly reporting progress across all programs.</p>
+                                <p>Monthly student responses for the selected program year.</p>
                             </div>
                             <div className="chancellor-overall-progress-value">
                                 <strong>{progressPercentage}%</strong>
@@ -402,7 +403,7 @@ function ChancellorDashboard() {
                         </section>
                         <section className="chancellor-program-completion-overview" aria-labelledby="chancellor-program-completion-overview-title">
                             <h2 id="chancellor-program-completion-overview-title">Program Completion Overview</h2>
-                            <p>Monthly completion rate per program</p>
+                            <p>Monthly student responses per program for the selected year</p>
                             <ul className="chancellor-program-completion-list">
                                 {completionOverview.map((program) => (
                                     <li key={program.code} className="chancellor-program-completion-row">
