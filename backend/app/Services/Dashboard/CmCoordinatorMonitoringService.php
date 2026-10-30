@@ -401,29 +401,7 @@ class CmCoordinatorMonitoringService
 
     private function getGatheringSummary(Collection $weekRecords, array $studentIds, string $type, ?array $gatheringRange = null): array
     {
-        $attendanceRows = $weekRecords
-            ->where('gathering_type', $type)
-            ->filter(fn ($record) => $gatheringRange === null
-                || (($record->reporting_day ?? $record->day)->toDateString() >= $gatheringRange['start']
-                    && ($record->reporting_day ?? $record->day)->toDateString() <= $gatheringRange['end']))
-            ->filter(fn ($record) => in_array((int) $record->student_id, $studentIds, true));
-        $respondedStudentCount = $attendanceRows
-            ->filter(fn ($record) => in_array($record->status ?? 'no_response', ['present', 'excused'], true))
-            ->pluck('student_id')
-            ->unique()
-            ->count();
-        $totalStudents = count($studentIds);
-
-        return [
-            'status' => match (true) {
-                $respondedStudentCount === 0 => 'no_report',
-                $totalStudents > 0 && $respondedStudentCount >= $totalStudents => 'completed',
-                default => 'incomplete',
-            },
-            'has_attendance' => $attendanceRows->isNotEmpty(),
-            'responded_students' => min($respondedStudentCount, $totalStudents),
-            'total_students' => $totalStudents,
-        ];
+        return app(AttendanceResponseSummary::class)->gathering($weekRecords, $studentIds, $type, $gatheringRange);
     }
 
     private function getDraftAttendanceRows(string $start, string $end, ?array $studentIds = null): Collection

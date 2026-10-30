@@ -689,39 +689,29 @@ class DashboardService
             $this->getDraftAttendanceRows($reportingWeeksStart, $reportingWeeksEnd)
         );
 
-        // Reusable rule:
-        // 3 gathering types = complete
-        // 1–2 gathering types = incomplete
-        // 0 gathering types = no report
-        $getProgramStatus = function ($programCode, $programRecords): string {
-            $gatheringCount = $programRecords
-                ->filter(
-                    fn ($record) => ($record->program ?? $record->student?->program) === $programCode
-                )
-                ->pluck('gathering_type')
-                ->filter()
-                ->unique()
-                ->count();
-
-            return match (true) {
-                $gatheringCount >= 3 => 'completed',
-                $gatheringCount > 0 => 'incomplete',
-                default => 'no_report',
-            };
+        $rosters = Student::query()->active()->whereIn('program', $programs)
+            ->get(['id', 'program', 'year_level'])
+            ->groupBy(fn ($student) => $student->program . '|' . $student->year_level);
+        $responses = app(AttendanceResponseSummary::class);
+        $summarizeProgram = function ($programCode, $programRecords, $yearLevel = null, $weekStart = null) use ($rosters, $responses, $dateRange): array {
+            // Match the Coordinator's offered year groups and PM/WS/TG slots.
+            $years = $yearLevel !== null ? [(int) $yearLevel] : range(1, $programCode === 'ACT' ? 2 : 4);
+            $ranges = GatheringCycle::getRangesForWeekStart($weekStart ?? $dateRange['start']);
+            $slots = collect($years)->flatMap(function ($year) use ($programCode, $programRecords, $rosters, $responses, $ranges) {
+                $ids = $rosters->get($programCode . '|' . $year, collect())->pluck('id')->map(fn ($id) => (int) $id)->all();
+                return collect(['pm', 'ws', 'tg'])->map(fn ($type) => $responses->gathering($programRecords, $ids, $type, [
+                    'start' => $ranges[$type]['start']->toDateString(), 'end' => $ranges[$type]['end']->toDateString(),
+                ]));
+            });
+            $completed = $slots->where('status', 'completed')->count();
+            $hasResponses = $slots->contains(fn ($slot) => $slot['responded_students'] > 0);
+            return [
+                'status' => $completed === $slots->count() ? 'completed' : ($hasResponses ? 'incomplete' : 'no_report'),
+                'percentage' => (int) round($completed / max(1, $slots->count()) * 100),
+            ];
         };
-
-        $getCompletionPercentage = function ($programCode, $programRecords): int {
-            $gatheringCount = $programRecords
-                ->filter(
-                    fn ($record) => ($record->program ?? $record->student?->program) === $programCode
-                )
-                ->pluck('gathering_type')
-                ->filter()
-                ->unique()
-                ->count();
-
-            return min(100, (int) round(($gatheringCount / 3) * 100));
-        };
+        $getProgramStatus = fn ($code, $rows, $year = null, $start = null): string => $summarizeProgram($code, $rows, $year, $start)['status'];
+        $getCompletionPercentage = fn ($code, $rows, $year = null): int => $summarizeProgram($code, $rows, $year)['percentage'];
 
         // Data for the Programs Needing Attention table
         // and Program Completion Overview.
@@ -750,7 +740,7 @@ class DashboardService
                             )
                         );
 
-                        return $getProgramStatus($programCode, $recordsForWeek);
+                        return $getProgramStatus($programCode, $recordsForWeek, null, $weekStart);
                     })
                     ->values()
                     ->toArray();
@@ -776,12 +766,8 @@ class DashboardService
             $yearPrograms = (int) $selectedYearLevel > 2
                 ? $programs->reject(fn ($programCode) => $programCode === 'ACT')->values()
                 : $programs;
-            $yearRecords = $records->filter(
-                fn ($record) => (string) $record->student?->year_level === (string) $selectedYearLevel
-            );
-            $reportingWeekYearRecords = $reportingWeekRecords->filter(
-                fn ($record) => (string) $record->student?->year_level === (string) $selectedYearLevel
-            );
+            $yearRecords = $records;
+            $reportingWeekYearRecords = $reportingWeekRecords;
 
             $programYearReporting = $yearPrograms->map(
                 function ($programCode) use (
@@ -797,6 +783,7 @@ class DashboardService
                         ->map(function (array $week) use (
                             $programCode,
                             $reportingWeekYearRecords,
+                            $selectedYearLevel,
                             $getProgramStatus
                         ) {
                             $weekStart = Carbon::parse($week['week_start']);
@@ -808,7 +795,7 @@ class DashboardService
                                 )
                             );
 
-                            return $getProgramStatus($programCode, $recordsForWeek);
+                            return $getProgramStatus($programCode, $recordsForWeek, $selectedYearLevel, $weekStart);
                         })
                         ->values()
                         ->toArray();
@@ -817,8 +804,8 @@ class DashboardService
                         'code' => $programCode,
                         'name' => $programNames[$programCode] ?? $programCode,
                         'year_level' => (int) $selectedYearLevel,
-                        'status' => $getProgramStatus($programCode, $yearRecords),
-                        'completion' => $getCompletionPercentage($programCode, $yearRecords),
+                        'status' => $getProgramStatus($programCode, $yearRecords, $selectedYearLevel),
+                        'completion' => $getCompletionPercentage($programCode, $yearRecords, $selectedYearLevel),
                         'weekly_statuses' => $weeklyStatuses,
                     ];
                 }
@@ -863,7 +850,9 @@ class DashboardService
                 $statuses = $programs->map(
                     fn ($programCode) => $getProgramStatus(
                         $programCode,
-                        $recordsForWeek
+                        $recordsForWeek,
+                        null,
+                        $weekStart
                     )
                 );
 
@@ -947,6 +936,7 @@ class DashboardService
                                 'year_level' => $entry['year_level'] ?? null,
                             ],
                             'gathering_type' => $entry['gathering_type'] ?? $draft->gathering_type,
+                            'status' => $entry['status'] ?? 'no_response',
                             'day' => Carbon::parse($draft->day),
                         ];
                     });

@@ -15,6 +15,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->mock(\App\Services\Escalations\WeeklyEscalationService::class)->shouldReceive('syncStudent')->zeroOrMoreTimes();
 
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
@@ -124,14 +125,14 @@ class ChancellorDashboardYearFilterTest extends TestCase
             ->assertJsonPath('program_year_reporting.0.year_level', 1)
             ->assertJsonPath('program_year_reporting.0.status', 'incomplete')
             ->assertJsonPath('program_year_reporting.0.completion', 33)
-            ->assertJsonPath('summary.completed', 1);
+            ->assertJsonPath('summary.completed', 0);
 
         $secondYearResponse
             ->assertOk()
             ->assertJsonPath('program_year_reporting.0.year_level', 2)
             ->assertJsonPath('program_year_reporting.0.status', 'incomplete')
             ->assertJsonPath('program_year_reporting.0.completion', 67)
-            ->assertJsonPath('summary.completed', 1);
+            ->assertJsonPath('summary.completed', 0);
 
         $thirdYearResponse = $this->getJson('/api/dashboard?date=2026-10-07&year_level=3');
         $thirdYearResponse
@@ -185,6 +186,104 @@ class ChancellorDashboardYearFilterTest extends TestCase
         $this->assertSame($expected, $payload['program_year_reporting'][0]['weekly_statuses']);
         $this->assertSame($expected, $payload['program_reporting'][0]['weekly_statuses']);
         $this->assertSame([0, 1, 0, 0, 0], collect($payload['weekly_progress'])->pluck('incomplete')->all());
+    }
+
+    public function test_week_icon_requires_every_active_student_in_all_three_gatherings(): void
+    {
+        Program::create(['code' => 'BSIS', 'name' => 'Information Systems']);
+        $first = Student::create(['name' => 'First', 'program' => 'BSIS', 'year_level' => 2]);
+        $second = Student::create(['name' => 'Second', 'program' => 'BSIS', 'year_level' => 2]);
+        Student::create(['name' => 'Inactive', 'program' => 'BSIS', 'year_level' => 2, 'is_active' => false]);
+
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            $this->addResponse($first, $type);
+        }
+        $this->assertYearProgress('incomplete', 0);
+        $this->addResponse($second, 'pm');
+        $this->assertYearProgress('incomplete', 33);
+        $this->addResponse($second, 'ws', 'excused');
+        $this->assertYearProgress('incomplete', 67);
+        $this->addResponse($second, 'tg');
+        $this->assertYearProgress('completed', 100);
+
+        // Completing Year 2 cannot complete the other offered years of BSIS.
+        $payload = $this->chancellorPayload();
+        $this->assertSame('incomplete', $payload['program_reporting'][0]['status']);
+        $this->assertSame(25, $payload['program_reporting'][0]['completion']);
+        $this->assertSame(0, $payload['summary']['completed']);
+        $coordinator = app(\App\Services\Dashboard\CmCoordinatorMonitoringService::class)->getPayload(['year' => 2026, 'month' => 10]);
+        $course = collect($coordinator['courses'])->first(fn ($course) => $course['year_level'] === '2' || $course['year_level'] === 2);
+        $this->assertSame('completed', $course['weeks'][1]['status']);
+    }
+
+    public function test_no_response_records_and_duplicate_responses_do_not_complete_a_week(): void
+    {
+        Program::create(['code' => 'BSIS', 'name' => 'Information Systems']);
+        $first = Student::create(['name' => 'First', 'program' => 'BSIS', 'year_level' => 2]);
+        Student::create(['name' => 'Second', 'program' => 'BSIS', 'year_level' => 2]);
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            $this->addResponse($first, $type, 'no_response');
+        }
+        $this->assertYearProgress('no_report', 0);
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            $this->addResponse($first, $type);
+            $this->addResponse($first, $type);
+        }
+        $this->assertYearProgress('incomplete', 0);
+    }
+
+    public function test_draft_responses_can_complete_a_slot_without_approval_or_snapshot_fields(): void
+    {
+        Program::create(['code' => 'BSIS', 'name' => 'Information Systems']);
+        $student = Student::create(['name' => 'First', 'program' => 'BSIS', 'year_level' => 2]);
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            \Illuminate\Support\Facades\DB::table('attendance_drafts')->insert([
+                'gathering_type' => $type, 'day' => $type === 'pm' ? '2026-10-07' : '2026-10-10',
+                'status' => 'draft', 'parsed_data' => json_encode([['student_id' => $student->id, 'status' => 'present']]),
+            ]);
+        }
+        $this->assertYearProgress('completed', 100);
+    }
+
+    public function test_overall_graphs_require_all_years_and_gatherings_to_be_complete(): void
+    {
+        Program::create(['code' => 'ACT', 'name' => 'Computer Technology']);
+        foreach ([1, 2] as $year) {
+            $student = Student::create(['name' => 'Year '.$year, 'program' => 'ACT', 'year_level' => $year]);
+            foreach (['pm', 'ws', 'tg'] as $type) {
+                $this->addResponse($student, $type);
+            }
+        }
+        $payload = $this->chancellorPayload();
+        $this->assertSame('completed', $payload['program_reporting'][0]['status']);
+        $this->assertSame(100, $payload['program_reporting'][0]['completion']);
+        $this->assertSame(100, $payload['overall_progress']['percentage']);
+        $this->assertSame(1, $payload['weekly_progress'][1]['completed']);
+        $this->assertSame(1, $payload['summary']['completed']);
+    }
+
+    private function addResponse(Student $student, string $type, string $status = 'present'): void
+    {
+        AttendanceRecord::create([
+            'student_id' => $student->id, 'gathering_type' => $type,
+            'day' => $type === 'pm' ? '2026-10-07' : '2026-10-10',
+            'status' => $status, 'validation_status' => 'unvalidated', 'submitted_by' => 1,
+        ]);
+    }
+
+    private function chancellorPayload(): array
+    {
+        return app(\App\Services\Dashboard\DashboardService::class)->getChancellorDashboardPayload(
+            new User(['role' => 'chancellor']), ['date' => '2026-10-07', 'year_level' => 2]
+        );
+    }
+
+    private function assertYearProgress(string $status, int $percentage): void
+    {
+        $row = $this->chancellorPayload()['program_year_reporting'][0];
+        $this->assertSame($status, $row['status']);
+        $this->assertSame($percentage, $row['completion']);
+        $this->assertSame($status, $row['weekly_statuses'][1]);
     }
 
     private function createAttendanceRecord(Student $student, string $gatheringType): void
