@@ -629,6 +629,18 @@ class AttendanceController extends Controller
             }
 
             if ($result['matched']) {
+                if (isset($parsedSubmissions[$result['record']['student_id']])) {
+                    $formatErrorLines[] = [
+                        'student_name' => $result['record']['student_name'],
+                        'raw_line' => $line,
+                        'errors' => [[
+                            'field' => 'student',
+                            'reason' => 'Duplicate student entry. Keep only one entry for this student before importing.',
+                        ]],
+                    ];
+                    continue;
+                }
+
                 $parsedSubmissions[$result['record']['student_id']] = $result['record'];
 
                 $hasBatch = !empty($result['record']['batch']);

@@ -521,6 +521,18 @@ class AttendanceParsingService
                 continue;
             }
 
+            if (in_array($student->id, $matchedStudentIds, true)) {
+                $formatErrorLines[] = [
+                    'student_name' => $student->name,
+                    'raw_line' => $entry['raw_line'],
+                    'errors' => [[
+                        'field' => 'student',
+                        'reason' => 'Duplicate student entry. Keep only one entry for this student before importing.',
+                    ]],
+                ];
+                continue;
+            }
+
             $matchedStudentIds[] = $student->id;
 
             $hasAnySlotFilled = false;
