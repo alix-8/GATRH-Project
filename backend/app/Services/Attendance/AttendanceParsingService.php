@@ -808,7 +808,7 @@ class AttendanceParsingService
                     return [
                         'success' => false,
                         'date' => null,
-                        'error' => "Attendance cannot be added for {$clean} ({$matches[0]}) before that date.",
+                        'error' => $this->futureDateMessage(\Carbon\Carbon::parse($matches[0])),
                     ];
                 }
                 return [
@@ -848,7 +848,7 @@ class AttendanceParsingService
                         return [
                             'success' => false,
                             'date' => null,
-                            'error' => "Attendance cannot be added for {$clean} before that date.",
+                            'error' => $this->futureDateMessage($dateObj),
                         ];
                     }
                     return [
@@ -873,6 +873,13 @@ class AttendanceParsingService
             'date'    => null,
             'error'   => "Weekday \"{$clean}\" is invalid. Accepted values: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday (or Mon, Tue, Wed, Thu, Fri, Sat, Sun).",
         ];
+    }
+
+    private function futureDateMessage(\Carbon\Carbon $date): string
+    {
+        return 'Future dates are not allowed. The attendance date you entered is '
+            . $date->format('F j, Y')
+            . '. Please enter today’s date or an earlier date within the selected gathering period.';
     }
 
     public function getApplicableWeekRange(string $gatheringType, $customCycle = null, ?string $rawText = null): array
