@@ -39,9 +39,10 @@ const PROGRAM_TYPES = {
 }
 const GATHERINGS = [
     { type: 'pm', label: 'Prayer Meeting' },
-    { type: 'ws', label: 'Worship Service' },
     { type: 'tg', label: 'Thanksgiving' },
+    { type: 'ws', label: 'Worship Service' },
 ]
+const GATHERING_TYPES = GATHERINGS.map(({ type }) => type)
 const EMPTY_COURSES = []
 
 function formatDate(value, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
@@ -95,7 +96,7 @@ function CoordinatorMonitoring() {
     const error = requestError?.message || ''
     const courses = monitoring?.courses ?? EMPTY_COURSES
     const weeks = monitoring?.weeks || []
-    const gatheringTypes = ['pm', 'tg', 'ws']
+    const gatheringTypes = GATHERING_TYPES
     const detailWeek = selectedDetailWeek ?? weeks[0]?.number
     const detailKey = activeCourse
         ? `${activeCourse.program}-${activeCourse.year_level}-${monitoring?.month?.year}-${monitoring?.month?.month}-${detailWeek}`
