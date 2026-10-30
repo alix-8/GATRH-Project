@@ -9,6 +9,7 @@ function EditProgramModal({ program, heads, onClose, onUpdated }) {
     const initialHeadId = String(program.program_heads?.[0]?.id ?? '')
     const [form, setForm] = useState({
         name: program.name,
+        code: program.code,
         program_head_id: initialHeadId,
         max_year_level: String(program.max_year_level),
         is_active: Boolean(program.is_active),
@@ -42,6 +43,7 @@ function EditProgramModal({ program, heads, onClose, onUpdated }) {
 
         const payload = {
             name: form.name.trim(),
+            code: form.code.trim().toUpperCase(),
             max_year_level: Number(form.max_year_level),
             is_active: form.is_active,
         }
@@ -54,7 +56,7 @@ function EditProgramModal({ program, heads, onClose, onUpdated }) {
                 method: 'PATCH',
                 body: JSON.stringify(payload),
             })
-            onUpdated(result.message)
+            onUpdated(result.message, result.program?.code)
         } catch (error) {
             const errors = error.details?.errors ?? {}
             setFieldErrors({ ...errors, program_head_id: errors['program_head_ids.0'] ?? errors.program_head_ids })
@@ -79,6 +81,11 @@ function EditProgramModal({ program, heads, onClose, onUpdated }) {
                 <label htmlFor="admin-edit-program-name">Program Name<span>*</span></label>
                 <input id="admin-edit-program-name" autoFocus required maxLength={255} value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
+            </div>
+            <div className="admin-add-user-field">
+                <label htmlFor="admin-edit-program-code">Program Code<span>*</span></label>
+                <input id="admin-edit-program-code" required maxLength={20} pattern="[A-Za-z0-9_-]+" value={form.code} onChange={event => updateField('code', event.target.value.toUpperCase())} aria-invalid={Boolean(fieldErrors.code)} />
+                {fieldErrors.code && <small className="admin-add-user-field-error">{fieldErrors.code[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-program-head">Assigned Program Head</label>

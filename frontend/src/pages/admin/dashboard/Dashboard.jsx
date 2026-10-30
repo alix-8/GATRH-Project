@@ -5,6 +5,7 @@ import Sidebar from '../../../components/layout/Sidebar'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useAutoDismissNotice from '../../../hooks/useAutoDismissNotice'
 import ActiveUsersIcon from '../../../assets/icons/active-users-icon.svg'
 import AdminStudentsIcon from '../../../assets/icons/admin-students-icon.svg'
 import ActiveProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
@@ -32,7 +33,7 @@ const accountRoleIcons = {
 function AdminDashboard() {
     const [dashboard, setDashboard] = useState(null)
     const [error, setError] = useState('')
-    const [notice, setNotice] = useState('')
+    const [notice, showNotice, clearNotice] = useAutoDismissNotice()
     const [isAddUserOpen, setIsAddUserOpen] = useState(false)
     const [isAddStudentOpen, setIsAddStudentOpen] = useState(false)
     const [isAddProgramOpen, setIsAddProgramOpen] = useState(false)
@@ -70,7 +71,7 @@ function AdminDashboard() {
 
     function handleUserCreated(message) {
         setIsAddUserOpen(false)
-        setNotice(message || 'User account created successfully.')
+        showNotice(message || 'User account created successfully.')
         request('/admin/dashboard')
             .then(data => {
                 setDashboard(data)
@@ -81,7 +82,7 @@ function AdminDashboard() {
 
     function handleStudentCreated(message) {
         setIsAddStudentOpen(false)
-        setNotice(message || 'Student created successfully.')
+        showNotice(message || 'Student created successfully.')
         request('/admin/dashboard')
             .then(data => {
                 setDashboard(data)
@@ -92,7 +93,7 @@ function AdminDashboard() {
 
     function handleProgramCreated(message) {
         setIsAddProgramOpen(false)
-        setNotice(message || 'Program created successfully.')
+        showNotice(message || 'Program created successfully.')
         request('/admin/dashboard')
             .then(data => {
                 setDashboard(data)
@@ -157,9 +158,9 @@ function AdminDashboard() {
                                 <div><h2>Manage System Accounts</h2><p>Administrative changes.</p></div>
                             </div>
                             <div className="admin-quick-grid">
-                                <button className="admin-quick-action blue" type="button" onClick={() => { setNotice(''); setIsAddUserOpen(true) }} aria-haspopup="dialog"><span className="admin-quick-icon" aria-hidden="true"><img src={AddUserIcon} alt="" /></span><strong>Add User</strong><small>Create a Secretary, Program Head, or Chancellor.</small><b aria-hidden="true">›</b></button>
-                                <button className="admin-quick-action green" type="button" onClick={() => { setNotice(''); setIsAddStudentOpen(true) }} aria-haspopup="dialog"><span className="admin-quick-icon" aria-hidden="true"><img src={AdminStudentsIcon} alt="" /></span><strong>Add Student</strong><small>Create a new student record.</small><b aria-hidden="true">›</b></button>
-                                <button className="admin-quick-action purple" type="button" onClick={() => { setNotice(''); setIsAddProgramOpen(true) }} aria-haspopup="dialog"><span className="admin-quick-icon" aria-hidden="true"><img src={AddProgramIcon} alt="" /></span><strong>Add Program</strong><small>Create a new academic program.</small><b aria-hidden="true">›</b></button>
+                                <button className="admin-quick-action blue" type="button" onClick={() => { clearNotice(); setIsAddUserOpen(true) }} aria-haspopup="dialog"><span className="admin-quick-icon" aria-hidden="true"><img src={AddUserIcon} alt="" /></span><strong>Add User</strong><small>Create a Secretary, Program Head, or Chancellor.</small><b aria-hidden="true">›</b></button>
+                                <button className="admin-quick-action green" type="button" onClick={() => { clearNotice(); setIsAddStudentOpen(true) }} aria-haspopup="dialog"><span className="admin-quick-icon" aria-hidden="true"><img src={AdminStudentsIcon} alt="" /></span><strong>Add Student</strong><small>Create a new student record.</small><b aria-hidden="true">›</b></button>
+                                <button className="admin-quick-action purple" type="button" onClick={() => { clearNotice(); setIsAddProgramOpen(true) }} aria-haspopup="dialog"><span className="admin-quick-icon" aria-hidden="true"><img src={AddProgramIcon} alt="" /></span><strong>Add Program</strong><small>Create a new academic program.</small><b aria-hidden="true">›</b></button>
                                 <Link className="admin-quick-action navy" to="/admin/system-settings"><span className="admin-quick-icon" aria-hidden="true"><img src={SystemSettingsIcon} alt="" /></span><strong>System Settings</strong><small>Manage system configuration.</small><b aria-hidden="true">›</b></Link>
                             </div>
                         </section>

@@ -18,7 +18,30 @@ function isNoResponse(status) {
     return String(status ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_') === 'no_response'
 }
 
-export default function RecordDate({ value, status, label = 'Date of submission', tooltip = 'date' }) {
+function formatCompactRange(dates) {
+    const ordered = [...dates].sort((first, second) => first.getTime() - second.getTime())
+    const first = ordered[0]
+    const last = ordered[ordered.length - 1]
+
+    if (first.toDateString() === last.toDateString()) {
+        return first.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    }
+
+    const sameYear = first.getFullYear() === last.getFullYear()
+    const sameMonth = sameYear && first.getMonth() === last.getMonth()
+    const start = first.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        ...(!sameYear ? { year: 'numeric' } : {}),
+    })
+    const end = sameMonth
+        ? `${last.getDate()}, ${last.getFullYear()}`
+        : last.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+    return `${start}-${end}`
+}
+
+export default function RecordDate({ value, status, label = 'Date of submission', tooltip = 'date', compactRange = false }) {
     if (isNoResponse(status)) {
         return <>—</>
     }
@@ -49,7 +72,7 @@ export default function RecordDate({ value, status, label = 'Date of submission'
 
     return (
         <time dateTime={dateTime} title={tooltipText}>
-            {visibleDates.join(', ')}
+            {compactRange ? formatCompactRange(parsedDates) : visibleDates.join(', ')}
         </time>
     )
 }

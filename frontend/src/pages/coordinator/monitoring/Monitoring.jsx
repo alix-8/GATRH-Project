@@ -5,10 +5,12 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import CompletedIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
+import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
 import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg'
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import backendPercentage from '../../../utils/backendPercentage'
 import RecordDate from '../../../components/RecordDate'
 import './Monitoring.css'
 
@@ -38,9 +40,10 @@ const PROGRAM_TYPES = {
 }
 const GATHERINGS = [
     { type: 'pm', label: 'Prayer Meeting' },
-    { type: 'ws', label: 'Worship Service' },
     { type: 'tg', label: 'Thanksgiving' },
+    { type: 'ws', label: 'Worship Service' },
 ]
+const GATHERING_TYPES = GATHERINGS.map(({ type }) => type)
 const EMPTY_COURSES = []
 
 function formatDate(value, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
@@ -94,7 +97,7 @@ function CoordinatorMonitoring() {
     const error = requestError?.message || ''
     const courses = monitoring?.courses ?? EMPTY_COURSES
     const weeks = monitoring?.weeks || []
-    const gatheringTypes = ['pm', 'tg', 'ws']
+    const gatheringTypes = GATHERING_TYPES
     const detailWeek = selectedDetailWeek ?? weeks[0]?.number
     const detailKey = activeCourse
         ? `${activeCourse.program}-${activeCourse.year_level}-${monitoring?.month?.year}-${monitoring?.month?.month}-${detailWeek}`
@@ -162,6 +165,26 @@ function CoordinatorMonitoring() {
         setActiveCourse(null)
         setActiveIncompleteEntry(null)
     }
+
+    const selectedWeek = weeks.find((item) => item.number === detailWeek)
+    const weekTabs = (
+        <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
+            {weeks.map((item) => (
+                <button
+                    key={item.number}
+                    type="button"
+                    className={item.number === detailWeek ? 'active' : ''}
+                    aria-pressed={item.number === detailWeek}
+                    onClick={() => {
+                        setSelectedDetailWeek(item.number)
+                        setActiveIncompleteEntry(null)
+                    }}
+                >
+                    {item.label}
+                </button>
+            ))}
+        </div>
+    )
 
     return (
         <div className="coordinator-dashboard">
@@ -283,7 +306,8 @@ function CoordinatorMonitoring() {
                                                         const courseWeek = course.weeks.find((entry) => entry.number === item.number)
                                                         return gatheringTypes.map((type) => {
                                                             const itemStatus = courseWeek?.gatherings.find((entry) => entry.type === type)
-                                                            const noAttendanceRecorded = itemStatus?.status === 'no_report' && !itemStatus?.has_attendance
+                                                            const recordedNoResponses = itemStatus?.status === 'no_report' && itemStatus.has_attendance
+                                                            const noAttendanceRecorded = !itemStatus || (itemStatus.status === 'no_report' && !itemStatus.has_attendance)
                                                             const statusTooltip = noAttendanceRecorded
                                                                 ? 'No attendance recorded yet'
                                                                 : `${itemStatus?.responded_students ?? 0}/${itemStatus?.total_students ?? course.students_count} students responded`
@@ -292,13 +316,15 @@ function CoordinatorMonitoring() {
                                                                     key={`${course.label}-${item.number}-${type}`}
                                                                     className={`monitoring-status-cell monitoring-status-cell-tooltip ${type === gatheringTypes[gatheringTypes.length - 1] ? 'monitoring-week-end' : ''}`}
                                                                     data-tooltip={statusTooltip}
-                                                                    data-tooltip-tone={noAttendanceRecorded ? 'error' : undefined}
+                                                                    data-tooltip-tone={noAttendanceRecorded || recordedNoResponses ? 'error' : undefined}
                                                                 >
                                                                     <span
                                                                         className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'} ${noAttendanceRecorded ? 'monitoring-status-no-attendance' : ''}`}
                                                                         role="img"
                                                                         aria-label={noAttendanceRecorded
                                                                             ? `${item.label} ${GATHERING_LABELS[type]}: No attendance recorded yet`
+                                                                            : recordedNoResponses
+                                                                                ? `${item.label} ${GATHERING_LABELS[type]}: Attendance recorded, 0 students responded`
                                                                             : `${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status === 'no_report' || !itemStatus ? 'No response' : itemStatus.status}`}
                                                                     >
                                                                         <img
@@ -306,7 +332,7 @@ function CoordinatorMonitoring() {
                                                                                 ? CompletedIcon
                                                                                 : itemStatus?.status === 'incomplete'
                                                                                     ? IncompleteIcon
-                                                                                    : NoReportsIcon}
+                                                                                    : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
                                                                             alt=""
                                                                         />
                                                                     </span>
@@ -318,9 +344,9 @@ function CoordinatorMonitoring() {
                                                         className="monitoring-progress-cell"
                                                         title={`${course.progress.completed} out of ${course.progress.total} gathering attendance completed`}
                                                     >
-                                                        <span>{course.progress.completed}/{course.progress.total}</span>
-                                                        <div className="monitoring-progress-track">
-                                                            <span style={{ width: `${course.progress.percentage}%` }} />
+                                                        <span>{backendPercentage(course.progress.percentage)}%</span>
+                                                        <div className="monitoring-progress-track" role="progressbar" aria-label={`${course.label} completed gathering attendance`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={backendPercentage(course.progress.percentage)}>
+                                                            <span style={{ width: `${backendPercentage(course.progress.percentage)}%` }} />
                                                         </div>
                                                     </td>
                                                     <td className="monitoring-action-cell">
@@ -354,10 +380,16 @@ function CoordinatorMonitoring() {
                                     Incomplete
                                 </span>
                                 <span>
+                                    <span className="monitoring-legend-icon monitoring-legend-recorded-no-response">
+                                        <img src={RecordedNoResponseIcon} alt="" />
+                                    </span>
+                                    Zero Response
+                                </span>
+                                <span>
                                     <span className="monitoring-legend-icon monitoring-legend-no-report">
                                         <img src={NoReportsIcon} alt="" />
                                     </span>
-                                    No Response
+                                    No Report
                                 </span>
                             </div>
                         </div>
@@ -387,8 +419,25 @@ function CoordinatorMonitoring() {
                             </div>
                         </header>
 
-                        {detailLoading && <p className="monitoring-message" role="status">Loading course details...</p>}
-                        {currentDetailError && <p className="monitoring-message monitoring-error" role="alert">{currentDetailError}</p>}
+                        {detailLoading && (
+                            <div className="monitoring-detail-body" aria-busy="true">
+                                <h3 className="monitoring-detail-section-title">Week Details</h3>
+                                {weekTabs}
+                                <section className="monitoring-week-details">
+                                    <h4>{selectedWeek?.label}<small> - {selectedWeek?.description}</small></h4>
+                                    <div className="monitoring-week-loading">
+                                        <LoadingCircle label={`Loading ${selectedWeek?.label ?? 'week'} details…`} size={28} />
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+                        {currentDetailError && (
+                            <div className="monitoring-detail-body">
+                                <h3 className="monitoring-detail-section-title">Week Details</h3>
+                                {weekTabs}
+                                <p className="monitoring-message monitoring-error" role="alert">{currentDetailError}</p>
+                            </div>
+                        )}
                         {currentDetails && (
                             <div className="monitoring-detail-body">
                                 {currentDetails.course.students_count === 0 && (
@@ -402,10 +451,10 @@ function CoordinatorMonitoring() {
                                 >
                                     <div>
                                         <span>Overall Progress</span>
-                                        <span>{currentDetails.progress.completed}/{currentDetails.progress.total}</span>
+                                        <span>{backendPercentage(currentDetails.progress.percentage)}%</span>
                                     </div>
-                                    <span className="monitoring-detail-progress-track">
-                                        <span style={{ width: `${currentDetails.progress.percentage}%` }} />
+                                    <span className="monitoring-detail-progress-track" role="progressbar" aria-label="Completed gathering attendance" aria-valuemin="0" aria-valuemax="100" aria-valuenow={backendPercentage(currentDetails.progress.percentage)}>
+                                        <span style={{ width: `${backendPercentage(currentDetails.progress.percentage)}%` }} />
                                     </span>
                                 </div>
 
@@ -417,7 +466,7 @@ function CoordinatorMonitoring() {
                                         </svg>
                                         <span>
                                             <small>Approved on</small>
-                                            <strong>{currentDetails.approval.approved_on
+                                            <strong>{currentDetails.approval.has_report && (currentDetails.approval.approved_on
                                                 ? new Date(currentDetails.approval.approved_on).toLocaleString('en-US', {
                                                     month: 'short',
                                                     day: 'numeric',
@@ -425,7 +474,7 @@ function CoordinatorMonitoring() {
                                                     hour: '2-digit',
                                                     minute: '2-digit',
                                                 })
-                                                : 'Not yet approved'}
+                                                : 'Not yet approved')}
                                             </strong>
                                         </span>
                                     </div>
@@ -439,22 +488,7 @@ function CoordinatorMonitoring() {
                                 </div>
 
                                 <h3 className="monitoring-detail-section-title">Week Details</h3>
-                                <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
-                                    {weeks.map((item) => (
-                                        <button
-                                            key={item.number}
-                                            type="button"
-                                            className={item.number === detailWeek ? 'active' : ''}
-                                            aria-pressed={item.number === detailWeek}
-                                            onClick={() => {
-                                                setSelectedDetailWeek(item.number)
-                                                setActiveIncompleteEntry(null)
-                                            }}
-                                        >
-                                            {item.label}
-                                        </button>
-                                    ))}
-                                </div>
+                                {weekTabs}
 
                                 <section className="monitoring-week-details">
                                     <h4>
@@ -472,6 +506,7 @@ function CoordinatorMonitoring() {
                                             (item) => item.gathering_type === gatheringItem.type
                                         )
                                         const status = entry?.status || 'no_report'
+                                        const recordedNoResponses = status === 'no_report' && entry?.has_attendance
                                         const gatheringDates = entry?.dates?.length ? entry.dates : entry?.date ? [entry.date] : []
                                         const scheduledRange = currentDetails.week.gathering_ranges?.[gatheringItem.type]
                                         const gatheringDateRange = gatheringDates.length
@@ -480,14 +515,14 @@ function CoordinatorMonitoring() {
                                         return (
                                             <div className="monitoring-week-detail-row" key={gatheringItem.type}>
                                                 <span title={`${gatheringItem.label} · ${gatheringDateRange}`}>{gatheringItem.label}</span>
-                                                <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} />
+                                                <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} compactRange />
                                                 <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
                                                     <img
                                                         src={status === 'completed'
                                                             ? CompletedIcon
                                                             : status === 'incomplete'
                                                                 ? IncompleteIcon
-                                                                : NoReportsIcon}
+                                                            : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
                                                         alt=""
                                                     />
                                                     {status === 'completed'
@@ -501,16 +536,14 @@ function CoordinatorMonitoring() {
                                         )
                                     })}
 
-                                    <div className="monitoring-incomplete-details">
+                                    {currentDetails.incomplete_entries.length > 0 && <div className="monitoring-incomplete-details">
                                         <h4>
                                             <span className="monitoring-incomplete-icon" aria-hidden="true">
                                                 <img src={IncompleteEntryIcon} alt="" />
                                             </span>
                                             Incomplete Entry Details
                                         </h4>
-                                        {currentDetails.incomplete_entries.length === 0
-                                            ? <p>No incomplete entries for this week.</p>
-                                            : currentDetails.incomplete_entries.map((entry) => {
+                                        {currentDetails.incomplete_entries.map((entry) => {
                                                 const entryKey = entry.gathering_type
                                                 const isOpen = activeIncompleteEntry === entryKey
                                                 return (
@@ -538,9 +571,8 @@ function CoordinatorMonitoring() {
                                                         )}
                                                     </article>
                                                 )
-                                            })
-                                        }
-                                    </div>
+                                            })}
+                                    </div>}
                                 </section>
                             </div>
                         )}
