@@ -165,6 +165,26 @@ function CoordinatorMonitoring() {
         setActiveIncompleteEntry(null)
     }
 
+    const selectedWeek = weeks.find((item) => item.number === detailWeek)
+    const weekTabs = (
+        <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
+            {weeks.map((item) => (
+                <button
+                    key={item.number}
+                    type="button"
+                    className={item.number === detailWeek ? 'active' : ''}
+                    aria-pressed={item.number === detailWeek}
+                    onClick={() => {
+                        setSelectedDetailWeek(item.number)
+                        setActiveIncompleteEntry(null)
+                    }}
+                >
+                    {item.label}
+                </button>
+            ))}
+        </div>
+    )
+
     return (
         <div className="coordinator-dashboard">
             <Sidebar />
@@ -389,8 +409,25 @@ function CoordinatorMonitoring() {
                             </div>
                         </header>
 
-                        {detailLoading && <p className="monitoring-message" role="status">Loading course details...</p>}
-                        {currentDetailError && <p className="monitoring-message monitoring-error" role="alert">{currentDetailError}</p>}
+                        {detailLoading && (
+                            <div className="monitoring-detail-body" aria-busy="true">
+                                <h3 className="monitoring-detail-section-title">Week Details</h3>
+                                {weekTabs}
+                                <section className="monitoring-week-details">
+                                    <h4>{selectedWeek?.label}<small> - {selectedWeek?.description}</small></h4>
+                                    <div className="monitoring-week-loading">
+                                        <LoadingCircle label={`Loading ${selectedWeek?.label ?? 'week'} details…`} size={28} />
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+                        {currentDetailError && (
+                            <div className="monitoring-detail-body">
+                                <h3 className="monitoring-detail-section-title">Week Details</h3>
+                                {weekTabs}
+                                <p className="monitoring-message monitoring-error" role="alert">{currentDetailError}</p>
+                            </div>
+                        )}
                         {currentDetails && (
                             <div className="monitoring-detail-body">
                                 {currentDetails.course.students_count === 0 && (
@@ -441,22 +478,7 @@ function CoordinatorMonitoring() {
                                 </div>
 
                                 <h3 className="monitoring-detail-section-title">Week Details</h3>
-                                <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
-                                    {weeks.map((item) => (
-                                        <button
-                                            key={item.number}
-                                            type="button"
-                                            className={item.number === detailWeek ? 'active' : ''}
-                                            aria-pressed={item.number === detailWeek}
-                                            onClick={() => {
-                                                setSelectedDetailWeek(item.number)
-                                                setActiveIncompleteEntry(null)
-                                            }}
-                                        >
-                                            {item.label}
-                                        </button>
-                                    ))}
-                                </div>
+                                {weekTabs}
 
                                 <section className="monitoring-week-details">
                                     <h4>

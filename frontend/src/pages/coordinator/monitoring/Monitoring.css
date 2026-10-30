@@ -682,6 +682,14 @@
     font-weight: 400;
 }
 
+.monitoring-week-loading {
+    display: flex;
+    min-height: 220px;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
 .monitoring-week-detail-headings,
 .monitoring-week-detail-row {
     display: grid;
