@@ -244,7 +244,6 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const footer = (() => {
         switch (record.status) {
             case 'approved':
-                return <div className="status-pill status-pill-approved">✓ Approved</div>
             case 'pending':
                 return (
                     <div className="drawer-footer-actions">
@@ -253,7 +252,9 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                 Unsubmit
                             </button>
                         )}
-                        <div className="status-pill status-pill-pending">✓ Submitted</div>
+                        <div className={`status-pill status-pill-${record.status === 'approved' ? 'approved' : 'pending'}`}>
+                            {record.status === 'approved' ? '✓ Approved' : '✓ Submitted'}
+                        </div>
                     </div>
                 )
             default:
@@ -301,6 +302,18 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                         <p className="submitter-role">{draft.submitted_by?.role}</p>
                                     </div>
                                 </div>
+                                {draft.unsubmitted_at && (
+                                    <div className="submitted-card-unsubmitted">
+                                        <span>Unsubmitted at</span>
+                                        <time dateTime={draft.unsubmitted_at}>
+                                            {new Date(draft.unsubmitted_at).toLocaleString('en-US', {
+                                                timeZone: 'Asia/Manila',
+                                                month: 'short', day: 'numeric', year: 'numeric',
+                                                hour: 'numeric', minute: '2-digit', hour12: true,
+                                            })}
+                                        </time>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="kpi-grid">
@@ -438,7 +451,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 <div className="unsubmit-confirm-overlay">
                     <section className="unsubmit-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="unsubmit-confirm-title">
                         <h2 id="unsubmit-confirm-title">Return attendance to Validating?</h2>
-                        <p>This submission will become an editable draft again. You can make changes and submit it for validation later.</p>
+                        <p>This submission will become an editable draft again. Any approval will be removed. You can edit it and submit it for approval again.</p>
                         <div className="unsubmit-confirm-actions">
                             <button type="button" className="unsubmit-cancel-btn" onClick={() => setUnsubmitConfirm(false)} disabled={unsubmitting}>Cancel</button>
                             <button type="button" className="unsubmit-submit-btn" onClick={handleUnsubmit} disabled={unsubmitting}>

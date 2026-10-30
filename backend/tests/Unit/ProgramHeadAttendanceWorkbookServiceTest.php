@@ -81,6 +81,61 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         }
     }
 
+    public function test_session_workbook_shows_the_full_gathering_range_and_preserves_actual_attendance_dates(): void
+    {
+        $service = new ProgramHeadAttendanceWorkbookService();
+        foreach ([
+            ['pm', '2026-10-28', 'October 28-30, 2026'],
+            ['ws', '2026-10-31', 'October 31-November 1, 2026'],
+            ['tg', '2026-10-31', 'October 31-November 1, 2026'],
+        ] as [$type, $reportingDay, $expectedRange]) {
+            $record = (object) [
+                'student' => (object) ['name' => 'Test Student', 'program' => 'BSIS', 'year_level' => 2, 'escalation' => null],
+                'program' => 'BSIS', 'year_level' => 1,
+                'gathering_type' => $type, 'reporting_day' => \Carbon\Carbon::parse($reportingDay),
+                'day' => \Carbon\Carbon::parse('2026-10-26'), 'venue' => 'Special', 'batch' => '08:00:00', 'status' => 'present',
+            ];
+            $path = $service->create(new Collection([$record]));
+            try {
+                $worksheet = $this->readZipEntry(file_get_contents($path), 'xl/worksheets/sheet1.xml');
+                $this->assertStringContainsString('<c r="B3" s="5" t="inlineStr"><is><t xml:space="preserve">'.$expectedRange.'</t>', $worksheet);
+                $this->assertStringContainsString('GATHERING DATES', $worksheet);
+                $this->assertStringContainsString('BSIS 1ST', $worksheet);
+                $this->assertStringContainsString('Special, Mon, 8:00 AM', $worksheet);
+                $this->assertStringContainsString('WEEK 5', $worksheet);
+            } finally {
+                @unlink($path);
+            }
+        }
+    }
+
+    public function test_monthly_reminder_workbook_omits_approval_labels_but_distinguishes_missing_and_no_response(): void
+    {
+        $records = [];
+        foreach ([['pm', 'draft', 'present'], ['ws', 'validated', 'no_response'], ['tg', 'unvalidated', 'excused']] as [$type, $approval, $status]) {
+            $records[] = (object) [
+                'gathering_type' => $type, 'reporting_day' => \Carbon\Carbon::parse($type === 'pm' ? '2026-10-07' : '2026-10-10'),
+                'day' => \Carbon\Carbon::parse('2026-10-07'), 'venue' => 'Special', 'batch' => '08:00:00',
+                'status' => $status, 'validation_status' => $approval,
+            ];
+        }
+        $student = (object) ['id' => 1, 'name' => 'Student', 'escalation' => null, 'attendanceRecords' => $records];
+        $service = new ProgramHeadAttendanceWorkbookService();
+        $path = $service->createPeriod(new Collection([$student]), CarbonImmutable::parse('2026-10-01'), 'month', 'BSIS', 1, null, null, 'Coverage: All reporting weeks · PM, WS, TG. Students included: 1.');
+        try {
+            $sheet = $this->readZipEntry(file_get_contents($path), 'xl/worksheets/sheet1.xml');
+            foreach (['Missing record', 'No Response', 'Excused', 'Coverage: All reporting weeks', 'Students included: 1.'] as $label) {
+                $this->assertStringContainsString($label, $sheet);
+            }
+            foreach (['[Draft]', '[Approved]', '[Pending approval]'] as $label) {
+                $this->assertStringNotContainsString($label, $sheet);
+            }
+            $this->assertStringContainsString('s="18"', $sheet);
+        } finally {
+            @unlink($path);
+        }
+    }
+
     private function readZipEntry(string $archive, string $expectedName): string|false
     {
         $offset = 0;

@@ -126,6 +126,12 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         Route::post('/admin/students/school-year-rollover/{rollover}/undo', [AdminStudentController::class, 'undoSchoolYearRollover']);
     });
 
+    Route::middleware('role:secretary,program_head,program_secretary')->group(function () {
+        Route::get('/reminders/{reminder}/monthly-export/preview', [\App\Http\Controllers\Reminders\MonthlyExportController::class, 'preview']);
+        Route::post('/reminders/{reminder}/monthly-export', [\App\Http\Controllers\Reminders\MonthlyExportController::class, 'download']);
+        Route::post('/reminders/{reminder}/monthly-export/complete', [\App\Http\Controllers\Reminders\MonthlyExportController::class, 'complete']);
+    });
+
     /* Secretary */
     Route::middleware('role:secretary')->group(function () {
         Route::get('/attendance/import-periods', [AttendanceController::class, 'importPeriods']);

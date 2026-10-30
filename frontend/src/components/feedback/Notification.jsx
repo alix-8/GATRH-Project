@@ -128,7 +128,7 @@ function Notification() {
                         return {
                             id: `reminder-${reminder.id}`,
                             iconType: isPersonal ? 'my-reminder' : 'calendar',
-                            title: isPersonal
+                            title: reminder.reminder_type === 'monthly_export' ? reminder.title : isPersonal
                                 ? `My Reminder: ${reminder.title}`
                                 : GATHERING_LABELS[reminder.gathering_type] || reminder.title,
                             subtext: formatReminderTime(reminder.due_date),

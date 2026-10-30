@@ -49,6 +49,13 @@ Artisan::command('inspire', function () {
 
 $schedulerTimezone = SystemTimezone::timezone();
 
+Artisan::command('reminders:monthly-exports', function () {
+    $created = app(\App\Services\Reminders\MonthlyExportService::class)->reconcile();
+    $this->info("Created {$created} monthly export reminder(s); existing exports reconciled.");
+})->purpose('Catch up monthly export reminders after final gathering windows and reconcile later changes');
+
+Schedule::command('reminders:monthly-exports')->hourly()->timezone($schedulerTimezone)->withoutOverlapping();
+
     //weekly gathering reminders for secretaries
     Schedule::command('reminders:generate-weekly-gatherings')
         ->weeklyOn(Carbon::MONDAY, '00:05')

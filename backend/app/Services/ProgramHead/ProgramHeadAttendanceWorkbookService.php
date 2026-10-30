@@ -64,12 +64,13 @@ class ProgramHeadAttendanceWorkbookService
         string $program,
         int $yearLevel,
         ?string $programName = null,
-        ?int $weekNumber = null
+        ?int $weekNumber = null,
+        ?string $exportNotice = null
     ): string {
         [$weeks] = $this->periodWeeks($selectedDate, $period, $weekNumber);
         $columns = $this->periodColumns($weeks);
         $this->mergeCells = [];
-        $rows = $this->periodRows($students, $weeks, $columns, $selectedDate, $programName ?: $program, $yearLevel);
+        $rows = $this->periodRows($students, $weeks, $columns, $selectedDate, $programName ?: $program, $yearLevel, $exportNotice);
         $path = tempnam(sys_get_temp_dir(), 'gatrh-attendance-');
 
         if ($path === false) {
@@ -185,7 +186,8 @@ class ProgramHeadAttendanceWorkbookService
         array $columns,
         CarbonImmutable $selectedDate,
         string $program,
-        int $yearLevel
+        int $yearLevel,
+        ?string $exportNotice = null
     ): array {
         $slotColumns = array_slice($columns, 0, -1);
         $lastColumn = $columns[array_key_last($columns)]['column'];
@@ -251,9 +253,9 @@ class ProgramHeadAttendanceWorkbookService
                         break;
                     }
                 }
-                $present = $record?->status === 'present';
-                $value = $present ? $this->attendanceDetails($record) : 'No Response';
-                $style = $present ? $this->gatheringStyle($slot['type']) : 7;
+                $present = in_array($record?->status, ['present', 'excused'], true);
+                $value = $present ? $this->attendanceDetails($record) : ($record ? 'No Response' : ($exportNotice !== null ? 'Missing record' : 'No Response'));
+                $style = $present ? $this->attendanceStyle($record) : 7;
                 $cells[] = $this->cell($this->columnName($slot['column']) . $rowNumber, $value, $style);
             }
 
@@ -262,6 +264,11 @@ class ProgramHeadAttendanceWorkbookService
             $rows[] = $this->row($cells, 34);
         }
 
+        if ($exportNotice !== null) {
+            $noticeRow = count($rows) + 1;
+            $rows[] = $this->row([$this->cell('A'.$noticeRow, $exportNotice, 5)], 48);
+            $this->mergeCells[] = 'A'.$noticeRow.':'.$this->columnName($lastColumn).$noticeRow;
+        }
         return $rows;
     }
 
@@ -357,10 +364,15 @@ class ProgramHeadAttendanceWorkbookService
         $firstRecord = $records->first();
         $student = $firstRecord?->student;
         $date = $firstRecord ? \App\Support\AttendanceReportingPeriod::day($records) : null;
-        $weekNumber = $date ? (int) ceil($date->day / 7) : null;
+        $range = $date ? \App\Support\GatheringCycle::getRangesForWeekStart($date)[$firstRecord->gathering_type] : null;
+        $rangeLabel = $range ? \App\Support\GatheringCycle::formatRangeLabel($range['start'], $range['end']) : '';
+        $weekNumber = $date ? intdiv((int) \App\Support\GatheringCycle::weekStartForDate($date->copy()->startOfMonth())->diffInDays(
+            \App\Support\GatheringCycle::weekStartForDate($date)
+        ), 7) + 1 : null;
+        $year = $firstRecord?->year_level ?? $student?->year_level;
         $programLabel = trim(implode(' ', array_filter([
-            $student?->program,
-            $student?->year_level ? $this->ordinalYear((int) $student->year_level) : null,
+            $firstRecord?->program ?? $student?->program,
+            $year ? $this->ordinalYear((int) $year) : null,
         ])));
 
         $rows = [
@@ -374,7 +386,7 @@ class ProgramHeadAttendanceWorkbookService
             ], 34),
             $this->row([
                 $this->cell('A3', 'WEEK DATES', 2),
-                $this->cell('B3', $date?->format('F j, Y') ?? '', 5),
+                $this->cell('B3', $rangeLabel, 5),
             ], 24),
             $this->row([
                 $this->cell('A4', 'GATHERING', 2),
@@ -382,8 +394,8 @@ class ProgramHeadAttendanceWorkbookService
                 $this->cell('C4', 'ESCALATION', 2),
             ], 24),
             $this->row([
-                $this->cell('A5', 'DATE', 2),
-                $this->cell('B5', $date?->format('M j, Y') ?? '', 5),
+                $this->cell('A5', 'GATHERING DATES', 2),
+                $this->cell('B5', $rangeLabel, 5),
                 $this->cell('C5', 'CURRENT LEVEL', 2),
             ], 24),
             $this->row([
@@ -398,7 +410,7 @@ class ProgramHeadAttendanceWorkbookService
         foreach ($records as $record) {
             $rowNumber = count($rows) + 1;
             $present = $record->status === 'present';
-            $style = $present ? $this->gatheringStyle($record->gathering_type) : 7;
+            $style = $present ? $this->attendanceStyle($record) : 7;
             $student = $record->student;
             $escalationLevel = $student?->escalation?->escalation_level ?? 'None';
 
@@ -415,6 +427,7 @@ class ProgramHeadAttendanceWorkbookService
     private function attendanceDetails(object $record): string
     {
         $parts = array_filter([
+            $record->status === 'excused' ? 'Excused' : null,
             $record->venue,
             $record->day?->format('D'),
             $this->formatTime($record->batch),
@@ -440,6 +453,13 @@ class ProgramHeadAttendanceWorkbookService
             'pm' => 'PM',
             default => strtoupper((string) $type),
         };
+    }
+
+    private function attendanceStyle(object $record): int
+    {
+        return strcasecmp(trim((string) ($record->venue ?? '')), 'Special') === 0
+            ? 18
+            : $this->gatheringStyle($record->gathering_type);
     }
 
     private function gatheringStyle(?string $type): int
@@ -577,7 +597,7 @@ class ProgramHeadAttendanceWorkbookService
             . '<border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border>'
             . '</borders>'
             . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            . '<cellXfs count="18">'
+            . '<cellXfs count="19">'
             . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             . '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>'
@@ -596,6 +616,7 @@ class ProgramHeadAttendanceWorkbookService
             . '<xf numFmtId="0" fontId="6" fillId="13" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
             . '<xf numFmtId="0" fontId="7" fillId="5" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '<xf numFmtId="0" fontId="8" fillId="13" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            . '<xf numFmtId="0" fontId="7" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             . '</cellXfs>'
             . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
             . '</styleSheet>';

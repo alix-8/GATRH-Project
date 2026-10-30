@@ -18,10 +18,12 @@ class AttendanceDraft extends Model
         'total_detected',
         'matched_count',
         'status',
+        'unsubmitted_at',
     ];
 
     protected $casts = [
         'day'           => 'date',
+        'unsubmitted_at' => 'datetime',
         'parsed_data'   => 'array',
         'unparsed_data' => 'array',
     ];

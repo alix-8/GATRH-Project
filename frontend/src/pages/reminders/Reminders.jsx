@@ -14,10 +14,11 @@ import NotificationIcon from '../../assets/icons/notification-icon.svg'
 import CalendarIcon from '../../assets/icons/calendar-icon.svg'
 import GatheringIcon from '../../assets/icons/gathering-icon.svg'
 import MyReminderIcon from '../../assets/icons/my-reminder-icon.svg'
+import DownloadIcon from '../../assets/icons/download-icon.svg'
 import EditIcon from '../../assets/icons/edit-icon.svg'
 import AddReminderIcon from '../../assets/icons/add-reminder-icon.svg'
 import DeleteIcon from '../../assets/icons/delete-icon.svg'
-import { request } from '../../api/request'
+import { request, API_BASE_URL, xsrfHeaders } from '../../api/request'
 import useLiveRefresh from '../../hooks/useLiveRefresh'
 import Calendar from '../../components/Calendar/Calendar'
 import { TrashIcon } from '../../components/Icons/Reusables'
@@ -264,6 +265,8 @@ function Reminders() {
     const [openMenu, setOpenMenu] = useState('')
     const [saving, setSaving] = useState(false)
     const [completingReminderId, setCompletingReminderId] = useState(null)
+    const [exportingReminderId, setExportingReminderId] = useState(null)
+    const [exportConfirmation, setExportConfirmation] = useState(null)
     const [deletingReminder, setDeletingReminder] = useState(null)
     const [deleting, setDeleting] = useState(false)
     const [escalationReport, setEscalationReport] = useState(null)
@@ -358,12 +361,12 @@ function Reminders() {
                                     time: record.time,
                                 }),
                                 recordDate: record.day_iso,
-                                status: record.status === 'approved' ? 'completed' : 'needs_action',
+                                status: isSubmittedRecord ? 'completed' : 'needs_action',
                                 statusLabel: meta.label,
                                 deadline: record.status !== 'validating'
                                     ? null
                                     : submissionDeadlines.get(deadlineKey) || fallbackSubmissionDeadline(record.day_iso),
-                                tone: meta.tone,
+                                tone: isSubmittedRecord ? 'completed' : meta.tone,
                                 action: meta.action,
                                 createdAt: record.day_iso,
                             }
@@ -381,15 +384,18 @@ function Reminders() {
                             : roleSummaryData?.escalation_count ?? 0,
                     })
                 }
+                const reminderTasksNeedingAction = nextReminders.filter(reminder =>
+                    ['custom', 'monthly_export'].includes(reminder.reminder_type) && reminder.status === 'needs_action'
+                ).length
                 setSummary({
                     upcoming: remindersData.summary?.upcoming ?? nextReminders.filter(item => item.status === 'upcoming').length,
                     needs_action: role === 'program_head'
-                        ? (programHeadSubmissionData?.pendingCount ?? nextAttendanceTasks.length)
+                        ? (programHeadSubmissionData?.pendingCount ?? nextAttendanceTasks.length) + reminderTasksNeedingAction
                         : role === 'cm_coordinator'
                             ? remindersData.summary?.needs_action ?? nextReminders.filter(item => item.status === 'needs_action').length
-                        : nextAttendanceTasks.filter(item => item.status === 'needs_action').length,
-                    completed: remindersData.summary?.completed
-                        ?? nextReminders.filter(item => item.status === 'completed').length
+                        : nextAttendanceTasks.filter(item => item.status === 'needs_action').length + reminderTasksNeedingAction,
+                    completed: nextReminders.filter(item => ['custom', 'monthly_export'].includes(item.reminder_type)
+                        && item.status === 'completed').length
                         + nextAttendanceTasks.filter(item => item.status === 'completed').length,
                 })
             } catch (err) {
@@ -481,7 +487,7 @@ function Reminders() {
 
     const upcomingCard = { title: 'Upcoming', value: summary.upcoming, description: 'Scheduled activities', icon: RemindersIcon, className: 'upcoming' }
     const escalationCard = { title: 'Escalations', value: roleSummary.escalation_count, description: 'Students requiring intervention', icon: EscalationsIcon, className: 'escalation' }
-    const needsActionCard = { title: 'Needs Action', value: summary.needs_action, description: 'Attendance awaiting your review', icon: NeedsActionIcon, className: 'needs-action' }
+    const needsActionCard = { title: 'Needs Action', value: summary.needs_action, description: 'Tasks requiring attention', icon: NeedsActionIcon, className: 'needs-action' }
     const roleEscalationCard = { ...escalationCard, title: 'Escalation', description: 'Students that need attention', icon: EscalationsIcon, className: 'escalation' }
     const coordinatorNeedsActionCard = { ...needsActionCard, description: 'Tasks requiring attention' }
     const completedCard = { title: 'Completed', value: summary.completed, description: 'Completed reminders', icon: CompletedIcon, className: 'completed' }
@@ -518,6 +524,7 @@ function Reminders() {
         .filter(reminder => reminder.reminder_type !== 'submission_countdown')
         .map(reminder => {
             const isGathering = reminder.reminder_type === 'gathering'
+            const isMonthlyExport = reminder.reminder_type === 'monthly_export'
             const gatheringDate = dateKeyInLocalTime(reminder.gathering_date || reminder.due_date)
             const dueDateKey = dateKeyInLocalTime(reminder.due_date || reminder.gathering_date)
             const isToday = (isGathering ? gatheringDate : dueDateKey) === todayKey
@@ -529,7 +536,7 @@ function Reminders() {
 
             const title = isGathering
                 ? GATHERING_LABELS[reminder.gathering_type] || reminder.title
-                : `My Reminder : ${reminder.title}`
+                : isMonthlyExport ? reminder.title : `My Reminder : ${reminder.title}`
             const isCompleted = reminder.status === 'completed'
 
             return {
@@ -537,11 +544,13 @@ function Reminders() {
                 reminderId: reminder.id,
                 sourceReminder: reminder,
                 type: isGathering ? 'gathering' : 'custom',
-                icon: isGathering ? CalendarIcon : MyReminderIcon,
+                icon: isMonthlyExport ? DownloadIcon : isGathering ? CalendarIcon : MyReminderIcon,
                 title,
                 description: isGathering
                     ? formatGatheringReminderDateTime(reminder)
-                    : [reminder.description ? `Note : ${reminder.description}` : '', formatSavedReminderDateTime(reminder.due_date)].filter(Boolean).join(' · '),
+                    : isMonthlyExport
+                        ? `${reminder.program} · Year ${reminder.year_level}`
+                        : [reminder.description ? `Note : ${reminder.description}` : '', formatSavedReminderDateTime(reminder.due_date)].filter(Boolean).join(' · '),
                 status: reminder.status,
                 statusLabel: isGathering
                     ? alreadyRecorded
@@ -557,12 +566,12 @@ function Reminders() {
                             ? 'Needs Action'
                             : 'Upcoming',
                 tone: isCompleted ? 'completed' : reminder.status === 'needs_action' ? 'needs-action' : 'upcoming',
-                countdown: !isGathering && !isCompleted
+                countdown: !isGathering && !isMonthlyExport && !isCompleted
                     ? formatDeadlineCountdown(reminder.due_date, countdownNow)
                     : '',
-                countdownOverdue: !isGathering && !isCompleted && isDeadlinePassed(reminder.due_date, countdownNow),
+                countdownOverdue: !isGathering && !isMonthlyExport && !isCompleted && isDeadlinePassed(reminder.due_date, countdownNow),
                 isToday,
-                action: isGathering && isToday && !alreadyRecorded ? 'Add attendance' : null,
+                action: isMonthlyExport ? 'Export Monthly Records' : isGathering && isToday && !alreadyRecorded ? 'Add attendance' : null,
             }
         })
 
@@ -637,6 +646,9 @@ function Reminders() {
         })
         .map(({ item }) => item)
     const visibleItems = allItems.filter(item => {
+        if (item.sourceReminder?.reminder_type === 'monthly_export' && item.status === 'completed') {
+            return activeFilter === 'completed'
+        }
         if (activeFilter === 'all') return true
         if (activeFilter === 'today') return item.isToday
         if (activeFilter === 'mine') return item.type === 'custom'
@@ -825,6 +837,55 @@ function Reminders() {
         setDeletingReminder(reminder)
     }
 
+    const openMonthlyExportConfirmation = async (reminder) => {
+        setExportConfirmation({ reminder, loading: true, details: null, error: '' })
+        try {
+            const details = await request(`/reminders/${reminder.id}/monthly-export/preview`)
+            setExportConfirmation(current => current?.reminder.id === reminder.id
+                ? { ...current, details, loading: false } : current)
+        } catch (previewError) {
+            setExportConfirmation(current => current?.reminder.id === reminder.id
+                ? { ...current, loading: false, error: previewError.message } : current)
+        }
+    }
+
+    const exportMonthlyReminder = async (reminder) => {
+        setExportingReminderId(reminder.id)
+        setExportConfirmation(current => current ? { ...current, error: '' } : current)
+        setError('')
+        try {
+            const response = await fetch(`${API_BASE_URL}/reminders/${reminder.id}/monthly-export`, {
+                method: 'POST', credentials: 'include', headers: { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', ...xsrfHeaders() },
+            })
+            if (!response.ok) {
+                const details = await response.json().catch(() => ({}))
+                throw new Error(details.message || 'Unable to export monthly records. Your reminder remains pending.')
+            }
+            const token = response.headers.get('X-Monthly-Export-Token')
+            const blob = await response.blob()
+            if (!token || !blob.size) throw new Error('The download was incomplete. Your reminder remains pending.')
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = response.headers.get('Content-Disposition')?.match(/filename="?([^";]+)"?/i)?.[1]
+                || `${reminder.program}-${reminder.year_level}-${reminder.export_month}-monthly.xlsx`
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+            const confirmation = await request(`/reminders/${reminder.id}/monthly-export/complete`, {
+                method: 'POST', body: JSON.stringify({ token }),
+            })
+            setExportConfirmation(null)
+            if (!confirmation.current) setError(confirmation.message)
+            setAttendanceRefreshTrigger(current => current + 1)
+        } catch (exportError) {
+            setExportConfirmation(current => current ? { ...current, error: exportError.message || 'Export failed. Your reminder remains pending.' } : current)
+        } finally {
+            setExportingReminderId(null)
+        }
+    }
+
     const handleCompleteReminder = async (reminder) => {
         if (!reminder || completingReminderId) return
 
@@ -995,7 +1056,7 @@ function Reminders() {
 
                                 <div className="task-status">
                                     <strong>{item.statusLabel}</strong>
-                                    {item.type === 'custom' && item.status !== 'completed' && (
+                                    {item.type === 'custom' && item.sourceReminder?.reminder_type !== 'monthly_export' && item.status !== 'completed' && (
                                         <div className="task-actions">
                                             <button
                                                 type="button"
@@ -1022,8 +1083,11 @@ function Reminders() {
                                     {item.action && (
                                         <button
                                             type="button"
+                                            disabled={exportingReminderId === item.reminderId}
                                             onClick={() => {
-                                                if (item.type === 'escalation') {
+                                                if (item.sourceReminder?.reminder_type === 'monthly_export') {
+                                                    openMonthlyExportConfirmation(item.sourceReminder)
+                                                } else if (item.type === 'escalation') {
                                                     openEscalationReport(item.sourceEscalation)
                                                 } else if (item.action === 'Add attendance') {
                                                     markNotificationIdsSeen([`deadline-${item.sourceReminder.parent_reminder_id ?? item.sourceReminder.id}`])
@@ -1044,9 +1108,11 @@ function Reminders() {
                                                     setAttendanceDrawerOpen(true)
                                                 }
                                             }}                                        >
-                                            {item.action}
+                                            {exportingReminderId === item.reminderId ? 'Exporting…' : item.action}
                                             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                                <path d="m7 4 6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d={item.sourceReminder?.reminder_type === 'monthly_export'
+                                                    ? 'M10 2v10m-4-4 4 4 4-4M3 13v4h14v-4'
+                                                    : 'm7 4 6 6-6 6'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                             </svg>
                                         </button>
                                     )}
@@ -1277,6 +1343,33 @@ function Reminders() {
                             </button>
                         </div>
                     </form>
+                </div>
+            )}
+
+            {exportConfirmation && (
+                <div className="reminder-delete-overlay" role="presentation" onClick={() => !exportingReminderId && setExportConfirmation(null)}>
+                    <section className="reminder-delete-modal monthly-export-modal" role="dialog" aria-modal="true"
+                        aria-labelledby="monthly-export-confirm-title" onClick={event => event.stopPropagation()}
+                        onKeyDown={event => { if (event.key === 'Escape' && !exportingReminderId) setExportConfirmation(null) }}>
+                        <h2 id="monthly-export-confirm-title">Export Monthly Records?</h2>
+                        <div className="reminder-delete-divider" />
+                        {exportConfirmation.loading ? <p role="status">Loading export details…</p> : exportConfirmation.details && (
+                            <>
+                                <p className="monthly-export-scope"><strong>{exportConfirmation.details.program} · Year {exportConfirmation.details.year_level}</strong><br />{exportConfirmation.details.month}</p>
+                                <dl className="monthly-export-counts">
+                                    <div><dt>Coverage</dt><dd>{exportConfirmation.details.coverage}</dd></div>
+                                    <div><dt>Students included</dt><dd>{exportConfirmation.details.students_included} students</dd></div>
+                                </dl>
+                                <p>Missing record means no attendance was recorded. No Response is a recorded attendance result.</p>
+                            </>
+                        )}
+                        {exportConfirmation.error && <p className="reminder-modal-error" role="alert">{exportConfirmation.error}</p>}
+                        <div className="reminder-delete-actions">
+                            <button type="button" className="reminder-delete-cancel" autoFocus disabled={Boolean(exportingReminderId)} onClick={() => setExportConfirmation(null)}>Cancel</button>
+                            <button type="button" className="reminder-delete-confirm" disabled={exportConfirmation.loading || !exportConfirmation.details || Boolean(exportingReminderId)}
+                                onClick={() => exportMonthlyReminder(exportConfirmation.reminder)}>{exportingReminderId ? 'Exporting…' : 'Confirm Export'}</button>
+                        </div>
+                    </section>
                 </div>
             )}
 

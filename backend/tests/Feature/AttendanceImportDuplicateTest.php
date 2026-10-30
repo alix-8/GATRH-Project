@@ -56,11 +56,14 @@ class AttendanceImportDuplicateTest extends TestCase
             $table->unsignedBigInteger('submitted_by')->nullable();
             $table->unsignedBigInteger('validated_by')->nullable();
             $table->timestamp('approved_at')->nullable();
+            $table->timestamp('unsubmitted_at')->nullable();
+            $table->timestamp('resubmitted_at')->nullable();
             $table->string('validation_status');
             $table->timestamps();
         });
         Schema::create('attendance_drafts', function (Blueprint $table): void {
             $table->id();
+            $table->timestamp('unsubmitted_at')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->string('gathering_type');
             $table->string('status');
@@ -266,6 +269,8 @@ class AttendanceImportDuplicateTest extends TestCase
         $submitted = $controller->store($requestFor(['draft_id' => $draft->id, 'records' => $records]));
         $this->assertSame(201, $submitted->getStatusCode(), $submitted->getContent());
         $batchId = AttendanceRecord::firstOrFail()->batch_id;
+        $this->assertNull(AttendanceRecord::firstOrFail()->unsubmitted_at);
+        $this->assertNull(AttendanceRecord::firstOrFail()->resubmitted_at);
         $this->assertSame(['2026-10-28'], AttendanceRecord::pluck('reporting_day')->map(fn ($date) => Carbon::parse($date)->toDateString())->unique()->values()->all());
 
         Schema::create('programs', function (Blueprint $table): void {
@@ -298,6 +303,19 @@ class AttendanceImportDuplicateTest extends TestCase
         $exportRows = app(\App\Services\ProgramHead\ProgramHeadRecordsExportService::class)->query($head, ['date' => '2026-10-28'])->get();
         $this->assertCount(2, $exportRows);
         $this->assertSame(['2026-10-26', '2026-10-28'], $exportRows->map(fn ($row) => $row->day->toDateString())->sort()->values()->all());
+        $exportService = app(\App\Services\ProgramHead\ProgramHeadRecordsExportService::class);
+        $jr = Student::where('name', 'JR Balmaceda')->firstOrFail();
+        $jr->update(['year_level' => 2, 'is_active' => false]);
+        AttendanceRecord::query()->update(['reporting_day' => null]);
+        $batchRows = $exportService->query($head, [
+            'batch_id' => $batchId, 'date' => '1900-01-01', 'year_level' => 1, 'search' => 'not a student',
+        ])->get();
+        $this->assertCount(2, $batchRows);
+        $this->assertSame($exportRows->pluck('id')->sort()->values()->all(), $batchRows->pluck('id')->sort()->values()->all());
+        $this->assertCount(2, $exportService->query($head, ['batch_key' => $batchId, 'date' => '1900-01-01', 'year_level' => 1])->get());
+        $this->assertCount(0, $exportService->query($head, ['batch_id' => 'different-batch', 'year_level' => 1])->get());
+        $jr->update(['year_level' => 1, 'is_active' => true]);
+        AttendanceRecord::query()->update(['reporting_day' => '2026-10-28']);
         AttendanceRecord::query()->update(['validation_status' => 'unvalidated']);
         $monitor = app(\App\Services\Dashboard\CmCoordinatorMonitoringService::class);
         $monitoring = $monitor->getCourseDetails('BSIS', 1, ['month' => 10, 'year' => 2026, 'week' => 5]);
@@ -326,6 +344,26 @@ class AttendanceImportDuplicateTest extends TestCase
         ])->all()], 'PATCH'), $draft->id, app(AttendanceParsingService::class), app(AuditLogService::class));
         $this->assertSame(200, $edited->getStatusCode(), $edited->getContent());
         $this->assertSame('2026-10-28', collect($draft->fresh()->parsed_data)->firstWhere('student_name', 'JR Balmaceda')['day']);
+        $unsubmittedAt = $draft->fresh()->unsubmitted_at->toIso8601String();
+        $resubmitted = $controller->store($requestFor([
+            'draft_id' => $draft->id,
+            'records' => collect($draft->fresh()->parsed_data)->map(fn ($row) => collect($row)->only([
+                'student_id', 'gathering_type', 'day', 'status', 'batch', 'venue',
+            ])->all())->all(),
+        ]));
+        $this->assertSame(201, $resubmitted->getStatusCode(), $resubmitted->getContent());
+        $newRecord = AttendanceRecord::firstOrFail();
+        $this->assertSame($unsubmittedAt, $newRecord->unsubmitted_at->toIso8601String());
+        $this->assertTrue($newRecord->resubmitted_at->equalTo(Carbon::now()));
+        $this->assertSame('unvalidated', $newRecord->validation_status);
+        $this->assertNull($newRecord->approved_at);
+        $this->assertNull($newRecord->validated_by);
+        $reviewRequest = $requestFor([], 'GET');
+        $head->role = 'program_head';
+        $reviewRequest->setUserResolver(fn () => $head);
+        $review = $controller->reviewSubmission($reviewRequest, $newRecord->batch_id)->getData(true)['data'];
+        $this->assertSame($unsubmittedAt, $review['unsubmitted_at']);
+        $this->assertSame($newRecord->resubmitted_at->toIso8601String(), $review['resubmitted_at']);
     }
 
     public function test_legacy_mixed_submission_uses_regular_attendance_for_its_period(): void
@@ -366,6 +404,54 @@ class AttendanceImportDuplicateTest extends TestCase
         $migration->up();
         $this->assertSame('2026-10-28', $draft->fresh()->day->toDateString());
         $this->assertSame($rows, $draft->fresh()->parsed_data);
+    }
+
+    public function test_approved_unsubmit_is_limited_to_current_and_previous_reporting_weeks_but_pending_is_not(): void
+    {
+        foreach ([
+            ['validated', '2026-10-28', 200],
+            ['validated', '2026-10-21', 200],
+            ['validated', '2026-10-14', 409],
+            ['validated', '2026-11-04', 409],
+            ['unvalidated', '2026-09-02', 200],
+        ] as $index => [$status, $period, $expected]) {
+            $record = AttendanceRecord::create([
+                'student_id' => Student::firstOrFail()->id, 'gathering_type' => 'pm',
+                'day' => '2026-10-01', 'reporting_day' => $period, 'venue' => 'Special',
+                'batch_id' => 'unsubmit-test-'.$index, 'submitted_by' => 1,
+                'validation_status' => $status, 'validated_by' => $status === 'validated' ? 2 : null,
+                'approved_at' => $status === 'validated' ? now() : null,
+            ]);
+            $request = Request::create('/attendance/unsubmit', 'POST');
+            $request->setUserResolver(fn () => $this->secretary());
+            $response = app(AttendanceController::class)->unsubmitSubmission($request, $record->batch_id);
+            $this->assertSame($expected, $response->getStatusCode(), $response->getContent());
+            if ($expected === 200) {
+                $this->assertNull($record->fresh());
+                $draft = AttendanceDraft::whereDate('day', $period)->firstOrFail();
+                $this->assertNotNull($draft->unsubmitted_at);
+                $this->assertSame('draft', $draft->status);
+                $this->assertArrayNotHasKey('validated_by', $draft->parsed_data[0]);
+                $this->assertSame('2026-10-01', $draft->parsed_data[0]['day']);
+            } else {
+                $this->assertNotNull($record->fresh());
+                $this->assertSame($status, $record->fresh()->validation_status);
+            }
+        }
+    }
+
+    public function test_unsubmit_cannot_remove_another_secretarys_approved_submission(): void
+    {
+        $record = AttendanceRecord::create([
+            'student_id' => Student::firstOrFail()->id, 'gathering_type' => 'pm',
+            'day' => '2026-10-28', 'reporting_day' => '2026-10-28',
+            'batch_id' => 'another-secretary', 'submitted_by' => 99, 'validation_status' => 'validated',
+        ]);
+        $request = Request::create('/attendance/unsubmit', 'POST');
+        $request->setUserResolver(fn () => $this->secretary());
+        $response = app(AttendanceController::class)->unsubmitSubmission($request, $record->batch_id);
+        $this->assertSame(404, $response->getStatusCode());
+        $this->assertNotNull($record->fresh());
     }
 
     private function secretary(): User
