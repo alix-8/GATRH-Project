@@ -17,6 +17,16 @@ function Login({ initialEmail = '' }) {
     const navigate = useNavigate()
     const location = useLocation()
 
+    const [systemName, setSystemName] = useState('Gathering Attendance Tracking and Reporting Hub')
+    useEffect(() => {
+        const controller = new AbortController()
+        fetch(API_BASE_URL + '/branding', { signal: controller.signal, cache: 'no-store' })
+            .then(response => response.ok ? response.json() : Promise.reject())
+            .then(data => { if (data.system_name) setSystemName(data.system_name) })
+            .catch(() => {})
+        return () => controller.abort()
+    }, [])
+
     const [activeNav, setActiveNav] = useState('home')
     const [email, setEmail] = useState(() => initialEmail || location.state?.email || '')
     const [password, setPassword] = useState('')
@@ -136,9 +146,7 @@ function Login({ initialEmail = '' }) {
                 />
 
                 <h4 className="login-title">
-                    Gathering Attendance
-                    <br />
-                    Tracking and Reporting Hub
+                    {systemName}
                 </h4>
 
                 <h2 className="welcome-title">
