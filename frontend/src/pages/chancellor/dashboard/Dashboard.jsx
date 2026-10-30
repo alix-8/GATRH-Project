@@ -37,8 +37,6 @@ const REPORT_STATUS_LABELS = {
 const WEEKLY_CHART = {
     baseline: 225,
     top: 94,
-    barWidth: 60,
-    barX: [119, 219, 319, 419],
 }
 
 function getTodayDateValue() {
@@ -62,6 +60,7 @@ function ChancellorDashboard() {
     const [programReporting, setProgramReporting] = useState([])
     const [programYearReporting, setProgramYearReporting] = useState([])
     const [weeklyProgress, setWeeklyProgress] = useState([])
+    const [reportingWeeks, setReportingWeeks] = useState([])
     const [summary, setSummary] = useState({
         completed: 0,
         incomplete: 0,
@@ -70,7 +69,7 @@ function ChancellorDashboard() {
     })
     const [overallProgress, setOverallProgress] = useState({
         percentage: 0,
-        tally: '0 of 0 programs completed',
+        tally: '0 of 0 expected responses recorded',
     })
     const [loadError, setLoadError] = useState('')
     const [isYearOpen, setIsYearOpen] = useState(false)
@@ -101,11 +100,12 @@ function ChancellorDashboard() {
                 })
                 setOverallProgress(data.overall_progress || {
                     percentage: 0,
-                    tally: '0 of 0 programs completed',
+                    tally: '0 of 0 expected responses recorded',
                 })
                 setProgramReporting(data.program_reporting || [])
                 setProgramYearReporting(data.program_year_reporting || [])
                 setWeeklyProgress(data.weekly_progress || [])
+                setReportingWeeks(data.reporting_weeks || [])
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     setLoadError(error.message || 'Could not load dashboard filters.')
@@ -164,7 +164,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">Completed</span>
                             <strong>{summary.completed}</strong>
-                            <p>Programs with full reports</p>
+                            <p>Programs with full reports this month</p>
                         </div>
                     </article>
                     <article className="chancellor-summary-card chancellor-summary-card--in-progress">
@@ -174,7 +174,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">In Progress</span>
                             <strong>{summary.incomplete}</strong>
-                            <p>Programs with partial reports</p>
+                            <p>Programs with partial reports this month</p>
                         </div>
                     </article>
                     <article className="chancellor-summary-card chancellor-summary-card--no-report">
@@ -184,7 +184,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">No Report</span>
                             <strong>{summary.no_report}</strong>
-                            <p>Programs with no submission</p>
+                            <p>Programs with no responses this month</p>
                         </div>
                     </article>
                     
@@ -196,6 +196,7 @@ function ChancellorDashboard() {
                             <span className="chancellor-summary-label">Total Programs</span>
                             <strong>{summary.total_programs}</strong>
                             <p>Across all departments</p>
+
                         </div>
                     </article>
                    
@@ -205,7 +206,7 @@ function ChancellorDashboard() {
                         <section className="chancellor-overall-progress" aria-labelledby="chancellor-overall-progress-title">
                             <div className="chancellor-overall-progress-heading">
                                 <h2 id="chancellor-overall-progress-title">Overall Reporting Progress</h2>
-                                <p>Total attendance reports from all programs.</p>
+                                <p>Monthly student responses for the selected program year.</p>
                             </div>
                             <div className="chancellor-overall-progress-value">
                                 <strong>{progressPercentage}%</strong>
@@ -227,7 +228,7 @@ function ChancellorDashboard() {
                             <div className="chancellor-programs-attention-header">
                                 <div>
                                     <h2 id="chancellor-programs-attention-title">Programs Needing Attention</h2>
-                                    <p>Programs with incomplete or missing reports.</p>
+                                    <p>Monthly status with a weekly reporting breakdown.</p>
                                 </div>
                                 <div className="chancellor-year-filter" ref={yearRef}>
                                     <span>Program year</span>
@@ -275,8 +276,10 @@ function ChancellorDashboard() {
                                     <thead>
                                         <tr>
                                             <th scope="col">Program</th>
-                                            {[1, 2, 3, 4].map((weekNumber) => (
-                                                <th key={weekNumber} scope="col">Week {weekNumber}</th>
+                                            {reportingWeeks.map((week) => (
+                                                <th key={week.week_start} scope="col" title={week.range_label}>
+                                                    {week.label}
+                                                </th>
                                             ))}
                                             <th scope="col">Status</th>
                                         </tr>
@@ -290,8 +293,10 @@ function ChancellorDashboard() {
                                                         {report.year_level ?? yearLevel}
                                                     </span>
                                                 </th>
-                                                {(report.weekly_statuses || []).map((status, index) => (
-                                                    <td key={`${report.code}-${index}`}>
+                                                {reportingWeeks.map((week, index) => {
+                                                    const status = report.weekly_statuses?.[index] || 'no_report'
+                                                    return (
+                                                    <td key={`${report.code}-${week.week_start}`} title={`${week.range_label}: ${REPORT_STATUS_LABELS[status] || 'No Report'}`}>
                                                         <span
                                                             className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`}
                                                             role="img"
@@ -307,7 +312,8 @@ function ChancellorDashboard() {
                                                             />
                                                         </span>
                                                     </td>
-                                                ))}
+                                                    )
+                                                })}
                                                 <td>
                                                     <span className={`chancellor-report-status-label chancellor-report-status-label--${report.status}`}>
                                                         <span />
@@ -318,7 +324,7 @@ function ChancellorDashboard() {
                                         ))}
                                         {programYearReporting.length === 0 && (
                                             <tr>
-                                                <td className="chancellor-program-reporting-empty" colSpan="6">
+                                                <td className="chancellor-program-reporting-empty" colSpan={reportingWeeks.length + 2}>
                                                     No program reporting data is available.
                                                 </td>
                                             </tr>
@@ -355,7 +361,7 @@ function ChancellorDashboard() {
                             <svg className="chancellor-weekly-chart" viewBox="0 0 616 275" role="img" aria-labelledby="chancellor-weekly-chart-title chancellor-weekly-chart-description">
                                 <title id="chancellor-weekly-chart-title">Progress by Week</title>
                                 <desc id="chancellor-weekly-chart-description">
-                                    {weeklyProgress.map((week) => `${week.label}: ${week.completed || 0} completed, ${week.incomplete || 0} in progress, ${week.no_report || 0} no report`).join('; ') || 'No weekly progress data available'}
+                                    {weeklyProgress.map((week) => `${week.label} (${week.range_label}): ${week.completed || 0} completed, ${week.incomplete || 0} in progress, ${week.no_report || 0} no report`).join('; ') || 'No weekly progress data available'}
                                 </desc>
                                 {weeklyChartTicks.map((tick) => (
                                     <text key={tick} className="chancellor-weekly-axis-label" x="58" y={220 - tick / weeklyChartScale.maximum * 123}>
@@ -363,8 +369,11 @@ function ChancellorDashboard() {
                                     </text>
                                 ))}
                                 <line className="chancellor-weekly-axis-line" x1="96" x2="500" y1={WEEKLY_CHART.baseline} y2={WEEKLY_CHART.baseline} />
-                                {weeklyProgress.slice(0, 4).map((week, index) => {
+                                {weeklyProgress.map((week, index) => {
                                     let bottom = WEEKLY_CHART.baseline
+                                    const slotWidth = 400 / Math.max(1, weeklyProgress.length)
+                                    const barWidth = Math.min(60, slotWidth * 0.6)
+                                    const barX = 99 + index * slotWidth + (slotWidth - barWidth) / 2
                                     const segments = [
                                         ['completed', week.completed],
                                         ['in-progress', week.incomplete],
@@ -372,12 +381,13 @@ function ChancellorDashboard() {
                                     ]
                                     return (
                                         <g key={week.label}>
+                                            <title>{`${week.label}: ${week.range_label}`}</title>
                                             {segments.map(([status, count]) => {
                                                 const height = Math.max(0, Number(count) || 0) / weeklyChartScale.maximum * (WEEKLY_CHART.baseline - WEEKLY_CHART.top)
                                                 bottom -= height
-                                                return <rect key={status} className={`chancellor-weekly-segment--${status}`} x={WEEKLY_CHART.barX[index]} y={bottom} width={WEEKLY_CHART.barWidth} height={height} />
+                                                return <rect key={status} className={`chancellor-weekly-segment--${status}`} x={barX} y={bottom} width={barWidth} height={height} />
                                             })}
-                                            <text className="chancellor-weekly-label" x={WEEKLY_CHART.barX[index] + WEEKLY_CHART.barWidth / 2} y="257">{week.label}</text>
+                                            <text className="chancellor-weekly-label" x={barX + barWidth / 2} y="257">{week.label}</text>
                                         </g>
                                     )
                                 })}
@@ -393,7 +403,7 @@ function ChancellorDashboard() {
                         </section>
                         <section className="chancellor-program-completion-overview" aria-labelledby="chancellor-program-completion-overview-title">
                             <h2 id="chancellor-program-completion-overview-title">Program Completion Overview</h2>
-                            <p>Completion rate per program</p>
+                            <p>Monthly student responses per program for the selected year</p>
                             <ul className="chancellor-program-completion-list">
                                 {completionOverview.map((program) => (
                                     <li key={program.code} className="chancellor-program-completion-row">

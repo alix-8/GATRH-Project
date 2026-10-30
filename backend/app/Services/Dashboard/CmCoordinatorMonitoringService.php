@@ -169,7 +169,7 @@ class CmCoordinatorMonitoringService
             ->with(['validator:id,name'])
             ->whereIn('student_id', $roster->pluck('id'))
             ->whereIn('gathering_type', self::GATHERING_TYPES)
-            ->whereBetween('day', [$rangeStart, $rangeEnd])
+            ->inReportingRange([$rangeStart, $rangeEnd])
             ->orderBy('day')
             ->get();
         $records = $records->concat($this->getDraftAttendanceRows(
@@ -179,8 +179,8 @@ class CmCoordinatorMonitoringService
         ));
 
         $weekRecords = $records->filter(fn ($record) =>
-            $record->day->toDateString() >= $week['start']
-            && $record->day->toDateString() <= $week['end']
+            ($record->reporting_day ?? $record->day)->toDateString() >= $week['start']
+            && ($record->reporting_day ?? $record->day)->toDateString() <= $week['end']
         );
 
         $studentIds = $roster->pluck('id')->all();
@@ -188,8 +188,8 @@ class CmCoordinatorMonitoringService
             ->map(function (string $type) use ($weekRecords, $roster, $studentIds, $week) {
                 $gatheringRange = $week['gathering_ranges'][$type];
                 $eventRecords = $weekRecords->where('gathering_type', $type)
-                    ->filter(fn ($record) => $record->day->toDateString() >= $gatheringRange['start']
-                        && $record->day->toDateString() <= $gatheringRange['end']);
+                    ->filter(fn ($record) => ($record->reporting_day ?? $record->day)->toDateString() >= $gatheringRange['start']
+                        && ($record->reporting_day ?? $record->day)->toDateString() <= $gatheringRange['end']);
                 $summary = $this->getGatheringSummary($weekRecords, $studentIds, $type, $gatheringRange);
                 $dates = $eventRecords->pluck('day')
                     ->map(fn (Carbon $day) => $day->toDateString())
@@ -242,8 +242,8 @@ class CmCoordinatorMonitoringService
             ->first();
         $completedEvents = $weeks->sum(function (array $monthWeek) use ($records, $studentIds) {
             $recordsForWeek = $records->filter(fn ($record) =>
-                $record->day->toDateString() >= $monthWeek['start']
-                && $record->day->toDateString() <= $monthWeek['end']
+                ($record->reporting_day ?? $record->day)->toDateString() >= $monthWeek['start']
+                && ($record->reporting_day ?? $record->day)->toDateString() <= $monthWeek['end']
             );
 
             return collect(self::GATHERING_TYPES)
@@ -334,7 +334,7 @@ class CmCoordinatorMonitoringService
         $records = AttendanceRecord::query()
             ->with('student:id,program,year_level')
             ->whereIn('gathering_type', self::GATHERING_TYPES)
-            ->whereBetween('day', [$rangeStart, $rangeEnd])
+            ->inReportingRange([$rangeStart, $rangeEnd])
             ->whereHas('student', fn ($query) => $query->whereIn('program', $programCodes))
             ->get();
         $records = $records->concat($this->getDraftAttendanceRows(
@@ -352,8 +352,8 @@ class CmCoordinatorMonitoringService
 
             $weeklyData = $weeks->map(function (array $week) use ($courseRecords, $studentIds) {
                 $recordsForWeek = $courseRecords->filter(fn ($record) =>
-                    $record->day->toDateString() >= $week['start']
-                    && $record->day->toDateString() <= $week['end']
+                    ($record->reporting_day ?? $record->day)->toDateString() >= $week['start']
+                    && ($record->reporting_day ?? $record->day)->toDateString() <= $week['end']
                 );
 
                 $gatherings = collect(self::GATHERING_TYPES)->map(function (string $type) use ($recordsForWeek, $studentIds, $week) {
@@ -401,29 +401,7 @@ class CmCoordinatorMonitoringService
 
     private function getGatheringSummary(Collection $weekRecords, array $studentIds, string $type, ?array $gatheringRange = null): array
     {
-        $attendanceRows = $weekRecords
-            ->where('gathering_type', $type)
-            ->filter(fn ($record) => $gatheringRange === null
-                || ($record->day->toDateString() >= $gatheringRange['start']
-                    && $record->day->toDateString() <= $gatheringRange['end']))
-            ->filter(fn ($record) => in_array((int) $record->student_id, $studentIds, true));
-        $respondedStudentCount = $attendanceRows
-            ->filter(fn ($record) => in_array($record->status ?? 'no_response', ['present', 'excused'], true))
-            ->pluck('student_id')
-            ->unique()
-            ->count();
-        $totalStudents = count($studentIds);
-
-        return [
-            'status' => match (true) {
-                $respondedStudentCount === 0 => 'no_report',
-                $totalStudents > 0 && $respondedStudentCount >= $totalStudents => 'completed',
-                default => 'incomplete',
-            },
-            'has_attendance' => $attendanceRows->isNotEmpty(),
-            'responded_students' => min($respondedStudentCount, $totalStudents),
-            'total_students' => $totalStudents,
-        ];
+        return app(AttendanceResponseSummary::class)->gathering($weekRecords, $studentIds, $type, $gatheringRange);
     }
 
     private function getDraftAttendanceRows(string $start, string $end, ?array $studentIds = null): Collection
@@ -443,7 +421,8 @@ class CmCoordinatorMonitoringService
                             'year_level' => $entry['year_level'] ?? null,
                         ],
                         'gathering_type' => $entry['gathering_type'] ?? $draft->gathering_type,
-                        'day' => Carbon::parse($draft->day),
+                        'day' => Carbon::parse($entry['day'] ?? $draft->day),
+                        'reporting_day' => Carbon::parse($draft->day),
                         'status' => $entry['status'] ?? 'no_response',
                         'validation_status' => 'unvalidated',
                         'validator' => null,

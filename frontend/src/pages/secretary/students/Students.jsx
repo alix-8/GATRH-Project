@@ -11,6 +11,7 @@ import CalendarIcon from '../../../assets/icons/calendar-icon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
+import VenueLabel from '../../../components/VenueLabel'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import './Students.css'
 
@@ -517,7 +518,7 @@ function Students() {
                             {!overviewLoading && !overviewError && overviewHistory.length === 0 && <p className="overview-state">No attendance records yet.</p>}
                             {!overviewLoading && !overviewError && overviewHistory.length > 0 && (
                                 <table><thead><tr><th>Gathering</th><th>Time</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
-                                    <tbody>{overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{formatOverviewTime(record.time)}</td><td><RecordDate value={record.date} tooltip="weekday" /></td><td>{record.location}</td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : record.status === 'excused' ? 'Excused' : 'No Response'}</span></td></tr>)}</tbody></table>
+                                    <tbody>{overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{formatOverviewTime(record.time)}</td><td><RecordDate value={record.date} tooltip="weekday" /></td><td><VenueLabel value={record.location} fallback="" /></td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : record.status === 'excused' ? 'Excused' : 'No Response'}</span></td></tr>)}</tbody></table>
                             )}
                         </div>
                     </aside>

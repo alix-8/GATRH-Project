@@ -33,7 +33,7 @@ class ProgramHeadRecordsExportService
             });
 
         if (!empty($filters['date'])) {
-            $query->whereDate('day', $filters['date']);
+            $query->inReportingRange([$filters['date'], $filters['date']]);
         }
 
         if (!empty($filters['gathering_type'])) {
@@ -72,7 +72,7 @@ class ProgramHeadRecordsExportService
                 $records
                     ->whereIn('validation_status', ['validated', 'approved'])
                     ->whereIn('gathering_type', ['ws', 'tg', 'pm'])
-                    ->whereBetween('day', [$start->toDateString(), $end->toDateString()])
+                    ->inReportingRange([$start->toDateString(), $end->toDateString()])
                     ->orderBy('day')
                     ->orderBy('gathering_type');
             }])

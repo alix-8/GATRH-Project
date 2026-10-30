@@ -34,7 +34,7 @@ function GenerateTemplate({
     const copyPreview = async () => {
         await navigator.clipboard.writeText(previewText)
         setIsCopied(true)
-        window.setTimeout(() => setIsCopied(false), 1500)
+        window.setTimeout(() => setIsCopied(false), 2000)
     }
 
     return (
@@ -79,11 +79,17 @@ function GenerateTemplate({
                         aria-label={isCopied ? 'Copied format preview' : 'Copy format preview'}
                         title={isCopied ? 'Copied' : 'Copy preview'}
                     >
+                        {isCopied ? (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="m5 12 4 4L19 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        ) : (
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path d="M8 5h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" fill="currentColor" />
                             <path d="M16 5V2l3 3h-2a1 1 0 0 1-1-1Z" fill="#fff" />
                             <path d="M6 18H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
+                        )}
                     </button>
                 </div>
 

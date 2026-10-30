@@ -365,7 +365,7 @@ class AttendanceParsingService
             ];
         } elseif (!empty($parts['raw_date'])) {
             $range = $this->getApplicableWeekRange($gatheringType, $cycle, $rawText);
-            $resolution = $this->resolveWeekdayToDate($parts['raw_date'], $range['start'], $range['end']);
+            $resolution = $this->resolveWeekdayToDate($parts['raw_date'], $range['start'], $range['end'], $parts['venue']);
             if ($resolution['success']) {
                 $parts['date'] = $resolution['date'];
             } else {
@@ -521,6 +521,18 @@ class AttendanceParsingService
                 continue;
             }
 
+            if (in_array($student->id, $matchedStudentIds, true)) {
+                $formatErrorLines[] = [
+                    'student_name' => $student->name,
+                    'raw_line' => $entry['raw_line'],
+                    'errors' => [[
+                        'field' => 'student',
+                        'reason' => 'Duplicate student entry. Keep only one entry for this student before importing.',
+                    ]],
+                ];
+                continue;
+            }
+
             $matchedStudentIds[] = $student->id;
 
             $hasAnySlotFilled = false;
@@ -626,7 +638,7 @@ class AttendanceParsingService
                         'errors' => [$dayErr],
                     ];
                 } elseif ($hasDay) {
-                    $resolution = $this->resolveWeekdayToDate($slot['day'], $range['start'], $range['end']);
+                    $resolution = $this->resolveWeekdayToDate($slot['day'], $range['start'], $range['end'], $slot['venue']);
                     if ($resolution['success']) {
                         $resolvedDay = $resolution['date'];
                     } else {
@@ -757,7 +769,12 @@ class AttendanceParsingService
         return $res['success'] ? $res['date'] : null;
     }
 
-    public function resolveWeekdayToDate(?string $weekday, \Carbon\Carbon $rangeStart, \Carbon\Carbon $rangeEnd): array
+    public function isSpecialVenue(?string $venue): bool
+    {
+        return strcasecmp(trim((string) $venue), 'Special') === 0;
+    }
+
+    public function resolveWeekdayToDate(?string $weekday, \Carbon\Carbon $rangeStart, \Carbon\Carbon $rangeEnd, ?string $venue = null): array
     {
         if ($weekday === null || trim($weekday) === '') {
             return [
@@ -769,6 +786,24 @@ class AttendanceParsingService
 
         $clean = trim($weekday);
         $key = strtolower($clean);
+
+        if ($this->isSpecialVenue($venue)) {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $clean)) {
+                [$year, $month, $day] = array_map('intval', explode('-', $clean));
+                if (!checkdate($month, $day, $year)) {
+                    return ['success' => false, 'date' => null, 'error' => 'Invalid date. Please enter a valid date in YYYY-MM-DD format.'];
+                }
+                $date = \Carbon\Carbon::parse($clean)->startOfDay();
+                return $date->greaterThan(\Carbon\Carbon::today())
+                    ? ['success' => false, 'date' => null, 'error' => $this->futureDateMessage($date)]
+                    : ['success' => true, 'date' => $clean, 'error' => null];
+            }
+
+            // Weekday-only inputs refer to the selected calendar week. Explicit dates
+            // let special gatherings use any other past date without ambiguity.
+            $rangeStart = $rangeStart->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+            $rangeEnd = $rangeStart->copy()->addDays(6);
+        }
 
         if (isset(self::WEEKDAY_MAP[$key])) {
             $targetDay = self::WEEKDAY_MAP[$key];
@@ -796,7 +831,7 @@ class AttendanceParsingService
                     return [
                         'success' => false,
                         'date' => null,
-                        'error' => "Attendance cannot be added for {$clean} ({$matches[0]}) before that date.",
+                        'error' => $this->futureDateMessage(\Carbon\Carbon::parse($matches[0])),
                     ];
                 }
                 return [
@@ -836,7 +871,7 @@ class AttendanceParsingService
                         return [
                             'success' => false,
                             'date' => null,
-                            'error' => "Attendance cannot be added for {$clean} before that date.",
+                            'error' => $this->futureDateMessage($dateObj),
                         ];
                     }
                     return [
@@ -861,6 +896,13 @@ class AttendanceParsingService
             'date'    => null,
             'error'   => "Weekday \"{$clean}\" is invalid. Accepted values: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday (or Mon, Tue, Wed, Thu, Fri, Sat, Sun).",
         ];
+    }
+
+    private function futureDateMessage(\Carbon\Carbon $date): string
+    {
+        return 'Future dates are not allowed. The attendance date you entered is '
+            . $date->format('F j, Y')
+            . '. Please enter today’s date or an earlier date within the selected gathering period.';
     }
 
     public function getApplicableWeekRange(string $gatheringType, $customCycle = null, ?string $rawText = null): array

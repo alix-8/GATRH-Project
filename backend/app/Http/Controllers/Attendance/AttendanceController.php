@@ -14,6 +14,7 @@ use App\Models\Student;
 use App\Services\Attendance\AttendanceParsingService;
 use App\Services\Audit\AuditLogService;
 use App\Support\GatheringCycle;
+use App\Support\AttendanceReportingPeriod;
 
 class AttendanceController extends Controller
 {
@@ -46,10 +47,10 @@ class AttendanceController extends Controller
                 $start = $range['start']->toDateString();
                 $end = $range['end']->toDateString();
                 $records = AttendanceRecord::where('gathering_type', $type)
-                    ->whereBetween('day', [$start, $end])
+                    ->inReportingRange([$start, $end])
                     ->whereHas('student', fn ($query) => $query->where('program', $user->program)->where('year_level', $user->year_level));
                 $drafts = AttendanceDraft::where('gathering_type', $type)->where('status', 'draft')
-                    ->whereBetween('day', [$start, $end])
+                    ->inReportingRange([$start, $end])
                     ->whereHas('user', fn ($query) => $query->where('program', $user->program)->where('year_level', $user->year_level));
                 $recordCount = (clone $records)->count();
                 $draftCount = (clone $drafts)->count();
@@ -96,7 +97,7 @@ class AttendanceController extends Controller
             $end = $range['end']->toDateString();
 
             $recordQuery = AttendanceRecord::where('gathering_type', $type)
-                ->whereBetween('day', [$start, $end])
+                ->inReportingRange([$start, $end])
                 ->whereHas('student', function ($query) use ($user) {
                     $query->where('program', $user->program)
                         ->where('year_level', $user->year_level);
@@ -110,7 +111,7 @@ class AttendanceController extends Controller
 
             $draftCount = AttendanceDraft::where('gathering_type', $type)
                 ->where('status', 'draft')
-                ->whereBetween('day', [$start, $end])
+                ->inReportingRange([$start, $end])
                 ->whereHas('user', function ($query) use ($user) {
                     $query->where('program', $user->program)
                         ->where('year_level', $user->year_level);
@@ -227,7 +228,7 @@ class AttendanceController extends Controller
 
         $recordsQuery
             ->selectRaw(
-                'MAX(batch_id) AS batch_id, MIN(day) AS day, MIN(gathering_type) AS gathering_type, '
+                'MAX(batch_id) AS batch_id, COALESCE(MIN(reporting_day), MIN(day)) AS day, MIN(gathering_type) AS gathering_type, '
                 . 'MIN(submitted_by) AS submitted_by, MAX(updated_at) AS raw_submission_at, '
                 . 'COUNT(*) AS row_count, '
                 . 'SUM(CASE WHEN validation_status = ? THEN 1 ELSE 0 END) AS validated_count, '
@@ -369,7 +370,8 @@ class AttendanceController extends Controller
         $responded = $students->where('status', 'present')->count();
         $firstRecord = $records->first();
         $submitter = $firstRecord->submitter;
-        $weekRange = $this->gatheringRangeForDate($firstRecord->gathering_type, $firstRecord->day);
+        $reportingDay = AttendanceReportingPeriod::day($records);
+        $weekRange = $this->gatheringRangeForDate($firstRecord->gathering_type, $reportingDay);
 
         $submitterProgram = $submitter?->program ? strtoupper($submitter->program) : '';
         $submitterYear = $this->ordinalYear($submitter?->year_level);
@@ -378,7 +380,7 @@ class AttendanceController extends Controller
             'status' => 'success',
             'data'   => [
                 'gathering_type'    => $firstRecord->gathering_type,
-                'day'               => $firstRecord->day->format('F j, Y'),
+                'day'               => $reportingDay->format('F j, Y'),
                 'week_range'        => [
                     'start' => $weekRange['start']->toDateString(),
                     'end' => $weekRange['end']->toDateString(),
@@ -579,12 +581,6 @@ class AttendanceController extends Controller
         }
 
         $selectedRange = $this->parsingService->getApplicableWeekRange($metadata['gathering_type'], $cycle, $request->raw_text);
-        if ($selectedRange['start']->greaterThan(Carbon::today())) {
-            return response()->json([
-                'status' => 'future_gathering',
-                'message' => 'Attendance cannot be added yet because this gathering’s scheduled date range has not begun.',
-            ], 422);
-        }
 
         $lines = explode("\n", trim($request->raw_text));
         $parsedSubmissions = [];
@@ -629,6 +625,18 @@ class AttendanceController extends Controller
             }
 
             if ($result['matched']) {
+                if (isset($parsedSubmissions[$result['record']['student_id']])) {
+                    $formatErrorLines[] = [
+                        'student_name' => $result['record']['student_name'],
+                        'raw_line' => $line,
+                        'errors' => [[
+                            'field' => 'student',
+                            'reason' => 'Duplicate student entry. Keep only one entry for this student before importing.',
+                        ]],
+                    ];
+                    continue;
+                }
+
                 $parsedSubmissions[$result['record']['student_id']] = $result['record'];
 
                 $hasBatch = !empty($result['record']['batch']);
@@ -660,6 +668,16 @@ class AttendanceController extends Controller
                     $unmatchedLines[] = $result['unmatched_data'];
                 }
             }
+        }
+
+        $hasSpecialVenue = collect($parsedSubmissions)->contains(
+            fn (array $record): bool => $this->parsingService->isSpecialVenue($record['venue'] ?? null)
+        );
+        if ($selectedRange['start']->greaterThan(Carbon::today()) && !$hasSpecialVenue) {
+            return response()->json([
+                'status' => 'future_gathering',
+                'message' => 'Attendance cannot be added yet because this gathering’s scheduled date range has not begun.',
+            ], 422);
         }
 
         $missingStudents = $this->parsingService->findMissingStudents(
@@ -701,9 +719,9 @@ class AttendanceController extends Controller
             ->where(function ($q) use ($startStr, $endStr, $metadata) {
                 if (!empty($metadata['default_date'])) {
                     $q->where('day', $metadata['default_date'])
-                      ->orWhereBetween('day', [$startStr, $endStr]);
+                      ->orWhere(fn ($periodQuery) => $periodQuery->inReportingRange([$startStr, $endStr]));
                 } else {
-                    $q->whereBetween('day', [$startStr, $endStr]);
+                    $q->inReportingRange([$startStr, $endStr]);
                 }
             });
         $existingRecordsCount = (clone $existingRecordsQuery)->count();
@@ -715,7 +733,7 @@ class AttendanceController extends Controller
         $existingDraftsCount = AttendanceDraft::where('gathering_type', $metadata['gathering_type'])
             ->where('status', 'draft')
             ->when($request->draft_id, fn ($query) => $query->where('id', '!=', $request->draft_id))
-            ->whereBetween('day', [$startStr, $endStr])
+            ->inReportingRange([$startStr, $endStr])
             ->whereHas('user', function ($query) use ($metadata, $program, $yearLevel) {
                 $query->where('program', $metadata['program'] ?? $program)
                     ->where('year_level', $metadata['year_level'] ?? $yearLevel);
@@ -878,7 +896,7 @@ class AttendanceController extends Controller
                     $query->where('program', $user->program)
                         ->where('year_level', $user->year_level);
                 })
-                ->whereBetween('day', [$startStr, $endStr]);
+                ->inReportingRange([$startStr, $endStr]);
             $existingRecords = (clone $existingRecordsQuery)->count();
             $protectedRecords = $this->addProtectedAttendanceStatuses(clone $existingRecordsQuery)->count();
 
@@ -887,7 +905,7 @@ class AttendanceController extends Controller
             }
             $existingDrafts = AttendanceDraft::where('gathering_type', $type)
                 ->where('status', 'draft')
-                ->whereBetween('day', [$startStr, $endStr])
+                ->inReportingRange([$startStr, $endStr])
                 ->whereHas('user', function ($query) use ($user) {
                     $query->where('program', $user->program)
                         ->where('year_level', $user->year_level);
@@ -965,10 +983,10 @@ class AttendanceController extends Controller
                     $query->where('program', $user->program)
                         ->where('year_level', $user->year_level);
                 })
-                ->whereBetween('day', [$startStr, $endStr])
+                ->inReportingRange([$startStr, $endStr])
                 ->exists() || AttendanceDraft::where('gathering_type', $type)
                     ->where('status', 'draft')
-                    ->whereBetween('day', [$startStr, $endStr])
+                    ->inReportingRange([$startStr, $endStr])
                     ->whereHas('user', function ($query) use ($user) {
                         $query->where('program', $user->program)
                             ->where('year_level', $user->year_level);
@@ -1037,7 +1055,7 @@ class AttendanceController extends Controller
             'records'                  => 'required|array|min:1',
             'records.*.student_id'     => 'required|exists:students,id',
             'records.*.gathering_type' => 'required|in:pm,ws,tg',
-            'records.*.day'            => 'required|date_format:Y-m-d',
+            'records.*.day'            => 'required|date_format:Y-m-d|before_or_equal:today',
             'records.*.status'         => 'required|in:present,no_response,excused',
             'records.*.batch'          => 'nullable|string|max:10',
             'records.*.venue'          => 'nullable|string|max:25',
@@ -1090,6 +1108,14 @@ class AttendanceController extends Controller
         $submittedBy = $request->user()->id;
         $isOverride = (bool) $request->boolean('override');
         $cycle = $this->importPeriodCycle($request->input('week_period')) ?? $request->input('cycle') ?? $request->input('week_range');
+        if (!empty($validated['draft_id'])) {
+            $sourceDraft = AttendanceDraft::whereKey($validated['draft_id'])
+                ->where('user_id', $submittedBy)->where('status', 'draft')->first();
+            if (!$sourceDraft) {
+                return response()->json(['message' => 'Editable draft not found.'], 404);
+            }
+            $cycle = GatheringCycle::getRangesForWeekStart(Carbon::parse($sourceDraft->day));
+        }
 
         $duplicateRecords = [];
         $recordsToProcess = [];
@@ -1101,11 +1127,12 @@ class AttendanceController extends Controller
             $endStr = $range['end']->toDateString();
 
             // Check if attendance already exists for this student & gathering type in the applicable week
+            $recordData['reporting_day'] = $startStr;
             $existing = AttendanceRecord::where('student_id', $recordData['student_id'])
                 ->where('gathering_type', $type)
                 ->where(function ($q) use ($recordData, $startStr, $endStr) {
                     $q->where('day', $recordData['day'])
-                      ->orWhereBetween('day', [$startStr, $endStr]);
+                      ->orWhere(fn ($periodQuery) => $periodQuery->inReportingRange([$startStr, $endStr]));
                 })
                 ->with('student')
                 ->first();
@@ -1160,12 +1187,12 @@ class AttendanceController extends Controller
                         $query->where('program', $request->user()->program)
                             ->where('year_level', $request->user()->year_level);
                     })
-                    ->whereBetween('day', [$startStr, $endStr])
+                    ->inReportingRange([$startStr, $endStr])
                     ->exists();
                 $sectionHasDrafts = AttendanceDraft::where('gathering_type', $type)
                     ->where('status', 'draft')
                     ->when($validated['draft_id'] ?? null, fn ($query, $draftId) => $query->where('id', '!=', $draftId))
-                    ->whereBetween('day', [$startStr, $endStr])
+                    ->inReportingRange([$startStr, $endStr])
                     ->whereHas('user', function ($query) use ($request) {
                         $query->where('program', $request->user()->program)
                             ->where('year_level', $request->user()->year_level);
@@ -1234,6 +1261,7 @@ class AttendanceController extends Controller
                         'program'           => $studentSnapshot?->program,
                         'year_level'        => $studentSnapshot?->year_level,
                         'day'               => $recordData['day'],
+                        'reporting_day'     => $recordData['reporting_day'],
                         'batch'             => $formattedBatch,
                         'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
                         'status'            => $recordData['status'],
@@ -1250,6 +1278,7 @@ class AttendanceController extends Controller
                         'year_level'        => $studentSnapshot?->year_level,
                         'gathering_type'    => $recordData['gathering_type'],
                         'day'               => $recordData['day'],
+                        'reporting_day'     => $recordData['reporting_day'],
                         'batch'             => $formattedBatch,
                         'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
                         'status'            => $recordData['status'],
@@ -1357,10 +1386,12 @@ class AttendanceController extends Controller
 
         $first = $records->first();
         $submitter = $first->submitter;
-        $weekRange = $this->gatheringRangeForDate($first->gathering_type, $first->day);
+        $reportingDay = AttendanceReportingPeriod::day($records);
+        $weekRange = $this->gatheringRangeForDate($first->gathering_type, $reportingDay);
 
         $students = $records->map(fn ($r) => [
             'record_id'    => $r->id,
+            'day'          => $r->day?->toDateString(),
             'student_id'   => $r->student_id,
             'student_name' => $r->student->name ?? 'Unknown',
             'program'      => $r->program ?? $r->student->program ?? 'N/A',
@@ -1375,7 +1406,7 @@ class AttendanceController extends Controller
                 'batch_key'         => $batchKey,
                 'gathering_type'    => $first->gathering_type,
                 'gathering'         => $this->gatheringLabel($first->gathering_type),
-                'day'               => $first->day->format('F j, Y'),
+                'day'               => $reportingDay->format('F j, Y'),
                 'submission_date'   => $first->created_at?->format('F j, Y') ?? '—',
                 'week_range'        => [
                     'start' => $weekRange['start']->toDateString(),
@@ -1475,8 +1506,7 @@ class AttendanceController extends Controller
 
                 $createdDrafts = [];
                 foreach ($records->groupBy('gathering_type') as $type => $group) {
-                    $firstDay = $group->min(fn (AttendanceRecord $record) => Carbon::parse($record->day)->toDateString());
-                    $gatheringRange = GatheringCycle::getRangesForWeekStart(Carbon::parse($firstDay))[strtolower($type)];
+                    $gatheringRange = GatheringCycle::getRangesForWeekStart(AttendanceReportingPeriod::day($group))[strtolower($type)];
                     $rangeStart = $gatheringRange['start'];
                     $rangeEnd = $gatheringRange['end'];
 

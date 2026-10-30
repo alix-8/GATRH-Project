@@ -30,4 +30,10 @@ class AttendanceDraft extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function scopeInReportingRange($query, array $range)
+    {
+        $dates = array_map(fn ($date) => \Carbon\Carbon::parse($date)->toDateString(), $range);
+        return $query->whereRaw('DATE(day) BETWEEN ? AND ?', $dates);
+    }
 }

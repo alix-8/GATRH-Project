@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from '../../components/layout/Sidebar'
 import Header from '../../components/layout/Header'
 import RecordDate from '../../components/RecordDate'
+import VenueLabel from '../../components/VenueLabel'
 import RemindersIcon from '../../assets/icons/reminders-icon.svg'
 import NeedsActionIcon from '../../assets/needs-action.png'
 import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
@@ -1108,7 +1109,7 @@ function Reminders() {
                                                     <td title={record.gathering}>{record.gathering || '—'}</td>
                                                     <td>{record.time && record.time !== '—' ? record.time : '---'}</td>
                                                     <td>{record.date || '---'}</td>
-                                                    <td title={record.location}>{record.location && record.location !== '—' ? record.location : '---'}</td>
+                                                    <td title={record.location}><VenueLabel value={record.location && record.location !== '—' ? record.location : '---'} /></td>
                                                     <td><span className={`escalation-report-status ${record.status === 'present' ? 'present' : 'no-response'}`}><i />{record.status === 'present' ? 'Present' : 'No Response'}</span></td>
                                                 </tr>
                                             ))}

@@ -150,7 +150,7 @@ class ProgramHeadAttendanceWorkbookService
 
         $lastWeek = $weeks[array_key_last($weeks)];
 
-        return [$weeks, $firstSaturday, $lastWeek['end']];
+        return [$weeks, $firstWeekStart, $lastWeek['end']];
     }
 
     private function periodColumns(array $weeks): array
@@ -235,7 +235,7 @@ class ProgramHeadAttendanceWorkbookService
 
         foreach ($students as $student) {
             foreach ($student->attendanceRecords as $record) {
-                $attendanceByStudentAndSlot[$student->id][$record->gathering_type . '|' . $record->day->toDateString()] = $record;
+                $attendanceByStudentAndSlot[$student->id][$record->gathering_type . '|' . ($record->reporting_day ?? $record->day)->toDateString()] = $record;
             }
         }
 
@@ -356,7 +356,7 @@ class ProgramHeadAttendanceWorkbookService
     {
         $firstRecord = $records->first();
         $student = $firstRecord?->student;
-        $date = $firstRecord?->day;
+        $date = $firstRecord ? \App\Support\AttendanceReportingPeriod::day($records) : null;
         $weekNumber = $date ? (int) ceil($date->day / 7) : null;
         $programLabel = trim(implode(' ', array_filter([
             $student?->program,
