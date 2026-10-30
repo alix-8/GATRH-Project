@@ -56,6 +56,8 @@ class AttendanceImportDuplicateTest extends TestCase
             $table->unsignedBigInteger('submitted_by')->nullable();
             $table->unsignedBigInteger('validated_by')->nullable();
             $table->timestamp('approved_at')->nullable();
+            $table->timestamp('unsubmitted_at')->nullable();
+            $table->timestamp('resubmitted_at')->nullable();
             $table->string('validation_status');
             $table->timestamps();
         });
@@ -267,6 +269,8 @@ class AttendanceImportDuplicateTest extends TestCase
         $submitted = $controller->store($requestFor(['draft_id' => $draft->id, 'records' => $records]));
         $this->assertSame(201, $submitted->getStatusCode(), $submitted->getContent());
         $batchId = AttendanceRecord::firstOrFail()->batch_id;
+        $this->assertNull(AttendanceRecord::firstOrFail()->unsubmitted_at);
+        $this->assertNull(AttendanceRecord::firstOrFail()->resubmitted_at);
         $this->assertSame(['2026-10-28'], AttendanceRecord::pluck('reporting_day')->map(fn ($date) => Carbon::parse($date)->toDateString())->unique()->values()->all());
 
         Schema::create('programs', function (Blueprint $table): void {
@@ -327,6 +331,26 @@ class AttendanceImportDuplicateTest extends TestCase
         ])->all()], 'PATCH'), $draft->id, app(AttendanceParsingService::class), app(AuditLogService::class));
         $this->assertSame(200, $edited->getStatusCode(), $edited->getContent());
         $this->assertSame('2026-10-28', collect($draft->fresh()->parsed_data)->firstWhere('student_name', 'JR Balmaceda')['day']);
+        $unsubmittedAt = $draft->fresh()->unsubmitted_at->toIso8601String();
+        $resubmitted = $controller->store($requestFor([
+            'draft_id' => $draft->id,
+            'records' => collect($draft->fresh()->parsed_data)->map(fn ($row) => collect($row)->only([
+                'student_id', 'gathering_type', 'day', 'status', 'batch', 'venue',
+            ])->all())->all(),
+        ]));
+        $this->assertSame(201, $resubmitted->getStatusCode(), $resubmitted->getContent());
+        $newRecord = AttendanceRecord::firstOrFail();
+        $this->assertSame($unsubmittedAt, $newRecord->unsubmitted_at->toIso8601String());
+        $this->assertTrue($newRecord->resubmitted_at->equalTo(Carbon::now()));
+        $this->assertSame('unvalidated', $newRecord->validation_status);
+        $this->assertNull($newRecord->approved_at);
+        $this->assertNull($newRecord->validated_by);
+        $reviewRequest = $requestFor([], 'GET');
+        $head->role = 'program_head';
+        $reviewRequest->setUserResolver(fn () => $head);
+        $review = $controller->reviewSubmission($reviewRequest, $newRecord->batch_id)->getData(true)['data'];
+        $this->assertSame($unsubmittedAt, $review['unsubmitted_at']);
+        $this->assertSame($newRecord->resubmitted_at->toIso8601String(), $review['resubmitted_at']);
     }
 
     public function test_legacy_mixed_submission_uses_regular_attendance_for_its_period(): void

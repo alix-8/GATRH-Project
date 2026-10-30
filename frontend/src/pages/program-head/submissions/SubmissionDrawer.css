@@ -688,3 +688,35 @@
     }
 
 }
+.ph-resubmission-history {
+    overflow-x: auto;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #d3ddee;
+    color: #6b7482;
+    font-size: 11px;
+}
+
+.ph-resubmission-history > div {
+    display: flex;
+    align-items: baseline;
+    flex-shrink: 0;
+    gap: 6px;
+    white-space: nowrap;
+    line-height: 1.25;
+}
+
+.ph-resubmission-history > div + div {
+    margin-top: 2px;
+}
+
+.ph-resubmission-history strong,
+.ph-resubmission-history time {
+    margin: 0;
+    line-height: inherit;
+}
+
+.ph-resubmission-history strong {
+    color: #172b4d;
+    font-weight: 600;
+}

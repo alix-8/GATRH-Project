@@ -201,6 +201,24 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                     <span className="ph-drawer-submitted-label">Submitted by</span>
                                 )}
                                 {renderSubmittedBy()}
+                                {detail.unsubmitted_at && detail.resubmitted_at && (
+                                    <div className="ph-resubmission-history">
+                                        {[
+                                            ['Previously unsubmitted at', detail.unsubmitted_at],
+                                            ['Resubmitted at', detail.resubmitted_at],
+                                        ].map(([label, timestamp]) => (
+                                            <div key={label}>
+                                                <strong>{label}</strong>
+                                                <time dateTime={timestamp}>
+                                                    {new Date(timestamp).toLocaleString('en-US', {
+                                                        timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric',
+                                                        hour: 'numeric', minute: '2-digit', hour12: true,
+                                                    })}
+                                                </time>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <section className={submission.status === 'approved' ? 'ph-record-summary' : undefined}>

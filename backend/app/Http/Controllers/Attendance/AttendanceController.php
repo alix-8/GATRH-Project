@@ -1110,6 +1110,7 @@ class AttendanceController extends Controller
         $submittedBy = $request->user()->id;
         $isOverride = (bool) $request->boolean('override');
         $cycle = $this->importPeriodCycle($request->input('week_period')) ?? $request->input('cycle') ?? $request->input('week_range');
+        $sourceDraft = null;
         if (!empty($validated['draft_id'])) {
             $sourceDraft = AttendanceDraft::whereKey($validated['draft_id'])
                 ->where('user_id', $submittedBy)->where('status', 'draft')->first();
@@ -1237,8 +1238,10 @@ class AttendanceController extends Controller
 
         // --- Atomic Bulk Insert / Update within DB Transaction ---
         try {
-            $savedRecords = DB::transaction(function () use ($recordsToProcess, $submittedBy, $validated, $request, $isOverride, $studentsById) {
+            $savedRecords = DB::transaction(function () use ($recordsToProcess, $submittedBy, $validated, $request, $isOverride, $studentsById, $sourceDraft) {
             $records = [];
+            $unsubmittedAt = $sourceDraft?->unsubmitted_at;
+            $resubmittedAt = $unsubmittedAt ? now() : null;
             $overriddenCount = 0;
             $createdCount = 0;
             $batchId = (string) \Illuminate\Support\Str::uuid();
@@ -1268,6 +1271,10 @@ class AttendanceController extends Controller
                         'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
                         'status'            => $recordData['status'],
                         'validation_status' => 'unvalidated',
+                        'validated_by'      => null,
+                        'approved_at'       => null,
+                        'unsubmitted_at'    => $unsubmittedAt,
+                        'resubmitted_at'    => $resubmittedAt,
                         'submitted_by'      => $submittedBy,
                     ]);
                     $records[] = $existing->fresh();
@@ -1285,6 +1292,8 @@ class AttendanceController extends Controller
                         'venue'             => isset($recordData['venue']) ? trim($recordData['venue']) : null,
                         'status'            => $recordData['status'],
                         'validation_status' => 'unvalidated',
+                        'unsubmitted_at'    => $unsubmittedAt,
+                        'resubmitted_at'    => $resubmittedAt,
                         'submitted_by'      => $submittedBy,
                     ]);
                     $createdCount++;
@@ -1410,6 +1419,8 @@ class AttendanceController extends Controller
                 'gathering'         => $this->gatheringLabel($first->gathering_type),
                 'day'               => $reportingDay->format('F j, Y'),
                 'submission_date'   => $first->created_at?->format('F j, Y') ?? '—',
+                'unsubmitted_at'    => $first->unsubmitted_at?->toIso8601String(),
+                'resubmitted_at'    => $first->resubmitted_at?->toIso8601String(),
                 'week_range'        => [
                     'start' => $weekRange['start']->toDateString(),
                     'end' => $weekRange['end']->toDateString(),

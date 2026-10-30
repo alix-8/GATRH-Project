@@ -26,12 +26,16 @@ class AttendanceRecord extends Model
         'submitted_by',
         'validated_by',
         'approved_at',
+        'unsubmitted_at',
+        'resubmitted_at',
     ];
 
     protected $casts = [
         'day' => 'date',
         'reporting_day' => 'date',
         'approved_at' => 'datetime',
+        'unsubmitted_at' => 'datetime',
+        'resubmitted_at' => 'datetime',
     ];
 
     public function scopeInReportingRange($query, array $range)
