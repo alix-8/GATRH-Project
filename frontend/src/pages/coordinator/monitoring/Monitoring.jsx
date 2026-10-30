@@ -515,7 +515,7 @@ function CoordinatorMonitoring() {
                                         return (
                                             <div className="monitoring-week-detail-row" key={gatheringItem.type}>
                                                 <span title={`${gatheringItem.label} · ${gatheringDateRange}`}>{gatheringItem.label}</span>
-                                                <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} />
+                                                <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} compactRange />
                                                 <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
                                                     <img
                                                         src={status === 'completed'
