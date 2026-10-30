@@ -1,4 +1,5 @@
 import RecordDay from '../../../components/RecordDay'
+import VenueLabel from '../../../components/VenueLabel'
 import {
     ATTENDANCE_TIME_RE,
     attendanceDayError,
@@ -82,7 +83,7 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                                     title={incomplete && !hasVenue ? 'Venue is required when any attendance details are entered.' : ''}
                                     onChange={(event) => onStudentChange(student, 'venue', event.target.value)}
                                 />
-                            ) : <span title={student.venue || '—'}>{student.venue || '—'}</span>}
+                            ) : <span title={student.venue || '—'}><VenueLabel value={student.venue} /></span>}
                         </td>
                         <td>
                             <span

@@ -12,6 +12,7 @@ import RecordProgramIcon from '../../../assets/icons/RecordProgramIcon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDay from '../../../components/RecordDay'
+import VenueLabel from '../../../components/VenueLabel'
 import SearchPill from '../../../components/search/SearchPill'
 import './SubmissionDrawer.css'
 
@@ -267,7 +268,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                             <tr key={student.record_id || student.student_id || index}>
                                                 <td>{student.student_name}</td>
                                                 <td>{student.batch || '—'}</td>
-                                                <td>{student.venue || '—'}</td>
+                                                <td><VenueLabel value={student.venue} /></td>
                                                 <td><RecordDay value={student.day || detail.day} status={student.status} /></td>
                                                 <td>
                                                     <span className={`ph-drawer-attendance-status ${student.status === 'present' ? 'present' : 'no-response'}`}>
