@@ -5,6 +5,7 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import ModalSelect from '../dashboard/ModalSelect'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useAutoDismissNotice from '../../../hooks/useAutoDismissNotice'
 import TotalProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
 import ProgramHeadsIcon from '../../../assets/icons/active-users-icon.svg'
 import ActiveProgramIcon from '../../../assets/icons/active-program-icon.svg'
@@ -31,7 +32,7 @@ function Programs() {
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [editingProgram, setEditingProgram] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [notice, setNotice] = useState('')
+    const [notice, showNotice, clearNotice] = useAutoDismissNotice()
     const [error, setError] = useState('')
     const [pollTick, setPollTick] = useState(0)
 
@@ -90,7 +91,7 @@ function Programs() {
     function refreshPrograms(message) {
         setIsAddOpen(false)
         setEditingProgram(null)
-        setNotice(message)
+        showNotice(message)
         setRefreshVersion(current => current + 1)
         setLoading(true)
     }
@@ -142,7 +143,7 @@ function Programs() {
                                     <input type="search" aria-label="Search programs by name or ID" placeholder="Search name, ID..." maxLength={100} value={filters.search} onChange={event => updateFilter('search', event.target.value)} />
                                 </label>
                             </div>
-                            <button className="admin-programs-add-button" type="button" onClick={() => { setNotice(''); setIsAddOpen(true) }} aria-haspopup="dialog"><span aria-hidden="true">+</span> Add Program</button>
+                            <button className="admin-programs-add-button" type="button" onClick={() => { clearNotice(); setIsAddOpen(true) }} aria-haspopup="dialog"><span aria-hidden="true">+</span> Add Program</button>
                         </div>
                         <div className="admin-programs-table-wrap" role="region" aria-label="Programs table" tabIndex="0" aria-busy={loading}>
                             <table className="admin-programs-table">

@@ -3,6 +3,7 @@ import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useAutoDismissNotice from '../../../hooks/useAutoDismissNotice'
 import ChancellorIcon from '../../../assets/icons/chancellor-icon.svg'
 import McgiCoordinatorIcon from '../../../assets/icons/mcgi-coordinator-icon.svg'
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
@@ -49,7 +50,7 @@ function UserRoles() {
     const [loading, setLoading] = useState(true)
     const [isAddUserOpen, setIsAddUserOpen] = useState(false)
     const [editingUser, setEditingUser] = useState(null)
-    const [notice, setNotice] = useState('')
+    const [notice, showNotice, clearNotice] = useAutoDismissNotice()
     const [error, setError] = useState('')
     const [pollTick, setPollTick] = useState(0)
 
@@ -61,12 +62,6 @@ function UserRoles() {
         const timeout = window.setTimeout(() => setSearchQuery(filters.search.trim()), 300)
         return () => window.clearTimeout(timeout)
     }, [filters.search])
-
-    useEffect(() => {
-        if (!notice) return undefined
-        const timeout = window.setTimeout(() => setNotice(''), 5000)
-        return () => window.clearTimeout(timeout)
-    }, [notice])
 
     useEffect(() => {
         const controller = new AbortController()
@@ -110,14 +105,14 @@ function UserRoles() {
 
     function handleUserCreated(message) {
         setIsAddUserOpen(false)
-        setNotice(message || 'User account created successfully.')
+        showNotice(message || 'User account created successfully.')
         setRefreshVersion(current => current + 1)
         setLoading(true)
     }
 
     function handleUserUpdated(message) {
         setEditingUser(null)
-        setNotice(message || 'User account updated successfully.')
+        showNotice(message || 'User account updated successfully.')
         setRefreshVersion(current => current + 1)
         setLoading(true)
     }
@@ -176,7 +171,7 @@ function UserRoles() {
                                 <input type="search" aria-label="Search users by name, email, or ID" placeholder="Search name, ID..." value={filters.search} onChange={event => updateFilter('search', event.target.value)} />
                             </label>
                         </div>
-                        <button className="user-roles-add-button" type="button" onClick={() => { setNotice(''); setIsAddUserOpen(true) }} aria-haspopup="dialog"><span aria-hidden="true">+</span> Add User</button>
+                        <button className="user-roles-add-button" type="button" onClick={() => { clearNotice(); setIsAddUserOpen(true) }} aria-haspopup="dialog"><span aria-hidden="true">+</span> Add User</button>
                     </div>
                     <div className="user-roles-results" aria-busy={loading}>
                         <div className="user-roles-table-wrap" role="region" aria-label="User accounts table" tabIndex="0">

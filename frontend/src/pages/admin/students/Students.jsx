@@ -3,6 +3,7 @@ import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useAutoDismissNotice from '../../../hooks/useAutoDismissNotice'
 import ActiveUsersIcon from '../../../assets/icons/active-users-icon.svg'
 import SecretariesIcon from '../../../assets/icons/secretaries-icon.svg'
 import InactiveClockIcon from '../../../assets/icons/in-progress-programs-icon.svg'
@@ -40,7 +41,7 @@ function Students() {
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [isImportOpen, setIsImportOpen] = useState(false)
     const [editingStudent, setEditingStudent] = useState(null)
-    const [notice, setNotice] = useState('')
+    const [notice, showNotice, clearNotice] = useAutoDismissNotice()
     const [error, setError] = useState('')
     const [pollTick, setPollTick] = useState(0)
 
@@ -99,7 +100,7 @@ function Students() {
     }
 
     function refresh(message) {
-        setNotice(message)
+        showNotice(message)
         setRefreshVersion(current => current + 1)
         setLoading(true)
     }
@@ -136,8 +137,8 @@ function Students() {
                                 <label className="admin-students-search"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.3" stroke="currentColor" strokeWidth="1.6" /><path d="m12.7 12.7 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg><input type="search" aria-label="Search students by full name" placeholder="Search full name..." value={filters.search} onChange={event => updateFilter('search', event.target.value)} /></label>
                             </div>
                             <div className="admin-students-actions">
-                                <button className="admin-students-add-button" type="button" onClick={() => { setNotice(''); setIsAddOpen(true) }} aria-haspopup="dialog"><span aria-hidden="true">+</span> Add Student</button>
-                                <button className="admin-students-import-button" type="button" onClick={() => { setNotice(''); setIsImportOpen(true) }} aria-haspopup="dialog"><img src={ImportIcon} alt="" />Import</button>
+                                <button className="admin-students-add-button" type="button" onClick={() => { clearNotice(); setIsAddOpen(true) }} aria-haspopup="dialog"><span aria-hidden="true">+</span> Add Student</button>
+                                <button className="admin-students-import-button" type="button" onClick={() => { clearNotice(); setIsImportOpen(true) }} aria-haspopup="dialog"><img src={ImportIcon} alt="" />Import</button>
                             </div>
                         </div>
                         <div className="admin-students-table-wrap" role="region" aria-label="Student records table" tabIndex="0" aria-busy={loading}>
