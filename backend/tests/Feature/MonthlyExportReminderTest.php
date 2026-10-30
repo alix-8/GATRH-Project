@@ -256,6 +256,8 @@ class MonthlyExportReminderTest extends TestCase
         $this->actingAs($this->secretary)->getJson($path)->assertOk()
             ->assertJsonPath('program', 'BSIS')->assertJsonPath('year_level', 1)
             ->assertJsonPath('month', 'October 2026')
+            ->assertJsonPath('coverage', 'All reporting weeks · PM, WS, TG')
+            ->assertJsonPath('students_included', 1)
             ->assertJsonPath('pending_entries', 1)->assertJsonPath('missing_entries', 14);
         $this->assertSame('needs_action', $task->reminder->fresh()->status);
         $this->assertNull($task->fresh()->download_token);

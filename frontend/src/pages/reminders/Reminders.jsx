@@ -1357,10 +1357,10 @@ function Reminders() {
                             <>
                                 <p className="monthly-export-scope"><strong>{exportConfirmation.details.program} · Year {exportConfirmation.details.year_level}</strong><br />{exportConfirmation.details.month}</p>
                                 <dl className="monthly-export-counts">
-                                    <div><dt>Pending/draft entries</dt><dd>{exportConfirmation.details.pending_entries}</dd></div>
-                                    <div><dt>Missing entries</dt><dd>{exportConfirmation.details.missing_entries}</dd></div>
+                                    <div><dt>Coverage</dt><dd>{exportConfirmation.details.coverage}</dd></div>
+                                    <div><dt>Students included</dt><dd>{exportConfirmation.details.students_included} students</dd></div>
                                 </dl>
-                                <p>Missing entries are not recorded.</p>
+                                <p>Missing record means no attendance was recorded. No Response is a recorded attendance result.</p>
                             </>
                         )}
                         {exportConfirmation.error && <p className="reminder-modal-error" role="alert">{exportConfirmation.error}</p>}

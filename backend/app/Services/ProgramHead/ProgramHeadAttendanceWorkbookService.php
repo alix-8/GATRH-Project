@@ -255,11 +255,6 @@ class ProgramHeadAttendanceWorkbookService
                 }
                 $present = in_array($record?->status, ['present', 'excused'], true);
                 $value = $present ? $this->attendanceDetails($record) : ($record ? 'No Response' : ($exportNotice !== null ? 'Missing record' : 'No Response'));
-                if ($exportNotice !== null && $record) {
-                    $value .= match ($record->validation_status) {
-                        'validated' => ' [Approved]', 'draft' => ' [Draft]', default => ' [Pending approval]',
-                    };
-                }
                 $style = $present ? $this->attendanceStyle($record) : 7;
                 $cells[] = $this->cell($this->columnName($slot['column']) . $rowNumber, $value, $style);
             }

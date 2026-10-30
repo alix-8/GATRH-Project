@@ -21,6 +21,8 @@ class MonthlyExportController extends Controller
         return response()->json([
             'program' => $task->program, 'year_level' => (int) $task->year_level,
             'month' => $task->month->format('F Y'),
+            'coverage' => 'All reporting weeks · PM, WS, TG',
+            'students_included' => $snapshot['students']->count(),
             'pending_entries' => $snapshot['pending'], 'missing_entries' => $snapshot['missing'],
         ]);
     }
@@ -33,8 +35,9 @@ class MonthlyExportController extends Controller
         $path = $workbooks->createPeriod(
             $snapshot['students'], CarbonImmutable::parse($task->month), 'month',
             $task->program, (int) $task->year_level, null, null,
-            'Exported '.$task->month->format('F Y').' · '.$snapshot['notice']
-                .' Approval status is shown on each entry. Approval, not attendance completeness, finalizes this export.'
+            'Exported '.$task->month->format('F Y').' · Coverage: All reporting weeks · PM, WS, TG. '
+                .'Students included: '.$snapshot['students']->count().'. '
+                .'Missing record means no attendance was recorded. No Response is a recorded attendance result.'
         );
         $token = Str::random(64);
         $task->update([

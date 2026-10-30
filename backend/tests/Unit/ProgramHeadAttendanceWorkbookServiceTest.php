@@ -109,7 +109,7 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         }
     }
 
-    public function test_monthly_reminder_workbook_labels_approval_drafts_missing_and_no_response_separately(): void
+    public function test_monthly_reminder_workbook_omits_approval_labels_but_distinguishes_missing_and_no_response(): void
     {
         $records = [];
         foreach ([['pm', 'draft', 'present'], ['ws', 'validated', 'no_response'], ['tg', 'unvalidated', 'excused']] as [$type, $approval, $status]) {
@@ -121,11 +121,14 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         }
         $student = (object) ['id' => 1, 'name' => 'Student', 'escalation' => null, 'attendanceRecords' => $records];
         $service = new ProgramHeadAttendanceWorkbookService();
-        $path = $service->createPeriod(new Collection([$student]), CarbonImmutable::parse('2026-10-01'), 'month', 'BSIS', 1, null, null, 'Notice: pending approvals');
+        $path = $service->createPeriod(new Collection([$student]), CarbonImmutable::parse('2026-10-01'), 'month', 'BSIS', 1, null, null, 'Coverage: All reporting weeks · PM, WS, TG. Students included: 1.');
         try {
             $sheet = $this->readZipEntry(file_get_contents($path), 'xl/worksheets/sheet1.xml');
-            foreach (['[Draft]', '[Approved]', '[Pending approval]', 'Missing record', 'No Response', 'Excused', 'Notice: pending approvals'] as $label) {
+            foreach (['Missing record', 'No Response', 'Excused', 'Coverage: All reporting weeks', 'Students included: 1.'] as $label) {
                 $this->assertStringContainsString($label, $sheet);
+            }
+            foreach (['[Draft]', '[Approved]', '[Pending approval]'] as $label) {
+                $this->assertStringNotContainsString($label, $sheet);
             }
             $this->assertStringContainsString('s="18"', $sheet);
         } finally {

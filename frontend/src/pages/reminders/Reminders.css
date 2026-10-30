@@ -1220,15 +1220,25 @@
 }
 
 .monthly-export-counts > div {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 4px 0;
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 12px;
+    padding: 6px 0;
+    text-align: left;
+    line-height: 1.5;
+}
+
+.monthly-export-counts dt {
+    margin: 0;
+    text-align: left;
 }
 
 .monthly-export-counts dd {
     margin: 0;
     font-weight: 700;
+    text-align: left;
+    min-width: 0;
 }
 
 .monthly-export-modal .reminder-delete-confirm {
