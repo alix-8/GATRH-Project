@@ -88,7 +88,10 @@ function Programs() {
         setLoading(true)
     }
 
-    function refreshPrograms(message) {
+    function refreshPrograms(message, updatedCode) {
+        if (updatedCode && filters.program === editingProgram?.code) {
+            setFilters(current => ({ ...current, program: updatedCode }))
+        }
         setIsAddOpen(false)
         setEditingProgram(null)
         showNotice(message)
@@ -170,7 +173,7 @@ function Programs() {
                 </div>
             </main>
             {isAddOpen && <AddProgramModal onClose={() => setIsAddOpen(false)} onCreated={message => refreshPrograms(message || 'Program created successfully.')} />}
-            {editingProgram && <EditProgramModal program={editingProgram} heads={pageData?.program_head_options ?? []} onClose={() => setEditingProgram(null)} onUpdated={message => refreshPrograms(message || 'Program updated successfully.')} />}
+            {editingProgram && <EditProgramModal program={editingProgram} heads={pageData?.program_head_options ?? []} onClose={() => setEditingProgram(null)} onUpdated={(message, code) => refreshPrograms(message || 'Program updated successfully.', code)} />}
         </div>
     )
 }
