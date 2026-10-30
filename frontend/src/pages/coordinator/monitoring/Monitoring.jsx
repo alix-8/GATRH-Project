@@ -419,7 +419,7 @@ function CoordinatorMonitoring() {
                                         </svg>
                                         <span>
                                             <small>Approved on</small>
-                                            <strong>{currentDetails.approval.approved_on
+                                            <strong>{currentDetails.approval.has_report && (currentDetails.approval.approved_on
                                                 ? new Date(currentDetails.approval.approved_on).toLocaleString('en-US', {
                                                     month: 'short',
                                                     day: 'numeric',
@@ -427,7 +427,7 @@ function CoordinatorMonitoring() {
                                                     hour: '2-digit',
                                                     minute: '2-digit',
                                                 })
-                                                : 'Not yet approved'}
+                                                : 'Not yet approved')}
                                             </strong>
                                         </span>
                                     </div>
