@@ -35,12 +35,14 @@ class ReminderController extends Controller
     {
         $user = $request->user();
         $userId = $user->id;
+        app(\App\Services\Reminders\MonthlyExportService::class)->reconcile($user);
 
         // Catch up for this secretary if the scheduled task ran while the
         // Render instance was asleep or was restarting.
         if ($request->user()->role === 'secretary') {
             $this->reminderGenerationService->generateWeeklyGatheringReminders($request->user());
             $this->reminderGenerationService->spawnSubmissionReminders(7, $userId);
+            $this->reminderGenerationService->refreshSubmissionProgress($userId);
         }
 
         // Clean up gathering reminders left behind by attendance submissions
@@ -68,6 +70,16 @@ class ReminderController extends Controller
         }
 
         $reminders = $query->get();
+        $tasks = \App\Models\MonthlyExportTask::where('user_id', $userId)->get()->keyBy('reminder_id');
+        $scopes = app(\App\Services\Reminders\MonthlyExportService::class)->scopes($user);
+        $reminders = $reminders->filter(function ($reminder) use ($tasks, $scopes) {
+            if ($reminder->reminder_type !== 'monthly_export') return true;
+            $task = $tasks->get($reminder->id);
+            if (!$task || !in_array([$task->program, (int) $task->year_level], $scopes, true)) return false;
+            $reminder->export_month = $task->month->format('Y-m');
+            $reminder->last_exported_at = $task->exported_at?->toIso8601String();
+            return true;
+        })->values();
         $countdowns = $this->countdownService->reminderCountdownFor($reminders);
 
         $reminders->each(function ($reminder) use ($countdowns) {
@@ -110,6 +122,8 @@ class ReminderController extends Controller
         // Get all reminder status totals in one TiDB query instead of three.
         $reminderSummary = Reminder::query()
             ->where('user_id', $userId)
+            ->where(fn ($query) => $query->where('reminder_type', '!=', 'monthly_export')
+                ->orWhereIn('id', $tasks->filter(fn ($task) => in_array([$task->program, (int) $task->year_level], $scopes, true))->keys()))
             ->selectRaw(
                 'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS upcoming, '
                 . 'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS needs_action, '
@@ -226,6 +240,7 @@ class ReminderController extends Controller
      */
     public function update(Request $request, Reminder $reminder): JsonResponse
     {
+        abort_if($reminder->reminder_type === 'monthly_export', 422, 'Monthly export reminders are managed by exporting the records.');
         // Enforce ownership check
         if ($reminder->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized action.'], 403);
@@ -303,6 +318,7 @@ class ReminderController extends Controller
     public function markCompleted(Request $request, $id)
     {
         $reminder = $request->user()->reminders()->findOrFail($id);
+        abort_if($reminder->reminder_type === 'monthly_export', 422, 'Download the full monthly export to complete this reminder.');
 
         $reminder->update([
             'status'       => 'completed',
@@ -329,6 +345,8 @@ class ReminderController extends Controller
                 'message' => 'Reminder not found',
             ], 404);
         }
+
+        abort_if($reminder->reminder_type === 'monthly_export', 422, 'Monthly export reminders cannot be deleted.');
 
         if ($reminder->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized action.'], 403);

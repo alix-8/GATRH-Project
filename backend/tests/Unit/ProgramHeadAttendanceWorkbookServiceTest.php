@@ -109,6 +109,30 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         }
     }
 
+    public function test_monthly_reminder_workbook_labels_approval_drafts_missing_and_no_response_separately(): void
+    {
+        $records = [];
+        foreach ([['pm', 'draft', 'present'], ['ws', 'validated', 'no_response'], ['tg', 'unvalidated', 'excused']] as [$type, $approval, $status]) {
+            $records[] = (object) [
+                'gathering_type' => $type, 'reporting_day' => \Carbon\Carbon::parse($type === 'pm' ? '2026-10-07' : '2026-10-10'),
+                'day' => \Carbon\Carbon::parse('2026-10-07'), 'venue' => 'Special', 'batch' => '08:00:00',
+                'status' => $status, 'validation_status' => $approval,
+            ];
+        }
+        $student = (object) ['id' => 1, 'name' => 'Student', 'escalation' => null, 'attendanceRecords' => $records];
+        $service = new ProgramHeadAttendanceWorkbookService();
+        $path = $service->createPeriod(new Collection([$student]), CarbonImmutable::parse('2026-10-01'), 'month', 'BSIS', 1, null, null, 'Notice: pending approvals');
+        try {
+            $sheet = $this->readZipEntry(file_get_contents($path), 'xl/worksheets/sheet1.xml');
+            foreach (['[Draft]', '[Approved]', '[Pending approval]', 'Missing record', 'No Response', 'Excused', 'Notice: pending approvals'] as $label) {
+                $this->assertStringContainsString($label, $sheet);
+            }
+            $this->assertStringContainsString('s="18"', $sheet);
+        } finally {
+            @unlink($path);
+        }
+    }
+
     private function readZipEntry(string $archive, string $expectedName): string|false
     {
         $offset = 0;

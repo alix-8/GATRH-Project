@@ -165,10 +165,10 @@ class ReminderGenerationService
     /**
      * Refresh the "X/Y responded" text and status for all active submission reminders.
      */
-    public function refreshSubmissionProgress(): void
+    public function refreshSubmissionProgress(?int $onlyUserId = null): void
     {
         $activeReminders = Reminder::where('reminder_type', 'submission_countdown')
-            ->where('status', '!=', 'completed')
+            ->when($onlyUserId, fn ($query) => $query->where('user_id', $onlyUserId))
             ->get();
 
         if ($activeReminders->isEmpty()) {
@@ -187,20 +187,37 @@ class ReminderGenerationService
                 $reminder->gathering_type,
                 $reminder->gathering_date->toDateString()
             ), 0);
-            $isComplete = $total > 0 && $responded >= $total;
+            $range = GatheringCycle::getRangesForWeekStart(Carbon::parse($reminder->gathering_date))[$reminder->gathering_type];
+            // A submission task is finished by submitting, not by getting every student's response.
+            $isComplete = AttendanceRecord::where('submitted_by', $reminder->user_id)
+                ->where('gathering_type', $reminder->gathering_type)
+                ->inReportingRange([$range['start'], $range['end']])
+                ->where(function ($query) use ($reminder): void {
+                    $query->where(fn ($snapshot) => $snapshot->where('program', $reminder->program)->where('year_level', $reminder->year_level))
+                        ->orWhere(fn ($legacy) => $legacy->whereNull('program')->whereHas('student', fn ($students) =>
+                            $students->where('program', $reminder->program)->where('year_level', $reminder->year_level)));
+                })->exists();
 
-            $updates[] = [
-                'id'           => $reminder->id,
+            $values = [
                 'description'  => $this->buildSubmissionDescription($reminder, $responded, $total),
                 'status'       => $isComplete ? 'completed' : 'needs_action',
-                'completed_at' => $isComplete ? SystemTimezone::now() : null,
-                'updated_at'   => SystemTimezone::now(),
+                'completed_at' => $isComplete ? ($reminder->completed_at ?? SystemTimezone::now()) : null,
             ];
+            $reminder->fill($values);
+            if ($reminder->isDirty()) {
+                $updates[] = ['id' => $reminder->id, ...$values, 'updated_at' => SystemTimezone::now()];
+            }
         }
 
-        // One statement refreshes all reminder rows while retaining per-row values.
+        // Update existing rows only; an upsert can fail on required fields or recreate a deleted reminder.
         if ($updates !== []) {
-            Reminder::upsert($updates, ['id'], ['description', 'status', 'completed_at', 'updated_at']);
+            DB::transaction(function () use ($updates): void {
+                foreach ($updates as $update) {
+                    $id = $update['id'];
+                    unset($update['id']);
+                    Reminder::whereKey($id)->update($update);
+                }
+            });
         }
     }
 
@@ -246,6 +263,7 @@ class ReminderGenerationService
     public function expireCompletedReminders(): int
     {
         return Reminder::where('status', 'completed')
+            ->where('reminder_type', '!=', 'monthly_export')
             ->whereNull('expired_at')
             ->update(['expired_at' => SystemTimezone::now()]);
     }

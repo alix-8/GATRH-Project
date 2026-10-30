@@ -64,12 +64,13 @@ class ProgramHeadAttendanceWorkbookService
         string $program,
         int $yearLevel,
         ?string $programName = null,
-        ?int $weekNumber = null
+        ?int $weekNumber = null,
+        ?string $exportNotice = null
     ): string {
         [$weeks] = $this->periodWeeks($selectedDate, $period, $weekNumber);
         $columns = $this->periodColumns($weeks);
         $this->mergeCells = [];
-        $rows = $this->periodRows($students, $weeks, $columns, $selectedDate, $programName ?: $program, $yearLevel);
+        $rows = $this->periodRows($students, $weeks, $columns, $selectedDate, $programName ?: $program, $yearLevel, $exportNotice);
         $path = tempnam(sys_get_temp_dir(), 'gatrh-attendance-');
 
         if ($path === false) {
@@ -185,7 +186,8 @@ class ProgramHeadAttendanceWorkbookService
         array $columns,
         CarbonImmutable $selectedDate,
         string $program,
-        int $yearLevel
+        int $yearLevel,
+        ?string $exportNotice = null
     ): array {
         $slotColumns = array_slice($columns, 0, -1);
         $lastColumn = $columns[array_key_last($columns)]['column'];
@@ -251,8 +253,13 @@ class ProgramHeadAttendanceWorkbookService
                         break;
                     }
                 }
-                $present = $record?->status === 'present';
-                $value = $present ? $this->attendanceDetails($record) : 'No Response';
+                $present = in_array($record?->status, ['present', 'excused'], true);
+                $value = $present ? $this->attendanceDetails($record) : ($record ? 'No Response' : ($exportNotice !== null ? 'Missing record' : 'No Response'));
+                if ($exportNotice !== null && $record) {
+                    $value .= match ($record->validation_status) {
+                        'validated' => ' [Approved]', 'draft' => ' [Draft]', default => ' [Pending approval]',
+                    };
+                }
                 $style = $present ? $this->attendanceStyle($record) : 7;
                 $cells[] = $this->cell($this->columnName($slot['column']) . $rowNumber, $value, $style);
             }
@@ -262,6 +269,11 @@ class ProgramHeadAttendanceWorkbookService
             $rows[] = $this->row($cells, 34);
         }
 
+        if ($exportNotice !== null) {
+            $noticeRow = count($rows) + 1;
+            $rows[] = $this->row([$this->cell('A'.$noticeRow, $exportNotice, 5)], 48);
+            $this->mergeCells[] = 'A'.$noticeRow.':'.$this->columnName($lastColumn).$noticeRow;
+        }
         return $rows;
     }
 
@@ -420,6 +432,7 @@ class ProgramHeadAttendanceWorkbookService
     private function attendanceDetails(object $record): string
     {
         $parts = array_filter([
+            $record->status === 'excused' ? 'Excused' : null,
             $record->venue,
             $record->day?->format('D'),
             $this->formatTime($record->batch),

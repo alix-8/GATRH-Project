@@ -1209,3 +1209,29 @@
     line-height: 1.6;
     white-space: pre-wrap;
 }
+.monthly-export-modal .monthly-export-counts {
+    margin: 16px 0;
+    padding: 12px;
+    border: 1px solid #d3ddee;
+    border-radius: 8px;
+    background: #eef3fb;
+    color: #172b4d;
+    font-size: 13px;
+}
+
+.monthly-export-counts > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 4px 0;
+}
+
+.monthly-export-counts dd {
+    margin: 0;
+    font-weight: 700;
+}
+
+.monthly-export-modal .reminder-delete-confirm {
+    border-color: #1da1f2;
+    background: #1da1f2;
+}
