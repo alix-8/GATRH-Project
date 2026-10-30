@@ -81,8 +81,12 @@ class AdminProgramController extends Controller
         if ($request->exists('name')) {
             $request->merge(['name' => trim((string) $request->input('name'))]);
         }
+        if ($request->exists('code')) {
+            $request->merge(['code' => strtoupper(trim((string) $request->input('code')))]);
+        }
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('programs', 'name')->ignore($program->id)],
+            'code' => ['sometimes', 'required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('programs', 'code')->ignore($program->id)],
             'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['sometimes', 'nullable', 'array'],
             'program_head_ids.*' => [

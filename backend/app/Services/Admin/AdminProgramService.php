@@ -61,7 +61,15 @@ class AdminProgramService
             $programHeadIds = $data['program_head_ids'] ?? null;
             unset($data['program_head_ids']);
 
+            $oldCode = $program->code;
+            if (array_key_exists('code', $data)) {
+                $data['code'] = strtoupper(trim($data['code']));
+            }
             $program->fill($data)->save();
+
+            if ($program->code !== $oldCode) {
+                $this->renameProgramCode($oldCode, $program->code);
+            }
 
             if ($shouldUpdateProgramHeads) {
                 $otherUserIds = $program->users()
@@ -83,6 +91,40 @@ class AdminProgramService
         });
     }
 
+    private function renameProgramCode(string $oldCode, string $newCode): void
+    {
+        foreach (['students', 'users', 'reminders', 'attendance_records'] as $table) {
+            DB::table($table)->where('program', $oldCode)->update(['program' => $newCode]);
+        }
+
+        DB::table('attendance_drafts')
+            ->select('id', 'parsed_data')
+            ->orderBy('id')
+            ->chunkById(100, function ($drafts) use ($oldCode, $newCode): void {
+                foreach ($drafts as $draft) {
+                    $records = json_decode($draft->parsed_data ?? '[]', true);
+                    if (! is_array($records)) {
+                        continue;
+                    }
+
+                    $changed = false;
+                    foreach ($records as &$record) {
+                        if (is_array($record) && ($record['program'] ?? null) === $oldCode) {
+                            $record['program'] = $newCode;
+                            $changed = true;
+                        }
+                    }
+                    unset($record);
+
+                    if ($changed) {
+                        DB::table('attendance_drafts')->where('id', $draft->id)->update([
+                            'parsed_data' => json_encode($records),
+                        ]);
+                    }
+                }
+            });
+    }
+
     private function deactivateProgramMembers(Program $program): void
     {
         User::query()
@@ -92,6 +134,7 @@ class AdminProgramService
                     ->orWhere('program', $program->code);
             })
             ->chunkById(100, function ($users) {
+                /** @var \Illuminate\Database\Eloquent\Collection<int, User> $users */
                 foreach ($users as $user) {
                     if ($this->userHasAnActiveProgram($user)) {
                         continue;
@@ -106,6 +149,7 @@ class AdminProgramService
             ->where('program', $program->code)
             ->where('is_active', true)
             ->chunkById(100, function ($students) {
+                /** @var \Illuminate\Database\Eloquent\Collection<int, Student> $students */
                 foreach ($students as $student) {
                     $student->update(['is_active' => false]);
                 }

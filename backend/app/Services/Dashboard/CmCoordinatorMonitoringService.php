@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 
 class CmCoordinatorMonitoringService
 {
-    private const GATHERING_TYPES = ['pm', 'ws', 'tg'];
+    private const GATHERING_TYPES = ['pm', 'tg', 'ws'];
 
     private const GATHERING_LABELS = [
         'pm' => 'Prayer Meeting',
@@ -222,6 +222,7 @@ class CmCoordinatorMonitoringService
                     'date' => $dates[0] ?? null,
                     'dates' => $dates,
                     'status' => $summary['status'],
+                    'has_attendance' => $summary['has_attendance'],
                     'approval_status' => $allValidated ? 'approved' : 'pending',
                     'approved_on' => $allValidated ? $latestApproval?->updated_at?->toIso8601String() : null,
                     'program_head' => $allValidated
@@ -236,9 +237,9 @@ class CmCoordinatorMonitoringService
             })
             ->sortBy(fn (array $entry) => ($entry['date'] ?? '9999-12-31') . '|' . $entry['gathering_type'])
             ->values();
-        $latestApproval = $records
+        $latestApproval = $weekRecords
             ->filter(fn ($record) => in_array($record->validation_status, ['validated', 'approved'], true))
-            ->sortByDesc('updated_at')
+            ->sortByDesc(fn ($record) => ($record->approved_at ?? $record->updated_at)?->getTimestamp() ?? 0)
             ->first();
         $completedEvents = $weeks->sum(function (array $monthWeek) use ($records, $studentIds) {
             $recordsForWeek = $records->filter(fn ($record) =>
@@ -276,7 +277,8 @@ class CmCoordinatorMonitoringService
                 'percentage' => (int) round(($completedEvents / max(1, $monthlyEventTotal)) * 100),
             ],
             'approval' => [
-                'approved_on' => $latestApproval?->updated_at?->toIso8601String(),
+                'has_report' => $weekRecords->isNotEmpty(),
+                'approved_on' => ($latestApproval?->approved_at ?? $latestApproval?->updated_at)?->toIso8601String(),
                 'program_head' => $programHeadNames ?: null,
             ],
             'week' => $week,
