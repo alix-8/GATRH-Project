@@ -630,6 +630,20 @@ class DashboardService
             'start' => GatheringCycle::weekStartForDate($selectedDate),
             'end' => GatheringCycle::weekEndForDate($selectedDate),
         ];
+        $reportingWeeks = collect();
+        $lastWeekStart = GatheringCycle::weekStartForDate($selectedDate->copy()->endOfMonth());
+        for ($start = GatheringCycle::weekStartForDate($selectedDate->copy()->startOfMonth()), $number = 1;
+            $start->lessThanOrEqualTo($lastWeekStart);
+            $start->addWeek(), $number++) {
+            $end = $start->copy()->addDays(6);
+            $reportingWeeks->push([
+                'number' => $number,
+                'label' => 'Week ' . $number,
+                'week_start' => $start->toDateString(),
+                'week_end' => $end->toDateString(),
+                'range_label' => $start->format('M j') . ' – ' . $end->format('M j, Y'),
+            ]);
+        }
         // Use the program catalog so seeded programs remain available without enrolled students.
          $allPrograms = Program::query()
             ->orderBy('code')
@@ -660,23 +674,19 @@ class DashboardService
         );
         $records = $records->concat($draftRecords);
 
-        // Records for the four weeks shown in the dashboard table/chart.
-        $weekFourStart = $selectedDate->copy()
-            ->startOfWeek(Carbon::WEDNESDAY)
-            ->subWeeks(3);
+        // The table and chart share the month's Wednesday-to-Tuesday weeks.
+        $reportingWeeksStart = Carbon::parse($reportingWeeks->first()['week_start']);
+        $reportingWeeksEnd = Carbon::parse($reportingWeeks->last()['week_end'])->endOfDay();
 
-        $weekFourEnd = $selectedDate->copy()
-            ->endOfWeek(Carbon::TUESDAY);
-
-        $fourWeekRecords = AttendanceRecord::query()
+        $reportingWeekRecords = AttendanceRecord::query()
             ->with('student:id,program,year_level')
             ->inReportingRange([
-                $weekFourStart,
-                $weekFourEnd,
+                $reportingWeeksStart,
+                $reportingWeeksEnd,
             ])
             ->get();
-        $fourWeekRecords = $fourWeekRecords->concat(
-            $this->getDraftAttendanceRows($weekFourStart, $weekFourEnd)
+        $reportingWeekRecords = $reportingWeekRecords->concat(
+            $this->getDraftAttendanceRows($reportingWeeksStart, $reportingWeeksEnd)
         );
 
         // Reusable rule:
@@ -718,26 +728,22 @@ class DashboardService
         $programReporting = $programs->map(
             function ($programCode) use (
                 $records,
-                $fourWeekRecords,
-                $selectedDate,
+                $reportingWeekRecords,
+                $reportingWeeks,
                 $getProgramStatus,
                 $getCompletionPercentage,
                 $programNames
             ) {
-                $weeklyStatuses = collect(range(3, 0))
-                    ->map(function ($weekOffset) use (
+                $weeklyStatuses = $reportingWeeks
+                    ->map(function (array $week) use (
                         $programCode,
-                        $fourWeekRecords,
-                        $selectedDate,
+                        $reportingWeekRecords,
                         $getProgramStatus
                     ) {
-                        $weekStart = $selectedDate->copy()
-                            ->startOfWeek(Carbon::WEDNESDAY)
-                            ->subWeeks($weekOffset);
+                        $weekStart = Carbon::parse($week['week_start']);
+                        $weekEnd = Carbon::parse($week['week_end'])->endOfDay();
 
-                        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
-
-                        $recordsForWeek = $fourWeekRecords->filter(
+                        $recordsForWeek = $reportingWeekRecords->filter(
                             fn ($record) => ($record->reporting_day ?? $record->day)->betweenIncluded(
                                 $weekStart,
                                 $weekEnd
@@ -758,7 +764,7 @@ class DashboardService
                         $records
                     ),
 
-                    // For table columns: Week 1, Week 2, Week 3, Week 4
+                    // Indexed in the same order as reporting_weeks.
                     'weekly_statuses' => $weeklyStatuses,
                 ];
             }
@@ -773,33 +779,29 @@ class DashboardService
             $yearRecords = $records->filter(
                 fn ($record) => (string) $record->student?->year_level === (string) $selectedYearLevel
             );
-            $fourWeekYearRecords = $fourWeekRecords->filter(
+            $reportingWeekYearRecords = $reportingWeekRecords->filter(
                 fn ($record) => (string) $record->student?->year_level === (string) $selectedYearLevel
             );
 
             $programYearReporting = $yearPrograms->map(
                 function ($programCode) use (
                     $yearRecords,
-                    $fourWeekYearRecords,
-                    $selectedDate,
+                    $reportingWeekYearRecords,
+                    $reportingWeeks,
                     $selectedYearLevel,
                     $getProgramStatus,
                     $getCompletionPercentage,
                     $programNames
                 ) {
-                    $weeklyStatuses = collect(range(3, 0))
-                        ->map(function ($weekOffset) use (
+                    $weeklyStatuses = $reportingWeeks
+                        ->map(function (array $week) use (
                             $programCode,
-                            $fourWeekYearRecords,
-                            $selectedDate,
+                            $reportingWeekYearRecords,
                             $getProgramStatus
                         ) {
-                            $weekStart = $selectedDate->copy()
-                                ->startOfWeek(Carbon::WEDNESDAY)
-                                ->subWeeks($weekOffset);
-
-                            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
-                            $recordsForWeek = $fourWeekYearRecords->filter(
+                            $weekStart = Carbon::parse($week['week_start']);
+                            $weekEnd = Carbon::parse($week['week_end'])->endOfDay();
+                            $recordsForWeek = $reportingWeekYearRecords->filter(
                                 fn ($record) => ($record->reporting_day ?? $record->day)->betweenIncluded(
                                     $weekStart,
                                     $weekEnd
@@ -842,20 +844,16 @@ class DashboardService
             : 0;
 
         // Data for the Progress by Week stacked bar chart.
-        $weeklyProgress = collect(range(3, 0))
-            ->map(function ($weekOffset) use (
-                $selectedDate,
-                $fourWeekRecords,
+        $weeklyProgress = $reportingWeeks
+            ->map(function (array $week) use (
+                $reportingWeekRecords,
                 $programs,
                 $getProgramStatus
             ) {
-                $weekStart = $selectedDate->copy()
-                    ->startOfWeek(Carbon::WEDNESDAY)
-                    ->subWeeks($weekOffset);
+                $weekStart = Carbon::parse($week['week_start']);
+                $weekEnd = Carbon::parse($week['week_end'])->endOfDay();
 
-                $weekEnd = $weekStart->copy()->endOfWeek(Carbon::TUESDAY);
-
-                $recordsForWeek = $fourWeekRecords->filter(
+                $recordsForWeek = $reportingWeekRecords->filter(
                     fn ($record) => ($record->reporting_day ?? $record->day)->betweenIncluded(
                         $weekStart,
                         $weekEnd
@@ -870,9 +868,7 @@ class DashboardService
                 );
 
                 return [
-                    'label' => 'Week ' . (4 - $weekOffset),
-                    'week_start' => $weekStart->toDateString(),
-                    'week_end' => $weekEnd->toDateString(),
+                    ...$week,
                     'completed' => $statuses
                         ->filter(fn ($status) => $status === 'completed')
                         ->count(),
@@ -915,6 +911,7 @@ class DashboardService
 
             // Progress by Week chart
             'weekly_progress' => $weeklyProgress,
+            'reporting_weeks' => $reportingWeeks,
         ];
     }
 

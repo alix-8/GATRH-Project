@@ -146,6 +146,47 @@ class ChancellorDashboardYearFilterTest extends TestCase
             ->assertJsonPath('program_year_reporting.0.code', 'BSIS');
     }
 
+    public function test_monthly_weeks_are_dynamic_and_match_coordinator_reporting_ranges(): void
+    {
+        Program::create(['code' => 'BSIS', 'name' => 'Information Systems']);
+        $user = new User(['role' => 'chancellor']);
+        $dashboard = app(\App\Services\Dashboard\DashboardService::class);
+        $coordinator = app(\App\Services\Dashboard\CmCoordinatorMonitoringService::class);
+
+        foreach ([
+            ['2023-02-15', 4, '2023-02-01', '2023-02-28'],
+            ['2026-10-30', 5, '2026-09-30', '2026-11-03'],
+            ['2026-09-15', 6, '2026-08-26', '2026-10-06'],
+            ['2026-01-01', 5, '2025-12-31', '2026-02-03'],
+        ] as [$date, $count, $first, $last]) {
+            $payload = $dashboard->getChancellorDashboardPayload($user, ['date' => $date, 'year_level' => 1]);
+            $weeks = collect($payload['reporting_weeks']);
+            $this->assertCount($count, $weeks);
+            $this->assertSame($first, $weeks->first()['week_start']);
+            $this->assertSame($last, $weeks->last()['week_end']);
+            $this->assertSame($weeks->pluck('week_start')->all(), collect($payload['weekly_progress'])->pluck('week_start')->all());
+            $this->assertCount($count, $payload['program_year_reporting'][0]['weekly_statuses']);
+            $month = \Carbon\Carbon::parse($date);
+            $monitoring = $coordinator->getPayload(['year' => $month->year, 'month' => $month->month]);
+            $this->assertSame(collect($monitoring['weeks'])->pluck('start')->all(), $weeks->pluck('week_start')->all());
+            $this->assertSame(collect($monitoring['weeks'])->pluck('end')->all(), $weeks->pluck('week_end')->all());
+        }
+    }
+
+    public function test_weekly_statuses_use_the_same_monthly_slots_as_the_chart(): void
+    {
+        Program::create(['code' => 'ACT', 'name' => 'Computer Technology']);
+        $student = Student::create(['name' => 'Student', 'program' => 'ACT', 'year_level' => 1]);
+        $this->createAttendanceRecord($student, 'pm'); // October 7: Week 2, not Week 4.
+        $payload = app(\App\Services\Dashboard\DashboardService::class)->getChancellorDashboardPayload(
+            new User(['role' => 'chancellor']), ['date' => '2026-10-30', 'year_level' => 1]
+        );
+        $expected = ['no_report', 'incomplete', 'no_report', 'no_report', 'no_report'];
+        $this->assertSame($expected, $payload['program_year_reporting'][0]['weekly_statuses']);
+        $this->assertSame($expected, $payload['program_reporting'][0]['weekly_statuses']);
+        $this->assertSame([0, 1, 0, 0, 0], collect($payload['weekly_progress'])->pluck('incomplete')->all());
+    }
+
     private function createAttendanceRecord(Student $student, string $gatheringType): void
     {
         $submitter = User::create([
