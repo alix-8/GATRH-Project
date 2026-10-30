@@ -395,6 +395,7 @@ class DashboardService
                     'students'       => "{$presentCount}/{$totalManagedStudents} students",
                     'status'         => 'validating',
                     'status_label'   => 'Validating',
+                    'unsubmitted_at' => $draft->unsubmitted_at?->toIso8601String(),
                     'action'         => 'Review',
                 ];
             });
@@ -413,7 +414,7 @@ class DashboardService
                     : Carbon::parse($r->day)->format('Y-m-d');
                 return $r->gathering_type . '|' . $dayFormatted;
             })
-            ->map(function ($group) use ($totalManagedStudents) {
+            ->map(function ($group) use ($totalManagedStudents, $user) {
                 $first = $group->first();
                 $dayCarbon = AttendanceReportingPeriod::day($group);
 
@@ -425,6 +426,10 @@ class DashboardService
                     'ref_id'         => null,
                     'batch_id'       => $first->batch_id ?? null,
                     'source'         => 'record',
+                    'can_unsubmit' => $group->every(fn ($row) => (int) $row->submitted_by === (int) $user->id)
+                        && (!$group->contains(fn ($row) => $row->validation_status === 'validated')
+                            || \App\Support\AttendanceUnsubmitPolicy::approvedWeekAllowed($dayCarbon)),
+                    'submitted_by_id' => $first->submitted_by,
                     'gathering_type' => $first->gathering_type,
                     'gathering'      => $this->formatGatheringName($first->gathering_type),
                     'date'           => $dayCarbon->format('F j, Y'),

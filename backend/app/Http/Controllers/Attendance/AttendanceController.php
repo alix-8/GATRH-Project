@@ -15,6 +15,7 @@ use App\Services\Attendance\AttendanceParsingService;
 use App\Services\Audit\AuditLogService;
 use App\Support\GatheringCycle;
 use App\Support\AttendanceReportingPeriod;
+use App\Support\AttendanceUnsubmitPolicy;
 
 class AttendanceController extends Controller
 {
@@ -182,7 +183,7 @@ class AttendanceController extends Controller
             $draftsQuery->whereDate('updated_at', $validated['date']);
         }
 
-        $drafts = $draftsQuery->get(['id', 'day', 'updated_at', 'gathering_type'])->map(function ($draft) use ($program, $yearLevel) {
+        $drafts = $draftsQuery->get(['id', 'day', 'updated_at', 'gathering_type', 'unsubmitted_at'])->map(function ($draft) use ($program, $yearLevel) {
             return [
                 'source'         => 'draft',
                 'id'             => 'draft-' . $draft->id,
@@ -199,6 +200,7 @@ class AttendanceController extends Controller
                 'gathering'      => $this->gatheringLabel($draft->gathering_type ?? ''),
                 'time'           => optional($draft->updated_at)->format('g:i A'),
                 'status'         => 'validating',
+                'unsubmitted_at' => $draft->unsubmitted_at?->toIso8601String(),
             ];
         })->filter(function ($row) use ($validated) {
             if (!empty($validated['gathering_type']) && $row['gathering_type'] !== $validated['gathering_type']) return false;
@@ -232,10 +234,9 @@ class AttendanceController extends Controller
                 . 'MIN(submitted_by) AS submitted_by, MAX(updated_at) AS raw_submission_at, '
                 . 'COUNT(*) AS row_count, '
                 . 'SUM(CASE WHEN validation_status = ? THEN 1 ELSE 0 END) AS validated_count, '
-                . 'SUM(CASE WHEN submitted_by <> ? OR '
-                . '(validation_status IS NOT NULL AND validation_status <> ?) '
+                . 'SUM(CASE WHEN submitted_by <> ? '
                 . 'THEN 1 ELSE 0 END) AS unsubmit_blocker_count',
-                ['validated', $user->id, 'unvalidated']
+                ['validated', $user->id]
             )
             ->groupByRaw($groupExpression);
 
@@ -278,7 +279,8 @@ class AttendanceController extends Controller
                 'status'            => (int) $group->validated_count === (int) $group->row_count
                     ? 'approved'
                     : 'pending',
-                'can_unsubmit'      => (int) $group->unsubmit_blocker_count === 0,
+                'can_unsubmit'      => (int) $group->unsubmit_blocker_count === 0
+                    && ((int) $group->validated_count === 0 || AttendanceUnsubmitPolicy::approvedWeekAllowed($day)),
             ];
         })->values();
 
@@ -1500,12 +1502,13 @@ class AttendanceController extends Controller
                 if ($records->isEmpty()) {
                     throw new \DomainException('Submission not found or it is no longer available to unsubmit.', 404);
                 }
-                if ($records->contains(fn (AttendanceRecord $record) => $record->validation_status === 'validated')) {
-                    throw new \DomainException('Approved attendance cannot be unsubmitted.', 409);
-                }
 
                 $createdDrafts = [];
                 foreach ($records->groupBy('gathering_type') as $type => $group) {
+                    if ($group->contains(fn ($record) => $record->validation_status === 'validated')
+                        && !AttendanceUnsubmitPolicy::approvedWeekAllowed(AttendanceReportingPeriod::day($group))) {
+                        throw new \DomainException('Approved attendance can only be unsubmitted for the current or previous reporting week.', 409);
+                    }
                     $gatheringRange = GatheringCycle::getRangesForWeekStart(AttendanceReportingPeriod::day($group))[strtolower($type)];
                     $rangeStart = $gatheringRange['start'];
                     $rangeEnd = $gatheringRange['end'];
@@ -1546,6 +1549,7 @@ class AttendanceController extends Controller
                         'total_detected' => count($parsedData),
                         'matched_count' => collect($parsedData)->where('status', 'present')->count(),
                         'status' => 'draft',
+                        'unsubmitted_at' => now(),
                     ]);
                 }
 

@@ -92,6 +92,7 @@ class AttendanceDraftController extends Controller
             'status' => 'success',
             'data'   => [
                 'id'                 => $draft->id,
+                'unsubmitted_at'     => $draft->unsubmitted_at?->toIso8601String(),
                 'gathering_type'     => $draft->gathering_type,
                 'day'                => optional($draft->day)->format('F j, Y'),
                 'day_iso'            => optional($draft->day)->toDateString(),

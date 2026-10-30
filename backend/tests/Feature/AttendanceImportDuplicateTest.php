@@ -61,6 +61,7 @@ class AttendanceImportDuplicateTest extends TestCase
         });
         Schema::create('attendance_drafts', function (Blueprint $table): void {
             $table->id();
+            $table->timestamp('unsubmitted_at')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->string('gathering_type');
             $table->string('status');
@@ -366,6 +367,54 @@ class AttendanceImportDuplicateTest extends TestCase
         $migration->up();
         $this->assertSame('2026-10-28', $draft->fresh()->day->toDateString());
         $this->assertSame($rows, $draft->fresh()->parsed_data);
+    }
+
+    public function test_approved_unsubmit_is_limited_to_current_and_previous_reporting_weeks_but_pending_is_not(): void
+    {
+        foreach ([
+            ['validated', '2026-10-28', 200],
+            ['validated', '2026-10-21', 200],
+            ['validated', '2026-10-14', 409],
+            ['validated', '2026-11-04', 409],
+            ['unvalidated', '2026-09-02', 200],
+        ] as $index => [$status, $period, $expected]) {
+            $record = AttendanceRecord::create([
+                'student_id' => Student::firstOrFail()->id, 'gathering_type' => 'pm',
+                'day' => '2026-10-01', 'reporting_day' => $period, 'venue' => 'Special',
+                'batch_id' => 'unsubmit-test-'.$index, 'submitted_by' => 1,
+                'validation_status' => $status, 'validated_by' => $status === 'validated' ? 2 : null,
+                'approved_at' => $status === 'validated' ? now() : null,
+            ]);
+            $request = Request::create('/attendance/unsubmit', 'POST');
+            $request->setUserResolver(fn () => $this->secretary());
+            $response = app(AttendanceController::class)->unsubmitSubmission($request, $record->batch_id);
+            $this->assertSame($expected, $response->getStatusCode(), $response->getContent());
+            if ($expected === 200) {
+                $this->assertNull($record->fresh());
+                $draft = AttendanceDraft::whereDate('day', $period)->firstOrFail();
+                $this->assertNotNull($draft->unsubmitted_at);
+                $this->assertSame('draft', $draft->status);
+                $this->assertArrayNotHasKey('validated_by', $draft->parsed_data[0]);
+                $this->assertSame('2026-10-01', $draft->parsed_data[0]['day']);
+            } else {
+                $this->assertNotNull($record->fresh());
+                $this->assertSame($status, $record->fresh()->validation_status);
+            }
+        }
+    }
+
+    public function test_unsubmit_cannot_remove_another_secretarys_approved_submission(): void
+    {
+        $record = AttendanceRecord::create([
+            'student_id' => Student::firstOrFail()->id, 'gathering_type' => 'pm',
+            'day' => '2026-10-28', 'reporting_day' => '2026-10-28',
+            'batch_id' => 'another-secretary', 'submitted_by' => 99, 'validation_status' => 'validated',
+        ]);
+        $request = Request::create('/attendance/unsubmit', 'POST');
+        $request->setUserResolver(fn () => $this->secretary());
+        $response = app(AttendanceController::class)->unsubmitSubmission($request, $record->batch_id);
+        $this->assertSame(404, $response->getStatusCode());
+        $this->assertNotNull($record->fresh());
     }
 
     private function secretary(): User
