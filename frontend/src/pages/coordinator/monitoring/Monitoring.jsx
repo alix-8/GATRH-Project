@@ -503,16 +503,14 @@ function CoordinatorMonitoring() {
                                         )
                                     })}
 
-                                    <div className="monitoring-incomplete-details">
+                                    {currentDetails.incomplete_entries.length > 0 && <div className="monitoring-incomplete-details">
                                         <h4>
                                             <span className="monitoring-incomplete-icon" aria-hidden="true">
                                                 <img src={IncompleteEntryIcon} alt="" />
                                             </span>
                                             Incomplete Entry Details
                                         </h4>
-                                        {currentDetails.incomplete_entries.length === 0
-                                            ? <p>No incomplete entries for this week.</p>
-                                            : currentDetails.incomplete_entries.map((entry) => {
+                                        {currentDetails.incomplete_entries.map((entry) => {
                                                 const entryKey = entry.gathering_type
                                                 const isOpen = activeIncompleteEntry === entryKey
                                                 return (
@@ -540,9 +538,8 @@ function CoordinatorMonitoring() {
                                                         )}
                                                     </article>
                                                 )
-                                            })
-                                        }
-                                    </div>
+                                            })}
+                                    </div>}
                                 </section>
                             </div>
                         )}
