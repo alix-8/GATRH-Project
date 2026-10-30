@@ -357,10 +357,15 @@ class ProgramHeadAttendanceWorkbookService
         $firstRecord = $records->first();
         $student = $firstRecord?->student;
         $date = $firstRecord ? \App\Support\AttendanceReportingPeriod::day($records) : null;
-        $weekNumber = $date ? (int) ceil($date->day / 7) : null;
+        $range = $date ? \App\Support\GatheringCycle::getRangesForWeekStart($date)[$firstRecord->gathering_type] : null;
+        $rangeLabel = $range ? \App\Support\GatheringCycle::formatRangeLabel($range['start'], $range['end']) : '';
+        $weekNumber = $date ? intdiv((int) \App\Support\GatheringCycle::weekStartForDate($date->copy()->startOfMonth())->diffInDays(
+            \App\Support\GatheringCycle::weekStartForDate($date)
+        ), 7) + 1 : null;
+        $year = $firstRecord?->year_level ?? $student?->year_level;
         $programLabel = trim(implode(' ', array_filter([
-            $student?->program,
-            $student?->year_level ? $this->ordinalYear((int) $student->year_level) : null,
+            $firstRecord?->program ?? $student?->program,
+            $year ? $this->ordinalYear((int) $year) : null,
         ])));
 
         $rows = [
@@ -374,7 +379,7 @@ class ProgramHeadAttendanceWorkbookService
             ], 34),
             $this->row([
                 $this->cell('A3', 'WEEK DATES', 2),
-                $this->cell('B3', $date?->format('F j, Y') ?? '', 5),
+                $this->cell('B3', $rangeLabel, 5),
             ], 24),
             $this->row([
                 $this->cell('A4', 'GATHERING', 2),
@@ -382,8 +387,8 @@ class ProgramHeadAttendanceWorkbookService
                 $this->cell('C4', 'ESCALATION', 2),
             ], 24),
             $this->row([
-                $this->cell('A5', 'DATE', 2),
-                $this->cell('B5', $date?->format('M j, Y') ?? '', 5),
+                $this->cell('A5', 'GATHERING DATES', 2),
+                $this->cell('B5', $rangeLabel, 5),
                 $this->cell('C5', 'CURRENT LEVEL', 2),
             ], 24),
             $this->row([

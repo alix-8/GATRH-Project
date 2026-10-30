@@ -303,6 +303,19 @@ class AttendanceImportDuplicateTest extends TestCase
         $exportRows = app(\App\Services\ProgramHead\ProgramHeadRecordsExportService::class)->query($head, ['date' => '2026-10-28'])->get();
         $this->assertCount(2, $exportRows);
         $this->assertSame(['2026-10-26', '2026-10-28'], $exportRows->map(fn ($row) => $row->day->toDateString())->sort()->values()->all());
+        $exportService = app(\App\Services\ProgramHead\ProgramHeadRecordsExportService::class);
+        $jr = Student::where('name', 'JR Balmaceda')->firstOrFail();
+        $jr->update(['year_level' => 2, 'is_active' => false]);
+        AttendanceRecord::query()->update(['reporting_day' => null]);
+        $batchRows = $exportService->query($head, [
+            'batch_id' => $batchId, 'date' => '1900-01-01', 'year_level' => 1, 'search' => 'not a student',
+        ])->get();
+        $this->assertCount(2, $batchRows);
+        $this->assertSame($exportRows->pluck('id')->sort()->values()->all(), $batchRows->pluck('id')->sort()->values()->all());
+        $this->assertCount(2, $exportService->query($head, ['batch_key' => $batchId, 'date' => '1900-01-01', 'year_level' => 1])->get());
+        $this->assertCount(0, $exportService->query($head, ['batch_id' => 'different-batch', 'year_level' => 1])->get());
+        $jr->update(['year_level' => 1, 'is_active' => true]);
+        AttendanceRecord::query()->update(['reporting_day' => '2026-10-28']);
         AttendanceRecord::query()->update(['validation_status' => 'unvalidated']);
         $monitor = app(\App\Services\Dashboard\CmCoordinatorMonitoringService::class);
         $monitoring = $monitor->getCourseDetails('BSIS', 1, ['month' => 10, 'year' => 2026, 'week' => 5]);

@@ -21,16 +21,33 @@ class ProgramHeadRecordsExportService
     /** Build an approved-record query scoped to the signed-in Program Head. */
     public function query(User $user, array $filters): Builder
     {
+        $batchKey = $filters['batch_id'] ?? $filters['batch_key'] ?? null;
         $query = AttendanceRecord::query()
             ->with(['student.escalation', 'submitter'])
             ->where('validation_status', 'validated')
-            ->whereHas('student', function (Builder $students) use ($user, $filters) {
-                $students->active()->accessibleTo($user);
+            ->whereHas('student', function (Builder $students) use ($user, $filters, $batchKey) {
+                $students->accessibleTo($user);
+                if ($batchKey) {
+                    return;
+                }
+                $students->active();
 
                 if (!empty($filters['year_level'])) {
                     $students->where('year_level', (int) $filters['year_level']);
                 }
             });
+
+        if ($batchKey) {
+            $this->applyBatchFilter($query, $batchKey);
+            if (!empty($filters['year_level'])) {
+                $query->where(function (Builder $rows) use ($filters) {
+                    $rows->where('year_level', (int) $filters['year_level'])
+                        ->orWhere(fn (Builder $legacy) => $legacy->whereNull('year_level')
+                            ->whereHas('student', fn (Builder $students) => $students->where('year_level', (int) $filters['year_level'])));
+                });
+            }
+            return $query->orderBy('student_id');
+        }
 
         if (!empty($filters['date'])) {
             $query->inReportingRange([$filters['date'], $filters['date']]);
@@ -38,10 +55,6 @@ class ProgramHeadRecordsExportService
 
         if (!empty($filters['gathering_type'])) {
             $query->where('gathering_type', $filters['gathering_type']);
-        }
-
-        if (!empty($filters['batch_key'])) {
-            $this->applyBatchFilter($query, $filters['batch_key']);
         }
 
         if (!empty($filters['search'])) {

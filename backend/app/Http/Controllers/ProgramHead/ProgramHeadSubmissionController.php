@@ -196,6 +196,7 @@ class ProgramHeadSubmissionController extends Controller
             'year_level' => ['nullable', 'integer', 'between:1,4'],
             'search' => ['nullable', 'string', 'max:100'],
             'batch_key' => ['nullable', 'string', 'max:100'],
+            'batch_id' => ['nullable', 'string', 'max:100'],
             'period' => ['nullable', 'in:session,week,month'],
             'program' => ['required_if:period,week,month', 'nullable', 'string', 'max:100'],
             'month' => ['nullable', 'date_format:Y-m'],

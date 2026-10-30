@@ -87,10 +87,10 @@ export default function RecordsTable() {
         setExportNotice(null)
         try {
             const params = new URLSearchParams({
-                date: record.date_iso,
-                gathering_type: record.gathering_type,
                 year_level: String(record.year_level),
-                batch_key: record.batch_key,
+                ...(record.batch_key?.includes('|')
+                    ? { batch_key: record.batch_key }
+                    : { batch_id: record.batch_key }),
             })
             const response = await fetch(`${API_BASE_URL}/program-head/records/export?${params}`, {
                 credentials: 'include',
