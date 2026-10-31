@@ -16,9 +16,9 @@ import './Dashboard.css'
 
 const metrics = [
     { key: 'pending_review', label: 'Pending Review', detail: 'Awaiting your review', icon: PendingReviewIcon },
-    { key: 'approved', label: 'Approved', detail: 'Successfully reviewed', icon: ApprovedIcon },
+    { key: 'approved', label: 'Approved', detail: 'Fully approved submissions', icon: ApprovedIcon },
     { key: 'escalation_count', label: 'Escalations', detail: 'Students requiring intervention', icon: EscalationsIcon },
-    { key: 'total_submissions', label: 'Total Submissions', detail: 'All submitted records', icon: TotalSubmissionsIcon },
+    { key: 'total_submissions', label: 'Total Submissions', detail: 'Submitted attendance batches', icon: TotalSubmissionsIcon },
 ]
 
 const activityIcons = {

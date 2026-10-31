@@ -220,6 +220,10 @@
     padding-top: 0px !important;
  }
 
+.ph-activity-panel p.ph-empty {
+    text-align: center;
+}
+
 #ph-activity-title,
 #ph-pending-title {
     text-align: left;
