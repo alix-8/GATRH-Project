@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -12,23 +13,30 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRules;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
 
     function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-            'remember' => 'sometimes|boolean',
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+                'remember' => 'sometimes|boolean',
+            ]);
+        } catch (ValidationException $exception) {
+            $this->recordFailedSecurityEvent($request, 'Signed in', 'Sign-in input validation failed.');
+            throw $exception;
+        }
 
         $throttleKey = 'login:' . strtolower(trim($request->input('email'))) . '|' . $request->ip();
         $maxAttempts = config('auth.login_throttle.max_attempts');
         $decaySeconds = config('auth.login_throttle.decay_seconds');
 
         if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+            $this->recordFailedSecurityEvent($request, 'Signed in', 'Sign-in attempt blocked by rate limit.');
             return response()->json([
                 'message' => 'Too many failed login attempts. Please try again later.',
                 'retry_after' => RateLimiter::availableIn($throttleKey),
@@ -39,6 +47,7 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             RateLimiter::hit($throttleKey, $decaySeconds);
+            $this->recordFailedSecurityEvent($request, 'Signed in', 'Sign-in attempt failed: invalid credentials.');
 
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
@@ -46,6 +55,7 @@ class AuthController extends Controller
         RateLimiter::clear($throttleKey);
 
         if (! $user->is_active) {
+            app(AuditLogService::class)->recordSecurityEvent('Signed in', $user, 'failed', 'Sign-in attempt blocked: inactive account.');
             return response()->json(['message' => 'This account is inactive.'], 403);
         }
 
@@ -55,6 +65,7 @@ class AuthController extends Controller
         $remember = $request->boolean('remember');
         Auth::login($user, $remember);
         $request->session()->regenerate();
+        app(AuditLogService::class)->recordSecurityEvent('Signed in', $user);
 
         return response()->json([
             // Keep the login response limited to the fields needed to route
@@ -150,18 +161,25 @@ class AuthController extends Controller
     /** Verify the emailed code before showing the new-password form. */
     function verifyPasswordResetCode(Request $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'code' => 'required|digits:6',
-        ]);
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'code' => 'required|digits:6',
+            ]);
+        } catch (ValidationException $exception) {
+            $this->recordFailedSecurityEvent($request, 'Changed password', 'Password reset code validation failed.');
+            throw $exception;
+        }
 
         $key = $this->passwordResetAttemptKey($validated['email'], $request);
         if (RateLimiter::tooManyAttempts($key, 5)) {
+            $this->recordFailedSecurityEvent($request, 'Changed password', 'Password reset code verification blocked by rate limit.');
             return response()->json(['message' => 'Too many incorrect code attempts. Request a new code and try again.'], 429);
         }
 
         if (!$this->passwordResetCodeIsValid($validated['email'], $validated['code'])) {
             RateLimiter::hit($key, 600);
+            $this->recordFailedSecurityEvent($request, 'Changed password', 'Password reset code verification failed: incorrect or expired code.');
             return response()->json(['message' => 'That code is incorrect or expired. Check it and try again.'], 422);
         }
 
@@ -172,24 +190,31 @@ class AuthController extends Controller
     /** Reset a user's password using the emailed code. */
     function resetPassword(Request $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'code' => 'required|digits:6',
-            'password' => [
-                'required',
-                'string',
-                'confirmed',
-                PasswordRules::min(8)->mixedCase()->numbers()->symbols(),
-            ],
-        ]);
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'code' => 'required|digits:6',
+                'password' => [
+                    'required',
+                    'string',
+                    'confirmed',
+                    PasswordRules::min(8)->mixedCase()->numbers()->symbols(),
+                ],
+            ]);
+        } catch (ValidationException $exception) {
+            $this->recordFailedSecurityEvent($request, 'Changed password', 'Password reset input validation failed.');
+            throw $exception;
+        }
 
         $key = $this->passwordResetAttemptKey($validated['email'], $request);
         if (RateLimiter::tooManyAttempts($key, 5)) {
+            $this->recordFailedSecurityEvent($request, 'Changed password', 'Password reset attempt blocked by rate limit.');
             return response()->json(['message' => 'Too many incorrect code attempts. Request a new code and try again.'], 429);
         }
 
         if (!$this->passwordResetCodeIsValid($validated['email'], $validated['code'])) {
             RateLimiter::hit($key, 600);
+            $this->recordFailedSecurityEvent($request, 'Changed password', 'Password reset failed: incorrect or expired code.');
             return response()->json(['message' => 'That code is incorrect or expired. Request a new code and try again.'], 422);
         }
 
@@ -204,7 +229,21 @@ class AuthController extends Controller
             ->delete();
         RateLimiter::clear($key);
 
+        app(AuditLogService::class)->recordSecurityEvent('Changed password', $user);
+
         return response()->json(['message' => 'Password reset successfully.']);
+    }
+
+    private function recordFailedSecurityEvent(Request $request, string $action, string $reason): void
+    {
+        $email = $request->input('email');
+        if (!is_string($email)) {
+            return;
+        }
+        $user = User::where('email', strtolower(trim($email)))->first();
+        if ($user) {
+            app(AuditLogService::class)->recordSecurityEvent($action, $user, 'failed', $reason);
+        }
     }
 
     private function passwordResetAttemptKey(string $email, Request $request): string

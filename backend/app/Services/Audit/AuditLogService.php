@@ -9,6 +9,20 @@ use Illuminate\Support\Facades\Auth;
 
 class AuditLogService
 {
+    public function recordSecurityEvent(string $action, User $actor, string $result = 'success', ?string $details = null): void
+    {
+        if ($actor->role !== 'admin') {
+            return;
+        }
+
+        try {
+            $this->recordAction($action, 'users', (string) $actor->id, $actor, $result, $details);
+        } catch (\Throwable $exception) {
+            // Audit-storage failures must not change the authentication response.
+            report($exception);
+        }
+    }
+
     public function record(string $action, Model $subject, ?User $actor = null): void
     {
         $this->recordAction($action, $subject->getTable(), (string) $subject->getKey(), $actor);

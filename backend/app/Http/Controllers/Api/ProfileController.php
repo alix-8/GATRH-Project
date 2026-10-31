@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -48,19 +50,25 @@ class ProfileController extends Controller
      */
     public function changePassword(Request $request)
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'string'],
-            'password' => [
-                'required',
-                'confirmed',
-                'different:current_password',
-                $this->passwordRules(),
-            ],
-        ]);
+        try {
+            $validated = $request->validate([
+                'current_password' => ['required', 'string'],
+                'password' => [
+                    'required',
+                    'confirmed',
+                    'different:current_password',
+                    $this->passwordRules(),
+                ],
+            ]);
+        } catch (ValidationException $exception) {
+            app(AuditLogService::class)->recordSecurityEvent('Changed password', $request->user(), 'failed', 'Password change input validation failed.');
+            throw $exception;
+        }
 
         $user = $request->user();
 
         if (!Hash::check($validated['current_password'], $user->password)) {
+            app(AuditLogService::class)->recordSecurityEvent('Changed password', $user, 'failed', 'Password change failed: incorrect current password.');
             return response()->json([
                 'message' => 'The current password is incorrect.',
                 'errors' => [
@@ -72,6 +80,7 @@ class ProfileController extends Controller
         $user->update([
             'password' => $validated['password'],
         ]);
+        app(AuditLogService::class)->recordSecurityEvent('Changed password', $user);
 
         return response()->json([
             'message' => 'Password changed successfully.',
