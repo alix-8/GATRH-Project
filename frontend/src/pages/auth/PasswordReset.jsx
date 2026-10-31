@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE_URL, initializeCsrf, xsrfHeaders } from '../../api/request'
 import Login, { AdminContactLink } from './Login'
+import BackToLoginArrowIcon from '../../assets/icons/back-to-login-arrow-icon.svg'
 import './PasswordReset.css'
 
 const CODE_LIFETIME_SECONDS = 15 * 60
@@ -172,7 +173,7 @@ export function ForgotPassword() {
                 <h2>Email not found</h2>
                 <p className="password-success-copy">We couldn’t find an account with that email address. Check the spelling or try another email.</p>
                 <button className="password-primary" type="button" onClick={() => { setEmailNotFound(false); setEmail('') }}>Try Another Email</button>
-                <button className="password-back password-error-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Log In</button>
+                <button className="password-back password-error-back" type="button" onClick={backToLogin}><img src={BackToLoginArrowIcon} alt="" /> Back to Log In</button>
             </PasswordDialog>
         )
     }
@@ -206,7 +207,7 @@ export function ForgotPassword() {
                     <button className="password-primary" type="submit" disabled={loading || expiresIn === 0}>{loading ? 'Checking...' : 'Verify Code'}</button>
                 </form>
                 {expiresIn === 0 && <button className="password-resend" type="button" onClick={() => { setStage('email'); setError('') }}>Request a new code</button>}
-                <button className="password-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Login</button>
+                <button className="password-back" type="button" onClick={backToLogin}><img src={BackToLoginArrowIcon} alt="" /> Back to Login</button>
             </PasswordDialog>
         )
     }
@@ -227,7 +228,7 @@ export function ForgotPassword() {
                     <button className="password-primary" type="submit" disabled={loading || expiresIn === 0}>{loading ? 'Updating...' : 'Continue to Log In'}</button>
                 </form>
                 {expiresIn === 0 && <button className="password-resend" type="button" onClick={() => { setStage('email'); setPassword(''); setConfirmation('') }}>Request a new code</button>}
-                <button className="password-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Login</button>
+                <button className="password-back" type="button" onClick={backToLogin}><img src={BackToLoginArrowIcon} alt="" /> Back to Login</button>
                 <HelpFooter />
             </PasswordDialog>
         )
@@ -243,7 +244,7 @@ export function ForgotPassword() {
                 {error && <p className="password-error" role="alert">{error}</p>}
                 <button className="password-primary" type="submit" disabled={loading}>{loading ? 'Sending...' : 'Send Verification Code'}</button>
             </form>
-            <button className="password-back" type="button" onClick={backToLogin}><span aria-hidden="true">↶</span> Back to Login</button>
+            <button className="password-back" type="button" onClick={backToLogin}><img src={BackToLoginArrowIcon} alt="" /> Back to Login</button>
             <HelpFooter />
         </PasswordDialog>
     )
