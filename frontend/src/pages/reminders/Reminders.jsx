@@ -20,6 +20,7 @@ import AddReminderIcon from '../../assets/icons/add-reminder-icon.svg'
 import DeleteIcon from '../../assets/icons/delete-icon.svg'
 import { request, API_BASE_URL, xsrfHeaders } from '../../api/request'
 import useLiveRefresh from '../../hooks/useLiveRefresh'
+import useAutoDismissNotice from '../../hooks/useAutoDismissNotice'
 import Calendar from '../../components/Calendar/Calendar'
 import { TrashIcon } from '../../components/Icons/Reusables'
 import LoadingCircle from '../../components/feedback/LoadingCircle'
@@ -262,6 +263,7 @@ function Reminders() {
     const [activeFilter, setActiveFilter] = useState('all')
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('user')))
     const [error, setError] = useState('')
+    const [notice, showNotice, clearNotice] = useAutoDismissNotice()
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [editingReminder, setEditingReminder] = useState(null)
     useLiveRefresh(() => {
@@ -683,6 +685,7 @@ function Reminders() {
     }
 
     const openAddModal = () => {
+        clearNotice()
         setEditingReminder(null)
         setFormData(EMPTY_FORM)
         setError('')
@@ -734,6 +737,7 @@ function Reminders() {
     }
 
     const handleEditReminder = (reminder) => {
+        clearNotice()
         const { date, time } = splitDueDate(reminder.due_date)
 
         setEditingReminder(reminder)
@@ -752,6 +756,7 @@ function Reminders() {
 
     const handleSubmitReminder = async (event) => {
         event.preventDefault()
+        clearNotice()
         setSaving(true)
         setError('')
 
@@ -809,6 +814,7 @@ function Reminders() {
         }
 
         try {
+            let successMessage = ''
             if (editingReminder) {
                 const data = await request(`/reminders/${editingReminder.id}`, {
                     method: 'PUT',
@@ -817,6 +823,7 @@ function Reminders() {
                 const updated = data.data
 
                 setReminders(prev => prev.map(reminder => (reminder.id === editingReminder.id ? { ...reminder, ...updated } : reminder)))
+                successMessage = data.message || 'Reminder updated successfully.'
             } else {
                 const data = await request('/reminders', {
                     method: 'POST',
@@ -831,6 +838,7 @@ function Reminders() {
             }
             notifyRemindersChanged()
             handleCloseModal()
+            if (successMessage) showNotice(successMessage)
         } catch (err) {
             setError(err.message || 'Unable to save reminder.')
         } finally {
@@ -963,6 +971,8 @@ function Reminders() {
                     subtitle="Track upcoming gatherings and tasks that need attention."
                     className="reminders-header"
                 />
+
+                {notice && <p className="reminders-success-notice" role="status">{notice}</p>}
 
                 <section className={`reminders-cards reminders-cards-${role || 'default'}`} aria-label="Reminder summary">
                     {reminderCards.map(card => (
