@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE_URL, initializeCsrf, xsrfHeaders } from '../../api/request'
-import Login from './Login'
+import Login, { AdminContactLink } from './Login'
 import './PasswordReset.css'
 
 const CODE_LIFETIME_SECONDS = 15 * 60
@@ -24,7 +24,20 @@ function PasswordDialog({ children, variant = '', email = '' }) {
 }
 
 function HelpFooter() {
-    return <p className="password-help">Need help? <span>Contact your administrator</span></p>
+    const [adminEmail, setAdminEmail] = useState('')
+
+    useEffect(() => {
+        const controller = new AbortController()
+        fetch(`${API_BASE_URL}/branding`, { signal: controller.signal, cache: 'no-store' })
+            .then(response => response.ok ? response.json() : Promise.reject())
+            .then(data => {
+                if (typeof data.admin_email === 'string') setAdminEmail(data.admin_email)
+            })
+            .catch(() => {})
+        return () => controller.abort()
+    }, [])
+
+    return <p className="password-help">Need help? <AdminContactLink adminEmail={adminEmail} /></p>
 }
 
 function formatCountdown(seconds) {
