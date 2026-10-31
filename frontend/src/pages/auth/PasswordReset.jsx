@@ -3,13 +3,16 @@ import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-route
 import { API_BASE_URL, initializeCsrf, xsrfHeaders } from '../../api/request'
 import Login, { AdminContactLink } from './Login'
 import BackToLoginArrowIcon from '../../assets/icons/back-to-login-arrow-icon.svg'
-import CheckYourEmailIcon from '../../assets/icons/check-your-email-icon.svg'
 import './PasswordReset.css'
 
 const CODE_LIFETIME_SECONDS = 15 * 60
 
-function MailMark({ verified = false }) {
-    return <div className="password-mail-mark" aria-hidden="true">{verified ? <img src={CheckYourEmailIcon} alt="" /> : '✉'}</div>
+function MailMark({ checkIcon = false, complete = false }) {
+    return (
+        <div className={`password-mail-mark${complete ? ' is-complete' : ''}`} aria-hidden="true">
+            {checkIcon ? <span className="password-mail-icon" /> : '✉'}
+        </div>
+    )
 }
 
 function PasswordDialog({ children, variant = '', email = '' }) {
@@ -143,7 +146,6 @@ export function ForgotPassword() {
         const nextCode = event.target.value.replace(/\D/g, '').slice(0, 6)
         setCode(nextCode)
         setError('')
-        if (nextCode.length === 6) void verifyCode(nextCode)
     }
 
     const resetPassword = async (event) => {
@@ -204,7 +206,7 @@ export function ForgotPassword() {
     if (stage === 'code') {
         return (
             <PasswordDialog variant="password-modal-success password-modal-code" email={email}>
-                <MailMark verified />
+                <MailMark checkIcon complete={code.length === 6} />
                 <h2>Check your Email</h2>
                 <p className="password-sent-to">We sent a verification code to<br /><strong>{email}</strong></p>
                 {expiresIn > 0 ? (
@@ -212,9 +214,9 @@ export function ForgotPassword() {
                 ) : (
                     <div className="password-expired-message"><p>This code has expired.</p></div>
                 )}
-                <form className="password-code-form" onSubmit={(event) => { event.preventDefault(); void verifyCode(code) }}>
+                <form id="password-code-form" className="password-code-form" onSubmit={(event) => { event.preventDefault(); void verifyCode(code) }}>
                     <label htmlFor="reset-code">Enter the six digit code</label>
-                    <div className="password-code-field">
+                    <div className={`password-code-field${code.length === 6 ? ' is-complete' : ''}`}>
                         <input
                             id="reset-code"
                             type="text"
@@ -247,7 +249,13 @@ export function ForgotPassword() {
                     </div>
                 </div>
                 {expiresIn === 0 && <button className="password-resend" type="button" onClick={() => { setStage('email'); setError('') }}>Request a new code</button>}
-                <button className="password-code-back" type="button" onClick={backToLogin}>Back to Login</button>
+                {code.length > 0 ? (
+                    <button className="password-code-back" type="submit" form="password-code-form" disabled={loading || code.length !== 6 || expiresIn === 0}>
+                        {loading ? 'Checking...' : 'Enter Code'}
+                    </button>
+                ) : (
+                    <button className="password-code-back" type="button" onClick={backToLogin}>Back to Login</button>
+                )}
             </PasswordDialog>
         )
     }
