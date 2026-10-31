@@ -1,0 +1,120 @@
+.import-walkthrough-launcher {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.import-walkthrough-shade {
+    position: fixed;
+    z-index: 1290;
+    background: rgba(15, 23, 42, .20);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    pointer-events: none;
+}
+
+.import-walkthrough-launcher button {
+    background: none;
+    border: 0;
+    color: #17366f;
+    font: inherit;
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+[data-import-guide-active] {
+    outline: 2px solid #1da1f2;
+    outline-offset: 4px;
+    scroll-margin: 16px;
+}
+
+.import-walkthrough-card {
+    position: fixed;
+    z-index: 1300;
+    box-sizing: border-box;
+    max-height: min(300px, 45dvh);
+    overflow-y: auto;
+    padding: 16px;
+    border: 1px solid #cbd9ec;
+    border-radius: 10px;
+    background: #fff;
+    color: #172b4d;
+    box-shadow: 0 6px 24px #172b4d26;
+    text-align: left;
+    font: 13px/1.5 system-ui, sans-serif;
+}
+
+.import-walkthrough-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #69758a;
+    font-size: 11px;
+}
+
+.import-walkthrough-card h3 {
+    margin: 10px 0 6px;
+    font-size: 15px;
+}
+
+.import-walkthrough-card p {
+    margin: 0 0 14px;
+}
+
+.import-walkthrough-card button {
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    padding: 5px 10px;
+    background: #fff;
+    color: #17366f;
+    font: inherit;
+    cursor: pointer;
+}
+
+.import-walkthrough-meta button {
+    padding: 0;
+    border: 0;
+    text-decoration: underline;
+    font-size: 11px;
+}
+
+.import-walkthrough-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+.import-walkthrough-actions span {
+    font-size: 11px;
+    color: #69758a;
+}
+
+@media (max-width: 900px) {
+    .import-walkthrough-card {
+        padding: 14px;
+    }
+}
+
+@media (max-width: 720px) {
+    .import-walkthrough-card {
+        padding: 12px;
+        font-size: 12px;
+    }
+
+    .import-walkthrough-card h3 {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 460px) {
+    .import-walkthrough-card {
+        border-radius: 8px;
+    }
+
+    .import-walkthrough-meta {
+        gap: 8px;
+    }
+}

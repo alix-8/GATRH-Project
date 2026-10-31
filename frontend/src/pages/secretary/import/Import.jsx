@@ -21,6 +21,7 @@ import PreviewImportPanel from './panels/PreviewImportPanel'
 import PreviewIndividualPanel from './panels/PreviewIndividualPanel'
 import './Import.css'
 import DisabledImportButton from './DisabledImportButton'
+import ImportWalkthrough from './walkthrough/ImportWalkthrough'
 
 const getGatheringTypeFromText = text => {
     const match = text.match(/^\s*gathering\s*:\s*(.+?)\s*$/im)
@@ -409,6 +410,14 @@ function Import({ onGoToAttendance = () => {} }) {
         setDuplicateSource(null)
     }
 
+    const handleChangeWeek = () => {
+        clearForm()
+        setPreviewText('')
+        setPreviewCount(0)
+        setTemplateError('')
+        setModal('select-week')
+    }
+
     return (
         <div className="import">
             <Sidebar />
@@ -420,6 +429,13 @@ function Import({ onGoToAttendance = () => {} }) {
                 />
 
                 <div className="import-content">
+                    <ImportWalkthrough
+                        modal={modal}
+                        isPreviewing={isPreviewing}
+                        hasText={Boolean(form.raw_text.trim())}
+                        busy={isProcessing || isGenerating || isLoadingProfile || isLoadingPeriods}
+                        gatheringType={form.gathering_type}
+                    />
                     {weekPeriod && (periods?.[weekPeriod] || isLoadingPeriods) && (
                         <section className="import-period-banner" aria-live="polite" aria-busy={isLoadingPeriods}>
                             <div className="import-period-summary">
@@ -458,7 +474,7 @@ function Import({ onGoToAttendance = () => {} }) {
                                     )
                                 })}
                             </div>
-                            <DisabledImportButton className="import-period-change-button" type="button" onClick={() => setModal('select-week')} disabled={isPreviewing} disabledReason="Go back to raw text first." hintClassName="import-hint-week">
+                            <DisabledImportButton className="import-period-change-button" type="button" onClick={handleChangeWeek} disabled={isPreviewing} disabledReason="Go back to raw text first." hintClassName="import-hint-week">
                                 Change week
                             </DisabledImportButton>
                         </section>

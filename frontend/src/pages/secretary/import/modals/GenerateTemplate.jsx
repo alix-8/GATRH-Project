@@ -112,7 +112,7 @@ function GenerateTemplate({
                     {isGenerating ? 'Loading student names…' : templateError ? 'Preview unavailable.' : `${previewCount} student names found for this program and year level.`}
                 </p>
 
-                <div className="import-modal-buttons">
+                <div className="import-modal-buttons" data-import-guide="format">
                     <button className="import-clear-button" type="button" onClick={() => setModal(null)}>
                         Cancel
                     </button>

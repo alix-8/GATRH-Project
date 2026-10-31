@@ -26,7 +26,7 @@ function ImportAttendancePanel({
                 <div>
                     <h2>Import Attendance</h2>
                 </div>
-                <label className={`import-gathering-select ${isGatheringOpen ? 'open' : ''}`} title={isPreviewing ? 'Go back to raw text to change gathering.' : undefined}>
+                <label data-import-guide="gathering" className={`import-gathering-select ${isGatheringOpen ? 'open' : ''}`} title={isPreviewing ? 'Go back to raw text to change gathering.' : undefined}>
                     <select
                         aria-label="Gathering type"
                         name="gathering_type"
@@ -67,7 +67,7 @@ function ImportAttendancePanel({
                         rows="12"
                     />
 
-                    <div className="import-column-actions-row">
+                    <div className="import-column-actions-row" data-import-guide="prepare">
                         <DisabledImportButton className="import-clear-button" type="button" onClick={onClear} disabled={isPreviewing} disabledReason="Go back to raw text first." hintClassName="import-hint-clear">
                             Clear
                         </DisabledImportButton>
@@ -85,7 +85,7 @@ function ImportAttendancePanel({
 
                     <DisabledImportButton
                         type="button"
-                        className="import-parse-preview-btn"
+                        className="import-parse-preview-btn" data-import-guide="preview"
                         onClick={isPreviewing ? onBackToEdit : onGeneratePreview}
                         disabled={!isPreviewing && (gatheringTypeMismatch || isProcessing)}
                         disabledReason={isProcessing ? '' : 'Match the gathering header and dropdown.'}
@@ -95,12 +95,12 @@ function ImportAttendancePanel({
                     </DisabledImportButton>
                 </div>
 
-                <div className="import-column">
+                <div className="import-column" data-import-guide="review">
                     <p className="import-column-label">Preview</p>
                     {preview ?? <div className="import-preview-placeholder" />}
 
                     <DisabledImportButton
-                        className="import-primary-button import-process-btn"
+                        className="import-primary-button import-process-btn" data-import-guide="save"
                         type="button"
                         onClick={onProcess}
                         disabled={isGenerating || isProcessing || !isPreviewing || previewRowCount < 1}
