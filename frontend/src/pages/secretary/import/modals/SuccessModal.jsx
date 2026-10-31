@@ -42,7 +42,7 @@ function SuccessModal({ result, onClose, onGoToAttendance }) {
                     )}
                 </div>
 
-                <div className="import-modal-buttons">
+                <div className="import-modal-buttons" data-import-guide="success">
                     <button className="import-clear-button" type="button" onClick={onClose}>
                         Close
                     </button>

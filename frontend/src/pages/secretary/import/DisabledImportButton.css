@@ -1,0 +1,16 @@
+.import-disabled-hint { display: inline-flex; position: relative; min-width: 0; cursor: not-allowed; }
+.import-disabled-hint > button:disabled { pointer-events: none; }
+.import-hint-full { width: 100%; }
+.import-hint-process { width: 100%; margin-top: auto; }
+.import-hint-process > button { margin-top: 0; }
+.import-column-actions-row .import-hint-clear { width: 45%; }
+.import-column-actions-row .import-hint-generate { width: 55%; }
+.import-column-actions-row .import-disabled-hint > button { width: 100%; }
+.import-modal-buttons > .import-disabled-hint { flex: 1; }
+.import-hint-close { position: absolute; top: .9rem; right: 1rem; }
+.import-hint-close > button.import-modal-close { position: static; }
+.import-hint-week { flex: 0 0 auto; justify-self: end; }
+@media (max-width: 900px) { .import-hint-week { grid-column: 2; grid-row: 1; } }
+@media (max-width: 600px) { .import-hint-week { grid-column: 1 / -1; grid-row: auto; } }
+
+.import-gathering-select[title] > select:disabled { pointer-events: none; }

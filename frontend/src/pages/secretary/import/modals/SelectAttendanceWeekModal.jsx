@@ -20,7 +20,7 @@ function SelectAttendanceWeekModal({ periods, loading, error, onSelect, onCancel
                 {loading ? <p className="import-week-status">Preparing attendance weeks…</p> : null}
                 {error ? <p className="import-week-error" role="alert">{error}</p> : null}
                 {!loading && !error && (
-                    <div className="import-week-options">
+                    <div className="import-week-options" data-import-guide="week">
                         {options.map(option => {
                             const data = periods?.[option.key]
                             return (

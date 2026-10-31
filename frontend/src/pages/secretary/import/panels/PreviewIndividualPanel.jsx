@@ -73,12 +73,14 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
         const targetField = field === 'batch' ? 'batch' : field
         return errors?.format_errors?.some(
             (e) => (e.student_name === studentName || e.raw_line?.includes(studentName)) &&
+                   (!e.gathering_type || e.gathering_type === gatheringType) &&
                    (e.field === targetField || (e.errors || []).some((err) => err.field === targetField))
         )
     }
 
     const isIncomplete = (studentName) =>
-        errors?.incomplete_records?.some((r) => r.student_name === studentName)
+        errors?.incomplete_records?.some((r) => r.student_name === studentName &&
+            (!r.gathering_type || r.gathering_type === gatheringType))
 
     return (
         <div className="preview-cards">

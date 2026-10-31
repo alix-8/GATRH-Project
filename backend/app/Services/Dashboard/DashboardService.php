@@ -220,24 +220,24 @@ class DashboardService
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->inReportingRange([$dateRange['start'], $dateRange['end']]);
 
-        $pendingRecordsQuery = (clone $baseQuery)
-            ->where(function ($query) {
-                $query->whereNull('validation_status')
-                    ->orWhere('validation_status', 'unvalidated');
+        // Evaluate the whole submission before counting it as approved. Filtering
+        // approved student rows first would count partially approved batches too.
+        $submissions = $baseQuery
+            ->get(['batch_id', 'gathering_type', 'day', 'reporting_day', 'submitted_by', 'validation_status'])
+            ->groupBy(function ($record) {
+                if (!empty($record->batch_id)) {
+                    return 'batch:' . $record->batch_id;
+                }
+
+                $day = Carbon::parse($record->reporting_day ?? $record->day)->toDateString();
+                return 'legacy:' . $record->gathering_type . '|' . $day . '|' . $record->submitted_by;
             });
 
-        $submissionGroup = "CASE WHEN batch_id IS NOT NULL AND batch_id <> '' "
-            . "THEN CONCAT('batch:', batch_id) "
-            . "ELSE CONCAT('legacy:', gathering_type, '|', DATE_FORMAT(day, '%Y-%m-%d'), '|', submitted_by) END";
-        $pendingReview = $pendingRecordsQuery
-            ->selectRaw("{$submissionGroup} AS submission_group")
-            ->groupByRaw($submissionGroup)
-            ->get()
-            ->count();
-
-        // Attendance records store the approved state as `validated`.
-        $approved = (clone $baseQuery)->where('validation_status', 'validated')->count();
-        $total = (clone $baseQuery)->count();
+        $approved = $submissions->filter(fn ($batch) => $batch->every(
+            fn ($record) => in_array($record->validation_status, ['validated', 'approved'], true)
+        ))->count();
+        $total = $submissions->count();
+        $pendingReview = $total - $approved;
 
         return [
             'pending_review' => $pendingReview,
