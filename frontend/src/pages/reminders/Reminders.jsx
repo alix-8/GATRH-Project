@@ -31,6 +31,7 @@ import './Reminders.css'
 const FILTERS = [
     { value: 'all', label: 'All Reminders' },
     { value: 'today', label: 'Today' },
+    { value: 'escalation', label: 'Escalation' },
     { value: 'needs_action', label: 'Needs Action' },
     { value: 'completed', label: 'Completed' },
     { value: 'mine', label: 'My reminder' },
@@ -652,6 +653,7 @@ function Reminders() {
         }
         if (activeFilter === 'all') return true
         if (activeFilter === 'today') return item.isToday
+        if (activeFilter === 'escalation') return item.type === 'escalation'
         if (activeFilter === 'mine') return item.type === 'custom'
         if (activeFilter === 'needs_action') return item.type !== 'escalation' && item.status === 'needs_action'
         if (activeFilter === 'completed') return ['attendance', 'custom'].includes(item.type) && item.status === 'completed'
