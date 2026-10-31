@@ -870,6 +870,17 @@
     background: #eef2f8;
 }
 
+.reminder-select:disabled {
+    background: #eef2f8;
+    color: #8895a8;
+    cursor: not-allowed;
+}
+
+.reminder-select:disabled > img:first-child,
+.reminder-select:disabled .select-chevron {
+    opacity: 0.5;
+}
+
 .reminder-select:focus-visible {
     outline: 2px solid #159fe8;
     outline-offset: 2px;
@@ -933,10 +944,11 @@
 }
 
 .select-chevron {
-    width: 10px;
+    flex: 0 0 11px;
+    width: 11px;
     height: 7px;
     margin-left: auto;
-    opacity: 0.85;
+    color: #172b4d;
 }
 
 .reminder-date-row {
