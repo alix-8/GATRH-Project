@@ -43,6 +43,7 @@ const hasWeeklySlots = text => /^\s*(?:PM|WS|TG)\s*:/im.test(text)
 function Import({ onGoToAttendance = () => {} }) {
     const location = useLocation()
     const templateRequestId = useRef(0)
+    const validationRevision = useRef(0)
     const [form, setForm] = useState({
         program: '',
         year_level: '',
@@ -100,8 +101,17 @@ function Import({ onGoToAttendance = () => {} }) {
         return () => { active = false }
     }, [])
 
+    const resetValidation = () => {
+        validationRevision.current += 1
+        setParseErrors(null)
+        setModalMessage('')
+        setFieldWarning(null)
+        setResult(null)
+    }
+
     const updateField = event => {
         const { name, value } = event.target
+        resetValidation()
         setForm(current => ({ ...current, [name]: value }))
     }
 
@@ -166,6 +176,7 @@ function Import({ onGoToAttendance = () => {} }) {
     }, [])
 
     const applyGeneratedTemplate = (gatheringType) => {
+        resetValidation()
         setForm(current => ({ ...current, gathering_type: gatheringType, raw_text: previewText }))
         setModal(null)
     }
@@ -201,6 +212,8 @@ function Import({ onGoToAttendance = () => {} }) {
         }
 
         setFieldWarning(null)
+        setParseErrors(null)
+        const revision = validationRevision.current
         setIsProcessing(true)
         setResult(null)
         try {
@@ -210,6 +223,7 @@ function Import({ onGoToAttendance = () => {} }) {
                 : { ...form, confirm_blank: isConfirmBlank, override: isOverride, week_period: weekPeriod }
 
             const data = await request(endpoint, { method: 'POST', body: JSON.stringify(payload) })
+            if (revision !== validationRevision.current) return
 
             const responseErrors = getStructuredParseErrors(data)
             const hasValidationFailure = Object.keys(responseErrors).length > 0 || /contains errors|correct them before saving|invalid attendance/i.test(data.message || '')
@@ -225,6 +239,7 @@ function Import({ onGoToAttendance = () => {} }) {
             setOverridePending(false)
             setDuplicateSource(null)
         } catch (error) {
+            if (revision !== validationRevision.current) return
             const details = error.details || {}
             if (details.status === 'duplicate_detected' || (details.requires_confirmation && details.duplicate_records)) {
                 setDuplicateData(details)
@@ -249,6 +264,7 @@ function Import({ onGoToAttendance = () => {} }) {
     const [isPreviewing, setIsPreviewing] = useState(false)
 
     const handleGeneratePreview = async () => {
+        setParseErrors(null)
         if (!form.raw_text.trim()) {
             setFieldWarning('Paste some attendance text first.')
             return
@@ -280,6 +296,7 @@ function Import({ onGoToAttendance = () => {} }) {
             return
         }
 
+        const revision = validationRevision.current
         setIsProcessing(true)
         try {
             await request('/attendance/check-duplicates', {
@@ -290,9 +307,11 @@ function Import({ onGoToAttendance = () => {} }) {
                     week_period: weekPeriod,
                 }),
             })
+            if (revision !== validationRevision.current) return
             setDuplicateSource('preview')
             setIsPreviewing(true)
         } catch (error) {
+            if (revision !== validationRevision.current) return
             const details = error.details || {}
             if (details.status === 'duplicate_detected') {
                 setDuplicateData(details)
@@ -321,6 +340,7 @@ function Import({ onGoToAttendance = () => {} }) {
 
     const periodHasDuplicates = period => ['pm', 'ws', 'tg'].some(type => (period?.[type]?.confirmable_count || 0) > 0)
     const handleChoosePeriod = period => {
+        resetValidation()
         setWeekPeriod(period)
         setOverridePending(false)
         if (periodHasDuplicates(periods?.[period])) {
@@ -376,6 +396,7 @@ function Import({ onGoToAttendance = () => {} }) {
     }
 
     const clearForm = () => {
+        resetValidation()
         setForm(current => ({ ...current, raw_text: '' }))
         setResult(null)
         setFieldWarning(null)
@@ -458,8 +479,8 @@ function Import({ onGoToAttendance = () => {} }) {
                     preview={
                         isPreviewing
                             ? (isWeekMode
-                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} onRowsParsed={setPreviewRowCount} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
-                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} onRowsParsed={setPreviewRowCount} onChange={(t) => setForm((cur) => ({ ...cur, raw_text: t }))} />
+                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} onRowsParsed={setPreviewRowCount} onChange={(value) => updateField({ target: { name: 'raw_text', value } })} />
+                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} onRowsParsed={setPreviewRowCount} onChange={(value) => updateField({ target: { name: 'raw_text', value } })} />
                             )
                             : null
                     }
