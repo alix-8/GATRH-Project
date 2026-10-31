@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -55,6 +56,7 @@ class AuthController extends Controller
         $remember = $request->boolean('remember');
         Auth::login($user, $remember);
         $request->session()->regenerate();
+        app(AuditLogService::class)->recordSecurityEvent('Signed in', $user);
 
         return response()->json([
             // Keep the login response limited to the fields needed to route
@@ -203,6 +205,8 @@ class AuthController extends Controller
             ->where('email', $user->email)
             ->delete();
         RateLimiter::clear($key);
+
+        app(AuditLogService::class)->recordSecurityEvent('Changed password', $user);
 
         return response()->json(['message' => 'Password reset successfully.']);
     }

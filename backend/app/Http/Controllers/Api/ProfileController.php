@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Hash;
@@ -72,6 +73,7 @@ class ProfileController extends Controller
         $user->update([
             'password' => $validated['password'],
         ]);
+        app(AuditLogService::class)->recordSecurityEvent('Changed password', $user);
 
         return response()->json([
             'message' => 'Password changed successfully.',
