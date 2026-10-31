@@ -1,3 +1,4 @@
+import DisabledImportButton from '../DisabledImportButton'
 
 import { useEffect, useState } from 'react'
 
@@ -71,13 +72,14 @@ function GenerateTemplate({
 
                 <div className="import-modal-preview-header">
                     <div className="import-modal-preview-label">Format Preview</div>
-                    <button
+                    <DisabledImportButton
                         className={`import-copy-button ${previewText && !isGenerating && !isCopied ? 'is-ready' : ''} ${isCopied ? 'is-copied' : ''}`}
                         type="button"
                         onClick={copyPreview}
                         disabled={!previewText || isGenerating}
+                        disabledReason={isGenerating ? '' : 'Generate a format first.'}
                         aria-label={isCopied ? 'Copied format preview' : 'Copy format preview'}
-                        title={isCopied ? 'Copied' : 'Copy preview'}
+                        title={!previewText || isGenerating ? undefined : isCopied ? 'Copied' : 'Copy preview'}
                     >
                         {isCopied ? (
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -90,7 +92,7 @@ function GenerateTemplate({
                             <path d="M6 18H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         )}
-                    </button>
+                    </DisabledImportButton>
                 </div>
 
                 <div className="import-modal-preview">
@@ -114,14 +116,14 @@ function GenerateTemplate({
                     <button className="import-clear-button" type="button" onClick={() => setModal(null)}>
                         Cancel
                     </button>
-                    <button
+                    <DisabledImportButton
                         className="import-primary-button"
                         type="button"
                         onClick={() => previewText ? applyGeneratedTemplate(gatheringType) : generateTemplate(gatheringType)}
                         disabled={isGenerating}
                     >
                         {isGenerating ? 'Loading...' : previewText ? 'Use Format' : 'Generate'}
-                    </button>
+                    </DisabledImportButton>
                 </div>
             </div>
         </div>

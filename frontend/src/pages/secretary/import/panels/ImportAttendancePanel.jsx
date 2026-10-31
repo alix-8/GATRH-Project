@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import DisabledImportButton from '../DisabledImportButton'
 import './ImportAttendancePanel.css'
 
 function ImportAttendancePanel({
@@ -25,7 +26,7 @@ function ImportAttendancePanel({
                 <div>
                     <h2>Import Attendance</h2>
                 </div>
-                <label className={`import-gathering-select ${isGatheringOpen ? 'open' : ''}`}>
+                <label className={`import-gathering-select ${isGatheringOpen ? 'open' : ''}`} title={isPreviewing ? 'Go back to raw text to change gathering.' : undefined}>
                     <select
                         aria-label="Gathering type"
                         name="gathering_type"
@@ -67,41 +68,47 @@ function ImportAttendancePanel({
                     />
 
                     <div className="import-column-actions-row">
-                        <button className="import-clear-button" type="button" onClick={onClear} disabled={isPreviewing}>
+                        <DisabledImportButton className="import-clear-button" type="button" onClick={onClear} disabled={isPreviewing} disabledReason="Go back to raw text first." hintClassName="import-hint-clear">
                             Clear
-                        </button>
-                        <button
+                        </DisabledImportButton>
+                        <DisabledImportButton
                             className="import-secondary-button"
                             type="button"
                             onClick={onOpenGenerateModal}
                             disabled={isGenerating || isProcessing || isPreviewing}
+                            disabledReason={isGenerating || isProcessing ? '' : 'Go back to raw text first.'}
+                            hintClassName="import-hint-generate"
                         >
                             {isGenerating ? 'Generating Format...' : 'Generate Format'}
-                        </button>
+                        </DisabledImportButton>
                     </div>
 
-                    <button
+                    <DisabledImportButton
                         type="button"
                         className="import-parse-preview-btn"
                         onClick={isPreviewing ? onBackToEdit : onGeneratePreview}
                         disabled={!isPreviewing && (gatheringTypeMismatch || isProcessing)}
+                        disabledReason={isProcessing ? '' : 'Match the gathering header and dropdown.'}
+                        hintClassName="import-hint-full"
                     >
                         {isPreviewing ? 'Back to Raw Text' : isProcessing ? 'Checking for duplicates...' : 'Parse and See Preview'}
-                    </button>
+                    </DisabledImportButton>
                 </div>
 
                 <div className="import-column">
                     <p className="import-column-label">Preview</p>
                     {preview ?? <div className="import-preview-placeholder" />}
 
-                    <button
+                    <DisabledImportButton
                         className="import-primary-button import-process-btn"
                         type="button"
                         onClick={onProcess}
                         disabled={isGenerating || isProcessing || !isPreviewing || previewRowCount < 1}
+                        disabledReason={isGenerating || isProcessing ? '' : !isPreviewing ? 'Parse and preview your attendance first.' : 'Add at least one student row.'}
+                        hintClassName="import-hint-process"
                     >
                         {isProcessing ? 'Processing...' : 'Process Attendance'}
-                    </button>
+                    </DisabledImportButton>
                 </div>
             </div>
         </section>

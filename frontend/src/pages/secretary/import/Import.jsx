@@ -20,6 +20,7 @@ import ImportAttendancePanel from './panels/ImportAttendancePanel'
 import PreviewImportPanel from './panels/PreviewImportPanel'
 import PreviewIndividualPanel from './panels/PreviewIndividualPanel'
 import './Import.css'
+import DisabledImportButton from './DisabledImportButton'
 
 const getGatheringTypeFromText = text => {
     const match = text.match(/^\s*gathering\s*:\s*(.+?)\s*$/im)
@@ -457,9 +458,9 @@ function Import({ onGoToAttendance = () => {} }) {
                                     )
                                 })}
                             </div>
-                            <button className="import-period-change-button" type="button" onClick={() => setModal('select-week')} disabled={isPreviewing}>
+                            <DisabledImportButton className="import-period-change-button" type="button" onClick={() => setModal('select-week')} disabled={isPreviewing} disabledReason="Go back to raw text first." hintClassName="import-hint-week">
                                 Change week
-                            </button>
+                            </DisabledImportButton>
                         </section>
                     )}
                     <ImportAttendancePanel
