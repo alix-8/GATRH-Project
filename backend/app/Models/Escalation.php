@@ -41,7 +41,7 @@ class Escalation extends Model
         return $query
             ->whereIn('escalation_level', $levels)
             ->where('no_response_count', '>', 0)
-            ->whereHas('student', fn (Builder $students) => $students->accessibleTo($user));
+            ->whereHas('student', fn (Builder $students) => $students->active()->accessibleTo($user));
     }
 
     // Belongs to a single student

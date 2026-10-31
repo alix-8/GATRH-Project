@@ -15,7 +15,7 @@ class AdminStudentSplitNameImportTest extends TestCase
     {
         parent::setUp();
         $this->mock(\App\Services\Audit\AuditLogService::class)->shouldReceive('record', 'recordAction')->zeroOrMoreTimes();
-        Schema::create('programs', function (Blueprint $t): void { $t->id(); $t->string('code'); });
+        Schema::create('programs', function (Blueprint $t): void { $t->id(); $t->string('code'); $t->boolean('is_active')->default(true); });
         Schema::create('students', function (Blueprint $t): void {
             $t->id(); $t->string('name'); $t->string('program'); $t->string('year_level');
             $t->boolean('is_active')->default(true); $t->timestamps();

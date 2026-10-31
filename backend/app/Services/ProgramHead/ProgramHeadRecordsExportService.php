@@ -30,11 +30,7 @@ class ProgramHeadRecordsExportService
                 if ($batchKey) {
                     return;
                 }
-                $students->active();
 
-                if (!empty($filters['year_level'])) {
-                    $students->where('year_level', (int) $filters['year_level']);
-                }
             });
 
         if ($batchKey) {
@@ -51,6 +47,12 @@ class ProgramHeadRecordsExportService
 
         if (!empty($filters['date'])) {
             $query->inReportingRange([$filters['date'], $filters['date']]);
+        }
+
+        if (!empty($filters['year_level'])) {
+            $query->where(fn (Builder $rows) => $rows->where('year_level', (int) $filters['year_level'])
+                ->orWhere(fn (Builder $legacy) => $legacy->whereNull('year_level')
+                    ->whereHas('student', fn (Builder $students) => $students->where('year_level', (int) $filters['year_level']))));
         }
 
         if (!empty($filters['gathering_type'])) {
@@ -75,17 +77,31 @@ class ProgramHeadRecordsExportService
         CarbonImmutable $start,
         CarbonImmutable $end
     ): Collection {
+        $historicalIds = AttendanceRecord::query()
+            ->whereIn('validation_status', ['validated', 'approved'])
+            ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
+            ->inReportingRange([$start->toDateString(), $end->toDateString()])
+            ->where(fn ($rows) => $rows->where('program', $program)
+                ->orWhere(fn ($legacy) => $legacy->whereNull('program')->whereHas('student', fn ($students) => $students->where('program', $program))))
+            ->where(fn ($rows) => $rows->where('year_level', $yearLevel)
+                ->orWhere(fn ($legacy) => $legacy->whereNull('year_level')->whereHas('student', fn ($students) => $students->where('year_level', $yearLevel))))
+            ->pluck('student_id');
+
         return Student::query()
-            ->active()
             ->accessibleTo($user)
-            ->where('program', $program)
-            ->where('year_level', $yearLevel)
+            ->where(fn ($students) => $students->where(fn ($current) =>
+                $current->active()->where('program', $program)->where('year_level', $yearLevel))
+                ->orWhereIn('students.id', $historicalIds))
             ->with('escalation')
-            ->with(['attendanceRecords' => function (HasMany $records) use ($start, $end) {
+            ->with(['attendanceRecords' => function (HasMany $records) use ($start, $end, $program, $yearLevel) {
                 $records
                     ->whereIn('validation_status', ['validated', 'approved'])
                     ->whereIn('gathering_type', ['ws', 'tg', 'pm'])
                     ->inReportingRange([$start->toDateString(), $end->toDateString()])
+                    ->where(fn ($rows) => $rows->where('program', $program)
+                        ->orWhere(fn ($legacy) => $legacy->whereNull('program')->whereHas('student', fn ($students) => $students->where('program', $program))))
+                    ->where(fn ($rows) => $rows->where('year_level', $yearLevel)
+                        ->orWhere(fn ($legacy) => $legacy->whereNull('year_level')->whereHas('student', fn ($students) => $students->where('year_level', $yearLevel))))
                     ->orderBy('day')
                     ->orderBy('gathering_type');
             }])

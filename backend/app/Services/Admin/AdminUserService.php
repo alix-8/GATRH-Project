@@ -25,7 +25,7 @@ class AdminUserService
         return [
             'summary' => $this->getSummary(),
             'users' => $this->getUsers($filters)->through(fn (User $user) => $this->presentUser($user)),
-            'programs' => Program::query()
+            'programs' => Program::query()->active()
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
             'roles' => $this->getRoleOptions(),
@@ -105,6 +105,13 @@ class AdminUserService
 
             if (array_key_exists('program', $data) || array_key_exists('program_ids', $data)) {
                 $data['program'] = $this->resolvePrimaryProgram($data, $programIds, $user);
+            }
+
+            if (($data['is_active'] ?? $user->is_active)
+                && in_array($data['role'] ?? $user->role, ['secretary', 'program_head', 'program_secretary'], true)
+                && ! Program::query()->active()->where(fn ($programs) => $programs
+                    ->whereIn('id', $programIds)->orWhere('code', $data['program'] ?? $user->program))->exists()) {
+                throw ValidationException::withMessages(['program' => ['An active account must be assigned to an active program.']]);
             }
 
             unset($data['program_ids']);

@@ -177,29 +177,7 @@ class AttendanceDraftController extends Controller
             ], 422);
         }
 
-        $inactiveStudents = Student::whereKey($submittedIds->all())
-            ->where('is_active', false)
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn (Student $student) => ['student_id' => $student->id, 'student_name' => $student->name])
-            ->values();
-
-        if ($inactiveStudents->isNotEmpty()) {
-            $message = $inactiveStudents->count() === 1
-                ? "{$inactiveStudents->first()['student_name']} is already inactive and cannot be edited in this attendance draft."
-                : 'These students are already inactive and cannot be edited in this attendance draft: '
-                    . $inactiveStudents->pluck('student_name')->implode(', ')
-                    . '.';
-
-            return response()->json([
-                'status' => 'error',
-                'message' => $message,
-                'inactive_students' => $inactiveStudents,
-            ], 403);
-        }
-
         $accessibleStudentCount = Student::whereKey($submittedIds->all())
-            ->active()
             ->accessibleTo($request->user())
             ->count();
         if ($accessibleStudentCount !== $submittedIds->count()) {

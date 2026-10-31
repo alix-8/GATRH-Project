@@ -49,7 +49,7 @@ class AdminStudentController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'program' => ['required', 'string', Rule::exists('programs', 'code')],
+            'program' => ['required', 'string', Rule::exists('programs', 'code')->where('is_active', true)],
             'year_level' => ['required', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -98,7 +98,7 @@ class AdminStudentController extends Controller
     {
         $validated = $request->validate([
             'file' => ['required', 'file', 'extensions:csv,xlsx', 'max:2048'],
-            'program' => ['nullable', 'required_with:year_level', 'string', Rule::exists('programs', 'code')],
+            'program' => ['nullable', 'required_with:year_level', 'string', Rule::exists('programs', 'code')->where('is_active', true)],
             'year_level' => ['nullable', 'required_with:program', Rule::in(['1', '2', '3', '4'])],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -122,7 +122,7 @@ class AdminStudentController extends Controller
             throw ValidationException::withMessages(['file' => ['Include a Full Name column or both Last Name (lname) and First Name (fname) columns. If Program and Year Level are not selected, the file must also have program and year_level columns.']]);
         }
 
-        $validPrograms = Program::query()->pluck('code')->all();
+        $validPrograms = Program::query()->active()->pluck('code')->all();
         $students = [];
         foreach ($lines as $index => $values) {
             if (collect($values)->every(fn ($value) => trim((string) $value) === '')) {

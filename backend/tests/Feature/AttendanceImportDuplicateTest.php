@@ -26,12 +26,23 @@ class AttendanceImportDuplicateTest extends TestCase
             ->shouldReceive('syncDraft', 'syncStudent')->zeroOrMoreTimes();
         $this->mock(AuditLogService::class)->shouldReceive('record', 'recordAction')->zeroOrMoreTimes();
 
+        Schema::create('programs', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code');
+            $table->string('name')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->json('roster_history')->nullable();
+        });
+        Schema::create('program_user', function (Blueprint $table): void {
+            $table->unsignedBigInteger('program_id');
+            $table->unsignedBigInteger('user_id');
+        });
         Schema::create('students', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
             $table->string('program');
             $table->integer('year_level');
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true); $table->json('roster_history')->nullable();
             $table->timestamps();
         });
         Schema::create('users', function (Blueprint $table): void {
@@ -273,15 +284,6 @@ class AttendanceImportDuplicateTest extends TestCase
         $this->assertNull(AttendanceRecord::firstOrFail()->resubmitted_at);
         $this->assertSame(['2026-10-28'], AttendanceRecord::pluck('reporting_day')->map(fn ($date) => Carbon::parse($date)->toDateString())->unique()->values()->all());
 
-        Schema::create('programs', function (Blueprint $table): void {
-            $table->id();
-            $table->string('code');
-            $table->string('name')->nullable();
-        });
-        Schema::create('program_user', function (Blueprint $table): void {
-            $table->unsignedBigInteger('program_id');
-            $table->unsignedBigInteger('user_id');
-        });
         $head = new User(['role' => 'program_head', 'program' => 'BSIS', 'year_level' => 1]);
         $head->id = 2;
         foreach (['program_head', 'cm_coordinator', 'chancellor'] as $role) {
@@ -452,6 +454,41 @@ class AttendanceImportDuplicateTest extends TestCase
         $response = app(AttendanceController::class)->unsubmitSubmission($request, $record->batch_id);
         $this->assertSame(404, $response->getStatusCode());
         $this->assertNotNull($record->fresh());
+    }
+
+    public function test_existing_draft_retains_an_inactivated_student_but_new_submission_rejects_them(): void
+    {
+        $student = Student::firstOrFail();
+        $entry = [
+            'student_id' => $student->id, 'student_name' => $student->name,
+            'program' => 'BSIS', 'year_level' => 1, 'gathering_type' => 'pm',
+            'day' => '2026-10-28', 'day_provided' => true,
+            'batch' => '08:00:00', 'venue' => 'Chapel', 'status' => 'present',
+        ];
+        $draft = AttendanceDraft::create([
+            'user_id' => 1, 'gathering_type' => 'pm', 'status' => 'draft',
+            'day' => '2026-10-28', 'parsed_data' => [$entry],
+        ]);
+        $student->update(['is_active' => false]);
+        $edit = Request::create('/attendance/drafts/'.$draft->id, 'PATCH', ['records' => [[
+            'student_id' => $student->id, 'day' => '2026-10-28', 'day_provided' => true,
+            'batch' => '8AM', 'venue' => 'Chapel',
+        ]]]);
+        $edit->setUserResolver(fn () => $this->secretary());
+        $response = app(AttendanceDraftController::class)->update($edit, $draft->id, app(AttendanceParsingService::class), app(AuditLogService::class));
+        $this->assertSame(200, $response->getStatusCode(), $response->getContent());
+        $this->assertCount(1, $draft->fresh()->parsed_data);
+
+        $submit = Request::create('/attendance', 'POST', ['records' => [$entry]]);
+        $submit->setUserResolver(fn () => $this->secretary());
+        $this->assertSame(403, app(AttendanceController::class)->store($submit)->getStatusCode());
+        $submit->merge(['draft_id' => $draft->id]);
+        $submit->merge(['records' => [[...$entry, 'gathering_type' => 'ws']]]);
+        $this->assertSame(422, app(AttendanceController::class)->store($submit)->getStatusCode());
+        $submit->merge(['records' => [$entry]]);
+        $response = app(AttendanceController::class)->store($submit);
+        $this->assertSame(201, $response->getStatusCode(), $response->getContent());
+        $this->assertDatabaseHas('attendance_records', ['student_id' => $student->id]);
     }
 
     private function secretary(): User

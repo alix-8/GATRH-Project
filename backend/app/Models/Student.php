@@ -10,6 +10,9 @@ use App\Models\User;
 class Student extends Model
 {
     use HasFactory;
+    use \App\Models\Concerns\TracksRosterHistory;
+
+    protected $attributes = ['is_active' => true];
 
     protected $fillable = [
         'name',
@@ -20,11 +23,22 @@ class Student extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'roster_history' => 'array',
     ];
 
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('students.is_active', true)->inActiveProgram();
+    }
+
+    public function scopeInActiveProgram($query)
+    {
+        // Legacy program codes remain usable, but a cataloged inactive program does not.
+        return $query->whereNotExists(function ($programs) {
+            $programs->selectRaw('1')->from('programs')
+                ->whereColumn('programs.code', 'students.program')
+                ->where('programs.is_active', false);
+        });
     }
 
     public function scopeAccessibleTo($query, User $user)

@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Program extends Model
 {
     use HasFactory;
+    use \App\Models\Concerns\TracksRosterHistory;
+
+    protected $attributes = ['is_active' => true];
 
     protected $fillable = [
         'code',
@@ -19,7 +22,13 @@ class Program extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'max_year_level' => 'integer',
+        'roster_history' => 'array',
     ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('programs.is_active', true);
+    }
 
     public function users()
     {

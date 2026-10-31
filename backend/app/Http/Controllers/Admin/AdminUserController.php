@@ -23,7 +23,7 @@ class AdminUserController extends Controller
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'role' => ['nullable', Rule::in(User::ROLES)],
-            'program' => ['nullable', 'string', Rule::exists('programs', 'code')],
+            'program' => ['nullable', 'string', Rule::exists('programs', 'code')->where('is_active', true)],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
             'per_page' => ['nullable', 'integer', 'between:1,100'],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -51,7 +51,7 @@ class AdminUserController extends Controller
             'password_confirmation' => ['prohibited'],
             'program' => ['nullable', 'string', 'required_if:role,secretary,program_secretary,program_head', Rule::exists('programs', 'code')],
             'program_ids' => ['nullable', 'array'],
-            'program_ids.*' => ['integer', 'distinct', Rule::exists('programs', 'id')],
+            'program_ids.*' => ['integer', 'distinct', Rule::exists('programs', 'id')->where('is_active', true)],
             'year_level' => ['nullable', 'string', 'max:20', 'required_if:role,secretary'],
             'is_active' => ['sometimes', 'boolean'],
         ]);

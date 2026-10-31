@@ -29,7 +29,15 @@ class MonthlyExportService
     public function authorize(User $user, MonthlyExportTask $task): void
     {
         abort_unless((int) $task->user_id === (int) $user->id, 403);
-        abort_unless(in_array([$task->program, (int) $task->year_level], $this->scopes($user), true), 403, 'You no longer have access to this program and year.');
+        $codes = $user->role === 'secretary' ? [$user->program] : $user->assignedProgramCodes();
+        $program = Program::where('code', $task->program)->first();
+        $maximumYear = $program?->max_year_level ?: ($task->program === 'ACT' ? 2 : 4);
+        $allowed = in_array($user->role, ['secretary', 'program_head', 'program_secretary'], true)
+            && $program !== null
+            && (int) $task->year_level >= 1 && (int) $task->year_level <= $maximumYear
+            && in_array($task->program, $codes, true)
+            && ($user->role !== 'secretary' || (int) $task->year_level === (int) $user->year_level);
+        abort_unless($allowed, 403, 'You no longer have access to this program and year.');
     }
 
     /** Eligibility is the day after the final PM/WS/TG window, not the reporting week's Tuesday. */

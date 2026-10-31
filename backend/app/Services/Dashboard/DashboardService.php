@@ -161,6 +161,7 @@ class DashboardService
     private function getSecretaryTasksAndReminders($user): array
     {
         return Reminder::query()
+            ->relevantToCurrentRoster()
             ->where('user_id', $user->id)
             ->whereIn('status', ['upcoming', 'needs_action'])
             ->orderBy('due_date')
@@ -650,9 +651,7 @@ class DashboardService
             ]);
         }
         // Use the program catalog so seeded programs remain available without enrolled students.
-         $allPrograms = Program::query()
-            ->orderBy('code')
-            ->pluck('code');
+         $allPrograms = app(ReportingRoster::class)->programsForMonth($selectedDate->copy()->startOfMonth())->pluck('code');
          $programNames = Program::query()->pluck('name', 'code');
         $selectedProgram = $filters['program'] ?? null;
         $selectedYearLevel = $filters['year_level'] ?? null;
@@ -679,19 +678,26 @@ class DashboardService
             $this->getDraftAttendanceRows($reportingWeeksStart, $reportingWeeksEnd)
         );
 
-        $rosters = Student::query()->active()->whereIn('program', $programs)
-            ->get(['id', 'program', 'year_level'])
+        $rosters = Student::query()->whereIn('program', $programs)
+            ->get()
             ->groupBy(fn ($student) => $student->program . '|' . $student->year_level);
+        $programCatalog = Program::query()->get()->keyBy('code');
+        $reportingRoster = app(ReportingRoster::class);
         $responses = app(AttendanceResponseSummary::class);
-        $summarizeProgram = function ($programCode, $programRecords, $yearLevel = null, $weekStart = null) use ($rosters, $responses, $dateRange): array {
+        $summarizeProgram = function ($programCode, $programRecords, $yearLevel = null, $weekStart = null) use ($rosters, $responses, $dateRange, $programCatalog, $reportingRoster): array {
             // Match the Coordinator's offered year groups and PM/WS/TG slots.
             $years = $yearLevel !== null ? [(int) $yearLevel] : range(1, $programCode === 'ACT' ? 2 : 4);
             $ranges = GatheringCycle::getRangesForWeekStart($weekStart ?? $dateRange['start']);
-            $slots = collect($years)->flatMap(function ($year) use ($programCode, $programRecords, $rosters, $responses, $ranges) {
-                $ids = $rosters->get($programCode . '|' . $year, collect())->pluck('id')->map(fn ($id) => (int) $id)->all();
-                return collect(['pm', 'ws', 'tg'])->map(fn ($type) => $responses->gathering($programRecords, $ids, $type, [
-                    'start' => $ranges[$type]['start']->toDateString(), 'end' => $ranges[$type]['end']->toDateString(),
-                ]));
+            $slots = collect($years)->flatMap(function ($year) use ($programCode, $programRecords, $rosters, $responses, $ranges, $programCatalog, $reportingRoster) {
+                $students = $rosters->get($programCode . '|' . $year, collect());
+                return collect(['pm', 'ws', 'tg'])->map(function ($type) use ($students, $programRecords, $responses, $ranges, $programCatalog, $programCode, $reportingRoster) {
+                    $range = ['start' => $ranges[$type]['start']->toDateString(), 'end' => $ranges[$type]['end']->toDateString()];
+                    $rows = $programRecords->where('gathering_type', $type)->filter(fn ($record) =>
+                        ($record->reporting_day ?? $record->day)->toDateString() >= $range['start']
+                        && ($record->reporting_day ?? $record->day)->toDateString() <= $range['end']);
+                    $ids = $reportingRoster->studentIds($students, $rows, $range['start'], $programCatalog->get($programCode));
+                    return $responses->gathering($programRecords, $ids, $type, $range);
+                });
             });
             $completed = $slots->where('status', 'completed')->count();
             $hasResponses = $slots->contains(fn ($slot) => $slot['responded_students'] > 0);

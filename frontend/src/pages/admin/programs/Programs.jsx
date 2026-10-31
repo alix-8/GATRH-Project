@@ -25,7 +25,7 @@ function initials(name) {
 
 function Programs() {
     const [pageData, setPageData] = useState(null)
-    const [filters, setFilters] = useState({ program: '', status: '', search: '' })
+    const [filters, setFilters] = useState({ program: '', status: 'active', search: '' })
     const [searchQuery, setSearchQuery] = useState('')
     const [page, setPage] = useState(1)
     const [refreshVersion, setRefreshVersion] = useState(0)
@@ -136,7 +136,6 @@ function Programs() {
                                 </label>
                                 <label className="admin-programs-select">
                                     <ModalSelect aria-label="Filter by status" value={filters.status} onChange={event => updateFilter('status', event.target.value)}>
-                                        <option value="">All Statuses</option>
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
                                     </ModalSelect>

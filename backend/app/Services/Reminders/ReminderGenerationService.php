@@ -5,6 +5,7 @@ namespace App\Services\Reminders;
 use App\Models\Reminder;
 use App\Models\AttendanceRecord;
 use App\Models\User;
+use App\Models\Student;
 use App\Support\GatheringCycle;
 use App\Support\SystemTimezone;
 use Carbon\Carbon;
@@ -38,6 +39,12 @@ class ReminderGenerationService
         $secretaries = User::where('role', 'secretary')
             ->whereNotNull('program')
             ->whereNotNull('year_level')
+            ->whereExists(function ($students) {
+                $students->selectRaw('1')->from('students')
+                    ->whereColumn('students.program', 'users.program')
+                    ->whereColumn('students.year_level', 'users.year_level')
+                    ->whereIn('students.id', Student::query()->active()->select('students.id'));
+            })
             ->when($onlyUser, fn ($query) => $query->whereKey($onlyUser->id))
             ->get(['id', 'program', 'year_level']);
 
@@ -189,7 +196,7 @@ class ReminderGenerationService
             ), 0);
             $range = GatheringCycle::getRangesForWeekStart(Carbon::parse($reminder->gathering_date))[$reminder->gathering_type];
             // A submission task is finished by submitting, not by getting every student's response.
-            $isComplete = AttendanceRecord::where('submitted_by', $reminder->user_id)
+            $isComplete = $total === 0 || AttendanceRecord::where('submitted_by', $reminder->user_id)
                 ->where('gathering_type', $reminder->gathering_type)
                 ->inReportingRange([$range['start'], $range['end']])
                 ->where(function ($query) use ($reminder): void {
@@ -313,7 +320,7 @@ class ReminderGenerationService
             ->unique()
             ->values();
 
-        $totalCounts = DB::table('students')
+        $totalCounts = Student::query()->active()
             ->select('program', 'year_level')
             ->selectRaw('COUNT(*) AS total')
             ->where('is_active', true)
@@ -338,6 +345,7 @@ class ReminderGenerationService
             )
             ->selectRaw('COUNT(*) AS responded')
             ->where('students.is_active', true)
+            ->whereIn('students.id', Student::query()->active()->select('students.id'))
             ->whereIn('students.program', $programs)
             ->whereIn('students.year_level', $yearLevels)
             ->whereIn('attendance_records.gathering_type', $gatheringTypes)
