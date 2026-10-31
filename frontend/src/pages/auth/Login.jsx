@@ -18,11 +18,19 @@ function Login({ initialEmail = '' }) {
     const location = useLocation()
 
     const [systemName, setSystemName] = useState('Gathering Attendance Tracking and Reporting Hub')
+    const [adminEmail, setAdminEmail] = useState('')
+    const adminEmailSubject = 'GATRH Account Access Help'
+    const gmailComposeUrl = adminEmail
+        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(adminEmail)}&su=${encodeURIComponent(adminEmailSubject)}`
+        : ''
     useEffect(() => {
         const controller = new AbortController()
         fetch(API_BASE_URL + '/branding', { signal: controller.signal, cache: 'no-store' })
             .then(response => response.ok ? response.json() : Promise.reject())
-            .then(data => { if (data.system_name) setSystemName(data.system_name) })
+            .then(data => {
+                if (data.system_name) setSystemName(data.system_name)
+                if (typeof data.admin_email === 'string') setAdminEmail(data.admin_email)
+            })
             .catch(() => {})
         return () => controller.abort()
     }, [])
@@ -253,7 +261,19 @@ function Login({ initialEmail = '' }) {
 
             {/* ACCOUNT HELP */}
             <p className="account-help">
-                <span>Need help accessing your account? Contact your administrator</span>
+                <span>Need help accessing your account?</span>
+                {adminEmail ? (
+                    <a
+                        className="admin-contact-link"
+                        href={gmailComposeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Contact your administrator at ${adminEmail}`}
+                    >
+                        <span className="admin-contact-label">Contact your administrator</span>
+                        <span className="admin-contact-email">{adminEmail}</span>
+                    </a>
+                ) : <span>Contact your administrator</span>}
             </p>
 
             {/* RIGHT SIDE */}

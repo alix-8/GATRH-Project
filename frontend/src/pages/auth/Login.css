@@ -252,6 +252,28 @@
     font-size: 13px;
 }
 
+.admin-contact-link {
+    display: inline-grid;
+    color: #172b4d;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.admin-contact-link span {
+    grid-area: 1 / 1;
+}
+
+.admin-contact-email,
+.admin-contact-link:hover .admin-contact-label,
+.admin-contact-link:focus-visible .admin-contact-label {
+    visibility: hidden;
+}
+
+.admin-contact-link:hover .admin-contact-email,
+.admin-contact-link:focus-visible .admin-contact-email {
+    visibility: visible;
+}
+
 .login-right {
     position: absolute;
     top: 0;
