@@ -24,7 +24,7 @@ import useAutoDismissNotice from '../../hooks/useAutoDismissNotice'
 import Calendar from '../../components/Calendar/Calendar'
 import { TrashIcon } from '../../components/Icons/Reusables'
 import LoadingCircle from '../../components/feedback/LoadingCircle'
-import ReviewDrawer from '../secretary/attendance/ReviewDrawer'
+import ReviewDrawer from '../../user/secretary/attendance/ReviewDrawer'
 import { markNotificationIdsSeen } from '../../components/feedback/notificationReadState'
 import './Reminders.css'
 
