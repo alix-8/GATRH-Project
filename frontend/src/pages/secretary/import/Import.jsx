@@ -437,7 +437,7 @@ function Import({ onGoToAttendance = () => {} }) {
                         gatheringType={form.gathering_type}
                     />
                     {weekPeriod && (periods?.[weekPeriod] || isLoadingPeriods) && (
-                        <section className="import-period-banner" aria-live="polite" aria-busy={isLoadingPeriods}>
+                        <section className="import-period-banner" data-import-guide="week-summary" aria-live="polite" aria-busy={isLoadingPeriods}>
                             <div className="import-period-summary">
                                 <svg className="import-period-calendar-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
@@ -474,7 +474,7 @@ function Import({ onGoToAttendance = () => {} }) {
                                     )
                                 })}
                             </div>
-                            <DisabledImportButton className="import-period-change-button" type="button" onClick={handleChangeWeek} disabled={isPreviewing} disabledReason="Go back to raw text first." hintClassName="import-hint-week">
+                            <DisabledImportButton className="import-period-change-button" data-import-guide="change-week" type="button" onClick={handleChangeWeek} disabled={isPreviewing} disabledReason="Go back to raw text first." hintClassName="import-hint-week">
                                 Change week
                             </DisabledImportButton>
                         </section>

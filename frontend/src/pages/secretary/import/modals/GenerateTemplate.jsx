@@ -48,6 +48,7 @@ function GenerateTemplate({
                     Gathering
                     <span className={`import-format-select ${isGatheringOpen ? 'open' : ''}`}>
                         <select
+                            data-import-guide="format-gathering"
                             className="import-native-select"
                             name="gathering_type"
                             value={gatheringType}
@@ -73,7 +74,8 @@ function GenerateTemplate({
                 <div className="import-modal-preview-header">
                     <div className="import-modal-preview-label">Format Preview</div>
                     <DisabledImportButton
-                        className={`import-copy-button ${previewText && !isGenerating && !isCopied ? 'is-ready' : ''} ${isCopied ? 'is-copied' : ''}`}
+                        className={`import-copy-button ${previewText && !isGenerating && !isCopied ? 'is-ready' : ''} ${isCopied ? 'is-copied' : ''}`} 
+                        data-import-guide="copy"
                         type="button"
                         onClick={copyPreview}
                         disabled={!previewText || isGenerating}

@@ -7,10 +7,52 @@
 .import-walkthrough-shade {
     position: fixed;
     z-index: 1290;
-    background: rgba(15, 23, 42, .20);
+    background: rgba(15, 23, 42, .15);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     pointer-events: none;
+}
+
+.import-walkthrough-arrow {
+    position: fixed;
+    z-index: 1291;
+    fill: none;
+    stroke: #1675d1;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 2px #fff);
+    pointer-events: none;
+    overflow: visible;
+}
+
+.import-walkthrough-arrow-motion {
+    animation: import-guide-arrow-point 900ms ease-in-out infinite;
+}
+
+@keyframes import-guide-arrow-point {
+    0%, 100% {
+        transform: translateX(-4px);
+    }
+    50% {
+        transform: translateX(4px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .import-walkthrough-arrow-motion {
+        animation: none;
+    }
+}
+
+[data-import-guide-clear] {
+    position: relative;
+    z-index: 1291;
+}
+
+/* Keep the sticky page header above the tour highlight and backdrop. */
+.import-header[data-import-guide-header] {
+    z-index: 1292;
 }
 
 .import-walkthrough-launcher button {
@@ -27,6 +69,22 @@
     outline: 2px solid #1da1f2;
     outline-offset: 4px;
     scroll-margin: 16px;
+    animation: import-guide-border-pulse 1.4s steps(1, end) infinite;
+}
+
+@keyframes import-guide-border-pulse {
+    0%, 100% {
+        outline-color: #1675d1;
+    }
+    50% {
+        outline-color: #7dcaff;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-import-guide-active] {
+        animation: none;
+    }
 }
 
 .import-walkthrough-card {

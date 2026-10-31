@@ -56,7 +56,7 @@ function ImportAttendancePanel({
             {fieldWarning && <p className="import-field-warning">{fieldWarning}</p>}
 
             <div className={`import-columns ${isPreviewing ? 'is-previewing' : ''}`}>
-                <div className="import-column">
+                <div className="import-column" data-import-guide-area="attendance-text">
                     <p className="import-column-label">Attendance Text</p>
                     <textarea
                         name="raw_text"
@@ -67,12 +67,13 @@ function ImportAttendancePanel({
                         rows="12"
                     />
 
-                    <div className="import-column-actions-row" data-import-guide="prepare">
+                    <div className="import-column-actions-row">
                         <DisabledImportButton className="import-clear-button" type="button" onClick={onClear} disabled={isPreviewing} disabledReason="Go back to raw text first." hintClassName="import-hint-clear">
                             Clear
                         </DisabledImportButton>
-                        <DisabledImportButton
+                        <DisabledImportButton                           
                             className="import-secondary-button"
+                            data-import-guide="prepare" 
                             type="button"
                             onClick={onOpenGenerateModal}
                             disabled={isGenerating || isProcessing || isPreviewing}
