@@ -5,7 +5,6 @@ import './AddUserModal.css'
 import './AddStudentModal.css'
 
 const programOrder = ['ACT', 'BSIS', 'BSSW', 'BSA', 'BSAIS', 'BAB']
-const programOptions = programOrder.map(code => ({ value: code, label: code }))
 const yearOptions = [
     { value: '1', label: '1st Year' },
     { value: '2', label: '2nd Year' },
@@ -19,6 +18,27 @@ function AddStudentModal({ onClose, onCreated }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const [fieldErrors, setFieldErrors] = useState({})
+    const [programOptions, setProgramOptions] = useState([])
+    const [programsLoading, setProgramsLoading] = useState(true)
+    const [programsError, setProgramsError] = useState('')
+
+    useEffect(() => {
+        let active = true
+        request('/admin/students?per_page=1')
+            .then(data => {
+                if (!active) return
+                const programs = [...(data.programs ?? [])].sort((first, second) => {
+                    const firstIndex = programOrder.indexOf(first.code)
+                    const secondIndex = programOrder.indexOf(second.code)
+                    return (firstIndex === -1 ? 99 : firstIndex) - (secondIndex === -1 ? 99 : secondIndex)
+                        || first.code.localeCompare(second.code)
+                })
+                setProgramOptions(programs.map(program => ({ value: program.code, label: program.code })))
+            })
+            .catch(() => { if (active) setProgramsError('Unable to load active programs. Close and reopen this form.') })
+            .finally(() => { if (active) setProgramsLoading(false) })
+        return () => { active = false }
+    }, [])
 
     useEffect(() => {
         const dialog = dialogRef.current
@@ -99,10 +119,11 @@ function AddStudentModal({ onClose, onCreated }) {
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-student-program">Program<span>*</span></label>
                 <ModalSelect id="admin-add-student-program" name="program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
-                    <option value="">Select Program</option>
+                    <option value="">{programsLoading ? 'Loading programs…' : 'Select Program'}</option>
                     {programOptions.map(program => <option key={program.value} value={program.value}>{program.label}</option>)}
                 </ModalSelect>
                 {fieldErrors.program && <small className="admin-add-user-field-error">{fieldErrors.program[0]}</small>}
+                {programsError && <small className="admin-add-user-field-error">{programsError}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-student-year">Year Level<span>*</span></label>
@@ -117,7 +138,7 @@ function AddStudentModal({ onClose, onCreated }) {
                 <div><button type="button" role="switch" aria-checked={form.is_active} aria-label="Student active" className={`admin-add-user-switch${form.is_active ? ' active' : ''}`} onClick={() => updateField('is_active', !form.is_active)}><span /></button><span className={form.is_active ? 'active' : 'inactive'}>{form.is_active ? 'Active' : 'Inactive'}</span></div>
             </div>
             {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
-            <button className="admin-add-user-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Adding Student…' : 'Add Student'}</button>
+            <button className="admin-add-user-submit" type="submit" disabled={isSubmitting || programsLoading || Boolean(programsError) || programOptions.length === 0}>{isSubmitting ? 'Adding Student…' : 'Add Student'}</button>
             <div className="admin-add-user-note permissions"><span aria-hidden="true">i</span><p><strong>Student Records</strong><br />Review and update student details from the Students page.</p></div>
         </form>
     </dialog>

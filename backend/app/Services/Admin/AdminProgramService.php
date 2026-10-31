@@ -15,7 +15,7 @@ class AdminProgramService
         return [
             'summary' => $this->getSummary(),
             'programs' => $this->getPrograms($filters),
-            'program_options' => Program::query()
+            'program_options' => Program::query()->where('is_active', $filters['is_active'] ?? true)
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
             'year_levels' => Student::query()
@@ -195,7 +195,7 @@ class AdminProgramService
                 ->select('users.id', 'users.name', 'users.email')])
             ->withCount(['students as students_count' => fn ($query) => $query->where('is_active', true)])
             ->when($filters['program'] ?? null, fn ($query, $code) => $query->where('code', $code))
-            ->when(isset($filters['is_active']), fn ($query) => $query->where('is_active', $filters['is_active']))
+            ->where('is_active', $filters['is_active'] ?? true)
             ->when($filters['year_level'] ?? null, fn ($query, $yearLevel) => $query->whereHas(
                 'students',
                 fn ($studentQuery) => $studentQuery->where('year_level', $yearLevel)

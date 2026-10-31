@@ -63,7 +63,7 @@ class ReminderController extends Controller
         $this->countdownService->statusSetter($userId);
 
         $status = $request->query('status');
-        $query = $request->user()->reminders()->orderBy('due_date');
+        $query = $request->user()->reminders()->relevantToCurrentRoster()->orderBy('due_date');
 
         if ($status) {
             $query->where('status', $status);

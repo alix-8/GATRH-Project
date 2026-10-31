@@ -23,7 +23,7 @@ class AdminStudentService
         return [
             'summary' => $this->getSummary(),
             'students' => $this->getStudents($filters),
-            'programs' => Program::query()
+            'programs' => Program::query()->active()
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
             'year_levels' => Student::query()
@@ -36,6 +36,7 @@ class AdminStudentService
 
     public function create(array $data): Student
     {
+        $this->assertActiveProgram($data['program']);
         $this->ensureStudentIsUnique($data);
 
         return DB::transaction(function () use ($data) {
@@ -45,6 +46,10 @@ class AdminStudentService
 
     public function update(Student $student, array $data): Student
     {
+        if (($data['program'] ?? $student->program) !== $student->program
+            || ($data['is_active'] ?? $student->is_active)) {
+            $this->assertActiveProgram($data['program'] ?? $student->program);
+        }
         $this->ensureStudentIsUnique($data, $student);
 
         return DB::transaction(function () use ($student, $data) {
@@ -67,7 +72,7 @@ class AdminStudentService
         $settings = SystemSetting::query()->findOrFail(1);
         $this->assertCurrentSchoolYear($schoolYear, $settings->academic_year);
 
-        $students = Student::query()->where('is_active', true)->get(['name', 'program', 'year_level']);
+        $students = Student::query()->active()->get(['name', 'program', 'year_level']);
         $secretaries = User::query()->where('role', 'secretary')->where('is_active', true)->get(['email', 'program', 'year_level']);
         if ($students->isEmpty() && $secretaries->isEmpty()) {
             throw ValidationException::withMessages(['students' => ['There are no active students or secretary accounts to roll over.']]);
@@ -172,7 +177,7 @@ class AdminStudentService
                 ]);
             }
 
-            $students = Student::query()->where('is_active', true)->orderBy('id')->lockForUpdate()->get();
+            $students = Student::query()->active()->orderBy('id')->lockForUpdate()->get();
             $secretaries = User::query()
                 ->where('role', 'secretary')
                 ->where('is_active', true)
@@ -385,7 +390,14 @@ class AdminStudentService
                 DB::table('students')->where('id', $item['id'])->update(['year_level' => '__undo_' . bin2hex(random_bytes(8))]);
             }
             foreach ($snapshot['students'] as $item) {
-                DB::table('students')->where('id', $item['id'])->update($item['before']);
+                $student = Student::query()->findOrFail($item['id']);
+                $student->fill($item['before']);
+                $student->rememberRosterStatusChange();
+                $values = $item['before'];
+                if ($student->isDirty('roster_history')) {
+                    $values['roster_history'] = json_encode($student->roster_history, JSON_THROW_ON_ERROR);
+                }
+                DB::table('students')->where('id', $item['id'])->update($values);
             }
             foreach ($snapshot['secretaries'] as $item) {
                 DB::table('users')->where('id', $item['id'])->update($item['before']);
@@ -467,7 +479,7 @@ class AdminStudentService
             'total' => Student::query()->count(),
             'active' => Student::query()->active()->count(),
             'inactive' => Student::query()->where('is_active', false)->count(),
-            'programs' => Program::query()->count(),
+            'programs' => Program::query()->active()->count(),
         ];
     }
 
@@ -477,7 +489,7 @@ class AdminStudentService
             ->withCount('attendanceRecords')
             ->when($filters['program'] ?? null, fn ($query, $program) => $query->where('program', $program))
             ->when($filters['year_level'] ?? null, fn ($query, $yearLevel) => $query->where('year_level', $yearLevel))
-            ->when(isset($filters['is_active']), fn ($query) => $query->where('is_active', $filters['is_active']))
+            ->when(($filters['is_active'] ?? true), fn ($query) => $query->active(), fn ($query) => $query->where('is_active', false))
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($studentQuery) use ($search) {
                     $studentQuery->where('name', 'like', "%{$search}%");
@@ -490,6 +502,13 @@ class AdminStudentService
             ->orderBy('name')
             ->paginate($filters['per_page'] ?? 10)
             ->withQueryString();
+    }
+
+    private function assertActiveProgram(string $program): void
+    {
+        if (! Program::query()->active()->where('code', $program)->exists()) {
+            throw ValidationException::withMessages(['program' => ['Select an active program.']]);
+        }
     }
 
     private function ensureStudentIsUnique(array $data, ?Student $student = null): void

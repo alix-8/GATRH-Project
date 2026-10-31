@@ -33,7 +33,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $table->id();
             $table->string('code')->unique();
             $table->string('name')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true); $table->json('roster_history')->nullable();
             $table->timestamps();
         });
 
@@ -42,7 +42,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $table->string('name');
             $table->string('program');
             $table->string('year_level');
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true); $table->json('roster_history')->nullable();
             $table->timestamps();
         });
 

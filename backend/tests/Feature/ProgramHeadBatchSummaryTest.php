@@ -14,10 +14,16 @@ class ProgramHeadBatchSummaryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Schema::create('programs', function (Blueprint $table) {
+            $table->id();
+            $table->string('code');
+            $table->boolean('is_active')->default(true);
+        });
         Schema::create('students', function (Blueprint $table) {
             $table->id();
             $table->string('program');
             $table->string('year_level');
+            $table->boolean('is_active')->default(true);
         });
         Schema::create('attendance_records', function (Blueprint $table) {
             $table->id();

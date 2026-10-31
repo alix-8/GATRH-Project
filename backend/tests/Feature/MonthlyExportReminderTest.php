@@ -29,16 +29,16 @@ class MonthlyExportReminderTest extends TestCase
         Schema::create('users', function (Blueprint $t): void {
             $t->id(); $t->string('name'); $t->string('email')->unique(); $t->string('password');
             $t->string('role'); $t->string('program')->nullable(); $t->integer('year_level')->nullable();
-            $t->boolean('is_active')->default(true); $t->timestamps();
+            $t->boolean('is_active')->default(true); $t->json('roster_history')->nullable(); $t->timestamps();
         });
         Schema::create('programs', function (Blueprint $t): void {
             $t->id(); $t->string('code'); $t->string('name'); $t->integer('max_year_level')->default(2);
-            $t->boolean('is_active')->default(true); $t->timestamps();
+            $t->boolean('is_active')->default(true); $t->json('roster_history')->nullable(); $t->timestamps();
         });
         Schema::create('program_user', function (Blueprint $t): void { $t->integer('program_id'); $t->integer('user_id'); });
         Schema::create('students', function (Blueprint $t): void {
             $t->id(); $t->string('name'); $t->string('program'); $t->integer('year_level');
-            $t->boolean('is_active')->default(true); $t->timestamps();
+            $t->boolean('is_active')->default(true); $t->json('roster_history')->nullable(); $t->timestamps();
         });
         Schema::create('escalations', function (Blueprint $t): void {
             $t->id(); $t->integer('student_id'); $t->string('escalation_level')->default('None');

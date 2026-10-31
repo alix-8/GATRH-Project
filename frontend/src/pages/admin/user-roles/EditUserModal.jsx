@@ -116,6 +116,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
                 <label htmlFor="user-roles-edit-program">Program<span>*</span></label>
                 <ModalSelect id="user-roles-edit-program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
                     <option value="">Select Program</option>
+                    {initialProgram && !programs.some(program => program.code === initialProgram) && <option value={initialProgram} disabled>{initialProgram} (inactive)</option>}
                     {programs.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}
                 </ModalSelect>
                 {fieldErrors.program && <small className="admin-add-user-field-error">{fieldErrors.program[0]}</small>}

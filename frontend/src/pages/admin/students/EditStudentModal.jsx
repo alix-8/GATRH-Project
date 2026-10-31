@@ -81,6 +81,7 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-student-program">Program<span>*</span></label>
                 <ModalSelect id="admin-edit-student-program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
+                    {!programs.some(program => program.code === student.program) && <option value={student.program} disabled>{student.program} (inactive)</option>}
                     {programs.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}
                 </ModalSelect>
                 {fieldErrors.program && <small className="admin-add-user-field-error">{fieldErrors.program[0]}</small>}

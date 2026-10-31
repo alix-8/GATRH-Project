@@ -28,6 +28,21 @@ class Reminder extends Model
         'gathering_date' => 'date',
     ];
 
+    public function scopeRelevantToCurrentRoster($query)
+    {
+        return $query->where(function ($reminders) {
+            $reminders->whereNotIn('reminder_type', ['gathering', 'submission_countdown'])
+                ->orWhereNull('reminder_type')
+                ->orWhere('status', 'completed')
+                ->orWhereExists(function ($students) {
+                    $students->selectRaw('1')->from('students')
+                        ->whereColumn('students.program', 'reminders.program')
+                        ->whereColumn('students.year_level', 'reminders.year_level')
+                        ->whereIn('students.id', Student::query()->active()->select('students.id'));
+                });
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -51,7 +66,7 @@ class Reminder extends Model
         return AttendanceRecord::whereHas('student', function ($q) {
                 $q->where('program', $this->program)
                   ->where('year_level', $this->year_level)
-                  ->where('is_active', true);
+                  ->active();
             })
             ->where('gathering_type', $this->gathering_type)
             ->where('day', $this->gathering_date->toDateString())

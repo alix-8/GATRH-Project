@@ -28,13 +28,12 @@ class CmCoordinatorMonitoringService
             1
         )->startOfMonth();
 
-        $programs = Program::query()
-            ->orderBy('code')
-            ->get(['id', 'code', 'name']);
+        $programs = app(ReportingRoster::class)->programsForMonth($month);
 
         // Include legacy student programs that may not yet have a programs row.
-        $knownCodes = $programs->pluck('code')->map(fn ($code) => strtoupper(trim($code)));
+        $knownCodes = Program::query()->pluck('code')->map(fn ($code) => strtoupper(trim($code)));
         $legacyCodes = Student::query()
+            ->active()
             ->whereNotNull('program')
             ->where('program', '!=', '')
             ->distinct()
@@ -57,7 +56,7 @@ class CmCoordinatorMonitoringService
             ? $programs->firstWhere('id', (int) $filters['program_id'])?->code
             : ($filters['program_code'] ?? null);
 
-        if ($selectedCode !== null) {
+        if ($selectedCode !== null || !empty($filters['program_id'])) {
             $programOptions = $programOptions->filter(fn ($program) => $program['code'] === $selectedCode)->values();
         }
 
@@ -131,6 +130,9 @@ class CmCoordinatorMonitoringService
 
         $programCode = strtoupper(trim($programCode));
         $program = Program::query()->whereRaw('UPPER(TRIM(code)) = ?', [$programCode])->first();
+        if ($program && ! app(ReportingRoster::class)->programsForMonth($month)->contains('id', $program->id)) {
+            return null;
+        }
         $programHeadNames = $program
             ? $program->programHeads()
                 ->where('users.is_active', true)
@@ -145,11 +147,10 @@ class CmCoordinatorMonitoringService
         }
 
         $roster = Student::query()
-            ->active()
             ->whereRaw('UPPER(TRIM(program)) = ?', [$programCode])
             ->where('year_level', $yearLevel)
             ->orderBy('name')
-            ->get(['id', 'name', 'program', 'year_level']);
+            ->get();
 
         if ($program === null && $roster->isEmpty()) {
             return null;
@@ -185,12 +186,13 @@ class CmCoordinatorMonitoringService
 
         $studentIds = $roster->pluck('id')->all();
         $entries = collect(self::GATHERING_TYPES)
-            ->map(function (string $type) use ($weekRecords, $roster, $studentIds, $week) {
+            ->map(function (string $type) use ($weekRecords, $roster, $studentIds, $week, $program) {
                 $gatheringRange = $week['gathering_ranges'][$type];
                 $eventRecords = $weekRecords->where('gathering_type', $type)
                     ->filter(fn ($record) => ($record->reporting_day ?? $record->day)->toDateString() >= $gatheringRange['start']
                         && ($record->reporting_day ?? $record->day)->toDateString() <= $gatheringRange['end']);
-                $summary = $this->getGatheringSummary($weekRecords, $studentIds, $type, $gatheringRange);
+                $eligibleIds = app(ReportingRoster::class)->studentIds($roster, $eventRecords, $gatheringRange['start'], $program);
+                $summary = $this->getGatheringSummary($weekRecords, $eligibleIds, $type, $gatheringRange);
                 $dates = $eventRecords->pluck('day')
                     ->map(fn (Carbon $day) => $day->toDateString())
                     ->unique()
@@ -202,6 +204,7 @@ class CmCoordinatorMonitoringService
                     ->pluck('student_id')
                     ->unique();
                 $missingStudents = $roster
+                    ->filter(fn (Student $student) => in_array((int) $student->id, $eligibleIds, true))
                     ->reject(fn (Student $student) => $respondedStudentIds->contains($student->id))
                     ->map(fn (Student $student) => [
                         'id' => $student->id,
@@ -241,7 +244,7 @@ class CmCoordinatorMonitoringService
             ->filter(fn ($record) => in_array($record->validation_status, ['validated', 'approved'], true))
             ->sortByDesc(fn ($record) => ($record->approved_at ?? $record->updated_at)?->getTimestamp() ?? 0)
             ->first();
-        $completedEvents = $weeks->sum(function (array $monthWeek) use ($records, $studentIds) {
+        $completedEvents = $weeks->sum(function (array $monthWeek) use ($records, $studentIds, $roster, $program) {
             $recordsForWeek = $records->filter(fn ($record) =>
                 ($record->reporting_day ?? $record->day)->toDateString() >= $monthWeek['start']
                 && ($record->reporting_day ?? $record->day)->toDateString() <= $monthWeek['end']
@@ -252,7 +255,9 @@ class CmCoordinatorMonitoringService
                     $recordsForWeek,
                     $studentIds,
                     $type,
-                    $monthWeek['gathering_ranges'][$type]
+                    $monthWeek['gathering_ranges'][$type],
+                    $roster,
+                    $program
                 )['status'] === 'completed')
                 ->count();
         });
@@ -264,7 +269,7 @@ class CmCoordinatorMonitoringService
                 'program_name' => $program?->name ?: $programCode,
                 'year_level' => $yearLevel,
                 'label' => $programCode . ' ' . $yearLevel,
-                'students_count' => $roster->count(),
+                'students_count' => $entries->max('total_students') ?? 0,
             ],
             'month' => [
                 'month' => $month->month,
@@ -298,7 +303,6 @@ class CmCoordinatorMonitoringService
                 || str_contains(mb_strtolower((string) $program['name']), mb_strtolower($search))
             )->pluck('code')->all();
         $students = Student::query()
-            ->active()
             ->whereIn('program', $programCodes)
             ->when($search !== '', function ($query) use ($search, $matchingProgramCodes) {
                 $query->where(function ($studentQuery) use ($search, $matchingProgramCodes) {
@@ -311,7 +315,7 @@ class CmCoordinatorMonitoringService
             })
             ->orderBy('program')
             ->orderBy('year_level')
-            ->get(['id', 'program', 'year_level'])
+            ->get()
             ->groupBy(fn (Student $student) => strtoupper(trim($student->program)) . '|' . $student->year_level);
 
         if (empty($filters['search'])) {
@@ -344,7 +348,8 @@ class CmCoordinatorMonitoringService
             $rangeEnd
         ));
 
-        return $students->map(function (Collection $roster, string $key) use ($records, $weeks) {
+        $programCatalog = Program::query()->get()->keyBy('code');
+        return $students->map(function (Collection $roster, string $key) use ($records, $weeks, $programCatalog) {
             [$programCode, $yearLevel] = explode('|', $key, 2);
             $studentIds = $roster->pluck('id')->all();
             $courseRecords = $records->filter(fn ($record) =>
@@ -352,17 +357,17 @@ class CmCoordinatorMonitoringService
                 && (string) $record->student?->year_level === (string) $yearLevel
             );
 
-            $weeklyData = $weeks->map(function (array $week) use ($courseRecords, $studentIds) {
+            $weeklyData = $weeks->map(function (array $week) use ($courseRecords, $studentIds, $roster, $programCatalog, $programCode) {
                 $recordsForWeek = $courseRecords->filter(fn ($record) =>
                     ($record->reporting_day ?? $record->day)->toDateString() >= $week['start']
                     && ($record->reporting_day ?? $record->day)->toDateString() <= $week['end']
                 );
 
-                $gatherings = collect(self::GATHERING_TYPES)->map(function (string $type) use ($recordsForWeek, $studentIds, $week) {
+                $gatherings = collect(self::GATHERING_TYPES)->map(function (string $type) use ($recordsForWeek, $studentIds, $week, $roster, $programCatalog, $programCode) {
                     $gatheringRange = $week['gathering_ranges'][$type];
                     return [
                         'type' => $type,
-                        ...$this->getGatheringSummary($recordsForWeek, $studentIds, $type, $gatheringRange),
+                        ...$this->getGatheringSummary($recordsForWeek, $studentIds, $type, $gatheringRange, $roster, $programCatalog->get($programCode)),
                     ];
                 })->values();
 
@@ -390,7 +395,7 @@ class CmCoordinatorMonitoringService
                 'program' => $programCode,
                 'year_level' => $yearLevel,
                 'label' => $programCode . ' ' . $yearLevel,
-                'students_count' => count($studentIds),
+                'students_count' => $roster->where('is_active', true)->count(),
                 'progress' => [
                     'completed' => $completedCount,
                     'total' => $totalCount,
@@ -401,8 +406,14 @@ class CmCoordinatorMonitoringService
         })->map(fn ($course) => (array) $course)->values();
     }
 
-    private function getGatheringSummary(Collection $weekRecords, array $studentIds, string $type, ?array $gatheringRange = null): array
+    private function getGatheringSummary(Collection $weekRecords, array $studentIds, string $type, ?array $gatheringRange = null, ?Collection $roster = null, ?Program $program = null): array
     {
+        if ($roster !== null && $gatheringRange !== null) {
+            $rows = $weekRecords->where('gathering_type', $type)->filter(fn ($record) =>
+                ($record->reporting_day ?? $record->day)->toDateString() >= $gatheringRange['start']
+                && ($record->reporting_day ?? $record->day)->toDateString() <= $gatheringRange['end']);
+            $studentIds = app(ReportingRoster::class)->studentIds($roster, $rows, $gatheringRange['start'], $program);
+        }
         return app(AttendanceResponseSummary::class)->gathering($weekRecords, $studentIds, $type, $gatheringRange);
     }
 

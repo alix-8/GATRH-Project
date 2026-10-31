@@ -1067,10 +1067,25 @@ class AttendanceController extends Controller
             'raw_text'                 => 'nullable|string',
         ]);
 
+        // Existing drafts retain their original students after inactivation.
+        $sourceDraft = null;
+        $preservedStudentIds = [];
+        if (!empty($validated['draft_id'])) {
+            $sourceDraft = AttendanceDraft::whereKey($validated['draft_id'])
+                ->where('user_id', $request->user()->id)->where('status', 'draft')->first();
+            if (!$sourceDraft) {
+                return response()->json(['message' => 'Editable draft not found.'], 404);
+            }
+            if (collect($validated['records'])->contains(fn ($record) => $record['gathering_type'] !== $sourceDraft->gathering_type)) {
+                return response()->json(['message' => 'Submit the gathering saved in this draft.'], 422);
+            }
+            $preservedStudentIds = collect($sourceDraft->parsed_data ?? [])->pluck('student_id')->all();
+        }
+
         $gatheringTypes = collect($validated['records'])->pluck('gathering_type')->unique();
         $studentIds = collect($validated['records'])->pluck('student_id')->unique();
         $accessibleStudentCount = Student::whereKey($studentIds)
-            ->active()
+            ->where(fn ($students) => $students->active()->orWhereIn('students.id', $preservedStudentIds))
             ->accessibleTo($request->user())
             ->count();
 
@@ -1110,13 +1125,7 @@ class AttendanceController extends Controller
         $submittedBy = $request->user()->id;
         $isOverride = (bool) $request->boolean('override');
         $cycle = $this->importPeriodCycle($request->input('week_period')) ?? $request->input('cycle') ?? $request->input('week_range');
-        $sourceDraft = null;
-        if (!empty($validated['draft_id'])) {
-            $sourceDraft = AttendanceDraft::whereKey($validated['draft_id'])
-                ->where('user_id', $submittedBy)->where('status', 'draft')->first();
-            if (!$sourceDraft) {
-                return response()->json(['message' => 'Editable draft not found.'], 404);
-            }
+        if ($sourceDraft) {
             $cycle = GatheringCycle::getRangesForWeekStart(Carbon::parse($sourceDraft->day));
         }
 
