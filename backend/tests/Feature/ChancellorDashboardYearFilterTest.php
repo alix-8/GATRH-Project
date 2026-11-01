@@ -125,18 +125,18 @@ class ChancellorDashboardYearFilterTest extends TestCase
             ->assertOk()
             ->assertJsonPath('program_year_reporting.0.year_level', 1)
             ->assertJsonPath('program_year_reporting.0.status', 'incomplete')
-            ->assertJsonPath('program_year_reporting.0.completion', 7)
-            ->assertJsonPath('program_reporting.0.completion', 7)
-            ->assertJsonPath('overall_progress.percentage', 7)
+            ->assertJsonPath('program_year_reporting.0.completion', 8)
+            ->assertJsonPath('program_reporting.0.completion', 8)
+            ->assertJsonPath('overall_progress.percentage', 8)
             ->assertJsonPath('summary.completed', 0);
 
         $secondYearResponse
             ->assertOk()
             ->assertJsonPath('program_year_reporting.0.year_level', 2)
             ->assertJsonPath('program_year_reporting.0.status', 'incomplete')
-            ->assertJsonPath('program_year_reporting.0.completion', 13)
-            ->assertJsonPath('program_reporting.0.completion', 13)
-            ->assertJsonPath('overall_progress.percentage', 13)
+            ->assertJsonPath('program_year_reporting.0.completion', 17)
+            ->assertJsonPath('program_reporting.0.completion', 17)
+            ->assertJsonPath('overall_progress.percentage', 17)
             ->assertJsonPath('summary.completed', 0);
 
         $thirdYearResponse = $this->getJson('/api/dashboard?date=2026-10-07&year_level=3');
@@ -161,9 +161,9 @@ class ChancellorDashboardYearFilterTest extends TestCase
 
         foreach ([
             ['2023-02-15', 4, '2023-02-01', '2023-02-28'],
-            ['2026-10-30', 5, '2026-09-30', '2026-11-03'],
-            ['2026-09-15', 6, '2026-08-26', '2026-10-06'],
-            ['2026-01-01', 5, '2025-12-31', '2026-02-03'],
+            ['2026-10-30', 4, '2026-10-07', '2026-11-03'],
+            ['2026-09-15', 5, '2026-09-02', '2026-10-06'],
+            ['2026-01-01', 4, '2026-01-07', '2026-02-03'],
         ] as [$date, $count, $first, $last]) {
             $payload = $dashboard->getChancellorDashboardPayload($user, ['date' => $date, 'year_level' => 1]);
             $weeks = collect($payload['reporting_weeks']);
@@ -183,14 +183,14 @@ class ChancellorDashboardYearFilterTest extends TestCase
     {
         Program::create(['code' => 'ACT', 'name' => 'Computer Technology']);
         $student = Student::create(['name' => 'Student', 'program' => 'ACT', 'year_level' => 1]);
-        $this->createAttendanceRecord($student, 'pm'); // October 7: Week 2, not Week 4.
+        $this->createAttendanceRecord($student, 'pm'); // October 7: Week 1.
         $payload = app(\App\Services\Dashboard\DashboardService::class)->getChancellorDashboardPayload(
             new User(['role' => 'chancellor']), ['date' => '2026-10-30', 'year_level' => 1]
         );
-        $expected = ['no_report', 'incomplete', 'no_report', 'no_report', 'no_report'];
+        $expected = ['incomplete', 'no_report', 'no_report', 'no_report'];
         $this->assertSame($expected, $payload['program_year_reporting'][0]['weekly_statuses']);
         $this->assertSame($expected, $payload['program_reporting'][0]['weekly_statuses']);
-        $this->assertSame([0, 1, 0, 0, 0], collect($payload['weekly_progress'])->pluck('incomplete')->all());
+        $this->assertSame([1, 0, 0, 0], collect($payload['weekly_progress'])->pluck('incomplete')->all());
     }
 
     public function test_week_icon_requires_every_active_student_in_all_three_gatherings(): void
@@ -203,22 +203,22 @@ class ChancellorDashboardYearFilterTest extends TestCase
         foreach (['pm', 'ws', 'tg'] as $type) {
             $this->addResponse($first, $type);
         }
-        $this->assertYearProgress('incomplete', 10);
-        $this->addResponse($second, 'pm');
         $this->assertYearProgress('incomplete', 13);
-        $this->addResponse($second, 'ws', 'excused');
+        $this->addResponse($second, 'pm');
         $this->assertYearProgress('incomplete', 17);
+        $this->addResponse($second, 'ws', 'excused');
+        $this->assertYearProgress('incomplete', 21);
         $this->addResponse($second, 'tg');
-        $this->assertYearProgress('completed', 20);
+        $this->assertYearProgress('completed', 25);
 
         // The card counts weekly icons; the program's monthly status stays incomplete.
         $payload = $this->chancellorPayload();
         $this->assertSame('incomplete', $payload['program_reporting'][0]['status']);
-        $this->assertSame(20, $payload['program_reporting'][0]['completion']);
+        $this->assertSame(25, $payload['program_reporting'][0]['completion']);
         $this->assertSame(1, $payload['summary']['completed']);
         $coordinator = app(\App\Services\Dashboard\CmCoordinatorMonitoringService::class)->getPayload(['year' => 2026, 'month' => 10]);
         $course = collect($coordinator['courses'])->first(fn ($course) => $course['year_level'] === '2' || $course['year_level'] === 2);
-        $this->assertSame('completed', $course['weeks'][1]['status']);
+        $this->assertSame('completed', $course['weeks'][0]['status']);
     }
 
     public function test_no_response_records_and_duplicate_responses_do_not_complete_a_week(): void
@@ -234,7 +234,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $this->addResponse($first, $type);
             $this->addResponse($first, $type);
         }
-        $this->assertYearProgress('incomplete', 10);
+        $this->assertYearProgress('incomplete', 13);
     }
 
     public function test_draft_responses_can_complete_a_slot_without_approval_or_snapshot_fields(): void
@@ -247,7 +247,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
                 'status' => 'draft', 'parsed_data' => json_encode([['student_id' => $student->id, 'status' => 'present']]),
             ]);
         }
-        $this->assertYearProgress('completed', 20);
+        $this->assertYearProgress('completed', 25);
     }
 
     public function test_overall_graphs_require_all_years_and_gatherings_to_be_complete(): void
@@ -261,9 +261,9 @@ class ChancellorDashboardYearFilterTest extends TestCase
         }
         $payload = $this->chancellorPayload();
         $this->assertSame('incomplete', $payload['program_reporting'][0]['status']);
-        $this->assertSame(20, $payload['program_reporting'][0]['completion']);
-        $this->assertSame(20, $payload['overall_progress']['percentage']);
-        $this->assertSame(1, $payload['weekly_progress'][1]['completed']);
+        $this->assertSame(25, $payload['program_reporting'][0]['completion']);
+        $this->assertSame(25, $payload['overall_progress']['percentage']);
+        $this->assertSame(1, $payload['weekly_progress'][0]['completed']);
         $this->assertSame(1, $payload['summary']['completed']);
         $this->assertSame(0, $payload['summary']['incomplete']);
     }
@@ -273,7 +273,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
         Program::create(['code' => 'ACT', 'name' => 'Computer Technology']);
         Program::create(['code' => 'BSIS', 'name' => 'Information Systems']);
         $student = Student::create(['name' => 'Earlier response', 'program' => 'BSIS', 'year_level' => 2]);
-        $this->addResponse($student, 'pm'); // Week 2 only; the selected date is in Week 5.
+        $this->addResponse($student, 'pm'); // Week 1 only; the selected date is in Week 4.
         $payload = app(\App\Services\Dashboard\DashboardService::class)->getChancellorDashboardPayload(
             new User(['role' => 'chancellor']), ['date' => '2026-10-30', 'year_level' => 2]
         );
@@ -283,10 +283,10 @@ class ChancellorDashboardYearFilterTest extends TestCase
         $this->assertSame(2, $payload['summary']['total_programs']);
         $row = collect($payload['program_year_reporting'])->firstWhere('code', 'BSIS');
         $this->assertSame('incomplete', $row['status']);
-        $this->assertSame('no_report', $row['weekly_statuses'][4]);
-        $this->assertSame(7, $row['completion']);
-        $this->assertSame(1, $payload['weekly_progress'][1]['incomplete']);
-        $this->assertSame(0, $payload['weekly_progress'][4]['incomplete']);
+        $this->assertSame('no_report', $row['weekly_statuses'][3]);
+        $this->assertSame(8, $row['completion']);
+        $this->assertSame(1, $payload['weekly_progress'][0]['incomplete']);
+        $this->assertSame(0, $payload['weekly_progress'][3]['incomplete']);
     }
 
     public function test_monthly_completion_requires_every_week_year_and_gathering(): void
@@ -294,7 +294,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
         Program::create(['code' => 'ACT', 'name' => 'Computer Technology']);
         foreach ([1, 2] as $year) {
             $student = Student::create(['name' => 'Year '.$year, 'program' => 'ACT', 'year_level' => $year]);
-            for ($week = \Carbon\Carbon::parse('2026-09-30'); $week->lte('2026-10-28'); $week->addWeek()) {
+            for ($week = \Carbon\Carbon::parse('2026-10-07'); $week->lte('2026-10-28'); $week->addWeek()) {
                 foreach (\App\Support\GatheringCycle::getRangesForWeekStart($week) as $type => $range) {
                     AttendanceRecord::create([
                         'student_id' => $student->id, 'gathering_type' => $type, 'day' => $range['start']->toDateString(),
@@ -304,20 +304,20 @@ class ChancellorDashboardYearFilterTest extends TestCase
             }
         }
         $payload = $this->chancellorPayload();
-        $this->assertSame(5, $payload['summary']['completed']);
+        $this->assertSame(4, $payload['summary']['completed']);
         $this->assertSame(100, $payload['overall_progress']['percentage']);
         $this->assertSame(100, $payload['program_reporting'][0]['completion']);
         $this->assertSame('completed', $payload['program_year_reporting'][0]['status']);
-        $this->assertSame(['completed', 'completed', 'completed', 'completed', 'completed'], $payload['program_year_reporting'][0]['weekly_statuses']);
+        $this->assertSame(['completed', 'completed', 'completed', 'completed'], $payload['program_year_reporting'][0]['weekly_statuses']);
 
         AttendanceRecord::query()->orderByDesc('id')->firstOrFail()->delete();
         $payload = $this->chancellorPayload();
-        $this->assertSame(4, $payload['summary']['completed']);
+        $this->assertSame(3, $payload['summary']['completed']);
         $this->assertSame(1, $payload['summary']['incomplete']);
-        $this->assertSame(93, $payload['overall_progress']['percentage']);
-        $this->assertSame(93, $payload['program_reporting'][0]['completion']);
+        $this->assertSame(92, $payload['overall_progress']['percentage']);
+        $this->assertSame(92, $payload['program_reporting'][0]['completion']);
         $this->assertSame('incomplete', $payload['program_year_reporting'][0]['status']);
-        $this->assertSame('incomplete', $payload['program_year_reporting'][0]['weekly_statuses'][4]);
+        $this->assertSame('incomplete', $payload['program_year_reporting'][0]['weekly_statuses'][3]);
     }
 
     public function test_response_percentages_are_weighted_and_all_graphs_follow_the_selected_year(): void
@@ -340,20 +340,20 @@ class ChancellorDashboardYearFilterTest extends TestCase
         $user = new User(['role' => 'chancellor']);
         $first = $dashboard->getChancellorDashboardPayload($user, ['date' => '2026-10-30', 'year_level' => 1]);
         $rows = collect($first['program_reporting'])->keyBy('code');
-        $this->assertSame(20, $rows['ACT']['completion']); // 3/15
-        $this->assertSame(2, $rows['BSIS']['completion']); // 1/45, though no complete gathering slot
+        $this->assertSame(25, $rows['ACT']['completion']); // 3/12
+        $this->assertSame(3, $rows['BSIS']['completion']); // 1/36, though no complete gathering slot
         $this->assertSame(4, $first['overall_progress']['responded_students']);
-        $this->assertSame(60, $first['overall_progress']['expected_responses']);
-        $this->assertSame(7, $first['overall_progress']['percentage']); // 4/60, not an average of program percentages
-        $this->assertSame(1, $first['weekly_progress'][1]['completed']);
-        $this->assertSame(1, $first['weekly_progress'][1]['incomplete']);
+        $this->assertSame(48, $first['overall_progress']['expected_responses']);
+        $this->assertSame(8, $first['overall_progress']['percentage']); // 4/48, not an average of program percentages
+        $this->assertSame(1, $first['weekly_progress'][0]['completed']);
+        $this->assertSame(1, $first['weekly_progress'][0]['incomplete']);
 
         $second = $dashboard->getChancellorDashboardPayload($user, ['date' => '2026-10-30', 'year_level' => 2]);
         $this->assertSame(1, $second['overall_progress']['responded_students']);
-        $this->assertSame(15, $second['overall_progress']['expected_responses']);
-        $this->assertSame(7, $second['overall_progress']['percentage']);
-        $this->assertSame(0, $second['weekly_progress'][1]['completed']);
-        $this->assertSame(1, $second['weekly_progress'][1]['incomplete']);
+        $this->assertSame(12, $second['overall_progress']['expected_responses']);
+        $this->assertSame(8, $second['overall_progress']['percentage']);
+        $this->assertSame(0, $second['weekly_progress'][0]['completed']);
+        $this->assertSame(1, $second['weekly_progress'][0]['incomplete']);
         $this->assertSame(1, $second['summary']['incomplete']);
         $third = $dashboard->getChancellorDashboardPayload($user, ['date' => '2026-10-30', 'year_level' => 3]);
         $this->assertSame(['BSIS'], collect($third['program_reporting'])->pluck('code')->all());
@@ -391,15 +391,15 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $student = Student::create(['name' => 'Year '.$year, 'program' => 'BSIS', 'year_level' => $year]);
             $this->addResponse($student, 'pm');
         }
-        // Five reporting weeks x three gatherings. Cards, monthly percentages,
+        // Four reporting weeks x three gatherings. Cards, monthly percentages,
         // table icons and weekly chart must reuse those same calculations.
         $this->partialMock(\App\Services\Dashboard\AttendanceResponseSummary::class)
-            ->shouldReceive('gathering')->times(15)->passthru();
+            ->shouldReceive('gathering')->times(12)->passthru();
         $payload = $this->chancellorPayload();
         $this->assertSame(1, $payload['overall_progress']['responded_students']);
-        $this->assertSame(15, $payload['overall_progress']['expected_responses']);
+        $this->assertSame(12, $payload['overall_progress']['expected_responses']);
         $this->assertSame(1, $payload['summary']['incomplete']);
-        $this->assertSame(5, count($payload['weekly_progress']));
+        $this->assertSame(4, count($payload['weekly_progress']));
     }
 
     public function test_total_programs_is_an_active_catalog_count_independent_of_filters(): void
@@ -438,7 +438,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
         $row = $this->chancellorPayload()['program_year_reporting'][0];
         $this->assertSame($status === 'no_report' ? 'no_report' : 'incomplete', $row['status']);
         $this->assertSame($percentage, $row['completion']);
-        $this->assertSame($status, $row['weekly_statuses'][1]);
+        $this->assertSame($status, $row['weekly_statuses'][0]);
     }
 
     private function createAttendanceRecord(Student $student, string $gatheringType): void
