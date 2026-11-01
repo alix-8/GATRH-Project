@@ -90,6 +90,7 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
     /* Reminders */
     Route::get('/reminders/role-summary', [ReminderController::class, 'roleSummary'])
         ->middleware('role:program_head,cm_coordinator,program_secretary,chancellor');
+    Route::patch('/reminders/{reminder}/undo', [ReminderController::class, 'undoCompletion']);
     Route::apiResource('reminders', ReminderController::class);
 
     /* Shared attendance data */
