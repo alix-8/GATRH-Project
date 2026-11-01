@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { getApiCooldownMs } from '../api/request'
 
 const DEFAULT_INTERVAL_MS = 15_000
 const subscribers = new Set()
@@ -7,11 +8,12 @@ let scheduledIntervalMs = null
 let lastWakeRefreshAt = 0
 
 function refreshVisibleSubscribers(force = false) {
-    if (document.visibilityState !== 'visible') return
+    if (document.visibilityState !== 'visible' || getApiCooldownMs() > 0) return
 
     const now = Date.now()
     subscribers.forEach((subscriber) => {
-        if (subscriber.inFlight || (!force && now - subscriber.lastRunAt < subscriber.intervalMs)) return
+        const minimumGap = force ? Math.min(subscriber.intervalMs, 15_000) : subscriber.intervalMs
+        if (subscriber.inFlight || now - subscriber.lastRunAt < minimumGap) return
 
         const controller = new AbortController()
         subscriber.controller = controller
