@@ -712,7 +712,8 @@ class DashboardService
         }
         // Use the program catalog so seeded programs remain available without enrolled students.
          $allPrograms = app(ReportingRoster::class)->programsForMonth($selectedDate->copy()->startOfMonth())->pluck('code');
-         $programNames = Program::query()->pluck('name', 'code');
+        $programCatalog = Program::query()->get()->keyBy('code');
+        $programNames = $programCatalog->pluck('name', 'code');
         $selectedProgram = $filters['program'] ?? null;
         $selectedYearLevel = $filters['year_level'] ?? null;
         $programs = $allPrograms;
@@ -727,24 +728,31 @@ class DashboardService
         $reportingWeeksStart = Carbon::parse($reportingWeeks->first()['week_start']);
         $reportingWeeksEnd = Carbon::parse($reportingWeeks->last()['week_end'])->endOfDay();
 
+        // Match the roster the response calculations already use, rather than
+        // fetching attendance for every program and year before filtering it.
+        $rosters = Student::query()->whereIn('program', $programs)
+            ->when($selectedYearLevel !== null, fn ($query) => $query->where('year_level', $selectedYearLevel))
+            ->get(['id', 'program', 'year_level', 'is_active', 'roster_history'])
+            ->groupBy(fn ($student) => $student->program . '|' . $student->year_level);
+        $rosterIds = $rosters->flatten(1)->pluck('id')->all();
+
         $reportingWeekRecords = AttendanceRecord::query()
-            ->with('student:id,program,year_level')
+            ->whereIn('student_id', $rosterIds)
             ->inReportingRange([
                 $reportingWeeksStart,
                 $reportingWeeksEnd,
             ])
-            ->get();
+            ->get(['student_id', 'gathering_type', 'status', 'day', 'reporting_day']);
         $reportingWeekRecords = $reportingWeekRecords->concat(
-            $this->getDraftAttendanceRows($reportingWeeksStart, $reportingWeeksEnd)
+            $this->getDraftAttendanceRows($reportingWeeksStart, $reportingWeeksEnd, $rosterIds)
         );
 
-        $rosters = Student::query()->whereIn('program', $programs)
-            ->get()
-            ->groupBy(fn ($student) => $student->program . '|' . $student->year_level);
-        $programCatalog = Program::query()->get()->keyBy('code');
         $reportingRoster = app(ReportingRoster::class);
         $responses = app(AttendanceResponseSummary::class);
-        $summarizeProgram = function ($programCode, $programRecords, $yearLevel = null, $weekStart = null) use ($rosters, $responses, $dateRange, $programCatalog, $reportingRoster): array {
+        $weeklySummaries = [];
+        $summarizeProgram = function ($programCode, $programRecords, $yearLevel = null, $weekStart = null) use ($rosters, $responses, $dateRange, $programCatalog, $reportingRoster, &$weeklySummaries): array {
+            $key = $programCode.'|'.($yearLevel ?? 'all').'|'.($weekStart ?? $dateRange['start'])->toDateString();
+            if (isset($weeklySummaries[$key])) return $weeklySummaries[$key];
             // Match the Coordinator's offered year groups and PM/WS/TG slots.
             $years = $yearLevel !== null ? [(int) $yearLevel] : range(1, $programCode === 'ACT' ? 2 : 4);
             $ranges = GatheringCycle::getRangesForWeekStart($weekStart ?? $dateRange['start']);
@@ -761,7 +769,7 @@ class DashboardService
             });
             $completed = $slots->where('status', 'completed')->count();
             $hasResponses = $slots->contains(fn ($slot) => $slot['responded_students'] > 0);
-            return [
+            return $weeklySummaries[$key] = [
                 'status' => $completed === $slots->count() ? 'completed' : ($hasResponses ? 'incomplete' : 'no_report'),
                 'percentage' => (int) round($completed / max(1, $slots->count()) * 100),
                 'completed_slots' => $completed,
@@ -791,7 +799,7 @@ class DashboardService
 
         // Data for the Programs Needing Attention table
         // and Program Completion Overview.
-        $programReporting = $programs->map(
+        $programReporting = $selectedYearLevel !== null ? collect() : $programs->map(
             function ($programCode) use (
                 $reportingWeekRecords,
                 $reportingWeeks,
@@ -1006,15 +1014,16 @@ class DashboardService
      * Chancellor's reporting charts. Drafts are removed when submitted, so
      * these rows do not overlap with persisted attendance records.
      */
-    private function getDraftAttendanceRows($start, $end): \Illuminate\Support\Collection
+    private function getDraftAttendanceRows($start, $end, ?array $studentIds = null): \Illuminate\Support\Collection
     {
         return AttendanceDraft::query()
             ->whereIn('status', ['draft', 'pending'])
             ->inReportingRange([$start, $end])
-            ->get()
-            ->flatMap(function (AttendanceDraft $draft) {
+            ->get(['gathering_type', 'day', 'parsed_data'])
+            ->flatMap(function (AttendanceDraft $draft) use ($studentIds) {
                 return collect($draft->parsed_data ?? [])
-                    ->filter(fn (array $entry) => ! empty($entry['student_id']))
+                    ->filter(fn (array $entry) => ! empty($entry['student_id'])
+                        && ($studentIds === null || in_array((int) $entry['student_id'], $studentIds, true)))
                     ->map(function (array $entry) use ($draft) {
                         return (object) [
                             'student_id' => (int) $entry['student_id'],
