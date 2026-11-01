@@ -1,25 +1,29 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import Login from './pages/auth/Login'
 import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset'
-import Dashboard from './user/secretary/dashboard/Dashboard'
-import Students from './user/secretary/students/Students'
-import Import from './user/secretary/import/Import'
-import Attendance from './user/secretary/attendance/Attendance'
-import Reminders from './pages/reminders/Reminders'
-import ProgramHeadDashboard from './user/program-head/dashboard/Dashboard'
 import Sidebar from './components/layout/Sidebar'
-import Profile from './pages/profile/Profile'
-import ProgramHeadSubmissions from './user/program-head/submissions/Submissions'
-import ProgramHeadRecords from './user/program-head/records/Records'
-import AdminDashboard from './user/admin/dashboard/Dashboard'
-import AdminUserRoles from './user/admin/user-roles/UserRoles'
-import AdminPrograms from './user/admin/programs/Programs'
-import AdminStudents from './user/admin/students/Students'
-import AdminActivityLog from './user/admin/activity-log/ActivityLog'
-import AdminSystemSettings from './user/admin/system-settings/SystemSettings'
-import ChancellorDashboard from './user/chancellor/dashboard/Dashboard'
-import CoordinatorMonitoring from './user/coordinator/monitoring/Monitoring'
+import Header from './components/layout/Header'
+import LoadingCircle from './components/feedback/LoadingCircle'
+
+// Authenticated pages are downloaded only when the user visits them.
+const Dashboard = lazy(() => import('./user/secretary/dashboard/Dashboard'))
+const Students = lazy(() => import('./user/secretary/students/Students'))
+const Import = lazy(() => import('./user/secretary/import/Import'))
+const Attendance = lazy(() => import('./user/secretary/attendance/Attendance'))
+const Reminders = lazy(() => import('./pages/reminders/Reminders'))
+const Profile = lazy(() => import('./pages/profile/Profile'))
+const ProgramHeadDashboard = lazy(() => import('./user/program-head/dashboard/Dashboard'))
+const ProgramHeadSubmissions = lazy(() => import('./user/program-head/submissions/Submissions'))
+const ProgramHeadRecords = lazy(() => import('./user/program-head/records/Records'))
+const AdminDashboard = lazy(() => import('./user/admin/dashboard/Dashboard'))
+const AdminUserRoles = lazy(() => import('./user/admin/user-roles/UserRoles'))
+const AdminPrograms = lazy(() => import('./user/admin/programs/Programs'))
+const AdminStudents = lazy(() => import('./user/admin/students/Students'))
+const AdminActivityLog = lazy(() => import('./user/admin/activity-log/ActivityLog'))
+const AdminSystemSettings = lazy(() => import('./user/admin/system-settings/SystemSettings'))
+const ChancellorDashboard = lazy(() => import('./user/chancellor/dashboard/Dashboard'))
+const CoordinatorMonitoring = lazy(() => import('./user/coordinator/monitoring/Monitoring'))
 
 const landingByRole = {
   secretary: '/dashboard',
@@ -71,7 +75,20 @@ function RoleRoute({ roles, children }) {
   const user = getSession()
   if (!user) return <Navigate to="/" replace />
   if (!roles.includes(user.role)) return <Navigate to={landingByRole[user.role] || '/unauthorized'} replace />
-  return children
+  return <Suspense fallback={<AuthenticatedPageLoading />}>{children}</Suspense>
+}
+
+function AuthenticatedPageLoading() {
+  const location = useLocation()
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#fff' }}>
+      <Sidebar />
+      <main style={{ flex: 1, minWidth: 0 }}>
+        <Header title={pageTitleByPath[location.pathname] || 'GATRH'} showNotification={false} />
+        <div style={{ padding: 32 }}><LoadingCircle label="Loading page…" /></div>
+      </main>
+    </div>
+  )
 }
 
 function RolePlaceholder({ title }) {
