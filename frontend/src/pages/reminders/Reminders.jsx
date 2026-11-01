@@ -1031,7 +1031,7 @@ function Reminders() {
                     </div>
 
                     <div className="reminders-filter-row" role="tablist" aria-label="Reminder filters">
-                        {FILTERS.map(filter => (
+                        {FILTERS.filter(filter => role !== 'program_secretary' || filter.value !== 'escalation').map(filter => (
                             <button
                                 type="button"
                                 role="tab"
