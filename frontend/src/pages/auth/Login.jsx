@@ -215,7 +215,7 @@ function Login({ initialEmail = '' }) {
                             name="password"
                             placeholder="****************"
                             value={password}
-                            onChange={(event) => setPassword(event.target.value)}
+                            onChange={(event) => { setPassword(event.target.value); if (!event.target.value) setShowPassword(false) }}
                             autoComplete="current-password"
                             required
                         />
@@ -229,9 +229,9 @@ function Login({ initialEmail = '' }) {
                                 <img
                                     className="show-password-icon"
                                     src={ShowPasswordIcon}
-                                    alt={showPassword ? 'Hide Password Icon' : 'Show Password Icon'}
+                                    alt=""
                                 />
-                                {!showPassword && <span className="login-password-slash" />}
+                                {showPassword && <span className="login-password-slash" />}
                             </button>
                         )}
                     </div>
