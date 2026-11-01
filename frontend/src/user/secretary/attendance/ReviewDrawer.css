@@ -513,6 +513,122 @@
   width: 100%;
 }
 
+.drawer-submission-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+}
+
+.drawer-submission-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 10px;
+  border: 1px solid;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.drawer-submission-notice.is-pending {
+  border-color: #f8c43a;
+  background: #fff9e5;
+  color: #c49b24;
+}
+
+.drawer-submission-notice.is-approved {
+  min-height: 64px;
+  border-color: #22b94c;
+  background: #f1fdf5;
+  color: #1ba747;
+}
+
+.drawer-submission-notice-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 50%;
+  background: #f8c43a;
+  color: #fff;
+}
+
+.is-approved .drawer-submission-notice-icon {
+  background: #1ba747;
+}
+
+.drawer-submission-notice-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.drawer-submission-notice strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.drawer-submission-notice p {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.drawer-withdraw-button {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 5px 12px;
+  border: 1px solid #1da1f2;
+  border-radius: 6px;
+  background: #fff;
+  color: #172b4d;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.drawer-withdraw-button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.drawer-withdraw-button:not(:disabled):hover {
+  background: #eef2f8;
+}
+
+.drawer-withdraw-button:focus-visible {
+  outline: 2px solid #159fe8;
+  outline-offset: 2px;
+}
+
+.drawer-withdraw-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .drawer-footer-actions .drawer-submit-btn,
 .drawer-edit-btn,
 .drawer-footer-actions .status-pill {
