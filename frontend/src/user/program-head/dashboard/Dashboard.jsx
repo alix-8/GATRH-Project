@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
@@ -12,6 +12,8 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
+import DashboardSkeleton from './DashboardSkeleton'
 import './Dashboard.css'
 
 const metrics = [
@@ -35,6 +37,10 @@ function compactActivityTime(value = '') {
 }
 
 function ProgramHeadDashboard() {
+    const showLoginSkeleton = useLoginSkeleton()
+    const loginSkeletonStartedAt = useRef(null)
+    const [showLoginOverlay, setShowLoginOverlay] = useState(showLoginSkeleton)
+    const [isLoginOverlayFading, setIsLoginOverlayFading] = useState(false)
     const [summary, setSummary] = useState({})
     const [pending, setPending] = useState([])
     const [activities, setActivities] = useState([])
@@ -46,6 +52,10 @@ function ProgramHeadDashboard() {
     const visibleMetrics = role === 'program_secretary'
         ? metrics.filter(metric => metric.key !== 'escalation_count')
         : metrics
+
+    useEffect(() => {
+        loginSkeletonStartedAt.current = Date.now()
+    }, [])
 
     const loadDashboard = useCallback(async (signal, silent = false) => {
         if (!silent) {
@@ -76,6 +86,23 @@ function ProgramHeadDashboard() {
         loadDashboard(controller.signal)
         return () => controller.abort()
     }, [loadDashboard])
+
+    useEffect(() => {
+        if (!showLoginOverlay || loading) return undefined
+
+        const minimumVisibleMs = error ? 0 : 700
+        const elapsedMs = loginSkeletonStartedAt.current === null ? 0 : Date.now() - loginSkeletonStartedAt.current
+        const remainingMs = Math.max(0, minimumVisibleMs - elapsedMs)
+        const timer = window.setTimeout(() => setIsLoginOverlayFading(true), remainingMs)
+        return () => window.clearTimeout(timer)
+    }, [showLoginOverlay, loading, error])
+
+    useEffect(() => {
+        if (!isLoginOverlayFading) return undefined
+
+        const timer = window.setTimeout(() => setShowLoginOverlay(false), 250)
+        return () => window.clearTimeout(timer)
+    }, [isLoginOverlayFading])
 
     const refreshDashboard = useCallback((signal) => loadDashboard(signal, true), [loadDashboard])
     useLiveRefresh(refreshDashboard)
@@ -142,6 +169,11 @@ function ProgramHeadDashboard() {
                     </section>
                 </div>
             </main>
+            {showLoginOverlay && (
+                <div className={`ph-login-skeleton-overlay${isLoginOverlayFading ? ' is-fading' : ''}`}>
+                    <DashboardSkeleton programSecretary={role === 'program_secretary'} />
+                </div>
+            )}
         </div>
     )
 }

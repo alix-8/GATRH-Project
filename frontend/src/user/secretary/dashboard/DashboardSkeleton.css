@@ -3,8 +3,14 @@
     background: #fff;
 }
 
-.secretary-skeleton--content { min-height: 0; }
-.secretary-skeleton-layout { display: flex; min-height: 100vh; }
+.secretary-skeleton--content {
+    min-height: 0;
+}
+
+.secretary-skeleton-layout {
+    display: flex;
+    min-height: 100vh;
+}
 
 .secretary-login-skeleton-overlay {
     position: fixed;
@@ -60,14 +66,38 @@
 
 .secretary-skeleton-sidebar-links,
 .secretary-skeleton-heading,
-.secretary-skeleton-date { display: grid; gap: 12px; }
+.secretary-skeleton-date {
+    display: grid;
+    gap: 12px;
+}
 
 .secretary-skeleton-sidebar-link,
-.secretary-skeleton-sidebar-footer { display: flex; align-items: center; gap: 10px; }
-.secretary-skeleton-sidebar-footer { margin-top: auto; }
-.secretary-skeleton-nav-icon { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; }
-.secretary-skeleton-nav-label { width: 65%; height: 10px; }
-.secretary-skeleton-main { min-width: 0; flex: 1; }
+.secretary-skeleton-sidebar-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.secretary-skeleton-sidebar-footer {
+    margin-top: auto;
+}
+
+.secretary-skeleton-nav-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+}
+
+.secretary-skeleton-nav-label {
+    width: 65%;
+    height: 10px;
+}
+
+.secretary-skeleton-main {
+    min-width: 0;
+    flex: 1;
+}
 
 .secretary-skeleton-header {
     display: flex;
@@ -78,12 +108,33 @@
     border-bottom: 1px solid #eef0f2;
 }
 
-.secretary-skeleton-heading { width: min(55%, 480px); }
-.secretary-skeleton-title { width: 140px; max-width: 100%; height: 20px; }
-.secretary-skeleton-subtitle { width: 100%; height: 12px; }
-.secretary-skeleton-date { width: 150px; }
-.secretary-skeleton-date > span { width: 65%; height: 10px; }
-.secretary-skeleton-content { padding: 20px 24px 40px; }
+.secretary-skeleton-heading {
+    width: min(55%, 480px);
+}
+
+.secretary-skeleton-title {
+    width: 140px;
+    max-width: 100%;
+    height: 20px;
+}
+
+.secretary-skeleton-subtitle {
+    width: 100%;
+    height: 12px;
+}
+
+.secretary-skeleton-date {
+    width: 150px;
+}
+
+.secretary-skeleton-date>span {
+    width: 65%;
+    height: 10px;
+}
+
+.secretary-skeleton-content {
+    padding: 20px 24px 40px;
+}
 
 .secretary-skeleton-hero {
     box-sizing: border-box;
@@ -96,12 +147,39 @@
     background: #f3f5f8;
 }
 
-.secretary-skeleton-hero-copy { display: flex; flex-direction: column; gap: 12px; width: min(55%, 440px); }
-.secretary-skeleton-hero-title { width: 80%; height: 24px; }
-.secretary-skeleton-hero-subtitle { width: 100%; height: 12px; }
-.secretary-skeleton-hero-stats { display: flex; gap: 24px; margin-top: auto; }
-.secretary-skeleton-hero-stats > span { width: 40%; height: 32px; }
-.secretary-skeleton-hero-illustration { width: 32%; min-height: 140px; border-radius: 12px; }
+.secretary-skeleton-hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(55%, 440px);
+}
+
+.secretary-skeleton-hero-title {
+    width: 80%;
+    height: 24px;
+}
+
+.secretary-skeleton-hero-subtitle {
+    width: 100%;
+    height: 12px;
+}
+
+.secretary-skeleton-hero-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: auto;
+}
+
+.secretary-skeleton-hero-stats>span {
+    width: 40%;
+    height: 32px;
+}
+
+.secretary-skeleton-hero-illustration {
+    width: 32%;
+    min-height: 140px;
+    border-radius: 12px;
+}
 
 .secretary-skeleton-kpis {
     display: grid;
@@ -111,13 +189,46 @@
 }
 
 .secretary-skeleton-kpi,
-.secretary-skeleton-panel { box-sizing: border-box; border: 1px solid #e5e8ed; border-radius: 10px; }
-.secretary-skeleton-kpi { display: flex; gap: 14px; min-height: 112px; padding: 18px; }
-.secretary-skeleton-kpi-icon { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; }
-.secretary-skeleton-kpi-copy { display: grid; flex: 1; gap: 10px; align-content: start; }
-.secretary-skeleton-kpi-copy > span { width: 85%; height: 10px; }
-.secretary-skeleton-kpi-copy > span:nth-child(2) { width: 40%; height: 24px; }
-.secretary-skeleton-kpi-copy > span:last-child { width: 70%; }
+.secretary-skeleton-panel {
+    box-sizing: border-box;
+    border: 1px solid #e5e8ed;
+    border-radius: 10px;
+}
+
+.secretary-skeleton-kpi {
+    display: flex;
+    gap: 14px;
+    min-height: 112px;
+    padding: 18px;
+}
+
+.secretary-skeleton-kpi-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+}
+
+.secretary-skeleton-kpi-copy {
+    display: grid;
+    flex: 1;
+    gap: 10px;
+    align-content: start;
+}
+
+.secretary-skeleton-kpi-copy>span {
+    width: 85%;
+    height: 10px;
+}
+
+.secretary-skeleton-kpi-copy>span:nth-child(2) {
+    width: 40%;
+    height: 24px;
+}
+
+.secretary-skeleton-kpi-copy>span:last-child {
+    width: 70%;
+}
 
 .secretary-skeleton-grid {
     display: grid;
@@ -126,47 +237,174 @@
     margin-top: 20px;
 }
 
-.secretary-skeleton-column { display: grid; align-content: start; gap: 14px; min-width: 0; }
-.secretary-skeleton-panel { padding: 18px; }
-.secretary-skeleton-panel-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.secretary-skeleton-heading-line { width: 45%; height: 16px; }
-.secretary-skeleton-filter { width: 100px; height: 34px; }
-.secretary-skeleton-chart { height: 360px; }
-.secretary-skeleton-legend { width: 45%; height: 10px; margin-top: 12px; }
-.secretary-skeleton-chart-bars { display: flex; align-items: end; justify-content: space-around; gap: 20px; height: 225px; padding: 16px 10px 0; }
-.secretary-skeleton-chart-bars > span { width: 15%; height: 55%; }
-.secretary-skeleton-chart-bars > span:nth-child(2) { height: 80%; }
-.secretary-skeleton-chart-bars > span:nth-child(3) { height: 65%; }
+.secretary-skeleton-column {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+    min-width: 0;
+}
 
-.secretary-skeleton-records { min-height: 290px; }
-.secretary-skeleton-records-header { width: 100%; height: 34px; margin-top: 20px; }
-.secretary-skeleton-record-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; padding: 16px 0; border-bottom: 1px solid #eef0f2; }
-.secretary-skeleton-record-row > span { width: 80%; height: 10px; }
-.secretary-skeleton-reminders { min-height: 260px; }
-.secretary-skeleton-reminder-row { display: grid; grid-template-columns: 25% 1fr 20%; gap: 12px; margin-top: 26px; }
-.secretary-skeleton-reminder-row > span { height: 12px; }
-.secretary-skeleton-monthly { min-height: 240px; }
-.secretary-skeleton-monthly-subtitle { width: 75%; height: 10px; margin-top: 12px; }
-.secretary-skeleton-monthly-row { display: grid; gap: 10px; margin-top: 24px; }
-.secretary-skeleton-monthly-row > span:first-child { width: 65%; height: 10px; }
-.secretary-skeleton-monthly-row > span:last-child { width: 100%; height: 12px; }
+.secretary-skeleton-panel {
+    padding: 18px;
+}
 
-@keyframes secretary-skeleton-shimmer { to { transform: translateX(100%); } }
+.secretary-skeleton-panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.secretary-skeleton-heading-line {
+    width: 45%;
+    height: 16px;
+}
+
+.secretary-skeleton-filter {
+    width: 100px;
+    height: 34px;
+}
+
+.secretary-skeleton-chart {
+    height: 360px;
+}
+
+.secretary-skeleton-legend {
+    width: 45%;
+    height: 10px;
+    margin-top: 12px;
+}
+
+.secretary-skeleton-chart-bars {
+    display: flex;
+    align-items: end;
+    justify-content: space-around;
+    gap: 20px;
+    height: 225px;
+    padding: 16px 10px 0;
+}
+
+.secretary-skeleton-chart-bars>span {
+    width: 15%;
+    height: 55%;
+}
+
+.secretary-skeleton-chart-bars>span:nth-child(2) {
+    height: 80%;
+}
+
+.secretary-skeleton-chart-bars>span:nth-child(3) {
+    height: 65%;
+}
+
+.secretary-skeleton-records {
+    min-height: 290px;
+}
+
+.secretary-skeleton-records-header {
+    width: 100%;
+    height: 34px;
+    margin-top: 20px;
+}
+
+.secretary-skeleton-record-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px 0;
+    border-bottom: 1px solid #eef0f2;
+}
+
+.secretary-skeleton-record-row>span {
+    width: 80%;
+    height: 10px;
+}
+
+.secretary-skeleton-reminders {
+    min-height: 260px;
+}
+
+.secretary-skeleton-reminder-row {
+    display: grid;
+    grid-template-columns: 25% 1fr 20%;
+    gap: 12px;
+    margin-top: 26px;
+}
+
+.secretary-skeleton-reminder-row>span {
+    height: 12px;
+}
+
+.secretary-skeleton-monthly {
+    min-height: 240px;
+}
+
+.secretary-skeleton-monthly-subtitle {
+    width: 75%;
+    height: 10px;
+    margin-top: 12px;
+}
+
+.secretary-skeleton-monthly-row {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.secretary-skeleton-monthly-row>span:first-child {
+    width: 65%;
+    height: 10px;
+}
+
+.secretary-skeleton-monthly-row>span:last-child {
+    width: 100%;
+    height: 12px;
+}
+
+@keyframes secretary-skeleton-shimmer {
+    to {
+        transform: translateX(100%);
+    }
+}
 
 @media (max-width: 900px) {
-    .secretary-skeleton-sidebar { display: none; }
-    .secretary-skeleton-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .secretary-skeleton-grid { grid-template-columns: 1fr; }
+    .secretary-skeleton-sidebar {
+        display: none;
+    }
+
+    .secretary-skeleton-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .secretary-skeleton-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 600px) {
-    .secretary-skeleton-content { padding: 16px; }
-    .secretary-skeleton-hero-illustration { display: none; }
-    .secretary-skeleton-hero-copy { width: 100%; }
-    .secretary-skeleton-kpis { grid-template-columns: 1fr; }
+    .secretary-skeleton-content {
+        padding: 16px;
+    }
+
+    .secretary-skeleton-hero-illustration {
+        display: none;
+    }
+
+    .secretary-skeleton-hero-copy {
+        width: 100%;
+    }
+
+    .secretary-skeleton-kpis {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .secretary-skeleton-block::after { animation: none; }
-    .secretary-login-skeleton-overlay { transition: none; }
+    .secretary-skeleton-block::after {
+        animation: none;
+    }
+
+    .secretary-login-skeleton-overlay {
+        transition: none;
+    }
 }
