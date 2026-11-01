@@ -960,8 +960,10 @@ class DashboardService
 
             // Four cards at the top
             'summary' => [
-                'completed' => $completed,
-                'incomplete' => $incomplete,
+                // These two cards count program-week icons. Monthly program
+                // statuses and response percentages remain separate.
+                'completed' => $weeklyProgress->sum('completed'),
+                'incomplete' => $weeklyProgress->sum('incomplete'),
                 'no_report' => $noReport,
                 'total_programs' => Program::query()->where('is_active', true)->count(),
                 'completion_rate' => $completionRate,
