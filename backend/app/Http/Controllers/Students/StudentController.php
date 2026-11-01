@@ -93,12 +93,36 @@ class StudentController extends Controller
             ? ['source' => 'weekly']
             : null;
 
+        // Keep the existing latest-response summary; expose gathering-specific
+        // responses separately for the table's gathering navigation.
+        $gatheringResponses = collect(['pm', 'ws', 'tg'])->mapWithKeys(function ($type) use ($students, $weeklyRecords, $drafts) {
+            $records = $weeklyRecords->where('gathering_type', $type)->groupBy('student_id');
+            $typeDrafts = $drafts->where('gathering_type', $type);
+            $hasSession = $records->isNotEmpty() || $typeDrafts->isNotEmpty();
+
+            return [$type => $students->mapWithKeys(function ($student) use ($records, $typeDrafts, $hasSession) {
+                $record = $records->get($student->id)?->first();
+                $status = $record?->status;
+                foreach ($typeDrafts as $draft) {
+                    $entry = collect($draft->parsed_data ?? [])->first(fn ($entry) => (int) ($entry['student_id'] ?? 0) === $student->id);
+                    if (! $entry) continue;
+                    if (! $record || $draft->day->gt($record->day)
+                        || ($draft->day->equalTo($record->day) && $draft->updated_at->gt($record->created_at))) {
+                        $status = $entry['status'] ?? 'no_response';
+                    }
+                    break;
+                }
+
+                return [$student->id => $hasSession ? ($status === 'present' ? 'Responded' : 'No Response') : null];
+            })];
+        });
+
         return response()->json([
             'week_range' => [
                 'start' => $weekStart,
                 'end' => $weekEnd,
             ],
-            'students' => $students->map(function (Student $student) use ($responses, $session, $weeklyEscalationCounts) {
+            'students' => $students->map(function (Student $student) use ($responses, $session, $weeklyEscalationCounts, $gatheringResponses) {
                 $record = $responses->get($student->id);
                 $status = $record ? ($record['status'] ?? $record->status) : null;
                 $hasResponded = $status === 'present';
@@ -109,6 +133,7 @@ class StudentController extends Controller
                     'program' => $student->program,
                     'year_level' => $student->year_level,
                     'response' => $session ? ($hasResponded ? 'Responded' : 'No Response') : null,
+                    'responses_by_gathering' => $gatheringResponses->map(fn ($responses) => $responses->get($student->id)),
                     'escalation_level' => $student->escalation->escalation_level ?? 'None',
                     'no_response_count' => min(3, $weeklyEscalationCounts->get($student->id, 0)),
                 ];

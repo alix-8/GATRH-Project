@@ -43,6 +43,7 @@ function Students() {
     const [students, setStudents] = useState([])
     const [attendanceSession, setAttendanceSession] = useState(null)
     const [latestGatheringType, setLatestGatheringType] = useState(null)
+    const [responseGathering, setResponseGathering] = useState(null)
     const [escalationWeekRange, setEscalationWeekRange] = useState(null)
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('user')))
     const [pollTick, setPollTick] = useState(0)
@@ -140,7 +141,13 @@ function Students() {
         const yearLabels = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' }
         return yearLabels[year] || year
     }
+    const activeResponseGathering = responseGathering || latestGatheringType || 'pm'
+    const changeResponseGathering = (direction) => {
+        const index = WEEKLY_GATHERING_TYPES.findIndex(({ type }) => type === activeResponseGathering)
+        setResponseGathering(WEEKLY_GATHERING_TYPES[(index + direction + WEEKLY_GATHERING_TYPES.length) % WEEKLY_GATHERING_TYPES.length].type)
+    }
     const filteredStudents = students
+        .map((student) => ({ ...student, response: student.responses_by_gathering?.[activeResponseGathering] ?? null }))
         .filter((student) => !selectedResponse || student.response === selectedResponse)
         .filter((student) => {
             if (!selectedLevel) return true
@@ -377,7 +384,15 @@ function Students() {
                         <table className="students-table">
                             <thead>
                                 <tr>
-                                    <th>Name</th><th>Year</th><th>Program</th><th>Latest Response{latestGatheringType ? ` (${latestGatheringType.toUpperCase()})` : ''}</th><th>Escalation</th><th>Action</th>
+                                    <th>Name</th><th>Year</th><th>Program</th>
+                                    <th>
+                                        <div className="students-response-navigation">
+                                            <button type="button" aria-label="Previous gathering response" onClick={() => changeResponseGathering(-1)}>‹</button>
+                                            <span aria-live="polite">Response ({activeResponseGathering.toUpperCase()})</span>
+                                            <button type="button" aria-label="Next gathering response" onClick={() => changeResponseGathering(1)}>›</button>
+                                        </div>
+                                    </th>
+                                    <th>Escalation</th><th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -394,8 +409,8 @@ function Students() {
                                             ) : (
                                                 <span
                                                     className="response-badge placeholder"
-                                                    aria-label="No escalation for this week yet"
-                                                    title="No escalation for this week yet"
+                                                    aria-label="No attendance for this gathering this week yet"
+                                                    title="No attendance for this gathering this week yet"
                                                 >
                                                     —
                                                 </span>

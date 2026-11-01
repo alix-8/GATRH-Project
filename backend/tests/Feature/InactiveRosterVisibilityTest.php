@@ -95,6 +95,37 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame(['OLD'], $programService->getPageData(['is_active' => false])['programs']->pluck('code')->all());
     }
 
+    public function test_snapshot_separates_gathering_responses_without_changing_latest_summary(): void
+    {
+        app(\App\Services\Escalations\WeeklyEscalationService::class)
+            ->shouldReceive('countsForStudents')->andReturn(collect());
+        app(\App\Services\Escalations\WeeklyEscalationService::class)
+            ->shouldReceive('syncDraft')->zeroOrMoreTimes();
+        $this->program('BSIS');
+        $student = $this->student('Different gathering responses');
+        $user = new User(['role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1, 'is_active' => true]);
+        $user->id = 1;
+        AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'pm',
+            'day' => '2026-10-28', 'status' => 'present']);
+        AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'ws',
+            'day' => '2026-10-31', 'status' => 'no_response']);
+
+        $request = \Illuminate\Http\Request::create('/api/students/attendance-snapshot');
+        $request->setUserResolver(fn () => $user);
+        $payload = app(\App\Http\Controllers\Students\StudentController::class)->attendanceSnapshot($request)->getData(true);
+        $this->assertSame('No Response', $payload['students'][0]['response']);
+        $this->assertSame(['pm' => 'Responded', 'ws' => 'No Response', 'tg' => null], $payload['students'][0]['responses_by_gathering']);
+
+        \App\Models\AttendanceDraft::create(['user_id' => 1, 'gathering_type' => 'ws',
+            'day' => '2026-10-31', 'status' => 'draft',
+            'parsed_data' => [['student_id' => $student->id, 'status' => 'present']]]);
+        Carbon::setTestNow('2026-10-31 12:01:00');
+        \App\Models\AttendanceDraft::query()->update(['updated_at' => now()]);
+        $payload = app(\App\Http\Controllers\Students\StudentController::class)->attendanceSnapshot($request)->getData(true);
+        $this->assertSame('Responded', $payload['students'][0]['responses_by_gathering']['ws']);
+        $this->assertSame('Responded', $payload['students'][0]['responses_by_gathering']['pm']);
+    }
+
     public function test_status_history_preserves_past_expectations_and_reactivation_gaps(): void
     {
         $program = $this->program('BSIS'); $student = $this->student('Student');
