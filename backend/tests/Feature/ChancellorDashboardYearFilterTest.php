@@ -384,6 +384,24 @@ class ChancellorDashboardYearFilterTest extends TestCase
         $this->assertSame(0, $otherYear['summary']['incomplete']);
     }
 
+    public function test_selected_year_calculates_each_gathering_week_once_for_the_whole_payload(): void
+    {
+        Program::create(['code' => 'BSIS', 'name' => 'Information Systems']);
+        foreach ([1, 2, 3, 4] as $year) {
+            $student = Student::create(['name' => 'Year '.$year, 'program' => 'BSIS', 'year_level' => $year]);
+            $this->addResponse($student, 'pm');
+        }
+        // Five reporting weeks x three gatherings. Cards, monthly percentages,
+        // table icons and weekly chart must reuse those same calculations.
+        $this->partialMock(\App\Services\Dashboard\AttendanceResponseSummary::class)
+            ->shouldReceive('gathering')->times(15)->passthru();
+        $payload = $this->chancellorPayload();
+        $this->assertSame(1, $payload['overall_progress']['responded_students']);
+        $this->assertSame(15, $payload['overall_progress']['expected_responses']);
+        $this->assertSame(1, $payload['summary']['incomplete']);
+        $this->assertSame(5, count($payload['weekly_progress']));
+    }
+
     public function test_total_programs_is_an_active_catalog_count_independent_of_filters(): void
     {
         Program::create(['code' => 'ACT', 'name' => 'Computer Technology', 'is_active' => true]);
