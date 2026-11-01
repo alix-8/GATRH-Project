@@ -24,6 +24,7 @@ const metrics = [
 const activityIcons = {
     submitted: SubmittedIcon,
     approved: ApprovedIcon,
+    withdrawn: PendingReviewIcon,
 }
 
 function compactActivityTime(value = '') {

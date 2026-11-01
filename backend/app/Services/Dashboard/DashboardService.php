@@ -561,7 +561,7 @@ class DashboardService
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return $records
+        $activities = $records
             ->groupBy(fn ($r) => $r->batch_id ?? ($r->gathering_type . '|' . $r->day . '|' . $r->submitted_by))
             ->sortByDesc(fn ($group) => $group->first()->updated_at)
             ->map(function ($group) use ($user) {
@@ -591,9 +591,41 @@ class DashboardService
                     'description' => $description,
                     'time_ago'    => $first->updated_at?->diffForHumans() ?? 'Recently',
                     'status'      => $status,
+                    'activity_at' => $first->updated_at?->toIso8601String(),
                 ];
-            })
+            });
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('audit_logs')) {
+            $programCodes = $user->assignedProgramCodes();
+            $withdrawals = \App\Models\AuditLog::query()
+                ->where('action', 'Unsubmitted attendance submission')
+                ->where('target_table', 'attendance_records')
+                ->where('result', 'success')
+                ->with('actor:id,name')
+                ->orderByDesc('created_at')
+                ->get()
+                ->flatMap(function ($log) use ($programCodes, $dateRange) {
+                    $details = json_decode($log->details ?? '', true);
+                    return collect($details['submissions'] ?? [])
+                        ->filter(fn ($entry) => in_array($entry['program'] ?? null, $programCodes, true)
+                            && ($entry['reporting_day'] ?? '') >= $dateRange['start']
+                            && ($entry['reporting_day'] ?? '') <= $dateRange['end'])
+                        ->map(fn ($entry, $index) => [
+                            'id' => 'withdrawal-'.$log->id.'-'.$index,
+                            'icon_type' => 'withdrawn',
+                            'title' => $this->formatGatheringName($entry['gathering_type']).' submission withdrawn',
+                            'description' => ($log->actor?->name ?? 'Secretary').' withdrew the submission',
+                            'time_ago' => $log->created_at?->diffForHumans() ?? 'Recently',
+                            'status' => 'withdrawn',
+                            'activity_at' => $log->created_at?->toIso8601String(),
+                        ]);
+                });
+            $activities = $activities->concat($withdrawals);
+        }
+
+        return $activities->sortByDesc('activity_at')
             ->take(4) // 2x2 grid = 4 items
+            ->map(fn ($activity) => \Illuminate\Support\Arr::except($activity, 'activity_at'))
             ->values()
             ->toArray();
     }
