@@ -13,7 +13,7 @@ use App\Services\Reminders\ReminderGenerationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-
+use Illuminate\Validation\ValidationException;
 class ReminderController extends Controller
 {
     protected ReminderCountdownService $countdownService;
@@ -100,6 +100,7 @@ class ReminderController extends Controller
                 ->when($user->role !== 'program_head', fn ($query) => $query->where('escalation_level', $alertLevel))
                 ->with('student')
                 ->orderByDesc('no_response_count')
+                ->mostRecentFirst()
                 ->get()
             : collect();
 
@@ -186,8 +187,8 @@ class ReminderController extends Controller
         $validated = $request->validate([
             'title'       => 'required|string|max:20',
             'description' => 'nullable|string|max:100',
+            'gathering_type' => 'required_unless:custom_type,general|nullable|in:pm,ws,tg',
             'custom_type' => 'required|in:submission,gathering,general',
-            'gathering_type' => 'required|in:pm,ws,tg',
             'due_date'    => 'required|date|after:now',
             'status'      => 'nullable|in:upcoming,needs_action,completed',
         ]);
@@ -196,7 +197,7 @@ class ReminderController extends Controller
              'user_id'       => $request->user()->id,
             'reminder_type' => 'custom',
             'custom_type'   => $validated['custom_type'],
-            'gathering_type' => $validated['gathering_type'],
+            'gathering_type' => $validated['custom_type'] === 'general' ? null : $validated['gathering_type'],
             'title'         => $validated['title'],
             'description'   => $validated['description'] ?? null,
             'due_date'      => $validated['due_date'],
@@ -258,10 +259,25 @@ class ReminderController extends Controller
             'title'       => 'sometimes|required|string|max:20',
             'description' => 'nullable|string|max:100',
             'custom_type' => 'sometimes|required|in:submission,gathering,general',
-            'gathering_type' => 'sometimes|required|in:pm,ws,tg',
+            'gathering_type' => 'sometimes|nullable|in:pm,ws,tg',
             'due_date'    => 'sometimes|required|date|after_or_equal:today',
             'status'      => 'sometimes|required|in:upcoming,needs_action,completed',
         ]);
+
+        $customType = $validated['custom_type'] ?? $reminder->custom_type;
+        if ($customType === 'general') {
+            $validated['gathering_type'] = null;
+        } elseif ($reminder->reminder_type === 'custom'
+            && (array_key_exists('custom_type', $validated) || array_key_exists('gathering_type', $validated))) {
+            $gatheringType = array_key_exists('gathering_type', $validated)
+                ? $validated['gathering_type']
+                : $reminder->gathering_type;
+            if (! $gatheringType) {
+                throw ValidationException::withMessages([
+                    'gathering_type' => 'Please choose a related gathering.',
+                ]);
+            }
+        }
 
         $reminder->update($validated);
 

@@ -10,6 +10,7 @@ import ImportIcon from '../../assets/icons/import-icon.svg'
 import AttendanceIcon from '../../assets/icons/attendance-icon.svg'
 import RemindersIcon from '../../assets/icons/reminders-icon.svg'
 import LogoutIcon from '../../assets/icons/logout-icon.svg'
+import { clearLoginSkeleton } from '../../utils/loginSkeletonState'
 import ProfileIcon from '../../assets/icons/profile-icon.svg'
 import SystemSettingsIcon from '../../assets/icons/system-settings-icon.svg'
 import UserRolesIcon from '../../assets/icons/user-roles-icon.svg'
@@ -66,6 +67,7 @@ function Sidebar() {
 
     const handleSignOut = () => {
         localStorage.removeItem('user')
+        clearLoginSkeleton()
         setIsLogoutModalOpen(false)
         navigate('/', { replace: true })
 

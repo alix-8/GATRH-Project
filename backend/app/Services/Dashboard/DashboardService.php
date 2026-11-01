@@ -160,7 +160,7 @@ class DashboardService
 
     private function getSecretaryTasksAndReminders($user): array
     {
-        return Reminder::query()
+        $reminders = Reminder::query()
             ->relevantToCurrentRoster()
             ->where('user_id', $user->id)
             ->whereIn('status', ['upcoming', 'needs_action'])
@@ -196,8 +196,31 @@ class DashboardService
                     },
                 ];
             })
-            ->values()
-            ->toArray();
+            ->values();
+
+        $escalations = Escalation::query()
+            ->visibleTo($user)
+            ->where('escalation_level', 'Level 1')
+            ->with('student')
+            ->mostRecentFirst()
+            ->limit(3)
+            ->get()
+            ->map(function (Escalation $escalation) {
+                $student = $escalation->student;
+
+                return [
+                    'id' => $escalation->id,
+                    'type' => 'escalation',
+                    'category' => 'Escalation',
+                    'title' => $student->name,
+                    'description' => "{$student->name} has reached Escalation {$escalation->escalation_level} and requires a follow up.",
+                    'date' => $escalation->updated_at?->toIso8601String(),
+                    'status' => 'escalation',
+                    'status_label' => 'Escalation Report',
+                ];
+            });
+
+        return $escalations->concat($reminders)->values()->toArray();
     }
     /** ============================================================
      * For Program Heads

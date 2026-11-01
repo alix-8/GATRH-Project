@@ -96,6 +96,45 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame(['OLD'], $programService->getPageData(['is_active' => false])['programs']->pluck('code')->all());
     }
 
+    public function test_secretary_dashboard_prepends_recent_level_one_alerts_without_replacing_reminders(): void
+    {
+        Schema::create('reminders', function (Blueprint $table) {
+            $table->id(); $table->integer('user_id'); $table->string('reminder_type');
+            $table->string('program')->nullable(); $table->integer('year_level')->nullable();
+            $table->string('title'); $table->string('status'); $table->dateTime('due_date');
+            $table->string('description')->nullable(); $table->timestamps();
+        });
+        $this->program('BSIS'); $this->program('OLD', false);
+        $user = new User(['role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1]);
+        $user->id = 1;
+        foreach (['Oldest', 'Third', 'Second', 'Newest'] as $index => $name) {
+            $student = $this->student($name);
+            DB::table('escalations')->insert(['student_id' => $student->id, 'escalation_level' => 'Level 1',
+                'no_response_count' => 1, 'updated_at' => '2026-10-'.(20 + $index).' 12:00:00']);
+        }
+        foreach ([['Inactive', 'BSIS', false, 1, 'Level 1'], ['Wrong program', 'ACT', true, 1, 'Level 1'],
+            ['Inactive program', 'OLD', true, 1, 'Level 1'], ['Level two', 'BSIS', true, 1, 'Level 2'],
+            ['Wrong year', 'BSIS', true, 2, 'Level 1']] as [$name, $program, $active, $year, $level]) {
+            $student = $this->student($name, $program, $active);
+            $student->update(['year_level' => $year]);
+            DB::table('escalations')->insert(['student_id' => $student->id, 'escalation_level' => $level,
+                'no_response_count' => 1, 'updated_at' => now()]);
+        }
+        foreach (range(1, 5) as $index) {
+            \App\Models\Reminder::create(['user_id' => 1, 'reminder_type' => 'custom', 'title' => 'Task '.$index,
+                'status' => 'upcoming', 'due_date' => now()->addDays($index)]);
+        }
+        \App\Models\Reminder::create(['user_id' => 2, 'reminder_type' => 'custom', 'title' => 'Another user',
+            'status' => 'needs_action', 'due_date' => now()]);
+        $method = new \ReflectionMethod(DashboardService::class, 'getSecretaryTasksAndReminders');
+        $items = $method->invoke(app(DashboardService::class), $user);
+        $this->assertCount(7, $items);
+        $this->assertSame(['Newest', 'Second', 'Third', 'Task 1', 'Task 2', 'Task 3', 'Task 4'], array_column($items, 'title'));
+        $this->assertSame('escalation', $items[0]['type']);
+        $this->assertSame('Escalation Report', $items[0]['status_label']);
+        $this->assertSame('custom', $items[3]['type']);
+    }
+
     public function test_recent_approval_activity_names_the_actual_approver_for_each_viewer(): void
     {
         $this->program('BSIS');

@@ -6,6 +6,7 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -24,6 +25,17 @@ class SystemNameSettingTest extends TestCase
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
         });
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('email');
+            $table->string('role');
+            $table->boolean('is_active');
+        });
+        DB::table('users')->insert([
+            ['email' => 'inactive.admin@laverdad.edu.ph', 'role' => 'admin', 'is_active' => false],
+            ['email' => 'admin@laverdad.edu.ph', 'role' => 'admin', 'is_active' => true],
+            ['email' => 'secretary@laverdad.edu.ph', 'role' => 'secretary', 'is_active' => true],
+        ]);
         SystemSetting::create([
             'system_name' => SystemSetting::DEFAULT_SYSTEM_NAME,
             'institution_name' => 'La Verdad Christian College',
@@ -34,10 +46,11 @@ class SystemNameSettingTest extends TestCase
         $this->mock(AuditLogService::class)->shouldReceive('recordAction')->zeroOrMoreTimes();
     }
 
-    public function test_branding_is_public_and_exposes_only_the_system_name(): void
+    public function test_branding_is_public_and_exposes_the_system_name_and_active_admin_email(): void
     {
         $this->getJson('/api/branding')->assertOk()->assertExactJson([
             'system_name' => SystemSetting::DEFAULT_SYSTEM_NAME,
+            'admin_email' => 'admin@laverdad.edu.ph',
         ]);
         $this->patchJson('/api/admin/settings/general', ['system_name' => 'Changed'])->assertUnauthorized();
     }
@@ -45,7 +58,7 @@ class SystemNameSettingTest extends TestCase
     public function test_admin_can_save_normalized_name_without_changing_date_settings(): void
     {
         $admin = new User(['name' => 'Admin', 'role' => 'admin', 'is_active' => true]);
-        $admin->id = 1;
+        $admin->id = 2;
         $this->actingAs($admin);
         $this->patchJson('/api/admin/settings/general', [
             'system_name' => '  Gathering   Hub  ',
@@ -54,7 +67,10 @@ class SystemNameSettingTest extends TestCase
         ])->assertOk()->assertJsonPath('settings.system_name', 'Gathering Hub');
         $this->assertSame('MM/DD/YYYY', SystemSetting::find(1)->date_format);
         $this->assertSame('Asia/Manila', SystemSetting::find(1)->timezone);
-        $this->getJson('/api/branding')->assertExactJson(['system_name' => 'Gathering Hub']);
+        $this->getJson('/api/branding')->assertExactJson([
+            'system_name' => 'Gathering Hub',
+            'admin_email' => 'admin@laverdad.edu.ph',
+        ]);
         foreach (['   ', str_repeat('x', 121)] as $invalid) {
             $this->patchJson('/api/admin/settings/general', ['system_name' => $invalid])
                 ->assertUnprocessable()->assertJsonValidationErrors('system_name');
