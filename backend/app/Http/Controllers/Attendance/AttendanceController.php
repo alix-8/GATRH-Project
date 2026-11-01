@@ -1587,7 +1587,16 @@ class AttendanceController extends Controller
             'Unsubmitted attendance submission',
             'attendance_records',
             $batchKey,
-            $user
+            $user,
+            'success',
+            json_encode(['submissions' => collect($result['drafts'])->flatMap(fn ($draft) =>
+                collect($draft->parsed_data ?? [])->map(fn ($entry) => [
+                    'program' => $entry['program'] ?? $user->program,
+                    'year_level' => $entry['year_level'] ?? $user->year_level,
+                    'gathering_type' => $draft->gathering_type,
+                    'reporting_day' => $draft->day->toDateString(),
+                ])->unique(fn ($entry) => $entry['program'].'|'.$entry['year_level'])
+            )->values()->all()])
         );
 
         return response()->json([

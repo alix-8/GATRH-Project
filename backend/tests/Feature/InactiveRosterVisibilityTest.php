@@ -96,6 +96,51 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame(['OLD'], $programService->getPageData(['is_active' => false])['programs']->pluck('code')->all());
     }
 
+    public function test_recent_activities_keep_withdrawals_scoped_after_the_draft_is_gone(): void
+    {
+        Schema::create('audit_logs', function (Blueprint $table) {
+            $table->id(); $table->integer('actor_id'); $table->string('action');
+            $table->string('target_table'); $table->string('target_id'); $table->string('result');
+            $table->text('details')->nullable(); $table->timestamps();
+        });
+        $this->program('BSIS');
+        DB::table('users')->insert(['id' => 5, 'name' => 'Secretary Mel', 'email' => 'mel@laverdad.edu.ph',
+            'password' => 'unused', 'role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1]);
+        foreach ([['BSIS', '2026-10-28'], ['ACT', '2026-10-28'], ['BSIS', '2026-09-16']] as $index => [$program, $day]) {
+            \App\Models\AuditLog::create(['actor_id' => 5, 'action' => 'Unsubmitted attendance submission',
+                'target_table' => 'attendance_records', 'target_id' => 'batch-'.$index, 'result' => 'success',
+                'details' => json_encode(['submissions' => [['program' => $program, 'year_level' => 1,
+                    'gathering_type' => 'pm', 'reporting_day' => $day]]])]);
+        }
+        foreach (['program_head', 'program_secretary'] as $role) {
+            $viewer = new User(['role' => $role, 'program' => 'BSIS']); $viewer->id = 10;
+            $activities = app(DashboardService::class)->getProgramHeadRecentActivity($viewer, ['start' => '2026-10-01', 'end' => '2026-10-31']);
+            $this->assertCount(1, $activities);
+            $this->assertSame('Prayer Meeting submission withdrawn', $activities[0]['title']);
+            $this->assertSame('Secretary Mel withdrew the submission', $activities[0]['description']);
+            $this->assertSame('withdrawn', $activities[0]['icon_type']);
+        }
+        $this->assertSame(0, \App\Models\AttendanceDraft::count());
+    }
+
+    public function test_coordinator_no_response_details_list_recorded_students_without_missing_or_responded_students(): void
+    {
+        $this->program('BSIS');
+        $responded = $this->student('Responded');
+        $noResponse = $this->student('Recorded no response');
+        $missing = $this->student('Missing record');
+        foreach ([[$responded, 'present'], [$responded, 'no_response'], [$noResponse, 'no_response'], [$noResponse, 'no_response']] as [$student, $status]) {
+            AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'pm',
+                'day' => '2026-10-28', 'reporting_day' => '2026-10-28', 'status' => $status]);
+        }
+        $details = app(CmCoordinatorMonitoringService::class)->getCourseDetails('BSIS', 1, ['year' => 2026, 'month' => 10, 'week' => 5]);
+        $pm = collect($details['week_details'])->firstWhere('gathering_type', 'pm');
+        $ws = collect($details['week_details'])->firstWhere('gathering_type', 'ws');
+        $this->assertSame([$noResponse->id], $pm['no_response_students']->pluck('id')->all());
+        $this->assertContains($missing->id, $pm['missing_students']->pluck('id')->all());
+        $this->assertSame([], $ws['no_response_students']->all());
+    }
+
     public function test_secretary_dashboard_prepends_recent_level_one_alerts_without_replacing_reminders(): void
     {
         Schema::create('reminders', function (Blueprint $table) {

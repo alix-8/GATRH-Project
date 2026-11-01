@@ -575,6 +575,7 @@
 }
 
 .monitoring-detail-backdrop {
+    overscroll-behavior: contain;
     position: fixed;
     inset: 0;
     z-index: 120;
@@ -639,6 +640,7 @@
 .monitoring-detail-body {
     flex: 1 1 auto;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
     padding: 0 20px 16px;
 }
 
@@ -926,6 +928,29 @@
 
 .monitoring-incomplete-details article button:hover {
     background: #087fc9;
+}
+
+.monitoring-no-response-details {
+    background: #fff0f0;
+    color: #c53030;
+}
+
+.monitoring-no-response-details .monitoring-incomplete-icon {
+    background: #ef4444;
+}
+
+.monitoring-no-response-details article button {
+    background: #e52328;
+    color: #fff;
+}
+
+.monitoring-no-response-details article button:hover {
+    background: #c51d22;
+}
+
+.monitoring-no-response-details article button:focus-visible {
+    outline: 2px solid #e52328;
+    outline-offset: 2px;
 }
 
 .monitoring-incomplete-details article ul {
