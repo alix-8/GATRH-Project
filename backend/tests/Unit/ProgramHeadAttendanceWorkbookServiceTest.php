@@ -136,6 +136,32 @@ class ProgramHeadAttendanceWorkbookServiceTest extends TestCase
         }
     }
 
+    public function test_period_exports_repeat_pm_ws_tg_with_the_correct_date_ranges(): void
+    {
+        $service = new ProgramHeadAttendanceWorkbookService();
+        foreach (['week', 'month'] as $period) {
+            $path = $service->createPeriod(new Collection(), CarbonImmutable::parse('2026-10-28'), $period, 'BSIS', 1);
+            try {
+                $sheet = $this->readZipEntry(file_get_contents($path), 'xl/worksheets/sheet1.xml');
+                preg_match('/<row r="4"[^>]*>(.*?)<\/row>/s', $sheet, $header);
+                preg_match_all('/<t[^>]*>(.*?)<\/t>/s', $header[1], $labels);
+                $types = array_slice($labels[1], 1);
+                $this->assertNotEmpty($types);
+                foreach (array_chunk($types, 3) as $group) {
+                    $this->assertSame(['PM', 'WS', 'TG'], $group);
+                }
+                $pmRange = $period === 'week' ? 'Oct 28 - Oct 30' : 'Sep 30 - Oct 2';
+                $weekendRange = $period === 'week' ? 'Oct 31 - Nov 1' : 'Oct 3 - Oct 4';
+                $this->assertMatchesRegularExpression('/<c r="B5"[^>]*>.*?'.preg_quote($pmRange, '/').'<\/t>/', $sheet);
+                foreach (['C5', 'D5'] as $cell) {
+                    $this->assertMatchesRegularExpression('/<c r="'.$cell.'"[^>]*>.*?'.preg_quote($weekendRange, '/').'<\/t>/', $sheet);
+                }
+            } finally {
+                @unlink($path);
+            }
+        }
+    }
+
     private function readZipEntry(string $archive, string $expectedName): string|false
     {
         $offset = 0;

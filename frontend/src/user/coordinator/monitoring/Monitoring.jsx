@@ -16,8 +16,8 @@ import './Monitoring.css'
 
 const GATHERING_LABELS = {
     pm: 'PM',
-    tg: 'TG',
     ws: 'WS',
+    tg: 'TG',
 }
 
 const PROGRAM_DISPLAY_NAMES = {
@@ -40,8 +40,8 @@ const PROGRAM_TYPES = {
 }
 const GATHERINGS = [
     { type: 'pm', label: 'Prayer Meeting' },
-    { type: 'tg', label: 'Thanksgiving' },
     { type: 'ws', label: 'Worship Service' },
+    { type: 'tg', label: 'Thanksgiving' },
 ]
 const GATHERING_TYPES = GATHERINGS.map(({ type }) => type)
 const EMPTY_COURSES = []
