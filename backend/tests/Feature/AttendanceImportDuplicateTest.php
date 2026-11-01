@@ -320,7 +320,7 @@ class AttendanceImportDuplicateTest extends TestCase
         AttendanceRecord::query()->update(['reporting_day' => '2026-10-28']);
         AttendanceRecord::query()->update(['validation_status' => 'unvalidated']);
         $monitor = app(\App\Services\Dashboard\CmCoordinatorMonitoringService::class);
-        $monitoring = $monitor->getCourseDetails('BSIS', 1, ['month' => 10, 'year' => 2026, 'week' => 5]);
+        $monitoring = $monitor->getCourseDetails('BSIS', 1, ['month' => 10, 'year' => 2026, 'week' => 4]);
         $pm = collect($monitoring['week_details'])->firstWhere('gathering_type', 'pm');
         $this->assertSame(2, $pm['responded_students']);
         $this->assertSame(['2026-10-26', '2026-10-28'], $pm['dates']);
@@ -330,7 +330,7 @@ class AttendanceImportDuplicateTest extends TestCase
         $draft = AttendanceDraft::firstOrFail();
         $this->assertSame('2026-10-28', $draft->day->toDateString());
         $this->assertSame('2026-10-28', collect($draft->parsed_data)->firstWhere('student_name', 'JR Balmaceda')['day']);
-        $monitoring = $monitor->getCourseDetails('BSIS', 1, ['month' => 10, 'year' => 2026, 'week' => 5]);
+        $monitoring = $monitor->getCourseDetails('BSIS', 1, ['month' => 10, 'year' => 2026, 'week' => 4]);
         $pm = collect($monitoring['week_details'])->firstWhere('gathering_type', 'pm');
         $this->assertSame(2, $pm['responded_students']);
         $this->assertSame(['2026-10-26', '2026-10-28'], $pm['dates']);

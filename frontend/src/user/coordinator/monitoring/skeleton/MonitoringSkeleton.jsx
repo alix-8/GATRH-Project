@@ -7,9 +7,9 @@ function Placeholder({ className = '' }) {
 export default function MonitoringSkeleton({ month, tableOnly = false }) {
     const [year, monthNumber] = month.split('-').map(Number)
     const firstDay = new Date(year, monthNumber - 1, 1)
-    const leadingDays = (firstDay.getDay() - 3 + 7) % 7
+    const daysUntilWednesday = (3 - firstDay.getDay() + 7) % 7
     const daysInMonth = new Date(year, monthNumber, 0).getDate()
-    const weekCount = Math.ceil((leadingDays + daysInMonth) / 7)
+    const weekCount = Math.ceil((daysInMonth - daysUntilWednesday) / 7)
 
     const table = (
         <div className="monitoring-skeleton-table-scroll" aria-hidden="true">

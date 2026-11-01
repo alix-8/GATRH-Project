@@ -81,18 +81,21 @@ function Notification() {
     }, [])
 
     const fetchControllerRef = useRef(null)
+    const trackedNotificationIdsRef = useRef([])
 
     const fetchNotifications = useCallback(async () => {
         if (!localStorage.getItem('user')) return
 
-        let isCoordinator = false
+        let needsAttendance = true
         try {
-            isCoordinator = JSON.parse(localStorage.getItem('user') || 'null')?.role === 'cm_coordinator'
+            const role = JSON.parse(localStorage.getItem('user') || 'null')?.role
+            needsAttendance = !['cm_coordinator', 'chancellor'].includes(role)
         } catch {
             // A missing or stale cached user should not prevent reminders loading.
         }
 
-        fetchControllerRef.current?.abort()
+        // Focus, bell clicks, and reminder events can arrive together.
+        if (fetchControllerRef.current && !fetchControllerRef.current.signal.aborted) return
 
         const controller = new AbortController()
         fetchControllerRef.current = controller
@@ -100,11 +103,11 @@ function Notification() {
         try {
                 const [remindersData, attendanceData] = await Promise.all([
                     request('/reminders', { signal: controller.signal }),
-                    isCoordinator
+                    !needsAttendance
                         ? Promise.resolve({ data: [] })
                         : request('/attendance?per_page=100&sort_by=day&sort_dir=desc', { signal: controller.signal })
                             .catch(error => {
-                                if (error.name === 'AbortError') throw error
+                                if (error.name === 'AbortError' || error.status === 429) throw error
                                 return { data: [] }
                             }),
                 ])
@@ -194,11 +197,14 @@ function Notification() {
 
                 const nextItems = [...escalationItems, ...dueAttendanceItems, ...dueMyReminderItems, ...reminderItems, ...attendanceItems]
                 const trackedIds = nextItems.filter(item => item.tracksBellDot).map(item => item.id)
+                trackedNotificationIdsRef.current = trackedIds
                 const seenIds = getSeenNotificationIds()
                 setHasUnreadReminder(trackedIds.some(id => !seenIds.has(String(id))))
                 setItems(nextItems.slice(0, 8))
         } catch {
             // Aborted or failed refresh: keep whatever items are already shown.
+        } finally {
+            if (fetchControllerRef.current === controller) fetchControllerRef.current = null
         }
     }, [])
 
@@ -224,9 +230,13 @@ function Notification() {
     }, [fetchNotifications])
 
     useEffect(() => {
-        window.addEventListener('notifications:changed', fetchNotifications)
-        return () => window.removeEventListener('notifications:changed', fetchNotifications)
-    }, [fetchNotifications])
+        const syncReadState = () => {
+            const seenIds = getSeenNotificationIds()
+            setHasUnreadReminder(trackedNotificationIdsRef.current.some(id => !seenIds.has(String(id))))
+        }
+        window.addEventListener('notifications:changed', syncReadState)
+        return () => window.removeEventListener('notifications:changed', syncReadState)
+    }, [])
 
     useLiveRefresh(fetchNotifications, 60_000)
 

@@ -58,6 +58,7 @@ function getWeeklyChartScale(weeks) {
 
 function ChancellorDashboard() {
     const [yearLevel, setYearLevel] = useState('1')
+    const [requestedYearLevel, setRequestedYearLevel] = useState('1')
     const [programReporting, setProgramReporting] = useState([])
     const [programYearReporting, setProgramYearReporting] = useState([])
     const [weeklyProgress, setWeeklyProgress] = useState([])
@@ -80,9 +81,14 @@ function ChancellorDashboard() {
     const query = useMemo(() => {
         const params = new URLSearchParams({
             date: getTodayDateValue(),
-            year_level: yearLevel,
+            year_level: requestedYearLevel,
         })
         return params.toString()
+    }, [requestedYearLevel])
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => setRequestedYearLevel(yearLevel), 300)
+        return () => window.clearTimeout(timer)
     }, [yearLevel])
 
     useEffect(() => {
@@ -93,6 +99,7 @@ function ChancellorDashboard() {
 
             try {
                 const data = await request(`/dashboard?${query}`, { signal: controller.signal })
+                if (controller.signal.aborted) return
                 setSummary(data.summary || {
                     completed: 0,
                     incomplete: 0,
@@ -163,9 +170,9 @@ function ChancellorDashboard() {
                             <img src={CompletedProgramsIcon} alt="" />
                         </span>
                         <div className="chancellor-summary-content">
-                            <span className="chancellor-summary-label">Completed</span>
+                            <span className="chancellor-summary-label">Completed Weeks</span>
                             <strong>{summary.completed}</strong>
-                            <p>Programs with full reports this month</p>
+                            <p>Completed program-week reports</p>
                         </div>
                     </article>
                     <article className="chancellor-summary-card chancellor-summary-card--in-progress">
@@ -175,7 +182,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">In Progress</span>
                             <strong>{summary.incomplete}</strong>
-                            <p>Programs with partial reports this month</p>
+                            <p>Incomplete program-week reports</p>
                         </div>
                     </article>
                     <article className="chancellor-summary-card chancellor-summary-card--no-report">

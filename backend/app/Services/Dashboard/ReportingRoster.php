@@ -21,7 +21,7 @@ class ReportingRoster
         $start = GatheringCycle::weekStartForDate($month);
         $end = GatheringCycle::weekEndForDate($month->copy()->endOfMonth());
         $recordedCodes = AttendanceRecord::query()->with('student')
-            ->inReportingRange([$start, $end])->get()
+            ->inReportingRange([$start, $end])->get()->toBase()
             ->map(fn ($row) => $row->program ?? $row->student?->program);
         $draftCodes = AttendanceDraft::query()->whereBetween('day', [$start->toDateString(), $end->toDateString()])
             ->get()->flatMap(fn ($draft) => collect($draft->parsed_data ?? [])->pluck('program'));

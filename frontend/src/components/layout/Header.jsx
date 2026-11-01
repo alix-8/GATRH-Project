@@ -12,6 +12,10 @@ function Header({
     className = '',
 }) {
     const subtitleText = subtitle ?? description
+    let receivesReminders = true
+    try {
+        receivesReminders = JSON.parse(localStorage.getItem('user') || 'null')?.role !== 'chancellor'
+    } catch { /* Keep the existing header behavior if cached user data is invalid. */ }
 
     return (
         <header className={`app-header page-header ${className}`.trim()}>
@@ -23,7 +27,7 @@ function Header({
             <div className="header-meta">
                 {children}
                 {showDate && <PageDate className="header-date" />}
-                {showNotification && <Notification />}
+                {showNotification && receivesReminders && <Notification />}
             </div>
         </header>
     )

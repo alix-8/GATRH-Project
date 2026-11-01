@@ -80,4 +80,16 @@ class PersonalReminderUndoTest extends TestCase
             $this->assertSame('completed', $reminder->fresh()->status);
         }
     }
+
+    public function test_chancellor_cannot_access_reminder_endpoints(): void
+    {
+        $user = $this->owner();
+        $user->role = 'chancellor';
+        $reminder = $this->reminder($user);
+        $this->actingAs($user)->getJson('/api/reminders')->assertForbidden();
+        $this->actingAs($user)->getJson('/api/reminders/role-summary')->assertForbidden();
+        $this->actingAs($user)->postJson('/api/reminders', [])->assertForbidden();
+        $this->actingAs($user)->patchJson('/api/reminders/'.$reminder->id.'/undo')->assertForbidden();
+        $this->assertSame('completed', $reminder->fresh()->status);
+    }
 }

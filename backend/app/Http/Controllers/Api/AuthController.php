@@ -43,11 +43,13 @@ class AuthController extends Controller
             ], 429);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', strtolower(trim($request->email)))->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             RateLimiter::hit($throttleKey, $decaySeconds);
-            $this->recordFailedSecurityEvent($request, 'Signed in', 'Sign-in attempt failed: invalid credentials.');
+            if ($user) {
+                app(AuditLogService::class)->recordSecurityEvent('Signed in', $user, 'failed', 'Sign-in attempt failed: invalid credentials.');
+            }
 
             return response()->json(['message' => 'Invalid credentials'], 401);
         }

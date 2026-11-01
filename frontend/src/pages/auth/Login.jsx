@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../../api/request'
 import LVCCLogo from '../../assets/icons/lvcc-logo.svg'
 import Illustration from '../../assets/illustrations/login-illustration.webp'
-import { initializeCsrf, xsrfHeaders } from '../../api/request'
+import { initializeCsrf, submitWithCsrf, xsrfHeaders } from '../../api/request'
+import { loadBranding } from '../../api/branding'
 import ShowPasswordIcon from '../../assets/icons/show-password-icon.svg'
 import AttendanceTrackingIcon from '../../assets/icons/attendance-tracking-icon.svg'
 import AttendanceConverterIcon from '../../assets/icons/attendance-converter-icon.svg'
@@ -41,15 +42,16 @@ function Login({ initialEmail = '' }) {
     const [systemName, setSystemName] = useState('Gathering Attendance Tracking and Reporting Hub')
     const [adminEmail, setAdminEmail] = useState('')
     useEffect(() => {
-        const controller = new AbortController()
-        fetch(API_BASE_URL + '/branding', { signal: controller.signal, cache: 'no-store' })
-            .then(response => response.ok ? response.json() : Promise.reject())
+        let cancelled = false
+        initializeCsrf().catch(() => {})
+        loadBranding()
             .then(data => {
+                if (cancelled) return
                 if (data.system_name) setSystemName(data.system_name)
                 if (typeof data.admin_email === 'string') setAdminEmail(data.admin_email)
             })
             .catch(() => {})
-        return () => controller.abort()
+        return () => { cancelled = true }
     }, [])
 
     const [activeNav, setActiveNav] = useState('home')
@@ -87,8 +89,7 @@ function Login({ initialEmail = '' }) {
         setLoading(true)
 
         try {
-            await initializeCsrf()
-            const response = await fetch(`${API_BASE_URL}/login`, {
+            const response = await submitWithCsrf(() => fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -101,7 +102,7 @@ function Login({ initialEmail = '' }) {
                     password,
                     remember,
                 }),
-            })
+            }))
 
             const data = await response.json().catch(() => ({}))
 
