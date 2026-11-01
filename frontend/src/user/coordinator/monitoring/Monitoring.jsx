@@ -237,8 +237,8 @@ function CoordinatorMonitoring() {
                                 </colgroup>
                                 <thead>
                                     <tr className="monitoring-table-heading">
-                                        <th className="monitoring-program-heading" scope="col">Program</th>
-                                        <th className="monitoring-type-heading" scope="col">Type</th>
+                                        <th className="monitoring-program-heading" scope="col"><div className="monitoring-heading-card">Program</div></th>
+                                        <th className="monitoring-type-heading" scope="col"><div className="monitoring-heading-card">Type</div></th>
                                         {weeks.map((item) => (
                                             <th
                                                 key={item.number}
@@ -247,20 +247,22 @@ function CoordinatorMonitoring() {
                                                 colSpan={gatheringTypes.length}
                                                 title={`${item.label}: ${formatDate(item.start)} – ${formatDate(item.end)}`}
                                             >
-                                                <span className="monitoring-week-title">{item.label}</span>
-                                                <small>{item.description}</small>
-                                                <span className="monitoring-week-gatherings">
-                                                    {gatheringTypes.map((type) => (
-                                                        <span
-                                                            key={type}
-                                                            title={`${GATHERING_LABELS[type]} · ${formatDate(item.gathering_ranges?.[type]?.start || item.start)} – ${formatDate(item.gathering_ranges?.[type]?.end || item.end)}`}
-                                                        >{GATHERING_LABELS[type]}</span>
-                                                    ))}
-                                                </span>
+                                                <div className="monitoring-heading-card monitoring-week-card">
+                                                    <span className="monitoring-week-title">{item.label}</span>
+                                                    <small>{item.description}</small>
+                                                    <span className="monitoring-week-gatherings">
+                                                        {gatheringTypes.map((type) => (
+                                                            <span
+                                                                key={type}
+                                                                title={`${GATHERING_LABELS[type]} · ${formatDate(item.gathering_ranges?.[type]?.start || item.start)} – ${formatDate(item.gathering_ranges?.[type]?.end || item.end)}`}
+                                                            >{GATHERING_LABELS[type]}</span>
+                                                        ))}
+                                                    </span>
+                                                </div>
                                             </th>
                                         ))}
-                                        <th className="monitoring-progress-heading" scope="col">Progress</th>
-                                        <th className="monitoring-action-heading" scope="col">Action</th>
+                                        <th className="monitoring-progress-heading" scope="col"><div className="monitoring-heading-card">Progress</div></th>
+                                        <th className="monitoring-action-heading" scope="col"><div className="monitoring-heading-card">Action</div></th>
                                     </tr>
                                 </thead>
                                 <tbody>
