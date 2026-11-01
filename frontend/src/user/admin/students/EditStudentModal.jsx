@@ -13,8 +13,11 @@ const years = [
 
 function EditStudentModal({ student, programs, onClose, onUpdated }) {
     const dialogRef = useRef(null)
+    const savedName = student.name ?? ''
+    const separator = savedName.indexOf(',')
     const [form, setForm] = useState({
-        name: student.name,
+        lname: (separator === -1 ? savedName : savedName.slice(0, separator)).trim(),
+        fname: separator === -1 ? '' : savedName.slice(separator + 1).trim(),
         program: student.program,
         year_level: String(student.year_level),
         is_active: Boolean(student.is_active),
@@ -40,19 +43,39 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
             [field]: value,
             ...(field === 'program' && value === 'ACT' && Number(current.year_level) > 2 ? { year_level: '' } : {}),
         }))
-        setFieldErrors(current => ({ ...current, [field]: undefined }))
+        setFieldErrors(current => ({
+            ...current,
+            [field]: undefined,
+            ...(['lname', 'fname'].includes(field) ? { name: undefined } : {}),
+        }))
         setSubmitError('')
     }
 
     async function handleSubmit(event) {
         event.preventDefault()
+        const lastName = form.lname.trim().replace(/\s+/g, ' ')
+        const firstName = form.fname.trim().replace(/\s+/g, ' ')
+        const name = `${lastName}, ${firstName}`
+        const errors = {}
+        if (!lastName) errors.lname = ['Enter the last name.']
+        if (!firstName) errors.fname = ['Enter the first name.']
+        if (name.length > 255) errors.name = ['The combined name must be 255 characters or fewer.']
+        if (Object.keys(errors).length) {
+            setFieldErrors(errors)
+            return
+        }
         setIsSubmitting(true)
         setSubmitError('')
         setFieldErrors({})
         try {
             const result = await request(`/admin/students/${student.id}`, {
                 method: 'PATCH',
-                body: JSON.stringify({ ...form, name: form.name.trim() }),
+                body: JSON.stringify({
+                    name,
+                    program: form.program,
+                    year_level: form.year_level,
+                    is_active: form.is_active,
+                }),
             })
             onUpdated(result.message)
         } catch (error) {
@@ -74,8 +97,14 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
         <p className="admin-add-user-description">Update the student record.</p>
         <form onSubmit={handleSubmit}>
             <div className="admin-add-user-field">
-                <label htmlFor="admin-edit-student-name">Full Name<span>*</span></label>
-                <input id="admin-edit-student-name" autoFocus required maxLength={255} value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
+                <label htmlFor="admin-edit-student-lname">Last Name<span>*</span></label>
+                <input id="admin-edit-student-lname" name="lname" autoFocus required maxLength={255} placeholder="Enter last name" value={form.lname} onChange={event => updateField('lname', event.target.value)} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
+                {fieldErrors.lname && <small className="admin-add-user-field-error">{fieldErrors.lname[0]}</small>}
+            </div>
+            <div className="admin-add-user-field">
+                <label htmlFor="admin-edit-student-fname">First Name<span>*</span></label>
+                <input id="admin-edit-student-fname" name="fname" required maxLength={255} placeholder="Enter first name" value={form.fname} onChange={event => updateField('fname', event.target.value)} aria-invalid={Boolean(fieldErrors.fname || fieldErrors.name)} />
+                {fieldErrors.fname && <small className="admin-add-user-field-error">{fieldErrors.fname[0]}</small>}
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
             </div>
             <div className="admin-add-user-field">
