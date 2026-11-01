@@ -418,7 +418,7 @@ function Students() {
                                         </td>
                                         <td>
                                             <span
-                                                className="escalation-bars"
+                                                className={`escalation-bars escalation-level-${escalationBars(student)}`}
                                                 aria-label={`${student.no_response_count} no-response records`}
                                                 title={escalationGuide}
                                             >
@@ -470,7 +470,7 @@ function Students() {
                                 <strong>Escalation</strong>
                                 <div className="overview-stat-escalation">
                                     <span
-                                        className="overview-escalation-indicator"
+                                        className={`overview-escalation-indicator escalation-level-${Math.min(3, Math.max(0, Number(overview.summary?.escalation_count) || 0))}`}
                                         aria-label={`${overview.summary?.escalation_count ?? 0} escalation levels`}
                                         title={escalationGuide}
                                     >

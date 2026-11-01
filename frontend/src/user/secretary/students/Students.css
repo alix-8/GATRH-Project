@@ -615,6 +615,18 @@
     background: #22c55e;
 }
 
+.students .escalation-level-1 i.filled {
+    background: #22c55e;
+}
+
+.students .escalation-level-2 i.filled {
+    background: #facc15;
+}
+
+.students .escalation-level-3 i.filled {
+    background: #ef4444;
+}
+
 .overview-escalation-bars {
     display: flex;
     gap: 3px;
