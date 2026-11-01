@@ -11,6 +11,7 @@ import RecordManagementIcon from '../../assets/icons/record-management.svg'
 import ReportSubmissionIcon from '../../assets/icons/report-submission-icon.svg'
 import DropDownIcon from '../../assets/icons/drop-down-icon.svg'
 import './Login.css'
+import { prepareLoginSkeleton } from '../../utils/loginSkeletonState'
 
 
 export function AdminContactLink({ adminEmail }) {
@@ -131,6 +132,7 @@ function Login({ initialEmail = '' }) {
 
             // Store the user information
             localStorage.setItem('user', JSON.stringify(data.user))
+            prepareLoginSkeleton(data.user.role)
 
             // Send each role directly to a page it can access.
             const landingByRole = {

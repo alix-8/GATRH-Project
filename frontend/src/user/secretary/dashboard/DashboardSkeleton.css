@@ -6,6 +6,10 @@
 
 /* ---------- shared shimmer block ---------- */
 
+.skeleton-page--content {
+    min-height: 0;
+}
+
 .sk {
     position: relative;
     overflow: hidden;

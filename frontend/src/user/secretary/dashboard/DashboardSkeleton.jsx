@@ -8,10 +8,11 @@ import './DashboardSkeleton.css'
  * Usage:
  *   {loading ? <DashboardSkeleton /> : <Dashboard data={data} />}
  */
-function DashboardSkeleton() {
+function DashboardSkeleton({ contentOnly = false }) {
+    const Content = contentOnly ? 'div' : 'main'
     return (
-        <div className="skeleton-page" aria-busy="true" aria-label="Loading dashboard">
-            <aside className="skeleton-sidebar">
+        <div className={`skeleton-page${contentOnly ? ' skeleton-page--content' : ''}`} aria-busy="true" aria-label="Loading dashboard">
+            {!contentOnly && <aside className="skeleton-sidebar">
                 <div className="sk sk-avatar" />
                 <div className="sk sk-line sk-w-70" />
                 <div className="sk sk-line sk-w-50" />
@@ -22,16 +23,16 @@ function DashboardSkeleton() {
                     <div className="sk sk-line sk-w-40" />
                     <div className="sk sk-circle-sm" />
                 </div>
-            </aside>
+            </aside>}
 
-            <main className="skeleton-main">
-                <header className="skeleton-header">
+            <Content className="skeleton-main">
+                {!contentOnly && <header className="skeleton-header">
                     <div className="sk sk-line sk-w-30 sk-tall" />
                     <div className="skeleton-header-right">
                         <div className="sk sk-line sk-w-20" />
                         <div className="sk sk-circle-sm" />
                     </div>
-                </header>
+                </header>}
 
                 <section className="skeleton-hero">
                     <div className="skeleton-hero-text">
@@ -87,7 +88,7 @@ function DashboardSkeleton() {
                         </div>
                     ))}
                 </section>
-            </main>
+            </Content>
         </div>
     )
 }

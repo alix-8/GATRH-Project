@@ -9,6 +9,7 @@ import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
 import backendPercentage from '../../../utils/backendPercentage'
 import RecordDate from '../../../components/RecordDate'
 import MonitoringSkeleton from './skeleton/MonitoringSkeleton'
@@ -54,6 +55,7 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
 }
 
 function CoordinatorMonitoring() {
+    const showLoginSkeleton = useLoginSkeleton()
     const today = new Date()
     const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
     const [selectedMonth, setSelectedMonth] = useState(currentMonth)
@@ -213,7 +215,7 @@ function CoordinatorMonitoring() {
         </div>
     )
 
-    if (loading && !error && !hasLoadedMonitoring) return <MonitoringSkeleton month={selectedMonth} />
+    if (loading && !error && !hasLoadedMonitoring && showLoginSkeleton) return <MonitoringSkeleton month={selectedMonth} />
 
     return (
         <div className="coordinator-dashboard">

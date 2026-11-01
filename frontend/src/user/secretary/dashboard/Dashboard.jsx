@@ -5,6 +5,7 @@ import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
 import RecordDate from '../../../components/RecordDate'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
 
 import PencilIcon from '../../../assets/icons/pencil-icon.svg'
 import EraserIcon from '../../../assets/icons/eraser-icon.svg'
@@ -48,6 +49,7 @@ function formatDashboardReminderDate(value) {
 }
 
 function Dashboard() {
+    const showLoginSkeleton = useLoginSkeleton()
     const [isLoading, setIsLoading] = useState(true)
     const [overview, setOverview] = useState([])
     const [overviewError, setOverviewError] = useState('')
@@ -225,7 +227,18 @@ function Dashboard() {
         })
     }
 
-    if (isLoading) return <DashboardSkeleton />
+    if (isLoading) {
+        if (showLoginSkeleton) return <DashboardSkeleton />
+        return (
+            <div className="dashboard">
+                <Sidebar />
+                <main className="dashboard-main">
+                    <Header title="Dashboard" subtitle="Monitor student attendance." className="dashboard-header" />
+                    <DashboardSkeleton contentOnly />
+                </main>
+            </div>
+        )
+    }
 
     return (
         <div className="dashboard">
