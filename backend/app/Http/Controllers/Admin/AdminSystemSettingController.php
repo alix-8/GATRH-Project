@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use DateTimeZone;
 use App\Http\Controllers\Controller;
 use App\Models\SystemSetting;
+use App\Models\User;
 use App\Services\Admin\AdminSystemSettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,7 +42,14 @@ class AdminSystemSettingController extends Controller
     {
         return response()->json([
             'system_name' => SystemSetting::whereKey(1)->value('system_name') ?: SystemSetting::DEFAULT_SYSTEM_NAME,
+             'admin_email' => User::query()
+                ->where('role', 'admin')
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->value('email'),
         ])->header('Cache-Control', 'no-store');
+
+        
     }
 
     public function update(Request $request): JsonResponse

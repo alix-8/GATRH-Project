@@ -23,6 +23,7 @@ class EscalationController extends Controller
             if ($user->role === 'program_head') {
                 $query->when($request->level !== 'Level 2', fn ($query) => $query->whereRaw('1 = 0'));
             } else {
+                $escalations = $query->mostRecentFirst()->get();
                 $query->where('escalation_level', $request->level);
             }
         }

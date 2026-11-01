@@ -61,6 +61,19 @@ class Escalation extends Model
             ->whereHas('student', fn (Builder $students) => $students->active()->accessibleTo($user));
     }
 
+     public function scopeAlphabeticalByStudent(Builder $query): Builder
+    {
+        return $query
+            ->orderBy(Student::query()->select('name')->whereColumn('students.id', 'escalations.student_id'))
+            ->orderBy('escalations.id');
+    }
+
+    public function scopeMostRecentFirst(Builder $query): Builder
+    {
+        return $query->orderByDesc('escalations.updated_at')->alphabeticalByStudent();
+    }
+
+
     // Belongs to a single student
     public function student()
     {
