@@ -172,7 +172,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">Completed Weeks</span>
                             <strong>{summary.completed}</strong>
-                            <p>Completed program-week reports</p>
+                            <p>Programs with full reports</p>
                         </div>
                     </article>
                     <article className="chancellor-summary-card chancellor-summary-card--in-progress">
@@ -182,7 +182,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">In Progress</span>
                             <strong>{summary.incomplete}</strong>
-                            <p>Incomplete program-week reports</p>
+                            <p>Programs with partial reports</p>
                         </div>
                     </article>
                     <article className="chancellor-summary-card chancellor-summary-card--no-report">
@@ -192,7 +192,7 @@ function ChancellorDashboard() {
                         <div className="chancellor-summary-content">
                             <span className="chancellor-summary-label">No Report</span>
                             <strong>{summary.no_report}</strong>
-                            <p>Programs with no responses this month</p>
+                            <p>Programs with no submission</p>
                         </div>
                     </article>
                     
