@@ -16,9 +16,9 @@ import './Dashboard.css'
 
 const metrics = [
     { key: 'pending_review', label: 'Pending Review', detail: 'Awaiting your review', icon: PendingReviewIcon },
-    { key: 'approved', label: 'Approved', detail: 'Fully approved submissions', icon: ApprovedIcon },
-    { key: 'escalation_count', label: 'Escalations', detail: 'Students requiring intervention', icon: EscalationsIcon },
-    { key: 'total_submissions', label: 'Total Submissions', detail: 'Submitted attendance batches', icon: TotalSubmissionsIcon },
+    { key: 'approved', label: 'Approved', detail: 'Sucessfully reviewed', icon: ApprovedIcon },
+    { key: 'escalation_count', label: 'Escalations', detail: 'Students reminders', icon: EscalationsIcon },
+    { key: 'total_submissions', label: 'Total Submissions', detail: 'All submitted records', icon: TotalSubmissionsIcon },
 ]
 
 const activityIcons = {
@@ -112,7 +112,7 @@ function ProgramHeadDashboard() {
                             <table className="ph-submission-table">
                                 <thead><tr><th>Secretary</th><th>Gathering</th><th>Program</th><th>Year</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
                                 <tbody>
-                                    {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.length === 0 ? <tr><td colSpan="7" className="ph-empty">You’re all caught up. No pending submissions.</td></tr> : pending.map((submission) => (
+                                    {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.length === 0 ? <tr><td colSpan="7" className="ph-empty">No pending submissions yet.</td></tr> : pending.map((submission) => (
                                         <tr key={submission.id}>
                                             <td><UserAvatar className="ph-secretary-avatar" name={submission.secretary} program={submission.program} />{submission.secretary}</td>
                                             <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td><RecordDate value={submission.date_iso || submission.date} /></td>
@@ -127,15 +127,17 @@ function ProgramHeadDashboard() {
 
                     <section className="ph-panel ph-activity-panel" aria-labelledby="ph-activity-title">
                         <div className="ph-panel-heading"><div><h2 id="ph-activity-title">Recent Activities</h2><p>Latest updates from attendance submissions and reviews.</p></div></div>
-                        {loading ? <p className="ph-empty"><LoadingCircle label="Loading recent activity…" /></p> : activities.length === 0 ? <p className="ph-empty">Recent submission activity will appear here.</p> : (
-                            <ul className="ph-activity-list">
-                                {activities.map((activity, index) => <li key={activity.id ?? index}>
-                                    <img className="ph-activity-icon" src={activityIcons[activity.icon_type] || SubmittedIcon} alt="" />
-                                    <div className="ph-activity-copy"><strong>{activity.title}</strong><p>{activity.description}</p></div>
-                                    <time>{compactActivityTime(activity.time_ago)}</time>
-                                </li>)}
-                            </ul>
-                        )}
+                        <div className="ph-activity-scroll">
+                            {loading ? <p className="ph-empty"><LoadingCircle label="Loading recent activity…" /></p> : activities.length === 0 ? <p className="ph-empty">Recent submission activity will appear here.</p> : (
+                                <ul className="ph-activity-list">
+                                    {activities.map((activity, index) => <li key={activity.id ?? index}>
+                                        <img className="ph-activity-icon" src={activityIcons[activity.icon_type] || SubmittedIcon} alt="" />
+                                        <div className="ph-activity-copy"><strong>{activity.title}</strong><p>{activity.description}</p></div>
+                                        <time>{compactActivityTime(activity.time_ago)}</time>
+                                    </li>)}
+                                </ul>
+                            )}
+                        </div>
                     </section>
                 </div>
             </main>
