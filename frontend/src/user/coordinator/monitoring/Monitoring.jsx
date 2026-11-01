@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import CompletedIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
@@ -12,6 +11,8 @@ import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import backendPercentage from '../../../utils/backendPercentage'
 import RecordDate from '../../../components/RecordDate'
+import MonitoringSkeleton from './skeleton/MonitoringSkeleton'
+import MonitoringDetailSkeleton from './skeleton/MonitoringDetailSkeleton'
 import './Monitoring.css'
 
 const GATHERING_LABELS = {
@@ -57,6 +58,7 @@ function CoordinatorMonitoring() {
     const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
     const [selectedMonth, setSelectedMonth] = useState(currentMonth)
     const [monitoring, setMonitoring] = useState(null)
+    const [hasLoadedMonitoring, setHasLoadedMonitoring] = useState(false)
     const [collapsedPrograms, setCollapsedPrograms] = useState([])
     const [settledQuery, setSettledQuery] = useState(null)
     const [requestError, setRequestError] = useState(null)
@@ -78,6 +80,7 @@ function CoordinatorMonitoring() {
                 .then((data) => {
                     if (controller.signal.aborted) return
                     setMonitoring(data)
+                    setHasLoadedMonitoring(true)
                     setRequestError(null)
                 })
                 .catch((loadError) => {
@@ -210,6 +213,8 @@ function CoordinatorMonitoring() {
         </div>
     )
 
+    if (loading && !error && !hasLoadedMonitoring) return <MonitoringSkeleton month={selectedMonth} />
+
     return (
         <div className="coordinator-dashboard">
             <Sidebar />
@@ -221,7 +226,7 @@ function CoordinatorMonitoring() {
                 />
 
                 <section
-                    className={`monitoring-content ${!error && loading ? 'monitoring-content--loading' : ''}`}
+                    className="monitoring-content"
                     aria-label="Coordinator monitoring"
                 >
                     <nav className="monitoring-month-navigation" aria-label="Monitoring month">
@@ -231,12 +236,8 @@ function CoordinatorMonitoring() {
                             <button type="button" onClick={() => navigateMonth(1)} disabled={selectedMonth >= currentMonth} aria-label="Next month">›</button>
                         </div>
                     </nav>
+                    {loading && !error && <MonitoringSkeleton month={selectedMonth} tableOnly />}
                     {error && <p className="monitoring-message monitoring-error" role="alert">{error}</p>}
-                    {!error && loading && (
-                        <div className="monitoring-loading">
-                            <LoadingCircle label="Loading monitoring data…" size={28} />
-                        </div>
-                    )}
                     {!error && !loading && courses.length === 0 && (
                         <p className="monitoring-message">No program attendance data is available.</p>
                     )}
@@ -453,16 +454,7 @@ function CoordinatorMonitoring() {
                         </header>
 
                         {detailLoading && (
-                            <div className="monitoring-detail-body" aria-busy="true">
-                                <h3 className="monitoring-detail-section-title">Week Details</h3>
-                                {weekTabs}
-                                <section className="monitoring-week-details">
-                                    <h4>{selectedWeek?.label}<small> - {selectedWeek?.description}</small></h4>
-                                    <div className="monitoring-week-loading">
-                                        <LoadingCircle label={`Loading ${selectedWeek?.label ?? 'week'} details…`} size={28} />
-                                    </div>
-                                </section>
-                            </div>
+                            <MonitoringDetailSkeleton weekTabs={weekTabs} week={selectedWeek} />
                         )}
                         {currentDetailError && (
                             <div className="monitoring-detail-body">

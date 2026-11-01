@@ -1,0 +1,59 @@
+.monitoring-detail-skeleton-line {
+    height: 12px;
+    width: 85%;
+}
+
+.monitoring-detail-skeleton-progress {
+    margin: 1px 0 20px;
+}
+
+.monitoring-detail-skeleton-progress > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.monitoring-detail-skeleton-progress > div > span:first-child {
+    width: 110px;
+}
+
+.monitoring-detail-skeleton-percentage {
+    width: 32px;
+}
+
+.monitoring-detail-skeleton-track {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.monitoring-detail-skeleton-approval {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 14px 11px;
+    border: 1px solid #e9ecf1;
+    border-radius: 8px;
+}
+
+.monitoring-detail-skeleton-approval > div {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.monitoring-detail-skeleton-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+}
+
+.monitoring-detail-skeleton-approval > div > div {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    gap: 6px;
+}

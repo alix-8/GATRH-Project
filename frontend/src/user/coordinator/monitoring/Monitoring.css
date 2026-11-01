@@ -25,14 +25,6 @@
     padding: 16px 20px 24px;
 }
 
-.monitoring-content--loading {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-}
-
 .monitoring-month-navigation {
     display: flex;
     align-items: center;
@@ -90,13 +82,6 @@
 
 .monitoring-error {
     color: #b42318;
-}
-
-.monitoring-loading {
-    width: 100%;
-    display: grid;
-    place-items: center;
-    min-height: 200px;
 }
 
 .monitoring-table-scroll {
