@@ -50,6 +50,9 @@ function formatDashboardReminderDate(value) {
 
 function Dashboard() {
     const showLoginSkeleton = useLoginSkeleton()
+    const loginSkeletonStartedAt = useRef(null)
+    const [showLoginOverlay, setShowLoginOverlay] = useState(showLoginSkeleton)
+    const [isLoginOverlayFading, setIsLoginOverlayFading] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [overview, setOverview] = useState([])
     const [overviewError, setOverviewError] = useState('')
@@ -77,6 +80,10 @@ function Dashboard() {
         today: null,
     })
     const navigate = useNavigate()
+
+    useEffect(() => {
+        loginSkeletonStartedAt.current = Date.now()
+    }, [])
 
     const defaultCalendar = {
         month: new Date(calendarYear, calendarMonth - 1, 1).toLocaleString('en-US', {
@@ -157,6 +164,23 @@ function Dashboard() {
         }
     }, [isAttendancePeriodOpen])
 
+    useEffect(() => {
+        if (!showLoginOverlay || isLoading) return undefined
+
+        const minimumVisibleMs = overviewError ? 0 : 700
+        const elapsedMs = loginSkeletonStartedAt.current === null ? 0 : Date.now() - loginSkeletonStartedAt.current
+        const remainingMs = Math.max(0, minimumVisibleMs - elapsedMs)
+        const timer = window.setTimeout(() => setIsLoginOverlayFading(true), remainingMs)
+        return () => window.clearTimeout(timer)
+    }, [showLoginOverlay, isLoading, overviewError])
+
+    useEffect(() => {
+        if (!isLoginOverlayFading) return undefined
+
+        const timer = window.setTimeout(() => setShowLoginOverlay(false), 250)
+        return () => window.clearTimeout(timer)
+    }, [isLoginOverlayFading])
+
     const monthlyDays = Array.from({ length: calendarMarks.days_in_month }, (_, index) => index + 1)
     const monthStart = new Date(calendarYear, calendarMonth - 1, 1)
     const monthStartOffset = (monthStart.getDay() + 6) % 7
@@ -222,8 +246,7 @@ function Dashboard() {
         })
     }
 
-    if (isLoading) {
-        if (showLoginSkeleton) return <DashboardSkeleton />
+    if (isLoading && !showLoginOverlay) {
         return (
             <div className="dashboard">
                 <Sidebar />
@@ -236,6 +259,7 @@ function Dashboard() {
     }
 
     return (
+        <>
         <div className="dashboard">
             <Sidebar />
 
@@ -356,7 +380,7 @@ function Dashboard() {
                             </div>
                             <div className="overview-chart">
                                 {overviewError ? (
-                                    <span className="overview-empty">{overviewError} Check that the API is running and you are signed in.</span>
+                                    <span className="overview-empty">{overviewError}</span>
                                 ) : (
                                     <>
                                         <div className="overview-y-axis" aria-hidden="true">
@@ -522,6 +546,12 @@ function Dashboard() {
                 }}
             />
         </div>
+        {showLoginOverlay && (
+            <div className={`secretary-login-skeleton-overlay${isLoginOverlayFading ? ' is-fading' : ''}`}>
+                <DashboardSkeleton />
+            </div>
+        )}
+        </>
     )
 }
 
