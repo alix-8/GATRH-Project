@@ -73,6 +73,19 @@ function CoordinatorMonitoring() {
     useLiveRefresh(() => setPollTick((current) => current + 1), 30_000)
 
     useEffect(() => {
+        if (!activeCourse) return undefined
+
+        const previousPageOverflow = document.documentElement.style.overflow
+        // Lock the root scroller only. Hiding overflow on body creates a new
+        // scroll container and displaces the sidebar's sticky positioning.
+        document.documentElement.style.overflow = 'hidden'
+
+        return () => {
+            document.documentElement.style.overflow = previousPageOverflow
+        }
+    }, [activeCourse])
+
+    useEffect(() => {
         const controller = new AbortController()
 
         const loadMonitoring = () => {
@@ -113,6 +126,8 @@ function CoordinatorMonitoring() {
         ? `${activeCourse.program}-${activeCourse.year_level}-${monitoring?.month?.year}-${monitoring?.month?.month}-${detailWeek}`
         : ''
     const currentDetails = courseDetails?.key === detailKey ? courseDetails.data : null
+    const noResponseEntries = (currentDetails?.week_details ?? []).filter(entry => entry.no_response_students?.length > 0)
+        .sort((first, second) => GATHERING_TYPES.indexOf(first.gathering_type) - GATHERING_TYPES.indexOf(second.gathering_type))
     const currentDetailError = detailFailure?.key === detailKey ? detailFailure.message : ''
     const detailLoading = Boolean(activeCourse && !currentDetails && !currentDetailError)
     const groupedCourses = useMemo(() => courses.reduce((groups, course) => {
@@ -600,6 +615,35 @@ function CoordinatorMonitoring() {
                                                 )
                                             })}
                                     </div>}
+                                    {noResponseEntries.length > 0 && (
+                                        <div className="monitoring-incomplete-details monitoring-no-response-details">
+                                            <h4>
+                                                <span className="monitoring-incomplete-icon" aria-hidden="true">
+                                                    <img src={RecordedNoResponseIcon} alt="" />
+                                                </span>
+                                                No Response Details
+                                            </h4>
+                                            {noResponseEntries.map(entry => {
+                                                const entryKey = `no-response-${entry.gathering_type}`
+                                                const isOpen = activeIncompleteEntry === entryKey
+                                                return (
+                                                    <article key={entryKey}>
+                                                        <div>
+                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
+                                                            <small>{entry.no_response_students.length} students recorded as No Response</small>
+                                                        </div>
+                                                        <button type="button" aria-expanded={isOpen} onClick={() => setActiveIncompleteEntry(isOpen ? null : entryKey)}>
+                                                            {isOpen ? 'Hide' : 'View'}
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
+                                                        </button>
+                                                        {isOpen && <ul>{entry.no_response_students.map(student => <li key={student.id}>{student.name}</li>)}</ul>}
+                                                    </article>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
                                 </section>
                             </div>
                         )}

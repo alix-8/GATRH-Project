@@ -96,6 +96,24 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame(['OLD'], $programService->getPageData(['is_active' => false])['programs']->pluck('code')->all());
     }
 
+    public function test_coordinator_no_response_details_list_recorded_students_without_missing_or_responded_students(): void
+    {
+        $this->program('BSIS');
+        $responded = $this->student('Responded');
+        $noResponse = $this->student('Recorded no response');
+        $missing = $this->student('Missing record');
+        foreach ([[$responded, 'present'], [$responded, 'no_response'], [$noResponse, 'no_response'], [$noResponse, 'no_response']] as [$student, $status]) {
+            AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'pm',
+                'day' => '2026-10-28', 'reporting_day' => '2026-10-28', 'status' => $status]);
+        }
+        $details = app(CmCoordinatorMonitoringService::class)->getCourseDetails('BSIS', 1, ['year' => 2026, 'month' => 10, 'week' => 5]);
+        $pm = collect($details['week_details'])->firstWhere('gathering_type', 'pm');
+        $ws = collect($details['week_details'])->firstWhere('gathering_type', 'ws');
+        $this->assertSame([$noResponse->id], $pm['no_response_students']->pluck('id')->all());
+        $this->assertContains($missing->id, $pm['missing_students']->pluck('id')->all());
+        $this->assertSame([], $ws['no_response_students']->all());
+    }
+
     public function test_secretary_dashboard_prepends_recent_level_one_alerts_without_replacing_reminders(): void
     {
         Schema::create('reminders', function (Blueprint $table) {

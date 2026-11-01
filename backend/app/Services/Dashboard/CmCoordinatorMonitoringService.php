@@ -211,6 +211,17 @@ class CmCoordinatorMonitoringService
                         'name' => $student->name,
                     ])->values();
 
+                $noResponseIds = $eventRecords
+                    ->where('status', 'no_response')
+                    ->pluck('student_id')
+                    ->unique()
+                    ->reject(fn ($id) => $respondedStudentIds->contains($id));
+                $noResponseStudents = $roster
+                    ->filter(fn (Student $student) => in_array((int) $student->id, $eligibleIds, true)
+                        && $noResponseIds->contains($student->id))
+                    ->map(fn (Student $student) => ['id' => $student->id, 'name' => $student->name])
+                    ->values();
+
                 $allValidated = $eventRecords->isNotEmpty() && $eventRecords->every(fn ($record) =>
                     in_array($record->validation_status, ['validated', 'approved'], true)
                 );
@@ -236,6 +247,7 @@ class CmCoordinatorMonitoringService
                     'total_students' => $summary['total_students'],
                     'remarks' => $summary['responded_students'] . '/' . $summary['total_students'],
                     'missing_students' => $missingStudents,
+                    'no_response_students' => $noResponseStudents,
                 ];
             })
             ->sortBy(fn (array $entry) => ($entry['date'] ?? '9999-12-31') . '|' . $entry['gathering_type'])
