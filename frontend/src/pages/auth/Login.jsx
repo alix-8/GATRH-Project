@@ -13,16 +13,40 @@ import DropDownIcon from '../../assets/icons/drop-down-icon.svg'
 import './Login.css'
 
 
+export function AdminContactLink({ adminEmail }) {
+    if (!adminEmail) return <span>Contact your administrator</span>
+
+    const subject = 'GATRH Account Access Help'
+    const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(adminEmail)}&su=${encodeURIComponent(subject)}`
+
+    return (
+        <a
+            className="admin-contact-link"
+            href={gmailComposeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Contact your administrator at ${adminEmail}`}
+        >
+            <span className="admin-contact-label">Contact your administrator</span>
+            <span className="admin-contact-email">{adminEmail}</span>
+        </a>
+    )
+}
+
 function Login({ initialEmail = '' }) {
     const navigate = useNavigate()
     const location = useLocation()
 
     const [systemName, setSystemName] = useState('Gathering Attendance Tracking and Reporting Hub')
+    const [adminEmail, setAdminEmail] = useState('')
     useEffect(() => {
         const controller = new AbortController()
         fetch(API_BASE_URL + '/branding', { signal: controller.signal, cache: 'no-store' })
             .then(response => response.ok ? response.json() : Promise.reject())
-            .then(data => { if (data.system_name) setSystemName(data.system_name) })
+            .then(data => {
+                if (data.system_name) setSystemName(data.system_name)
+                if (typeof data.admin_email === 'string') setAdminEmail(data.admin_email)
+            })
             .catch(() => {})
         return () => controller.abort()
     }, [])
@@ -253,7 +277,8 @@ function Login({ initialEmail = '' }) {
 
             {/* ACCOUNT HELP */}
             <p className="account-help">
-                <span>Need help accessing your account? Contact your administrator</span>
+                <span>Need help accessing your account?</span>
+                <AdminContactLink adminEmail={adminEmail} />
             </p>
 
             {/* RIGHT SIDE */}

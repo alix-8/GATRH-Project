@@ -695,9 +695,8 @@
 
 .dashboard-reminder-item {
     display: grid;
-    grid-template-columns: 100px max-content 120px 90px;
+    grid-template-columns: 80px minmax(0, 1fr) 110px 64px;
     align-items: center;
-    justify-content: space-between;
     flex: 0 0 48px;
     gap: 8px;
     box-sizing: border-box;
@@ -706,6 +705,14 @@
     border-bottom: 1px solid #edf0f4;
     color: #172b4d;
     font-size: 12px;
+}
+
+.dashboard-reminder-item--escalation {
+    background: #fff4f4;
+}
+
+.dashboard-reminder-item--escalation .dashboard-reminder-category {
+    color: #ed3347;
 }
 
 .dashboard-reminder-category {
@@ -718,11 +725,14 @@
 
 .dashboard-reminder-description {
     min-width: 0;
-    max-width: 150px;
+    max-height: 32px;
     overflow: hidden;
     text-align: left;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .dashboard-reminder-item time {
@@ -741,10 +751,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    width: 90px;
+    gap: 4px;
+    width: 64px;
     height: 32px;
-    padding: 7px 14px;
+    padding: 7px 6px;
     border: 0;
     border-radius: 7px;
     background: #078fe0;

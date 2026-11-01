@@ -10,7 +10,6 @@ import NeedsActionIcon from '../../assets/needs-action.png'
 import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
 import StudentsIcon from '../../assets/icons/students-icon.svg'
 import CompletedIcon from '../../assets/icons/completed-icon.svg'
-import DropDownIcon from '../../assets/icons/drop-down-icon.svg'
 import NotificationIcon from '../../assets/icons/notification-icon.svg'
 import CalendarIcon from '../../assets/icons/calendar-icon.svg'
 import GatheringIcon from '../../assets/icons/gathering-icon.svg'
@@ -21,16 +20,18 @@ import AddReminderIcon from '../../assets/icons/add-reminder-icon.svg'
 import DeleteIcon from '../../assets/icons/delete-icon.svg'
 import { request, API_BASE_URL, xsrfHeaders } from '../../api/request'
 import useLiveRefresh from '../../hooks/useLiveRefresh'
+import useAutoDismissNotice from '../../hooks/useAutoDismissNotice'
 import Calendar from '../../components/Calendar/Calendar'
 import { TrashIcon } from '../../components/Icons/Reusables'
 import LoadingCircle from '../../components/feedback/LoadingCircle'
-import ReviewDrawer from '../secretary/attendance/ReviewDrawer'
+import ReviewDrawer from '../../user/secretary/attendance/ReviewDrawer'
 import { markNotificationIdsSeen } from '../../components/feedback/notificationReadState'
 import './Reminders.css'
 
 const FILTERS = [
     { value: 'all', label: 'All Reminders' },
     { value: 'today', label: 'Today' },
+    { value: 'escalation', label: 'Escalation' },
     { value: 'needs_action', label: 'Needs Action' },
     { value: 'completed', label: 'Completed' },
     { value: 'mine', label: 'My reminder' },
@@ -47,6 +48,14 @@ const GATHERING_OPTIONS = [
     { value: 'ws', label: 'Worship Service' },
     { value: 'tg', label: 'Thanksgiving' },
 ]
+
+function SelectChevron() {
+    return (
+        <svg className="select-chevron" viewBox="0 0 16 10" fill="none" aria-hidden="true" focusable="false">
+            <path d="M2 2L8 8L14 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    )
+}
 
 const EMPTY_FORM = {
     title: '',
@@ -254,6 +263,7 @@ function Reminders() {
     const [activeFilter, setActiveFilter] = useState('all')
     const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('user')))
     const [error, setError] = useState('')
+    const [notice, showNotice, clearNotice] = useAutoDismissNotice()
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [editingReminder, setEditingReminder] = useState(null)
     useLiveRefresh(() => {
@@ -652,6 +662,7 @@ function Reminders() {
         }
         if (activeFilter === 'all') return true
         if (activeFilter === 'today') return item.isToday
+        if (activeFilter === 'escalation') return item.type === 'escalation'
         if (activeFilter === 'mine') return item.type === 'custom'
         if (activeFilter === 'needs_action') return item.type !== 'escalation' && item.status === 'needs_action'
         if (activeFilter === 'completed') return ['attendance', 'custom'].includes(item.type) && item.status === 'completed'
@@ -659,6 +670,7 @@ function Reminders() {
     })
 
     const selectedTypeLabel = REMINDER_TYPES.find(option => option.value === formData.type)?.label ?? 'Select Type'
+    const isGeneralReminder = formData.type === 'general'
     const selectedGatheringLabel = GATHERING_OPTIONS.find(option => option.value === formData.gathering)?.label ?? 'Select Gathering'
     const todayDateValue = toDateValue(new Date(countdownNow))
     const minimumReminderTime = getNextAvailableReminderTime(new Date(countdownNow))
@@ -673,6 +685,7 @@ function Reminders() {
     }
 
     const openAddModal = () => {
+        clearNotice()
         setEditingReminder(null)
         setFormData(EMPTY_FORM)
         setError('')
@@ -724,6 +737,7 @@ function Reminders() {
     }
 
     const handleEditReminder = (reminder) => {
+        clearNotice()
         const { date, time } = splitDueDate(reminder.due_date)
 
         setEditingReminder(reminder)
@@ -732,7 +746,7 @@ function Reminders() {
             title: reminder.title ?? '',
             description: reminder.description ?? '',
             type: reminder.custom_type ?? '',
-            gathering: reminder.gathering_type ?? '',
+            gathering: reminder.custom_type === 'general' ? '' : reminder.gathering_type ?? '',
             date,
             time,
         })
@@ -742,17 +756,12 @@ function Reminders() {
 
     const handleSubmitReminder = async (event) => {
         event.preventDefault()
+        clearNotice()
         setSaving(true)
         setError('')
 
         if (!formData.title.trim()) {
             setError('Please enter a reminder title.')
-            setSaving(false)
-            return
-        }
-
-        if (!formData.type && !formData.gathering) {
-            setError('Please choose a reminder type and a related gathering.')
             setSaving(false)
             return
         }
@@ -763,7 +772,7 @@ function Reminders() {
             return
         }
 
-        if (!formData.gathering) {
+        if (formData.type !== 'general' && !formData.gathering) {
             setError('Please choose a related gathering.')
             setSaving(false)
             return
@@ -800,11 +809,12 @@ function Reminders() {
             title: formData.title,
             description: formData.description || null,
             custom_type: formData.type,
-            gathering_type: formData.gathering,
+            gathering_type: formData.type === 'general' ? null : formData.gathering,
             due_date: `${toDateValue(formData.date)}T${formData.time}`,
         }
 
         try {
+            let successMessage = ''
             if (editingReminder) {
                 const data = await request(`/reminders/${editingReminder.id}`, {
                     method: 'PUT',
@@ -813,6 +823,7 @@ function Reminders() {
                 const updated = data.data
 
                 setReminders(prev => prev.map(reminder => (reminder.id === editingReminder.id ? { ...reminder, ...updated } : reminder)))
+                successMessage = data.message || 'Reminder updated successfully.'
             } else {
                 const data = await request('/reminders', {
                     method: 'POST',
@@ -827,6 +838,7 @@ function Reminders() {
             }
             notifyRemindersChanged()
             handleCloseModal()
+            if (successMessage) showNotice(successMessage)
         } catch (err) {
             setError(err.message || 'Unable to save reminder.')
         } finally {
@@ -959,6 +971,8 @@ function Reminders() {
                     subtitle="Track upcoming gatherings and tasks that need attention."
                     className="reminders-header"
                 />
+
+                {notice && <p className="reminders-success-notice" role="status">{notice}</p>}
 
                 <section className={`reminders-cards reminders-cards-${role || 'default'}`} aria-label="Reminder summary">
                     {reminderCards.map(card => (
@@ -1223,7 +1237,7 @@ function Reminders() {
                             <button type="button" className="reminder-select" aria-required="true" aria-expanded={openMenu === 'type'} onClick={() => setOpenMenu(openMenu === 'type' ? '' : 'type')}>
                                 <img src={CalendarIcon} alt="" aria-hidden="true" />
                                 {selectedTypeLabel}
-                                <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
+                                <SelectChevron />
                             </button>
                             {openMenu === 'type' && (
                                 <div className="reminder-menu">
@@ -1233,7 +1247,11 @@ function Reminders() {
                                             key={option.value}
                                             className={`reminder-option ${formData.type === option.value ? 'selected' : ''}`}
                                             onClick={() => {
-                                                setFormData(prev => ({ ...prev, type: option.value }))
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    type: option.value,
+                                                    gathering: option.value === 'general' ? '' : prev.gathering,
+                                                }))
                                                 setError('')
                                                 setOpenMenu('')
                                             }}
@@ -1246,13 +1264,13 @@ function Reminders() {
                         </div>
 
                         <div className="reminder-field reminder-select-field">
-                            <span>Related Gathering<b>*</b></span>
-                            <button type="button" className="reminder-select" aria-required="true" aria-expanded={openMenu === 'gathering'} onClick={() => setOpenMenu(openMenu === 'gathering' ? '' : 'gathering')}>
+                            <span>Related Gathering{!isGeneralReminder && <b>*</b>}</span>
+                            <button type="button" className="reminder-select" aria-required={!isGeneralReminder} aria-expanded={!isGeneralReminder && openMenu === 'gathering'} disabled={isGeneralReminder} onClick={() => setOpenMenu(openMenu === 'gathering' ? '' : 'gathering')}>
                                 <img src={GatheringIcon} alt="" aria-hidden="true" />
                                 {selectedGatheringLabel}
-                                <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
+                                <SelectChevron />
                             </button>
-                            {openMenu === 'gathering' && (
+                            {!isGeneralReminder && openMenu === 'gathering' && (
                                 <div className="reminder-menu">
                                     {GATHERING_OPTIONS.map(option => (
                                         <button
@@ -1278,7 +1296,7 @@ function Reminders() {
                                 <button type="button" className="reminder-select" aria-required="true" aria-expanded={openMenu === 'date'} onClick={() => setOpenMenu(openMenu === 'date' ? '' : 'date')}>
                                     <img src={CalendarIcon} alt="" aria-hidden="true" />
                                     {formData.date ? formatReminderDate(formData.date) : 'Select Date'}
-                                    <img className="select-chevron" src={DropDownIcon} alt="" aria-hidden="true" />
+                                    <SelectChevron />
                                 </button>
                                 {openMenu === 'date' && (
                                     <div className="reminder-calendar-popover">

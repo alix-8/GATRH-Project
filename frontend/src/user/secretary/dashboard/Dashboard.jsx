@@ -170,9 +170,11 @@ function Dashboard() {
         : Object.keys(gatheringLabels).map(category => ({ category, present: 0, absent: 0 }))
     const dayTypeMap = new Map((calendarMarks.highlight_days ?? []).map(day => [day.day, day.type]))
     const orderedReminders = [...tasksAndReminders].sort((first, second) => {
+        if (first.type === 'escalation' && second.type !== 'escalation') return -1
+        if (first.type !== 'escalation' && second.type === 'escalation') return 1
         const firstDate = parseDashboardReminderDate(first.date)?.getTime() ?? Number.POSITIVE_INFINITY
         const secondDate = parseDashboardReminderDate(second.date)?.getTime() ?? Number.POSITIVE_INFINITY
-        return firstDate - secondDate
+        return first.type === 'escalation' ? secondDate - firstDate : firstDate - secondDate
     })
     const dashboardReminders = orderedReminders.slice(0, 3)
     const dashboardRecords = recentRecords.slice(0, 3)
@@ -445,19 +447,26 @@ function Dashboard() {
                             {orderedReminders.length === 0 ? <p className="dashboard-reminders-empty">No upcoming tasks or reminders.</p> : (
                                 <div className="dashboard-reminder-list">
                                     {dashboardReminders.map(item => (
-                                        <div className="dashboard-reminder-item" key={`${item.category}-${item.id}`}>
+                                        <div
+                                            className={`dashboard-reminder-item${item.type === 'escalation' ? ' dashboard-reminder-item--escalation' : ''}`}
+                                            key={`${item.category}-${item.id}`}
+                                        >
                                             <span className="dashboard-reminder-category">{item.category}</span>
                                             <span
                                                 className="dashboard-reminder-description"
-                                                title={item.title || item.gathering || item.description || ''}
+                                                title={item.type === 'escalation' ? item.description : item.title || item.gathering || item.description || ''}
                                             >
                                                 {item.title || item.gathering || item.description}
                                             </span>
                                             <time dateTime={item.date || undefined}>{formatDashboardReminderDate(item.date)}</time>
                                             <button
                                                 type="button"
-                                                aria-label={`View reminder: ${item.title}`}
-                                                onClick={() => navigate('/reminders', { state: { highlightReminderId: item.id } })}
+                                                aria-label={`View ${item.type === 'escalation' ? 'escalation report' : 'reminder'}: ${item.title}`}
+                                                onClick={() => navigate('/reminders', {
+                                                    state: item.type === 'escalation'
+                                                        ? { highlightEscalationId: item.id }
+                                                        : { highlightReminderId: item.id },
+                                                })}
                                             >
                                                 View <span>›</span>
                                             </button>

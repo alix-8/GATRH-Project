@@ -30,8 +30,8 @@ const navigationByRole = {
 
     program_secretary: [
         { label: 'Dashboard', to: '/program-secretary/dashboard', icon: DashboardIcon },
-        { label: 'Submissions', to: '/program-secretary/submission', icon: AttendanceIcon },
-        { label: 'Records', to: '/program-secretary/records', icon: StudentsIcon },
+        { label: 'Submissions', to: '/program-secretary/submission', icon: PendingSubmissionIcon, lightIcon: true },
+        { label: 'Records', to: '/program-secretary/records', icon: RecordManagementIcon, lightIcon: true },
         { label: 'Reminders', to: '/reminders', icon: RemindersIcon },
     ],
 

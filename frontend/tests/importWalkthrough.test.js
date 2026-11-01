@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { importWalkthroughPhase, importWalkthroughPaused, importWalkthroughPosition, importWalkthroughStepIndex, importWalkthroughSteps, importWalkthroughCanAdvance } from '../src/pages/secretary/import/walkthrough/importWalkthroughSteps.js'
+import { importWalkthroughPhase, importWalkthroughPaused, importWalkthroughPosition, importWalkthroughStepIndex, importWalkthroughSteps, importWalkthroughCanAdvance } from '../src/user/secretary/import/walkthrough/importWalkthroughSteps.js'
 
 test('guide follows actual import state, including returning to raw text', () => {
     assert.equal(importWalkthroughPhase({ modal: 'select-week' }), importWalkthroughStepIndex('week'))
