@@ -532,7 +532,7 @@ class DashboardService
     public function getProgramHeadRecentActivity($user, array $dateRange): array
     {
         $records = AttendanceRecord::query()
-            ->with(['student', 'submitter'])
+            ->with(['student', 'submitter', 'validator'])
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->inReportingRange([$dateRange['start'], $dateRange['end']])
             ->orderBy('updated_at', 'desc')
@@ -541,16 +541,21 @@ class DashboardService
         return $records
             ->groupBy(fn ($r) => $r->batch_id ?? ($r->gathering_type . '|' . $r->day . '|' . $r->submitted_by))
             ->sortByDesc(fn ($group) => $group->first()->updated_at)
-            ->map(function ($group) {
+            ->map(function ($group) use ($user) {
                 $first = $group->first();
                 $status = $first->validation_status ?? 'unvalidated';
                 $gathering = $this->formatGatheringName($first->gathering_type);
                 $secretary = $first->submitter?->name ?? 'Unknown';
+                $approvalDescription = $first->validated_by !== null && (int) $first->validated_by === (int) $user->id
+                    ? 'You approved the record'
+                    : ($first->validator?->name
+                        ? "{$first->validator->name} approved the record"
+                        : 'The record was approved');
 
                 [$title, $description, $iconType] = match ($status) {
                     'validated' => [
                         "{$gathering} attendance submitted",
-                        "you approved the record",
+                        $approvalDescription,
                         'approved',
                     ],
                     default => ["{$gathering} Attendance submitted", $secretary, 'submitted'],

@@ -53,6 +53,9 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
 }
 
 function CoordinatorMonitoring() {
+    const today = new Date()
+    const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+    const [selectedMonth, setSelectedMonth] = useState(currentMonth)
     const [monitoring, setMonitoring] = useState(null)
     const [collapsedPrograms, setCollapsedPrograms] = useState([])
     const [settledQuery, setSettledQuery] = useState(null)
@@ -69,7 +72,9 @@ function CoordinatorMonitoring() {
         const controller = new AbortController()
 
         const loadMonitoring = () => {
-            request('/monitoring', { signal: controller.signal })
+            const [year, month] = selectedMonth.split('-')
+            const params = new URLSearchParams({ year: String(Number(year)), month: String(Number(month)) })
+            request(`/monitoring?${params}`, { signal: controller.signal })
                 .then((data) => {
                     if (controller.signal.aborted) return
                     setMonitoring(data)
@@ -83,7 +88,7 @@ function CoordinatorMonitoring() {
                     }
                 })
                 .finally(() => {
-                    if (!controller.signal.aborted) setSettledQuery(true)
+                    if (!controller.signal.aborted) setSettledQuery(selectedMonth)
                 })
         }
         loadMonitoring()
@@ -91,9 +96,9 @@ function CoordinatorMonitoring() {
         return () => {
             controller.abort()
         }
-    }, [pollTick])
+    }, [pollTick, selectedMonth])
 
-    const loading = !settledQuery
+    const loading = settledQuery !== selectedMonth
     const error = requestError?.message || ''
     const courses = monitoring?.courses ?? EMPTY_COURSES
     const weeks = monitoring?.weeks || []
@@ -166,6 +171,25 @@ function CoordinatorMonitoring() {
         setActiveIncompleteEntry(null)
     }
 
+    const changeMonth = (month) => {
+        if (month > currentMonth || month < '2000-01' || month === selectedMonth) return
+        setSelectedMonth(month)
+        setMonitoring(null)
+        setRequestError(null)
+        setSettledQuery(null)
+        closeCourseDetails()
+        setSelectedDetailWeek(null)
+        setCourseDetails(null)
+        setDetailFailure(null)
+    }
+
+    const navigateMonth = (direction) => {
+        const [year, month] = selectedMonth.split('-').map(Number)
+        const next = new Date(year, month - 1 + direction, 1)
+        changeMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`)
+    }
+    const monthLabel = formatDate(`${selectedMonth}-01`, { month: 'long', year: 'numeric' })
+
     const selectedWeek = weeks.find((item) => item.number === detailWeek)
     const weekTabs = (
         <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
@@ -200,6 +224,13 @@ function CoordinatorMonitoring() {
                     className={`monitoring-content ${!error && loading ? 'monitoring-content--loading' : ''}`}
                     aria-label="Coordinator monitoring"
                 >
+                    <nav className="monitoring-month-navigation" aria-label="Monitoring month">
+                        <div className="monitoring-month-controls">
+                            <button type="button" onClick={() => navigateMonth(-1)} disabled={selectedMonth <= '2000-01'} aria-label="Previous month">‹</button>
+                            <strong aria-live="polite">{monthLabel}</strong>
+                            <button type="button" onClick={() => navigateMonth(1)} disabled={selectedMonth >= currentMonth} aria-label="Next month">›</button>
+                        </div>
+                    </nav>
                     {error && <p className="monitoring-message monitoring-error" role="alert">{error}</p>}
                     {!error && loading && (
                         <div className="monitoring-loading">
@@ -210,7 +241,7 @@ function CoordinatorMonitoring() {
                         <p className="monitoring-message">No program attendance data is available.</p>
                     )}
 
-                    {!error && courses.length > 0 && (
+                    {!error && !loading && courses.length > 0 && (
                         <div className="monitoring-table-scroll" aria-busy={loading}>
                             <table
                                 className="monitoring-table"

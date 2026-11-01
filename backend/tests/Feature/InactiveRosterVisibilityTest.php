@@ -96,6 +96,29 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame(['OLD'], $programService->getPageData(['is_active' => false])['programs']->pluck('code')->all());
     }
 
+    public function test_recent_approval_activity_names_the_actual_approver_for_each_viewer(): void
+    {
+        $this->program('BSIS');
+        $student = $this->student('Student');
+        $head = new User(['name' => 'Program Head', 'role' => 'program_head', 'program' => 'BSIS']);
+        $head->id = 1;
+        $secretary = new User(['name' => 'Program Secretary', 'role' => 'program_secretary', 'program' => 'BSIS']);
+        $secretary->id = 2;
+        DB::table('users')->insert(['id' => 2, 'name' => 'Program Secretary', 'role' => 'program_secretary',
+            'program' => 'BSIS', 'email' => 'progsec@laverdad.edu.ph', 'password' => 'unused']);
+        $record = AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'pm',
+            'day' => '2026-10-28', 'reporting_day' => '2026-10-28', 'batch_id' => 'approved-batch',
+            'status' => 'present', 'validation_status' => 'validated', 'validated_by' => 2]);
+        $service = app(DashboardService::class);
+        $range = ['start' => '2026-10-01', 'end' => '2026-10-31'];
+        $this->assertSame('Program Secretary approved the record', $service->getProgramHeadRecentActivity($head, $range)[0]['description']);
+        $this->assertSame('You approved the record', $service->getProgramHeadRecentActivity($secretary, $range)[0]['description']);
+        $record->update(['validated_by' => null]);
+        $this->assertSame('The record was approved', $service->getProgramHeadRecentActivity($head, $range)[0]['description']);
+        $record->update(['validated_by' => 999]);
+        $this->assertSame('The record was approved', $service->getProgramHeadRecentActivity($head, $range)[0]['description']);
+    }
+
     public function test_program_head_escalation_uses_only_submitted_gatherings_and_preserves_secretary_level(): void
     {
         $this->program('BSIS');
