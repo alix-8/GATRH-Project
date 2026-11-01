@@ -68,6 +68,32 @@ class AdminSecurityEventTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['result' => 'failed', 'details' => 'Sign-in attempt blocked: inactive account.']);
     }
 
+    public function test_failed_login_reuses_the_user_lookup_and_preserves_security_logging(): void
+    {
+        $user = $this->admin();
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        $this->withSession([])->postJson('/api/login', ['email' => strtoupper($user->email), 'password' => 'WrongPass1!'])->assertUnauthorized();
+        $lookups = collect(DB::getQueryLog())->filter(fn ($query) =>
+            str_contains($query['query'], 'from "users"') && str_contains($query['query'], 'email'));
+        DB::disableQueryLog();
+        $this->assertCount(1, $lookups);
+        $this->assertDatabaseHas('audit_logs', ['actor_id' => $user->id, 'action' => 'Signed in', 'result' => 'failed']);
+    }
+
+    public function test_storage_benchmark_uses_temporary_probes_without_changing_drivers_or_users(): void
+    {
+        $this->admin();
+        config(['cache.default' => 'array', 'session.driver' => 'array']);
+        cache()->put('existing-auth-test-value', 'keep', 60);
+        $this->artisan('auth:benchmark-storage', ['--samples' => 2])->assertSuccessful();
+        $this->assertSame('array', config('session.driver'));
+        $this->assertSame('array', config('cache.default'));
+        $this->assertSame('keep', cache()->get('existing-auth-test-value'));
+        $this->assertDatabaseCount('users', 1);
+        $this->artisan('auth:benchmark-storage', ['--samples' => 0])->assertFailed();
+    }
+
     public function test_password_change_logs_success_without_password_data(): void
     {
         $user = $this->admin();

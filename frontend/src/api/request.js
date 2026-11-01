@@ -1,4 +1,5 @@
 import { createReadRequestCoordinator } from './readRequestCoordinator'
+import { createCsrfSession } from './csrfSession'
 
 const reads = createReadRequestCoordinator()
 let readGeneration = 0
@@ -14,10 +15,13 @@ export function xsrfHeaders() {
     return cookie ? { 'X-XSRF-TOKEN': decodeURIComponent(cookie.slice('XSRF-TOKEN='.length)) } : {}
 }
 
-export async function initializeCsrf() {
-    const appBase = API_BASE_URL.replace(/\/api$/, '')
-    await fetch(`${appBase}/sanctum/csrf-cookie`, { credentials: 'include' })
-}
+const csrfSession = createCsrfSession({
+    fetchCookie: () => fetch(`${API_BASE_URL.replace(/\/api$/, '')}/sanctum/csrf-cookie`, { credentials: 'include' }),
+    hasToken: () => Boolean(xsrfHeaders()['X-XSRF-TOKEN']),
+})
+
+export const initializeCsrf = options => csrfSession.prepare(options)
+export const submitWithCsrf = send => csrfSession.submit(send)
 
 async function sendRequest(url, options) {
     const response = await fetch(`${API_BASE_URL}${url}`, {
