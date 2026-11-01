@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { API_BASE_URL } from '../../../api/request'
+import { request } from '../../../api/request'
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
 import RecordDate from '../../../components/RecordDate'
@@ -105,18 +105,9 @@ function Dashboard() {
         })
         const controller = new AbortController()
 
-        fetch(`${API_BASE_URL}/dashboard?${params.toString()}`, {
-            credentials: 'include',
-            signal: controller.signal,
-            headers: {
-                Accept: 'application/json',
-            },
-        })
-            .then(response => {
-                if (!response.ok) throw new Error(`Dashboard request failed (${response.status}).`)
-                return response.json()
-            })
+        request(`/dashboard?${params.toString()}`, { signal: controller.signal })
             .then(data => {
+                if (controller.signal.aborted) return
                 setOverview(data?.attendance_overview ?? data?.chart_data?.series ?? [])
                 setOverviewError('')
                 setMonthlySummary(data?.monthly_summary ?? null)
@@ -128,6 +119,10 @@ function Dashboard() {
             })
             .catch(error => {
                 if (controller.signal.aborted) return
+                if (error.status === 429) {
+                    setOverviewError(error.message)
+                    return
+                }
                 setOverview([])
                 setOverviewError(error.message || 'Unable to load attendance data.')
                 setMonthlySummary(null)

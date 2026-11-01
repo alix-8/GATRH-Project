@@ -44,6 +44,10 @@ class DashboardService
             ],
             default => $weekRange,
         };
+        $data = new SecretaryDashboardData($user, [
+            $weekRange, $chartRange,
+            ['start' => $month->copy()->startOfMonth(), 'end' => $month->copy()->endOfMonth()],
+        ]);
 
         return [
             'role' => 'secretary',
@@ -51,26 +55,30 @@ class DashboardService
             // Blue hero card: “This month's Attendance / No response”
             'monthly_summary' => $this->getSecretaryMonthlySummary(
                 $user,
-                $month
+                $month,
+                $data
             ),
 
             // Four cards under the hero card
             'kpis' => $this->getSecretaryKpis(
                 $user,
-                $weekRange
+                $weekRange,
+                $data
             ),
 
             // Attendance Overview bar chart
             'attendance_overview' => $this->getAttendanceChartData(
                 $user,
                 $chartPeriod,
-                $chartRange
+                $chartRange,
+                $data
             )['series'],
 
             // Recent Attendance Record table
             'recent_records' => $this->getRecentRecords(
                 $user,
-                $weekRange
+                $weekRange,
+                $data
             ),
 
             // Task and Reminders card
@@ -82,12 +90,13 @@ class DashboardService
             'monthly_gathering' => $this->getMonthlyGatheringData(
                 $user,
                 $month->month,
-                $month->year
+                $month->year,
+                $data
             ),
         ];
     }
 
-        private function getSecretaryMonthlySummary($user, Carbon $month): array
+    private function getSecretaryMonthlySummary($user, Carbon $month, ?SecretaryDashboardData $data = null): array
     {
         $records = AttendanceRecord::query()
             ->whereHas(
@@ -99,20 +108,17 @@ class DashboardService
                 $month->copy()->endOfMonth(),
             ]);
 
+        $counts = $data?->statusCounts(['start' => $month->copy()->startOfMonth(), 'end' => $month->copy()->endOfMonth()])
+            ?? $records->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status')->all();
         return [
-            'attendance' => (clone $records)
-                ->where('status', 'present')
-                ->count(),
-
-            'no_response' => (clone $records)
-                ->where('status', 'no_response')
-                ->count(),
+            'attendance' => (int) ($counts['present'] ?? 0),
+            'no_response' => (int) ($counts['no_response'] ?? 0),
 
             'month_label' => $month->format('F Y'),
         ];
     }
 
-    private function getSecretaryKpis($user, array $weekRange): array
+    private function getSecretaryKpis($user, array $weekRange, ?SecretaryDashboardData $data = null): array
     {
         $weekRecords = AttendanceRecord::query()
             ->whereHas(
@@ -126,31 +132,29 @@ class DashboardService
 
         // Match the attendance overview: responses saved in an unsubmitted
         // draft should count toward this week's secretary KPIs as well.
-        $weekDraftResponses = AttendanceDraft::query()
+        $weekDrafts = $data?->draftsIn($weekRange) ?? AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->whereIn('status', ['draft', 'pending'])
             ->inReportingRange([
                 $weekRange['start'],
                 $weekRange['end'],
             ])
-            ->get()
-            ->flatMap(fn ($draft) => collect($draft->parsed_data ?? []));
+            ->get();
+        $weekDraftResponses = $weekDrafts->flatMap(fn ($draft) => $data?->entriesFor($draft) ?? collect($draft->parsed_data ?? []));
+        $counts = $data?->statusCounts($weekRange)
+            ?? $weekRecords->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status')->all();
 
         return [
-            'total_students' => Student::query()
+            'total_students' => $data?->studentCount ?? Student::query()
                 ->active()
                 ->accessibleTo($user)
                 ->count(),
 
-            'week_respondents' => (clone $weekRecords)
-                ->where('status', 'present')
-                ->count() + $weekDraftResponses->where('status', 'present')->count(),
+            'week_respondents' => (int) ($counts['present'] ?? 0) + $weekDraftResponses->where('status', 'present')->count(),
 
-            'week_no_response' => (clone $weekRecords)
-                ->where('status', 'no_response')
-                ->count() + $weekDraftResponses->where('status', 'no_response')->count(),
+            'week_no_response' => (int) ($counts['no_response'] ?? 0) + $weekDraftResponses->where('status', 'no_response')->count(),
 
-            'pending_submission' => AttendanceDraft::query()
+            'pending_submission' => $data?->drafts->count() ?? AttendanceDraft::query()
                 ->where('user_id', $user->id)
                 ->whereIn('status', ['draft', 'pending'])
                 ->count(),
@@ -228,26 +232,32 @@ class DashboardService
     public function getProgramHeadDashboardPayload($user, array $filters): array
     {
         $dateRange = $this->resolveDateRange($filters['week'] ?? 'all');
+        $records = AttendanceRecord::query()
+            ->with(['student:id,name,program,year_level', 'submitter:id,name', 'validator:id,name'])
+            ->whereHas('student', fn ($query) => $query->accessibleTo($user))
+            ->inReportingRange([$dateRange['start'], $dateRange['end']])
+            ->get();
 
         return [
-            'summary'        => $this->getProgramHeadSummary($user, $dateRange),
-            'pending_list'   => $this->getProgramHeadPendingList($user, $dateRange),
-            'recent_records' => $this->getProgramHeadRecentActivity($user, $dateRange),
-            'calendar_marks' => $this->getCalendarMarks($user, $filters['month'], $filters['year']),
+            'summary'        => $this->getProgramHeadSummary($user, $dateRange, $records),
+            'pending_list'   => $this->getProgramHeadPendingList($user, $dateRange, $records),
+            'recent_records' => $this->getProgramHeadRecentActivity($user, $dateRange, $records),
             'role'           => 'program_head',
         ];
     }
 
-    public function getProgramHeadSummary($user, array $dateRange): array
+    public function getProgramHeadSummary($user, array $dateRange, ?\Illuminate\Support\Collection $records = null): array
     {
-        $baseQuery = AttendanceRecord::query()
-            ->whereHas('student', fn ($query) => $query->accessibleTo($user))
-            ->inReportingRange([$dateRange['start'], $dateRange['end']]);
+        if ($records === null) {
+            $records = AttendanceRecord::query()
+                ->whereHas('student', fn ($query) => $query->accessibleTo($user))
+                ->inReportingRange([$dateRange['start'], $dateRange['end']])
+                ->get(['batch_id', 'gathering_type', 'day', 'reporting_day', 'submitted_by', 'validation_status']);
+        }
 
         // Evaluate the whole submission before counting it as approved. Filtering
         // approved student rows first would count partially approved batches too.
-        $submissions = $baseQuery
-            ->get(['batch_id', 'gathering_type', 'day', 'reporting_day', 'submitted_by', 'validation_status'])
+        $submissions = $records
             ->groupBy(function ($record) {
                 if (!empty($record->batch_id)) {
                     return 'batch:' . $record->batch_id;
@@ -287,20 +297,24 @@ class DashboardService
         ];
     }
 
-    public function getAttendanceChartData($user, string $filter, array $dateRange): array
+    public function getAttendanceChartData($user, string $filter, array $dateRange, ?SecretaryDashboardData $data = null): array
     {
-        $records = AttendanceRecord::query()
+        $records = $data ? $data->recordsIn($dateRange)
+            ->groupBy(fn ($row) => $row->gathering_type.'|'.$row->status)
+            ->map(fn ($rows) => (object) ['gathering_type' => $rows->first()->gathering_type,
+                'status' => $rows->first()->status, 'total' => $rows->count()])
+            ->values() : AttendanceRecord::query()
             ->select('gathering_type', 'status', DB::raw('COUNT(*) as total'))
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->inReportingRange([$dateRange['start'], $dateRange['end']])
             ->groupBy('gathering_type', 'status')
             ->get();
 
-        $draftsByType = AttendanceDraft::query()
+        $draftsByType = ($data?->draftsIn($dateRange) ?? AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->whereIn('status', ['draft', 'pending'])
             ->inReportingRange([$dateRange['start'], $dateRange['end']])
-            ->get()
+            ->get())
             ->groupBy('gathering_type');
 
         $categories = ['pm', 'ws', 'tg'];
@@ -313,7 +327,7 @@ class DashboardService
             // Unsubmitted drafts are part of the secretary's attendance overview too.
             // parsed_data stores the same per-student status values as saved records.
             foreach ($draftsByType->get($cat, collect()) as $draft) {
-                $entries = collect($draft->parsed_data ?? []);
+                $entries = $data?->entriesFor($draft) ?? collect($draft->parsed_data ?? []);
                 $presentCount += $entries->where('status', 'present')->count();
                 $absentCount += $entries->where('status', 'no_response')->count();
             }
@@ -355,9 +369,11 @@ class DashboardService
             ->toArray();
     }
 
-    public function getProgramHeadPendingList($user, array $dateRange): array
+    public function getProgramHeadPendingList($user, array $dateRange, ?\Illuminate\Support\Collection $sharedRecords = null): array
     {
-        $records = AttendanceRecord::query()
+        $records = $sharedRecords ? $sharedRecords
+            ->filter(fn ($row) => $row->validation_status === null || $row->validation_status === 'unvalidated')
+            ->sortByDesc('day') : AttendanceRecord::query()
             ->with(['student', 'submitter'])
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->inReportingRange([$dateRange['start'], $dateRange['end']])
@@ -391,18 +407,18 @@ class DashboardService
             ->toArray();
     }
 
-    public function getRecentRecords($user, ?array $dateRange = null): array
+    public function getRecentRecords($user, ?array $dateRange = null, ?SecretaryDashboardData $data = null): array
     {
-        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
+        $totalManagedStudents = $data?->studentCount ?? Student::query()->active()->accessibleTo($user)->count();
 
         // 1. Unsubmitted Drafts
-        $drafts = AttendanceDraft::query()
+        $drafts = ($data?->drafts->where('status', 'draft') ?? AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->where('status', 'draft')
             ->orderBy('updated_at', 'desc')
-            ->get()
-            ->map(function ($draft) use ($totalManagedStudents) {
-                $parsed = is_array($draft->parsed_data) ? $draft->parsed_data : (array) $draft->parsed_data;
+            ->get())
+            ->map(function ($draft) use ($totalManagedStudents, $data) {
+                $parsed = $data ? $data->entriesFor($draft)->all() : (array) ($draft->parsed_data ?? []);
                 $presentCount = $draft->matched_count ?? collect($parsed)->where('status', 'present')->count();
                 $dayCarbon = $draft->day ? Carbon::parse($draft->day) : Carbon::parse($draft->updated_at);
 
@@ -425,10 +441,7 @@ class DashboardService
             });
 
         // 2. Submitted Attendance Records grouped by batch_id or gathering_type|day
-        $recordsQuery = AttendanceRecord::query()
-            ->whereHas('student', fn ($query) => $query->accessibleTo($user));
-
-        $records = $recordsQuery->get()
+        $records = app(SecretaryRecentAttendanceQuery::class)->records($user)
             ->groupBy(function ($r) {
                 if (!empty($r->batch_id)) {
                     return $r->batch_id;
@@ -490,32 +503,32 @@ class DashboardService
         return 'pending';
     }
 
-    public function getMonthlyGatheringData($user, int $monthNumber, int $year): array
+    public function getMonthlyGatheringData($user, int $monthNumber, int $year, ?SecretaryDashboardData $data = null): array
     {
         $month = Carbon::create($year, $monthNumber, 1)->startOfDay();
         $monthStart = $month->toDateString();
         $monthEnd = $month->copy()->endOfMonth()->toDateString();
         $monthLastDay = $month->copy()->endOfMonth()->startOfDay();
-        $totalManagedStudents = Student::query()->active()->accessibleTo($user)->count();
+        $totalManagedStudents = $data?->studentCount ?? Student::query()->active()->accessibleTo($user)->count();
 
-        $responsesByGathering = AttendanceRecord::query()
+        $responsesByGathering = ($data?->recordsIn(['start' => $monthStart, 'end' => $monthEnd])->where('status', 'present') ?? AttendanceRecord::query()
             ->select('gathering_type', 'student_id', 'day', 'reporting_day')
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->where('status', 'present')
             ->inReportingRange([$monthStart, $monthEnd])
-            ->get()
+            ->get())
             ->groupBy('gathering_type')
             ->map(fn ($group) => $group->map(fn ($record) => [
                 'student_id' => (int) $record->student_id,
                 'day' => Carbon::parse($record->reporting_day ?? $record->day)->toDateString(),
             ]));
 
-        $draftResponsesByGathering = AttendanceDraft::query()
+        $draftResponsesByGathering = ($data?->draftsIn(['start' => $monthStart, 'end' => $monthEnd]) ?? AttendanceDraft::query()
             ->where('user_id', $user->id)
             ->whereIn('status', ['draft', 'pending'])
             ->inReportingRange([$monthStart, $monthEnd])
-            ->get()
-            ->flatMap(fn (AttendanceDraft $draft) => collect($draft->parsed_data ?? [])
+            ->get())
+            ->flatMap(fn (AttendanceDraft $draft) => ($data?->entriesFor($draft) ?? collect($draft->parsed_data ?? []))
                 ->filter(fn (array $entry) => ($entry['status'] ?? null) === 'present'
                     && ! empty($entry['student_id']))
                 ->map(fn (array $entry) => [
@@ -552,9 +565,9 @@ class DashboardService
             ->toArray();
     }
 
-    public function getProgramHeadRecentActivity($user, array $dateRange): array
+    public function getProgramHeadRecentActivity($user, array $dateRange, ?\Illuminate\Support\Collection $sharedRecords = null): array
     {
-        $records = AttendanceRecord::query()
+        $records = $sharedRecords?->sortByDesc('updated_at') ?? AttendanceRecord::query()
             ->with(['student', 'submitter', 'validator'])
             ->whereHas('student', fn ($query) => $query->accessibleTo($user))
             ->inReportingRange([$dateRange['start'], $dateRange['end']])
@@ -603,7 +616,8 @@ class DashboardService
                 ->where('result', 'success')
                 ->with('actor:id,name')
                 ->orderByDesc('created_at')
-                ->get()
+                ->orderByDesc('id')
+                ->lazy(100)
                 ->flatMap(function ($log) use ($programCodes, $dateRange) {
                     $details = json_decode($log->details ?? '', true);
                     return collect($details['submissions'] ?? [])
@@ -619,7 +633,7 @@ class DashboardService
                             'status' => 'withdrawn',
                             'activity_at' => $log->created_at?->toIso8601String(),
                         ]);
-                });
+                })->take(4);
             $activities = $activities->concat($withdrawals);
         }
 

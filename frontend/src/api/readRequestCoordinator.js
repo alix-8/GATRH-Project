@@ -65,5 +65,5 @@ export function createReadRequestCoordinator({ now = Date.now } = {}) {
         })
     }
 
-    return { run, pause, remainingMs }
+    return { run, pause, remainingMs, isBusy: () => pending.size > 0 }
 }
