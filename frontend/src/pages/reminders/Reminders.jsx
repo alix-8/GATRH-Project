@@ -32,6 +32,7 @@ const FILTERS = [
     { value: 'all', label: 'All Reminders' },
     { value: 'today', label: 'Today' },
     { value: 'escalation', label: 'Escalation' },
+    { value: 'exports', label: 'Exports' },
     { value: 'needs_action', label: 'Needs Action' },
     { value: 'completed', label: 'Completed' },
     { value: 'mine', label: 'My reminder' },
@@ -663,7 +664,8 @@ function Reminders() {
         if (activeFilter === 'all') return true
         if (activeFilter === 'today') return item.isToday
         if (activeFilter === 'escalation') return item.type === 'escalation'
-        if (activeFilter === 'mine') return item.type === 'custom'
+        if (activeFilter === 'exports') return item.sourceReminder?.reminder_type === 'monthly_export'
+        if (activeFilter === 'mine') return item.type === 'custom' && item.sourceReminder?.reminder_type !== 'monthly_export'
         if (activeFilter === 'needs_action') return item.type !== 'escalation' && item.status === 'needs_action'
         if (activeFilter === 'completed') return ['attendance', 'custom'].includes(item.type) && item.status === 'completed'
         return true
@@ -1071,6 +1073,11 @@ function Reminders() {
 
                                 <div className="task-status">
                                     <strong>{item.statusLabel}</strong>
+                                    {item.statusLabel === 'Upcoming' && ['gathering', 'submission_countdown'].includes(item.sourceReminder?.reminder_type) && (
+                                        <span className="task-system-pin">
+                                            (Pinned by the system)
+                                        </span>
+                                    )}
                                     {item.type === 'custom' && item.sourceReminder?.reminder_type !== 'monthly_export' && item.status !== 'completed' && (
                                         <div className="task-actions">
                                             <button

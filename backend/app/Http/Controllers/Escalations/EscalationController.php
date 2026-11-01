@@ -20,10 +20,17 @@ class EscalationController extends Controller
 
         // Optional filter by escalation level (e.g., Level 1, Level 2, Level 3)
         if ($request->has('level')) {
-            $query->where('escalation_level', $request->level);
+            if ($user->role === 'program_head') {
+                $query->when($request->level !== 'Level 2', fn ($query) => $query->whereRaw('1 = 0'));
+            } else {
+                $query->where('escalation_level', $request->level);
+            }
         }
 
         $escalations = $query->orderBy('no_response_count', 'desc')->get();
+        if ($user->role === 'program_head') {
+            $escalations->each(fn ($escalation) => $escalation->forceFill(['escalation_level' => 'Level 2', 'no_response_count' => 2]));
+        }
 
         return response()->json([
             'status' => 'success',
@@ -40,6 +47,9 @@ class EscalationController extends Controller
         $escalation = Escalation::query()->visibleTo($request->user())
             ->with(['student', 'student.attendanceRecords'])
             ->findOrFail($id);
+        if ($request->user()->role === 'program_head') {
+            $escalation->forceFill(['escalation_level' => 'Level 2', 'no_response_count' => 2]);
+        }
 
         return response()->json([
             'status' => 'success',

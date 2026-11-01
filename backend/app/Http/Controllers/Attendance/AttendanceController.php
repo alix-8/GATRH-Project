@@ -1573,7 +1573,10 @@ class AttendanceController extends Controller
                     ]);
                 }
 
-                AttendanceRecord::whereIn('id', $records->pluck('id'))->delete();
+                // Preserve deletion observers, including escalation refresh.
+                foreach ($records as $record) {
+                    $record->delete();
+                }
                 return ['drafts' => $createdDrafts, 'record_count' => $records->count()];
             });
         } catch (\DomainException $exception) {

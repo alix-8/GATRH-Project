@@ -399,10 +399,21 @@ class AttendanceDraftController extends Controller
             'ids.*' => 'integer',
         ]);
 
-        $deleted = AttendanceDraft::whereIn('id', $validated['ids'])
-            ->where('user_id', $request->user()->id)
-            ->where('status', 'draft')
-            ->delete();
+        $deleted = DB::transaction(function () use ($validated, $request) {
+            $drafts = AttendanceDraft::whereIn('id', $validated['ids'])
+                ->where('user_id', $request->user()->id)
+                ->where('status', 'draft')
+                ->lockForUpdate()
+                ->get();
+
+            // Delete models individually so the observer refreshes escalation
+            // from the remaining attendance and drafts for each student.
+            foreach ($drafts as $draft) {
+                $draft->delete();
+            }
+
+            return $drafts->count();
+        });
 
         return response()->json([
             'status'  => 'success',
