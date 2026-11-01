@@ -190,7 +190,7 @@ function SystemSettings() {
         <div className="admin-system-settings">
             <Sidebar />
             <main className="admin-system-settings-main">
-                <Header title="System Settings" subtitle="Set up your system settings and grab a backup." showNotification={false} className="admin-system-settings-header" />
+                <Header title="System Settings" subtitle="Set up your system settings" showNotification={false} className="admin-system-settings-header" />
                 <div className="admin-system-settings-content">
                     <nav className="admin-settings-nav" aria-label="Settings sections">
                         <button type="button" className={`admin-settings-nav-item${activeSection === 'general' ? ' active' : ''}`} aria-current={activeSection === 'general' ? 'page' : undefined} onClick={() => setActiveSection('general')}><img src={GeneralIcon} alt="" />General</button>
