@@ -11,13 +11,15 @@ class AdminDashboardService
 {
     public function getPayload(): array
     {
+        $users = User::query()->selectRaw('COUNT(*) as total, COALESCE(SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END), 0) as active')->first();
+        $programs = Program::query()->selectRaw('COUNT(*) as total, COALESCE(SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END), 0) as active')->first();
         return [
             'summary' => [
-                'user_accounts' => User::query()->count(),
-                'active_users' => User::query()->where('is_active', true)->count(),
+                'user_accounts' => (int) $users->total,
+                'active_users' => (int) $users->active,
                 'students' => Student::query()->active()->count(),
-                'programs' => Program::query()->count(),
-                'active_programs' => Program::query()->where('is_active', true)->count(),
+                'programs' => (int) $programs->total,
+                'active_programs' => (int) $programs->active,
             ],
             'accounts' => $this->getAccountSummary(),
             'recent_activity' => $this->getRecentActivity(),

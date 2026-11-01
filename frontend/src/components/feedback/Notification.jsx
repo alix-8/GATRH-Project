@@ -81,6 +81,7 @@ function Notification() {
     }, [])
 
     const fetchControllerRef = useRef(null)
+    const trackedNotificationIdsRef = useRef([])
 
     const fetchNotifications = useCallback(async () => {
         if (!localStorage.getItem('user')) return
@@ -196,6 +197,7 @@ function Notification() {
 
                 const nextItems = [...escalationItems, ...dueAttendanceItems, ...dueMyReminderItems, ...reminderItems, ...attendanceItems]
                 const trackedIds = nextItems.filter(item => item.tracksBellDot).map(item => item.id)
+                trackedNotificationIdsRef.current = trackedIds
                 const seenIds = getSeenNotificationIds()
                 setHasUnreadReminder(trackedIds.some(id => !seenIds.has(String(id))))
                 setItems(nextItems.slice(0, 8))
@@ -228,9 +230,13 @@ function Notification() {
     }, [fetchNotifications])
 
     useEffect(() => {
-        window.addEventListener('notifications:changed', fetchNotifications)
-        return () => window.removeEventListener('notifications:changed', fetchNotifications)
-    }, [fetchNotifications])
+        const syncReadState = () => {
+            const seenIds = getSeenNotificationIds()
+            setHasUnreadReminder(trackedNotificationIdsRef.current.some(id => !seenIds.has(String(id))))
+        }
+        window.addEventListener('notifications:changed', syncReadState)
+        return () => window.removeEventListener('notifications:changed', syncReadState)
+    }, [])
 
     useLiveRefresh(fetchNotifications, 60_000)
 

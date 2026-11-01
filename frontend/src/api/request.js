@@ -5,6 +5,7 @@ const reads = createReadRequestCoordinator()
 let readGeneration = 0
 
 export const getApiCooldownMs = () => reads.remainingMs()
+export const hasPendingApiReads = () => reads.isBusy()
 
 export const API_BASE_URL = (
     import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'

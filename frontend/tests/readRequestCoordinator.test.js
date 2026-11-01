@@ -104,3 +104,15 @@ test('already-aborted callers do not start a request', async () => {
     await assert.rejects(reads.run('dashboard', async () => ++calls, controller.signal), { name: 'AbortError' })
     assert.equal(calls, 0)
 })
+
+test('background polling can detect a pending read and resume after completion', async () => {
+    const reads = createReadRequestCoordinator()
+    let finish
+    assert.equal(reads.isBusy(), false)
+    const pending = reads.run('dashboard', () => new Promise(resolve => { finish = resolve }))
+    assert.equal(reads.isBusy(), true)
+    await Promise.resolve()
+    finish('loaded')
+    await pending
+    assert.equal(reads.isBusy(), false)
+})
