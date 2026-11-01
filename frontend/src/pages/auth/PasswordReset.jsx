@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-route
 import { API_BASE_URL, initializeCsrf, xsrfHeaders } from '../../api/request'
 import Login, { AdminContactLink } from './Login'
 import BackToLoginArrowIcon from '../../assets/icons/back-to-login-arrow-icon.svg'
+import ShowPasswordIcon from '../../assets/icons/show-password-icon.svg'
 import './PasswordReset.css'
 
 const CODE_LIFETIME_SECONDS = 15 * 60
@@ -19,7 +20,7 @@ function PasswordDialog({ children, variant = '', email = '' }) {
     return (
         <>
             <Login initialEmail={email} />
-            <div className="password-modal-overlay">
+            <div className={`password-modal-overlay${variant.includes('password-modal-reset') ? ' password-modal-overlay-reset' : ''}`}>
                 <section className={`password-modal ${variant}`} role="dialog" aria-modal="true">
                     {children}
                 </section>
@@ -51,9 +52,9 @@ function formatCountdown(seconds) {
 
 const passwordRules = [
     { label: 'At least 8 characters', test: (value) => value.length >= 8 },
-    { label: 'One uppercase and lowercase letter', test: (value) => /[A-Z]/.test(value) && /[a-z]/.test(value) },
-    { label: 'One number', test: (value) => /\d/.test(value) },
-    { label: 'One special character', test: (value) => /[^A-Za-z0-9]/.test(value) },
+    { label: 'At least one uppercase and lowercase letter', test: (value) => /[A-Z]/.test(value) && /[a-z]/.test(value) },
+    { label: 'At least one number', test: (value) => /\d/.test(value) },
+    { label: 'At least one special character', test: (value) => /[^A-Za-z0-9]/.test(value) },
 ]
 
 export function ForgotPassword() {
@@ -267,10 +268,10 @@ export function ForgotPassword() {
                 <p className="password-intro">Enter your new password below.</p>
                 <form onSubmit={resetPassword}>
                     <label htmlFor="new-password">New Password</label>
-                    <div className="password-input-wrap"><input id="new-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)}>◉</button></div>
-                    <ul className="password-rules">{passwordRules.map((rule) => <li className={rule.test(password) ? 'is-met' : ''} key={rule.label}><span aria-hidden="true">✓</span>{rule.label}</li>)}</ul>
+                    <div className="password-input-wrap"><input id="new-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(event) => { setPassword(event.target.value); if (!event.target.value) setShowPassword(false) }} required />{password.length > 0 && <button className={showPassword ? 'is-visible' : ''} type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)}><img src={ShowPasswordIcon} alt="" /></button>}</div>
+                    <ul className="password-rules">{passwordRules.map((rule) => <li className={rule.test(password) ? 'is-met' : ''} key={rule.label}><span aria-hidden="true" />{rule.label}</li>)}</ul>
                     <label htmlFor="confirm-password">Confirm New Password</label>
-                    <div className="password-input-wrap"><input id="confirm-password" type={showConfirmation ? 'text' : 'password'} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /><button type="button" aria-label={showConfirmation ? 'Hide password' : 'Show password'} onClick={() => setShowConfirmation(!showConfirmation)}>◉</button></div>
+                    <div className="password-input-wrap"><input id="confirm-password" type={showConfirmation ? 'text' : 'password'} autoComplete="new-password" value={confirmation} onChange={(event) => { setConfirmation(event.target.value); if (!event.target.value) setShowConfirmation(false) }} required />{confirmation.length > 0 && <button className={showConfirmation ? 'is-visible' : ''} type="button" aria-label={showConfirmation ? 'Hide password' : 'Show password'} onClick={() => setShowConfirmation(!showConfirmation)}><img src={ShowPasswordIcon} alt="" /></button>}</div>
                     {error && <p className="password-error" role="alert">{error}</p>}
                     {expiresIn === 0 && <p className="password-error" role="alert">This code has expired. Request a new one.</p>}
                     <button className="password-primary" type="submit" disabled={loading || expiresIn === 0}>{loading ? 'Updating...' : 'Continue to Log In'}</button>
