@@ -160,8 +160,20 @@
     overflow: auto;
 }
 
+.ph-table-scroll { display: flex; flex-direction: column; }
+
+.ph-pending-empty {
+    display: grid;
+    min-height: 50px;
+    flex: 1;
+    place-items: center;
+    color: #778397;
+    font-size: 13px;
+}
+
 .ph-submission-table {
     width: 100%;
+    flex: none;
     border-collapse: collapse;
     text-align: left;
     font-size: 12px;

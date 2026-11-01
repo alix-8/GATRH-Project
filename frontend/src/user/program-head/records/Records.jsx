@@ -5,13 +5,13 @@ import './Records.css'
 
 export default function ProgramHeadRecords() {
     return (
-        <div className="attendance ph-records-layout">
+        <div className="ph-records-layout">
             <Sidebar />
-            <main className="attendance-main ph-records-main">
+            <main className="ph-records-main">
                 <Header
                     title="Records"
                     subtitle="View and manage finalized attendance records."
-                    className="attendance-header ph-records-header"
+                    className="ph-records-header"
                 />
                 <RecordsTable />
             </main>

@@ -112,7 +112,7 @@ function ProgramHeadDashboard() {
                             <table className="ph-submission-table">
                                 <thead><tr><th>Secretary</th><th>Gathering</th><th>Program</th><th>Year</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
                                 <tbody>
-                                    {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.length === 0 ? <tr><td colSpan="7" className="ph-empty">No pending submissions yet.</td></tr> : pending.map((submission) => (
+                                    {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.map((submission) => (
                                         <tr key={submission.id}>
                                             <td><UserAvatar className="ph-secretary-avatar" name={submission.secretary} program={submission.program} />{submission.secretary}</td>
                                             <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td><RecordDate value={submission.date_iso || submission.date} /></td>
@@ -122,6 +122,7 @@ function ProgramHeadDashboard() {
                                     ))}
                                 </tbody>
                             </table>
+                            {!loading && pending.length === 0 && <div className="ph-pending-empty">No pending submissions yet.</div>}
                         </div>
                     </section>
 
