@@ -241,20 +241,38 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     if (!isOpen) return null
 
     // Decide footer control based on the row's current lifecycle status
+    const approver = draft?.approved_by
+    const approverRole = { program_head: 'Program Head', program_secretary: 'Program Secretary' }[approver?.role]
+    const approvalDescription = approver?.name
+        ? `Approved by ${approver.name}${approverRole ? ` (${approverRole})` : ''}. This attendance report has been approved and recorded.`
+        : 'This attendance report has been approved and recorded.'
     const footer = (() => {
         switch (record.status) {
             case 'approved':
             case 'pending':
                 return (
-                    <div className="drawer-footer-actions">
+                    <div className="drawer-submission-footer">
+                        <div className={`drawer-submission-notice ${record.status === 'approved' ? 'is-approved' : 'is-pending'}`}>
+                            <span className="drawer-submission-notice-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    {record.status === 'approved' ? (
+                                        <path d="m4 12 4 4 8-9m-5 7 3 3 7-9" />
+                                    ) : (
+                                        <><circle cx="12" cy="12" r="9" /><path d="M12 6v6l4 3" /></>
+                                    )}
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>{record.status === 'approved' ? 'Approved & Recorded' : 'Submitted for Review'}</strong>
+                                <p>{record.status === 'approved' ? approvalDescription : 'This attendance report has been sent and is awaiting review.'}</p>
+                            </div>
+                        </div>
                         {record.can_unsubmit && (
-                            <button type="button" className="drawer-edit-btn unsubmit-btn" onClick={() => setUnsubmitConfirm(true)} disabled={unsubmitting}>
-                                Unsubmit
+                            <button type="button" className="drawer-withdraw-button" onClick={() => setUnsubmitConfirm(true)} disabled={unsubmitting}>
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 8a8 8 0 1 1 0 9M5 3v5h5" /></svg>
+                                {unsubmitting ? 'Withdrawing…' : 'Withdraw Submission'}
                             </button>
                         )}
-                        <div className={`status-pill status-pill-${record.status === 'approved' ? 'approved' : 'pending'}`}>
-                            {record.status === 'approved' ? '✓ Approved' : '✓ Submitted'}
-                        </div>
                     </div>
                 )
             default:
