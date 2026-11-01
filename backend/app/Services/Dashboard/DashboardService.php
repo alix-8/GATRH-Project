@@ -712,7 +712,7 @@ class DashboardService
         ];
         $reportingWeeks = collect();
         $lastWeekStart = GatheringCycle::weekStartForDate($selectedDate->copy()->endOfMonth());
-        for ($start = GatheringCycle::weekStartForDate($selectedDate->copy()->startOfMonth()), $number = 1;
+        for ($start = GatheringCycle::firstWeekStartForMonth($selectedDate), $number = 1;
             $start->lessThanOrEqualTo($lastWeekStart);
             $start->addWeek(), $number++) {
             $end = $start->copy()->addDays(6);

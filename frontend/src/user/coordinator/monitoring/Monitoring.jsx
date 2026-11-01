@@ -126,7 +126,11 @@ function CoordinatorMonitoring() {
         ? `${activeCourse.program}-${activeCourse.year_level}-${monitoring?.month?.year}-${monitoring?.month?.month}-${detailWeek}`
         : ''
     const currentDetails = courseDetails?.key === detailKey ? courseDetails.data : null
-    const noResponseEntries = (currentDetails?.week_details ?? []).filter(entry => entry.no_response_students?.length > 0)
+    const noResponseEntries = (currentDetails?.week_details ?? []).filter(entry => (
+        entry.status === 'no_report'
+        && entry.has_attendance
+        && entry.no_response_students?.length > 0
+    ))
         .sort((first, second) => GATHERING_TYPES.indexOf(first.gathering_type) - GATHERING_TYPES.indexOf(second.gathering_type))
     const currentDetailError = detailFailure?.key === detailKey ? detailFailure.message : ''
     const detailLoading = Boolean(activeCourse && !currentDetails && !currentDetailError)

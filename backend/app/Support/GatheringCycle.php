@@ -20,6 +20,15 @@ class GatheringCycle
      */
     private static ?array $savedWeekRanges = null;
 
+    /** Reporting weeks belong to the month containing their Wednesday start. */
+    public static function firstWeekStartForMonth(Carbon $month): Carbon
+    {
+        $monthStart = $month->copy()->startOfMonth();
+        $weekStart = self::weekStartForDate($monthStart);
+
+        return $weekStart->lessThan($monthStart) ? $weekStart->addWeek() : $weekStart;
+    }
+
     private static function anchorDay(string $gatheringType): int
     {
         return match ($gatheringType) {

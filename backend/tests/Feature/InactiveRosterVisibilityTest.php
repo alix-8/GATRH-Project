@@ -133,7 +133,7 @@ class InactiveRosterVisibilityTest extends TestCase
             AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'pm',
                 'day' => '2026-10-28', 'reporting_day' => '2026-10-28', 'status' => $status]);
         }
-        $details = app(CmCoordinatorMonitoringService::class)->getCourseDetails('BSIS', 1, ['year' => 2026, 'month' => 10, 'week' => 5]);
+        $details = app(CmCoordinatorMonitoringService::class)->getCourseDetails('BSIS', 1, ['year' => 2026, 'month' => 10, 'week' => 4]);
         $pm = collect($details['week_details'])->firstWhere('gathering_type', 'pm');
         $ws = collect($details['week_details'])->firstWhere('gathering_type', 'ws');
         $this->assertSame([$noResponse->id], $pm['no_response_students']->pluck('id')->all());

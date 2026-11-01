@@ -459,7 +459,8 @@ class CmCoordinatorMonitoringService
 
     private function getWeeks(Carbon $month): Collection
     {
-        $weekStart = GatheringCycle::weekStartForDate($month);
+        // A reporting week belongs only to the month containing its Wednesday.
+        $weekStart = GatheringCycle::firstWeekStartForMonth($month);
         $lastWeekStart = GatheringCycle::weekStartForDate($month->copy()->endOfMonth());
         $weeks = collect();
 
