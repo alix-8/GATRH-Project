@@ -97,16 +97,17 @@ class ReminderController extends Controller
         $visibleEscalations = $alertLevel
             ? Escalation::query()
                 ->visibleTo($user)
-                ->where('escalation_level', $alertLevel)
+                ->when($user->role !== 'program_head', fn ($query) => $query->where('escalation_level', $alertLevel))
                 ->with('student')
                 ->orderByDesc('no_response_count')
                 ->get()
             : collect();
 
-        $escalationAlerts = $visibleEscalations->map(function (Escalation $escalation) {
+        $escalationAlerts = $visibleEscalations->map(function (Escalation $escalation) use ($user) {
             $student = $escalation->student;
             $programYear = strtoupper(trim($student->program)) . '-' . trim((string) $student->year_level);
-            $level = strtolower($escalation->escalation_level);
+            $displayLevel = $user->role === 'program_head' ? 'Level 2' : $escalation->escalation_level;
+            $level = strtolower($displayLevel);
 
             return [
                 'id' => $escalation->id,
@@ -114,7 +115,7 @@ class ReminderController extends Controller
                 'student_name' => $student->name,
                 'program' => $student->program,
                 'year_level' => $student->year_level,
-                'escalation_level' => $escalation->escalation_level,
+                'escalation_level' => $displayLevel,
                 'description' => "{$programYear} {$student->name} has reached Escalation {$level} and requires a follow up.",
             ];
         })->values();

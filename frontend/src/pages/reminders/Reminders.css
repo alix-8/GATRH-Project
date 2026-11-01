@@ -354,6 +354,17 @@
     justify-self: end;
 }
 
+.task-system-pin {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: -16px;
+    color: #6a778c;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+
 .task-status strong {
     color: #111827;
     font-size: 13px;

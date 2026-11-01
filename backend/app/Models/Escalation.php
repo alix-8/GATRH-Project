@@ -38,6 +38,23 @@ class Escalation extends Model
             return $query->whereRaw('1 = 0');
         }
 
+        if ($user->role === 'program_head') {
+            $now = \App\Support\SystemTimezone::now();
+            $start = \App\Support\GatheringCycle::weekStartForDate($now)->toDateString();
+            $end = \App\Support\GatheringCycle::weekEndForDate($now)->toDateString();
+
+            // Heads act on submitted attendance only. The stored level also
+            // includes drafts for secretary indicators, so do not filter by it.
+            return $query->whereIn('student_id', AttendanceRecord::query()
+                ->select('student_id')
+                ->whereBetween('day', [$start, $end])
+                ->where('status', 'no_response')
+                ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
+                ->groupBy('student_id')
+                ->havingRaw('COUNT(DISTINCT gathering_type) = 2'))
+                ->whereHas('student', fn (Builder $students) => $students->active()->accessibleTo($user));
+        }
+
         return $query
             ->whereIn('escalation_level', $levels)
             ->where('no_response_count', '>', 0)

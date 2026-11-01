@@ -49,6 +49,7 @@ class InactiveRosterVisibilityTest extends TestCase
         });
         Schema::create('escalations', function (Blueprint $t) {
             $t->id(); $t->integer('student_id'); $t->string('escalation_level'); $t->integer('no_response_count');
+            $t->timestamps();
         });
     }
 
@@ -93,6 +94,90 @@ class InactiveRosterVisibilityTest extends TestCase
         $programService = app(AdminProgramService::class);
         $this->assertSame(['BSIS'], $programService->getPageData([])['programs']->pluck('code')->all());
         $this->assertSame(['OLD'], $programService->getPageData(['is_active' => false])['programs']->pluck('code')->all());
+    }
+
+    public function test_program_head_escalation_uses_only_submitted_gatherings_and_preserves_secretary_level(): void
+    {
+        $this->program('BSIS');
+        $student = $this->student('Submitted responses');
+        $head = new User(['role' => 'program_head', 'program' => 'BSIS']);
+        $secretary = new User(['role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1]);
+        $escalation = \App\Models\Escalation::create(['student_id' => $student->id,
+            'escalation_level' => 'Level 2', 'no_response_count' => 2]);
+        \App\Models\AttendanceDraft::withoutEvents(fn () => \App\Models\AttendanceDraft::create([
+            'user_id' => 1, 'gathering_type' => 'ws', 'day' => '2026-10-28', 'status' => 'draft',
+            'parsed_data' => [['student_id' => $student->id, 'status' => 'no_response']],
+        ]));
+        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
+        $this->assertSame(1, \App\Models\Escalation::visibleTo($secretary)->count());
+        $record = fn ($type, $day = '2026-10-28') => AttendanceRecord::create([
+            'student_id' => $student->id, 'gathering_type' => $type, 'day' => $day,
+            'status' => 'no_response', 'validation_status' => 'unvalidated',
+        ]);
+        $record('pm');
+        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
+        $record('pm'); // Duplicate rows must not count as another gathering.
+        $record('tg', '2026-10-21'); // Previous week must not contribute.
+        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
+        $ws = $record('ws');
+        $this->assertSame(1, \App\Models\Escalation::visibleTo($head)->count());
+        // A third gathering in drafts can raise the secretary level but must
+        // not hide the head's two submitted no-response gatherings.
+        $escalation->update(['escalation_level' => 'Level 3', 'no_response_count' => 3]);
+        $this->assertSame(1, \App\Models\Escalation::visibleTo($head)->count());
+        $request = \Illuminate\Http\Request::create('/api/escalations');
+        $request->setUserResolver(fn () => $head);
+        $payload = app(\App\Http\Controllers\Escalations\EscalationController::class)->index($request)->getData(true);
+        $this->assertSame('Level 2', $payload['data'][0]['escalation_level']);
+        $this->assertSame(2, $payload['data'][0]['no_response_count']);
+        $this->assertSame('Level 3', $escalation->fresh()->escalation_level);
+        $tg = $record('tg');
+        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
+        $tg->delete();
+        $this->assertSame(1, \App\Models\Escalation::visibleTo($head)->count());
+        $ws->delete();
+        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
+    }
+
+    public function test_deleting_drafts_refreshes_escalation_and_preserves_other_owners_drafts(): void
+    {
+        $this->app->instance(\App\Services\Escalations\WeeklyEscalationService::class, new \App\Services\Escalations\WeeklyEscalationService());
+        $this->program('BSIS');
+        $student = $this->student('Escalated student');
+        $user = new User(['role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1]);
+        $user->id = 1;
+        $drafts = collect(['pm', 'ws', 'tg'])->map(fn ($type) => \App\Models\AttendanceDraft::create([
+            'user_id' => 1, 'gathering_type' => $type, 'day' => '2026-10-28', 'status' => 'draft',
+            'parsed_data' => [['student_id' => $student->id, 'status' => 'no_response']],
+        ]));
+        $other = \App\Models\AttendanceDraft::create(['user_id' => 2, 'gathering_type' => 'pm',
+            'day' => '2026-10-28', 'status' => 'draft', 'parsed_data' => []]);
+        $this->assertSame(3, $student->escalation()->first()->no_response_count);
+
+        $delete = function (array $ids) use ($user) {
+            $request = \Illuminate\Http\Request::create('/api/attendance/drafts', 'DELETE', ['ids' => $ids]);
+            $request->setUserResolver(fn () => $user);
+            return app(\App\Http\Controllers\Attendance\AttendanceDraftController::class)->destroyMany($request)->getData(true);
+        };
+        $this->assertSame(1, $delete([$drafts[2]->id, $other->id])['deleted']);
+        $this->assertSame('Level 2', $student->escalation()->first()->escalation_level);
+        $this->assertNotNull($other->fresh());
+        $delete([$drafts[1]->id]);
+        $this->assertSame('Level 1', $student->escalation()->first()->escalation_level);
+        $delete([$drafts[0]->id]);
+        $this->assertSame('None', $student->escalation()->first()->escalation_level);
+        $this->assertSame(0, $student->escalation()->first()->no_response_count);
+        $this->assertSame(0, \App\Models\Escalation::visibleTo($user)->count());
+
+        $record = AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'pm',
+            'day' => '2026-10-28', 'status' => 'no_response']);
+        $draft = \App\Models\AttendanceDraft::create(['user_id' => 1, 'gathering_type' => 'ws',
+            'day' => '2026-10-28', 'status' => 'draft',
+            'parsed_data' => [['student_id' => $student->id, 'status' => 'no_response']]]);
+        $delete([$draft->id]);
+        $this->assertSame('Level 1', $student->escalation()->first()->escalation_level);
+        $record->delete();
+        $this->assertSame('None', $student->escalation()->first()->escalation_level);
     }
 
     public function test_snapshot_separates_gathering_responses_without_changing_latest_summary(): void
