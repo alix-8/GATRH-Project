@@ -928,6 +928,29 @@ function Reminders() {
         }
     }
 
+    const handleUndoReminder = async (reminder) => {
+        if (!reminder || completingReminderId) return
+
+        setCompletingReminderId(reminder.id)
+        try {
+            const response = await request(`/reminders/${reminder.id}/undo`, { method: 'PATCH' })
+            const updated = response.data
+            setReminders(prev => prev.map(item => String(item.id) === String(reminder.id) ? { ...item, ...updated } : item))
+            setSummary(prev => ({
+                ...prev,
+                completed: Math.max(0, prev.completed - 1),
+                upcoming: prev.upcoming + (updated.status === 'upcoming' ? 1 : 0),
+                needs_action: prev.needs_action + (updated.status === 'needs_action' ? 1 : 0),
+            }))
+            notifyRemindersChanged()
+            setAttendanceRefreshTrigger(current => current + 1)
+        } catch (err) {
+            setError(err.message || 'Unable to undo reminder completion.')
+        } finally {
+            setCompletingReminderId(null)
+        }
+    }
+
     const handleCloseDeleteModal = () => {
         if (deleting) return
         setDeletingReminder(null)
@@ -1044,7 +1067,11 @@ function Reminders() {
                                     </span>
 
                                     <div className="task-copy">
-                                        <h3>{item.title}</h3>
+                                        <h3>
+                                            {item.type === 'custom' && item.sourceReminder?.reminder_type !== 'monthly_export' ? (
+                                                <><span className="my-reminder-title-label">My Reminder : </span><span className="my-reminder-title">{item.sourceReminder.title}</span></>
+                                            ) : item.title}
+                                        </h3>
                                         {item.type === 'custom' && item.countdown && (
                                             <p className={`attendance-deadline-countdown${item.countdownOverdue ? ' is-overdue' : ''}`}>{item.countdown}</p>
                                         )}
@@ -1073,6 +1100,17 @@ function Reminders() {
 
                                 <div className="task-status">
                                     <strong>{item.statusLabel}</strong>
+                                    {item.sourceReminder?.reminder_type === 'custom' && item.status === 'completed' && (
+                                        <button
+                                            type="button"
+                                            className="task-undo-button"
+                                            onClick={() => handleUndoReminder(item.sourceReminder)}
+                                            disabled={Boolean(completingReminderId)}
+                                            aria-label={`Undo completion of ${item.sourceReminder.title}`}
+                                        >
+                                            {completingReminderId === item.sourceReminder.id ? 'Undoing…' : 'Undo'}
+                                        </button>
+                                    )}
                                     {item.statusLabel === 'Upcoming' && ['gathering', 'submission_countdown'].includes(item.sourceReminder?.reminder_type) && (
                                         <span className="task-system-pin">
                                             (Pinned by the system)

@@ -162,7 +162,7 @@ class ProgramHeadAttendanceWorkbookService
         foreach ($weeks as $week) {
             $week['first_column'] = $columnNumber;
 
-            foreach (['ws', 'tg', 'pm'] as $type) {
+            foreach (['pm', 'ws', 'tg'] as $type) {
                 $dateStart = $type === 'pm' ? $week['start'] : $week['start']->addDays(3);
                 $dateEnd = $dateStart->addDays($type === 'pm' ? 2 : 1);
                 $columns[] = [

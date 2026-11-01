@@ -1,0 +1,112 @@
+/* Shared interaction colors for action buttons that lacked hover feedback.
+   Match the existing blue action buttons and pale secondary-button tints. */
+
+/* Navy actions: authentication and system settings. */
+:is(
+    .login-button,
+    .password-primary,
+    .password-code-back,
+    .admin-settings-save
+):not(:disabled):is(:hover, :focus-visible) {
+    background: #0f203b;
+}
+
+/* Blue actions: create, save, review, approve, export, and unsubmit. */
+:is(
+    .profile-password-save,
+    .admin-students-add-button,
+    .admin-programs-add-button,
+    .admin-add-user-submit,
+    .add-reminder-button,
+    .reminder-modal-actions .modal-save,
+    .task-status > button,
+    .monthly-export-modal .reminder-delete-confirm,
+    .ph-drawer-approve,
+    .unsubmit-submit-btn
+):not(:disabled):is(:hover, :focus-visible) {
+    background: #0b83d2;
+}
+
+/* Destructive confirmations retain their red color. */
+:is(
+    .logout-modal-confirm,
+    .reminder-delete-modal:not(.monthly-export-modal) .reminder-delete-confirm
+):not(:disabled):is(:hover, :focus-visible) {
+    background: #c51d22;
+    border-color: #c51d22;
+}
+
+/* White and outlined actions use the system's pale blue tint. */
+:is(
+    .sidebar-signout,
+    .logout-modal-cancel,
+    .admin-students-import-button,
+    .admin-rollover-undo button,
+    .admin-rollover-actions > button:first-child,
+    .reminder-modal-actions .modal-cancel,
+    .reminder-delete-cancel,
+    .ph-drawer-close,
+    .unsubmit-cancel-btn,
+    .import-walkthrough-actions button
+):not(:disabled):is(:hover, :focus-visible) {
+    background: #eef2f8;
+}
+
+/* Dashboard cards keep their existing blue, green, and purple identities. */
+.admin-quick-action.blue:not(:disabled):is(:hover, :focus-visible) {
+    background: #dceeff;
+    border-color: #7bbcf0;
+}
+
+.admin-quick-action.green:not(:disabled):is(:hover, :focus-visible) {
+    background: #def5e6;
+    border-color: #8acda2;
+}
+
+.admin-quick-action.purple:not(:disabled):is(:hover, :focus-visible) {
+    background: #eee5fc;
+    border-color: #b59ae5;
+}
+
+/* Walkthrough links remain text-only. */
+:is(
+    .import-walkthrough-launcher button,
+    .import-walkthrough-meta button
+):not(:disabled):is(:hover, :focus-visible) {
+    color: #0b83d2;
+}
+
+/* Visible keyboard focus without changing button size or layout. */
+:is(
+    .login-button,
+    .password-primary,
+    .password-code-back,
+    .sidebar-signout,
+    .logout-modal-confirm,
+    .logout-modal-cancel,
+    .profile-password-save,
+    .admin-quick-action,
+    .admin-students-add-button,
+    .admin-students-import-button,
+    .admin-programs-add-button,
+    .admin-add-user-submit,
+    .admin-settings-save,
+    .admin-rollover-undo button,
+    .admin-rollover-actions > button,
+    .add-reminder-button,
+    .reminder-modal-actions .modal-save,
+    .reminder-modal-actions .modal-cancel,
+    .task-status > button,
+    .reminder-delete-confirm,
+    .reminder-delete-cancel,
+    .ph-drawer-approve,
+    .ph-drawer-close,
+    .unsubmit-submit-btn,
+    .unsubmit-cancel-btn,
+    .import-walkthrough-launcher button,
+    .import-walkthrough-meta button,
+    .import-walkthrough-actions button
+):not(:disabled):focus-visible {
+    outline: 2px solid #159fe8;
+    outline-offset: 3px;
+}

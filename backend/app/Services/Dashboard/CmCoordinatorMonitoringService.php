@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 
 class CmCoordinatorMonitoringService
 {
-    private const GATHERING_TYPES = ['pm', 'tg', 'ws'];
+    private const GATHERING_TYPES = ['pm', 'ws', 'tg'];
 
     private const GATHERING_LABELS = [
         'pm' => 'Prayer Meeting',

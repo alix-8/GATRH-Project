@@ -316,6 +316,26 @@ class ReminderController extends Controller
         ], 201);
     }
 
+    /** Reopen only the owner's completed personal reminder. */
+    public function undoCompletion(Request $request, int $reminder): JsonResponse
+    {
+        $updated = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $reminder) {
+            $item = $request->user()->reminders()->lockForUpdate()->findOrFail($reminder);
+            abort_unless($item->reminder_type === 'custom', 422, 'Only personal reminders can be reopened here.');
+            abort_unless($item->status === 'completed', 409, 'This reminder is no longer completed.');
+
+            $item->update([
+                'status' => $item->due_date && $item->due_date->lt(now()) ? 'needs_action' : 'upcoming',
+                'completed_at' => null,
+                'expired_at' => null,
+            ]);
+
+            return $item;
+        });
+
+        return response()->json(['status' => 'success', 'data' => $updated]);
+    }
+
     public function markCompleted(Request $request, $id)
     {
         $reminder = $request->user()->reminders()->findOrFail($id);

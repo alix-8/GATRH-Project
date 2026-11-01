@@ -325,6 +325,14 @@
     text-align: left;
 }
 
+.my-reminder-title-label {
+    color: #172b4d;
+}
+
+.my-reminder-title {
+    color: #1da1f2;
+}
+
 .task-copy p {
     margin: 16px 0 0;
     color: #111827;
@@ -397,6 +405,15 @@
     width: 14px;
     height: 14px;
     flex-shrink: 0;
+}
+
+.task-status > .task-undo-button {
+    min-width: 72px;
+}
+
+.task-status > .task-undo-button:disabled {
+    opacity: 0.65;
+    cursor: wait;
 }
 
 .task-actions {

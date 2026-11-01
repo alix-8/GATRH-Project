@@ -134,19 +134,20 @@
 }
 
 .monitoring-table-heading th {
+    position: relative;
     height: 76px;
     padding: 0;
-    border-top: 1px solid #bed0dc;
-    border-right: 1px solid #bed0dc;
-    border-bottom: 1px solid #bed0dc;
-    background: #e6f2fa;
+    border-top: 1px solid transparent;
+    border-right: 1px solid transparent;
+    border-bottom: 1px solid transparent;
+    background: transparent;
     font-size: 11px;
     font-weight: 700;
     text-align: center;
 }
 
 .monitoring-table-heading th:first-child {
-    border-left: 1px solid #bed0dc;
+    border-left: 1px solid transparent;
     border-radius: 8px 0 0 8px;
 }
 
@@ -158,27 +159,70 @@
     padding-top: 9px;
 }
 
+/* Individual header cards keep the existing table dimensions and columns. */
+.monitoring-heading-card {
+    position: absolute;
+    inset: 0 2px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid #bed0dc;
+    border-radius: 7px;
+    background: #e6f2fa;
+}
+
+.monitoring-week-card {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 9px;
+}
+
+/* The outer header pairs touch; week cards retain their spacing. */
+.monitoring-program-heading .monitoring-heading-card,
+.monitoring-progress-heading .monitoring-heading-card {
+    right: -1px;
+}
+
+.monitoring-type-heading .monitoring-heading-card,
+.monitoring-action-heading .monitoring-heading-card {
+    left: 0;
+}
+
+.monitoring-week-card .monitoring-week-gatherings {
+    align-self: stretch;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
 .monitoring-week-title,
 .monitoring-week-heading small {
     display: block;
     font-size: 16px;
 }
 
+.monitoring-week-title {
+    font-weight: 500;
+}
+
 .monitoring-week-heading small {
     margin: 4px 3px 0;
     color: #5d7187;
     font-size: 9px;
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .monitoring-table-heading .monitoring-program-heading {
     text-align: center;
     font-size: 13px;
+    font-weight: 500;
 }
 
 .monitoring-table-heading .monitoring-type-heading {
     text-align: center;
     font-size: 13px;
+    font-weight: 500;
 }
 
 .monitoring-table-heading .monitoring-progress-heading,
@@ -193,6 +237,7 @@
     border-top: 1px solid #bed0dc;
     background: #ffffff;
     font-size: 10px;
+    font-weight: 500;
     line-height: 23px;
 }
 
