@@ -1,0 +1,8 @@
+.user-avatar {
+    box-sizing: border-box;
+    flex-shrink: 0;
+    line-height: 1;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
