@@ -30,7 +30,7 @@ class InactiveRosterVisibilityTest extends TestCase
         });
         Schema::create('students', function (Blueprint $t) {
             $t->id(); $t->string('name'); $t->string('program'); $t->string('year_level');
-            $t->boolean('is_active')->default(true); $t->json('roster_history')->nullable(); $t->timestamps();
+            $t->boolean('is_active')->default(true); $t->string('inactive_reason')->nullable(); $t->json('roster_history')->nullable(); $t->timestamps();
         });
         Schema::create('users', function (Blueprint $t) {
             $t->id(); $t->string('name'); $t->string('email'); $t->string('password');
@@ -64,6 +64,28 @@ class InactiveRosterVisibilityTest extends TestCase
     private function program(string $code, bool $active = true): Program
     {
         return Program::create(['code' => $code, 'name' => $code, 'is_active' => $active]);
+    }
+
+    public function test_admin_student_counts_keep_manually_inactive_students_but_exclude_graduates(): void
+    {
+        $this->program('BSIS');
+        $this->student('Active student');
+        $this->student('Manually inactive student', 'BSIS', false);
+        Student::query()->where('name', 'Manually inactive student')->update(['inactive_reason' => 'manual']);
+        $this->student('Graduate', 'BSIS', false);
+        Student::query()->where('name', 'Graduate')->update(['inactive_reason' => 'graduated']);
+
+        $service = app(AdminStudentService::class);
+        $page = $service->getPageData([]);
+        $inactive = $service->getPageData(['is_active' => false]);
+        $graduates = $service->getPageData(['status' => 'graduated']);
+
+        $this->assertSame(2, $page['summary']['total']);
+        $this->assertSame(1, $page['summary']['active']);
+        $this->assertSame(1, $page['summary']['inactive']);
+        $this->assertSame(1, $page['summary']['graduates']);
+        $this->assertSame('Manually inactive student', $inactive['students']->first()->name);
+        $this->assertSame('Graduate', $graduates['students']->first()->name);
     }
 
     private function student(string $name, string $program = 'BSIS', bool $active = true): Student

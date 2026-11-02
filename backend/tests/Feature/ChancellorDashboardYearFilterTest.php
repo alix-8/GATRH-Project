@@ -33,7 +33,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $table->id();
             $table->string('code')->unique();
             $table->string('name')->nullable();
-            $table->boolean('is_active')->default(true); $table->json('roster_history')->nullable();
+            $table->boolean('is_active')->default(true); $table->string('inactive_reason')->nullable(); $table->json('roster_history')->nullable();
             $table->timestamps();
         });
 

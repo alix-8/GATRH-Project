@@ -38,6 +38,7 @@ class AdminStudentService
     {
         $this->assertActiveProgram($data['program']);
         $this->ensureStudentIsUnique($data);
+        $data['inactive_reason'] = null;
 
         return DB::transaction(function () use ($data) {
             return Student::query()->create($data);
@@ -52,6 +53,10 @@ class AdminStudentService
         }
         $this->ensureStudentIsUnique($data, $student);
 
+        if (array_key_exists('is_active', $data)) {
+            $data['inactive_reason'] = $data['is_active'] ? null : 'manual';
+        }
+
         return DB::transaction(function () use ($student, $data) {
             $student->fill($data)->save();
 
@@ -63,6 +68,7 @@ class AdminStudentService
     {
         DB::transaction(function () use ($student): void {
             $student->is_active = false;
+            $student->inactive_reason = 'manual';
             $student->save();
         });
     }
@@ -260,10 +266,15 @@ class AdminStudentService
                 $graduates = in_array($student->id, $graduatedIds, true);
                 return [
                     'id' => $student->id,
-                    'before' => ['year_level' => $student->year_level, 'is_active' => (bool) $student->is_active],
+                    'before' => [
+                        'year_level' => $student->year_level,
+                        'is_active' => (bool) $student->is_active,
+                        'inactive_reason' => $student->inactive_reason,
+                    ],
                     'after' => [
                         'year_level' => $graduates ? $student->year_level : (string) ((int) $student->year_level + 1),
                         'is_active' => ! $graduates,
+                        'inactive_reason' => $graduates ? 'graduated' : null,
                     ],
                 ];
             })->all();
@@ -308,6 +319,7 @@ class AdminStudentService
             foreach ($students as $student) {
                 if (in_array($student->id, $graduatedIds, true)) {
                     $student->is_active = false;
+                    $student->inactive_reason = 'graduated';
                     $student->save();
                     continue;
                 }
@@ -375,7 +387,11 @@ class AdminStudentService
 
             foreach ($snapshot['students'] as $item) {
                 $student = Student::query()->lockForUpdate()->find($item['id']);
-                if (! $student || (string) $student->year_level !== (string) $item['after']['year_level'] || (bool) $student->is_active !== (bool) $item['after']['is_active']) {
+                $hasInactiveReason = array_key_exists('inactive_reason', $item['after']);
+                if (! $student
+                    || (string) $student->year_level !== (string) $item['after']['year_level']
+                    || (bool) $student->is_active !== (bool) $item['after']['is_active']
+                    || ($hasInactiveReason && ($student->inactive_reason ?? null) !== $item['after']['inactive_reason'])) {
                     throw ValidationException::withMessages(['rollover' => ['A student changed after the rollover. Resolve the later change before trying to undo.']]);
                 }
             }
@@ -391,7 +407,7 @@ class AdminStudentService
             }
             foreach ($snapshot['students'] as $item) {
                 $student = Student::query()->findOrFail($item['id']);
-                $student->fill($item['before']);
+                $student->fill(array_merge(['inactive_reason' => null], $item['before']));
                 $student->rememberRosterStatusChange();
                 $values = $item['before'];
                 if ($student->isDirty('roster_history')) {
@@ -449,13 +465,14 @@ class AdminStudentService
             $secretariesQuery->lockForUpdate();
         }
 
-        $students = $studentsQuery->get(['id', 'name', 'program', 'year_level', 'is_active'])
+        $students = $studentsQuery->get(['id', 'name', 'program', 'year_level', 'is_active', 'inactive_reason'])
             ->map(fn (Student $student) => [
                 $student->id,
                 $student->name,
                 $student->program,
                 (string) $student->year_level,
                 (bool) $student->is_active,
+                $student->inactive_reason,
             ])->all();
         $secretaries = $secretariesQuery->get(['id', 'email', 'program', 'year_level', 'is_active'])
             ->map(fn (User $secretary) => [
@@ -476,9 +493,10 @@ class AdminStudentService
     private function getSummary(): array
     {
         return [
-            'total' => Student::query()->count(),
+            'total' => Student::query()->notGraduated()->count(),
             'active' => Student::query()->active()->count(),
-            'inactive' => Student::query()->where('is_active', false)->count(),
+            'inactive' => Student::query()->where('is_active', false)->notGraduated()->count(),
+            'graduates' => Student::query()->where('inactive_reason', 'graduated')->count(),
             'programs' => Program::query()->active()->count(),
         ];
     }
@@ -489,7 +507,13 @@ class AdminStudentService
             ->withCount('attendanceRecords')
             ->when($filters['program'] ?? null, fn ($query, $program) => $query->where('program', $program))
             ->when($filters['year_level'] ?? null, fn ($query, $yearLevel) => $query->where('year_level', $yearLevel))
-            ->when(($filters['is_active'] ?? true), fn ($query) => $query->active(), fn ($query) => $query->where('is_active', false))
+            ->when(
+                ($filters['status'] ?? null) === 'graduated',
+                fn ($query) => $query->where('inactive_reason', 'graduated'),
+                fn ($query) => ($filters['is_active'] ?? true)
+                    ? $query->active()
+                    : $query->where('is_active', false)->notGraduated()
+            )
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($studentQuery) use ($search) {
                     $studentQuery->where('name', 'like', "%{$search}%");

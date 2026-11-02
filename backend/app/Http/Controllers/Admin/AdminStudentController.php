@@ -25,12 +25,12 @@ class AdminStudentController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'program' => ['nullable', 'string', Rule::exists('programs', 'code')],
             'year_level' => ['nullable', 'string', 'max:20'],
-            'status' => ['nullable', Rule::in(['active', 'inactive'])],
+            'status' => ['nullable', Rule::in(['active', 'inactive', 'graduated'])],
             'per_page' => ['nullable', 'integer', 'between:1,100'],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        if (isset($validated['status'])) {
+        if (in_array($validated['status'] ?? null, ['active', 'inactive'], true)) {
             $validated['is_active'] = $validated['status'] === 'active';
             unset($validated['status']);
         }
@@ -136,6 +136,14 @@ class AdminStudentController extends Controller
                 if ($lastName === '' || $firstName === '') {
                     throw ValidationException::withMessages(['file' => ['Missing first or last name on row '.($index + 2).'. Provide both lname and fname, or a Full Name.']]);
                 }
+                $name = $lastName.', '.$firstName;
+            } elseif ($name !== '') {
+                $nameParts = explode(',', $name, 2);
+                if (count($nameParts) !== 2 || trim($nameParts[0]) === '' || trim($nameParts[1]) === '') {
+                    throw ValidationException::withMessages(['file' => ['Invalid name format on row '.($index + 2).'. Use "Last Name, First Name" or separate Last Name and First Name columns.']]);
+                }
+                $lastName = preg_replace('/\s+/u', ' ', trim($nameParts[0]));
+                $firstName = preg_replace('/\s+/u', ' ', trim($nameParts[1]));
                 $name = $lastName.', '.$firstName;
             }
             $program = strtoupper(trim((string) ($validated['program'] ?? ($programColumn === null ? '' : ($values[$programColumn] ?? '')))));

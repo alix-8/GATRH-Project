@@ -18,7 +18,7 @@ class AdminStudentSplitNameImportTest extends TestCase
         Schema::create('programs', function (Blueprint $t): void { $t->id(); $t->string('code'); $t->boolean('is_active')->default(true); });
         Schema::create('students', function (Blueprint $t): void {
             $t->id(); $t->string('name'); $t->string('program'); $t->string('year_level');
-            $t->boolean('is_active')->default(true); $t->timestamps();
+            $t->boolean('is_active')->default(true); $t->string('inactive_reason')->nullable(); $t->timestamps();
         });
         DB::table('programs')->insert(['code' => 'BSIS']);
         $admin = new User(['role' => 'admin', 'is_active' => true]);
@@ -46,6 +46,18 @@ class AdminStudentSplitNameImportTest extends TestCase
         $this->assertDatabaseHas('students', ['name' => 'Dela Cruz, Juan Miguel', 'program' => 'BSIS', 'year_level' => 2]);
         $this->importCsv("Full Name,program,year_level\n\"Reyes, Ana\",BSIS,1\n")->assertCreated();
         $this->assertDatabaseHas('students', ['name' => 'Reyes, Ana']);
+    }
+
+    public function test_full_name_column_requires_comma_separated_last_and_first_names(): void
+    {
+        $this->importCsv("Full Name,program,year_level\nAna Reyes,BSIS,1\n")
+            ->assertUnprocessable()->assertJsonValidationErrors('file')
+            ->assertJsonPath('errors.file.0', 'Invalid name format on row 2. Use "Last Name, First Name" or separate Last Name and First Name columns.');
+        $this->assertDatabaseCount('students', 0);
+
+        $this->importCsv("Full Name,program,year_level\n\"Reyes,   Ana Maria\",BSIS,1\n")
+            ->assertCreated();
+        $this->assertDatabaseHas('students', ['name' => 'Reyes, Ana Maria']);
     }
 
     public function test_reordered_case_insensitive_aliases_and_selected_scope_are_supported(): void

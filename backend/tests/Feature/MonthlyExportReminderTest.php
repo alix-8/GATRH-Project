@@ -29,7 +29,7 @@ class MonthlyExportReminderTest extends TestCase
         Schema::create('users', function (Blueprint $t): void {
             $t->id(); $t->string('name'); $t->string('email')->unique(); $t->string('password');
             $t->string('role'); $t->string('program')->nullable(); $t->integer('year_level')->nullable();
-            $t->boolean('is_active')->default(true); $t->json('roster_history')->nullable(); $t->timestamps();
+            $t->boolean('is_active')->default(true); $t->string('inactive_reason')->nullable(); $t->json('roster_history')->nullable(); $t->timestamps();
         });
         Schema::create('programs', function (Blueprint $t): void {
             $t->id(); $t->string('code'); $t->string('name'); $t->integer('max_year_level')->default(2);

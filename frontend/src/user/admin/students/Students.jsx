@@ -137,7 +137,7 @@ function Students() {
                             <div className="admin-students-filter-controls">
                                 <div className="admin-students-select program"><ModalSelect aria-label="Filter by program" value={filters.program} onChange={event => updateFilter('program', event.target.value)}><option value="">All Programs</option>{orderedPrograms.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}</ModalSelect></div>
                                 <div className="admin-students-select year"><ModalSelect aria-label="Filter by year level" value={filters.year_level} onChange={event => updateFilter('year_level', event.target.value)}><option value="">All Year Levels</option>{(filters.program === 'ACT' ? ['1', '2'] : yearLevels).map(year => <option key={year} value={year}>{yearLabel(year)}</option>)}</ModalSelect></div>
-                                <div className="admin-students-select status"><ModalSelect aria-label="Filter by status" value={filters.status} onChange={event => updateFilter('status', event.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></ModalSelect></div>
+                                <div className="admin-students-select status"><ModalSelect aria-label="Filter by status" value={filters.status} onChange={event => updateFilter('status', event.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option><option value="graduated">Graduated</option></ModalSelect></div>
                                 <label className="admin-students-search"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.3" stroke="currentColor" strokeWidth="1.6" /><path d="m12.7 12.7 4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg><input type="search" aria-label="Search students by full name" placeholder="Search full name..." value={filters.search} onChange={event => updateFilter('search', event.target.value)} /></label>
                             </div>
                             <div className="admin-students-actions">
@@ -155,7 +155,7 @@ function Students() {
                                                 <td><span className="admin-students-name"><span className={`admin-students-avatar ${avatarTones[student.id % avatarTones.length]}`} aria-hidden="true">{initials(student.name)}</span><strong>{student.name}</strong></span></td>
                                                 <td>{student.program}</td>
                                                 <td>{yearLabel(student.year_level)}</td>
-                                                <td><span className={`admin-students-status ${student.is_active ? 'active' : 'inactive'}`}>{student.is_active ? 'Active' : 'Inactive'}</span></td>
+                                                <td><span className={`admin-students-status ${student.is_active ? 'active' : student.inactive_reason === 'graduated' ? 'graduated' : 'inactive'}`}>{student.is_active ? 'Active' : student.inactive_reason === 'graduated' ? 'Graduated' : 'Inactive'}</span></td>
                                                 <td><button className="admin-students-edit-button" type="button" aria-label={`Edit ${student.name}`} onClick={() => setEditingStudent(student)}><img src={EditIcon} alt="" /></button></td>
                                             </tr>)}
                                 </tbody>

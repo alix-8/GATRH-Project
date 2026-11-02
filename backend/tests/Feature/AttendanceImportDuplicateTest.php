@@ -42,7 +42,7 @@ class AttendanceImportDuplicateTest extends TestCase
             $table->string('name');
             $table->string('program');
             $table->integer('year_level');
-            $table->boolean('is_active')->default(true); $table->json('roster_history')->nullable();
+            $table->boolean('is_active')->default(true); $table->string('inactive_reason')->nullable(); $table->json('roster_history')->nullable();
             $table->timestamps();
         });
         Schema::create('users', function (Blueprint $table): void {
