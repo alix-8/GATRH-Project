@@ -43,8 +43,14 @@ function AddUserModal({ onClose, onCreated }) {
         request('/admin/users?per_page=1')
             .then(data => {
                 if (active) {
-                    const availablePrograms = new Map((data.programs ?? []).map(program => [program.code, program]))
-                    setPrograms(programOrder.map(code => availablePrograms.get(code)).filter(Boolean))
+                    const availablePrograms = [...(data.programs ?? [])].sort((first, second) => {
+                        const firstIndex = programOrder.indexOf(first.code)
+                        const secondIndex = programOrder.indexOf(second.code)
+
+                        return (firstIndex === -1 ? 99 : firstIndex) - (secondIndex === -1 ? 99 : secondIndex)
+                            || first.code.localeCompare(second.code)
+                    })
+                    setPrograms(availablePrograms)
                     setProgramsLoading(false)
                 }
             })

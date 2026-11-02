@@ -135,7 +135,7 @@ function ChancellorDashboard() {
                 })
                 setOverallProgress(data.overall_progress || {
                     percentage: 0,
-                    tally: '0 of 0 expected responses recorded',
+                    tally: '0 of 0 expected responses recorded',    
                 })
                 setProgramReporting(data.program_reporting || [])
                 setProgramYearReporting(data.program_year_reporting || [])
