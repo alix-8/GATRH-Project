@@ -1,10 +1,16 @@
 .attendance {
     display: flex;
+    height: 100vh;
+    overflow: hidden;
     background-color: #ffffff;
 }
 
 .attendance-main {
     flex: 1;
+    min-width: 0;
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     background-color: #ffffff;
 }
 
@@ -13,3 +19,46 @@
 }
 
 /* .attendance-header handled by reusable Header component */
+
+@media (min-width: 1800px) and (min-height: 900px) {
+    .attendance > .sidebar {
+        width: clamp(240px, 12vw, 360px);
+        flex: 0 0 clamp(240px, 12vw, 360px);
+        padding: 28px clamp(16px, 1vw, 28px);
+    }
+
+    .attendance .sidebar-lvcc-logo {
+        top: 24px;
+        left: 50%;
+        width: clamp(112px, 6vw, 160px);
+        height: clamp(112px, 6vw, 160px);
+    }
+
+    .attendance .sidebar-nav {
+        margin-top: clamp(132px, 9vw, 200px);
+        gap: clamp(6px, .4vw, 12px);
+    }
+
+    .attendance .sidebar-link,
+    .attendance .sidebar-link.active {
+        padding: 14px 10px;
+        font-size: clamp(16px, .95vw, 22px);
+    }
+
+    .attendance .sidebar-signout {
+        font-size: clamp(15px, .9vw, 20px);
+    }
+
+    .attendance .app-header.page-header {
+        padding: 30px max(32px, calc((100% - 1800px) / 2));
+    }
+
+    .attendance-header .header-title h3 {
+        font-size: clamp(24px, 1.5vw, 36px);
+    }
+
+    .attendance-header .header-title p,
+    .attendance .app-header .header-meta .page-date {
+        font-size: clamp(17px, 1vw, 23px);
+    }
+}
