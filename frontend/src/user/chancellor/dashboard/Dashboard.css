@@ -621,11 +621,13 @@
     background: #f5c52e;
 }
 
+.chancellor-report-status-label--no_response,
 .chancellor-report-status-label--no_report {
     background: #fff0f0;
     color: #d02e2e;
 }
 
+.chancellor-report-status-label--no_response>span,
 .chancellor-report-status-label--no_report>span {
     background: #e83c3c;
 }

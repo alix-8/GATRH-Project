@@ -12,6 +12,7 @@ import TotalProgramsIcon from '../../../assets/icons/total-programs-icon.svg'
 import CompletedReportsIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteReportsIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
+import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
 import MonitoringCourseDetailModal from '../../coordinator/monitoring/MonitoringCourseDetailModal'
 import './Dashboard.css'
 
@@ -33,7 +34,18 @@ const PROGRAM_DISPLAY_NAMES = {
 const REPORT_STATUS_LABELS = {
     completed: 'Completed',
     incomplete: 'Incomplete',
+    no_response: 'No Response',
     no_report: 'No Report',
+}
+const REPORT_STATUS_ICONS = {
+    completed: CompletedReportsIcon,
+    incomplete: IncompleteReportsIcon,
+    no_response: RecordedNoResponseIcon,
+    no_report: NoReportsIcon,
+}
+
+function getReportDisplayStatus(status, hasAttendance) {
+    return status === 'no_report' && hasAttendance ? 'no_response' : status
 }
 
 const WEEKLY_CHART = {
@@ -321,7 +333,9 @@ function ChancellorDashboard() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {programYearReporting.map((report) => (
+                                        {programYearReporting.map((report) => {
+                                            const monthlyStatus = getReportDisplayStatus(report.status, report.has_attendance)
+                                            return (
                                             <tr key={report.code}>
                                                 <th scope="row">
                                                     <span>
@@ -330,7 +344,10 @@ function ChancellorDashboard() {
                                                     </span>
                                                 </th>
                                                 {reportingWeeks.map((week, index) => {
-                                                    const status = report.weekly_statuses?.[index] || 'no_report'
+                                                    const status = getReportDisplayStatus(
+                                                        report.weekly_statuses?.[index] || 'no_report',
+                                                        report.weekly_has_attendance?.[index]
+                                                    )
                                                     return (
                                                     <td key={`${report.code}-${week.week_start}`} title={`${week.range_label}: ${REPORT_STATUS_LABELS[status] || 'No Report'}`}>
                                                         <span
@@ -339,11 +356,7 @@ function ChancellorDashboard() {
                                                             aria-label={REPORT_STATUS_LABELS[status] || 'No Report'}
                                                         >
                                                             <img
-                                                                src={status === 'completed'
-                                                                    ? CompletedReportsIcon
-                                                                    : status === 'incomplete'
-                                                                        ? IncompleteReportsIcon
-                                                                        : NoReportsIcon}
+                                                                src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
                                                                 alt=""
                                                             />
                                                         </span>
@@ -351,9 +364,9 @@ function ChancellorDashboard() {
                                                     )
                                                 })}
                                                 <td>
-                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${report.status}`}>
+                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${monthlyStatus}`}>
                                                         <span />
-                                                        {REPORT_STATUS_LABELS[report.status] || 'No Report'}
+                                                        {REPORT_STATUS_LABELS[monthlyStatus] || 'No Report'}
                                                     </span>
                                                 </td>
                                                 <td className="chancellor-program-reporting-action">
@@ -373,7 +386,8 @@ function ChancellorDashboard() {
                                                     </button>
                                                 </td>
                                             </tr>
-                                        ))}
+                                            )
+                                        })}
                                         {programYearReporting.length === 0 && (
                                             <tr>
                                                 <td className="chancellor-program-reporting-empty" colSpan={reportingWeeks.length + 3}>
@@ -390,11 +404,7 @@ function ChancellorDashboard() {
                                         <span key={status}>
                                             <span className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`} aria-hidden="true">
                                                 <img
-                                                    src={status === 'completed'
-                                                        ? CompletedReportsIcon
-                                                        : status === 'incomplete'
-                                                            ? IncompleteReportsIcon
-                                                            : NoReportsIcon}
+                                                    src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
                                                     alt=""
                                                 />
                                             </span>
