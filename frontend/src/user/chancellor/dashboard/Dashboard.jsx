@@ -3,6 +3,7 @@ import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
 import backendPercentage from '../../../utils/backendPercentage'
 import DropdownIcon from '../../../assets/icons/drop-down-icon.svg'
 import CompletedProgramsIcon from '../../../assets/icons/completed-programs-icon.svg'
@@ -14,6 +15,7 @@ import IncompleteReportsIcon from '../../../assets/icons/incomplete-reports-icon
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
 import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
 import MonitoringCourseDetailModal from '../../coordinator/monitoring/MonitoringCourseDetailModal'
+import DashboardSkeleton from './DashboardSkeleton'
 import './Dashboard.css'
 
 const YEAR_LEVEL_OPTIONS = ['1', '2', '3', '4']
@@ -74,6 +76,11 @@ function getWeeklyChartScale(weeks) {
 }
 
 function ChancellorDashboard() {
+    const showLoginSkeleton = useLoginSkeleton()
+    const loginSkeletonStartedAt = useRef(null)
+    const [showLoginOverlay, setShowLoginOverlay] = useState(showLoginSkeleton)
+    const [isLoginOverlayFading, setIsLoginOverlayFading] = useState(false)
+    const [initialLoading, setInitialLoading] = useState(true)
     const [yearLevel, setYearLevel] = useState('1')
     const [requestedYearLevel, setRequestedYearLevel] = useState('1')
     const [selectedMonth, setSelectedMonth] = useState(() => getMonthValue())
@@ -105,6 +112,10 @@ function ChancellorDashboard() {
         })
         return params.toString()
     }, [requestedYearLevel, selectedMonth])
+
+    useEffect(() => {
+        loginSkeletonStartedAt.current = Date.now()
+    }, [])
 
     function navigateMonth(offset) {
         setSelectedMonth((current) => {
@@ -145,6 +156,8 @@ function ChancellorDashboard() {
                 if (error.name !== 'AbortError') {
                     setLoadError(error.message || 'Could not load dashboard filters.')
                 }
+            } finally {
+                if (!controller.signal.aborted) setInitialLoading(false)
             }
         }
 
@@ -153,6 +166,23 @@ function ChancellorDashboard() {
             controller.abort()
         }
     }, [query, pollTick])
+
+    useEffect(() => {
+        if (!showLoginOverlay || initialLoading) return undefined
+
+        const minimumVisibleMs = 1100
+        const elapsedMs = loginSkeletonStartedAt.current === null ? 0 : Date.now() - loginSkeletonStartedAt.current
+        const remainingMs = Math.max(0, minimumVisibleMs - elapsedMs)
+        const timer = window.setTimeout(() => setIsLoginOverlayFading(true), remainingMs)
+        return () => window.clearTimeout(timer)
+    }, [showLoginOverlay, initialLoading])
+
+    useEffect(() => {
+        if (!isLoginOverlayFading) return undefined
+
+        const timer = window.setTimeout(() => setShowLoginOverlay(false), 350)
+        return () => window.clearTimeout(timer)
+    }, [isLoginOverlayFading])
 
     useEffect(() => {
         const closeOutside = (event) => {
@@ -503,6 +533,11 @@ function ChancellorDashboard() {
                     month={{ year: detailYear, month: detailMonth }}
                     onClose={() => setActiveCourse(null)}
                 />
+            )}
+            {showLoginOverlay && (
+                <div className={`chancellor-login-skeleton-overlay${isLoginOverlayFading ? ' is-fading' : ''}`}>
+                    <DashboardSkeleton />
+                </div>
             )}
         </div>
     )

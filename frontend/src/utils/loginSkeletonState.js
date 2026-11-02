@@ -2,7 +2,7 @@ const LOGIN_SKELETON_KEY = 'gatrh.login-skeleton'
 
 export function prepareLoginSkeleton(role) {
     try {
-        if (['secretary', 'program_secretary', 'program_head', 'cm_coordinator'].includes(role)) {
+        if (['secretary', 'program_secretary', 'program_head', 'cm_coordinator', 'chancellor'].includes(role)) {
             sessionStorage.setItem(LOGIN_SKELETON_KEY, 'pending')
         } else {
             clearLoginSkeleton()
