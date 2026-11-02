@@ -444,11 +444,25 @@
     box-shadow: -10px 0 30px rgba(0, 0, 0, .16);
     box-sizing: border-box;
     color: #172b4d;
-    overflow-y: auto;
-    padding: 24px 20px 30px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     position: relative;
-    scrollbar-width: none;
     width: 33%;
+}
+
+.student-overview-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 24px 20px 20px;
+    scrollbar-width: none;
+}
+
+.student-overview-footer {
+    flex: none;
+    padding: 16px 20px 24px;
+    background: #fff;
 }
 
 .student-overview-drawer h2 {
@@ -456,6 +470,33 @@
     text-align: left;
     font-size: 16px;
     margin: 0;
+}
+
+.student-overview-close-icon {
+    position: absolute;
+    z-index: 1;
+    top: 16px;
+    right: 16px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #627187;
+    font: inherit;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.student-overview-close-icon:hover {
+    color: #172b4d;
+}
+
+.student-overview-close-icon:focus-visible,
+.student-overview-close-button:focus-visible {
+    outline: 2px solid #159fe8;
+    outline-offset: 2px;
 }
 
 .overview-month {
@@ -753,6 +794,23 @@
     border: 1px solid #d7e0ec;
     border-radius: 7px;
     overflow: hidden;
+}
+
+.student-overview-close-button {
+    display: block;
+    width: 100%;
+    min-height: 36px;
+    border: 1px solid #159fe8;
+    border-radius: 7px;
+    background: #fff;
+    color: #159fe8;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.student-overview-close-button:hover {
+    background: #eff8ff;
 }
 
 .overview-attendance-title {
