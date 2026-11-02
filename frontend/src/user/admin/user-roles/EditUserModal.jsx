@@ -7,6 +7,10 @@ import './EditUserModal.css'
 
 function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
     const dialogRef = useRef(null)
+    const isProgramHead = user.role === 'program_head'
+    const assignedProgram = user.programs?.length
+        ? user.programs.map(program => program.code).join(', ')
+        : user.program || ''
     const initialProgram = user.program || user.programs?.[0]?.code || ''
     const initialYearLevel = String(user.year_level || '').match(/^[1-4]/)?.[0] || String(user.year_level || '')
     const [form, setForm] = useState({
@@ -18,6 +22,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
         is_active: user.is_active,
     })
     const [saving, setSaving] = useState(false)
+    const [confirmRoleChange, setConfirmRoleChange] = useState(false)
     const [error, setError] = useState('')
     const [fieldErrors, setFieldErrors] = useState({})
 
@@ -34,19 +39,21 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
 
     const needsProgram = ['secretary', 'program_secretary', 'program_head'].includes(form.role)
     const needsYearLevel = form.role === 'secretary'
+    const roleLabel = role => roles.find(option => option.value === role)?.label || role
 
     function updateField(field, value) {
         setForm(current => ({
             ...current,
             [field]: value,
-            ...(field === 'role' && value !== current.role ? { program: '', year_level: '' } : {}),
+            ...(field === 'role' && value !== current.role
+                ? { ...(!isProgramHead ? { program: '' } : {}), year_level: '' }
+                : {}),
         }))
         setError('')
         setFieldErrors(current => ({ ...current, [field]: undefined }))
     }
 
-    async function handleSubmit(event) {
-        event.preventDefault()
+    async function saveChanges() {
         setSaving(true)
         setError('')
         setFieldErrors({})
@@ -58,7 +65,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
             is_active: form.is_active,
         }
 
-        if (form.role !== user.role || form.program !== initialProgram) {
+        if (!isProgramHead && (form.role !== user.role || form.program !== initialProgram)) {
             payload.program = needsProgram ? form.program : null
         }
         if (form.role !== user.role || form.year_level !== initialYearLevel) {
@@ -76,6 +83,15 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
             setFieldErrors(submitError.details?.errors ?? {})
             setSaving(false)
         }
+    }
+
+    function handleSubmit(event) {
+        event.preventDefault()
+        if (isProgramHead && form.role !== user.role) {
+            setConfirmRoleChange(true)
+            return
+        }
+        saveChanges()
     }
 
     return <dialog
@@ -114,7 +130,10 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
                 </ModalSelect>
                 {fieldErrors.role && <small className="admin-add-user-field-error">{fieldErrors.role[0]}</small>}
             </div>
-            {needsProgram && <div className="admin-add-user-field">
+            {isProgramHead ? <div className="admin-add-user-field">
+                <label htmlFor="user-roles-edit-program">Program</label>
+                <input id="user-roles-edit-program" value={assignedProgram || 'No program assigned'} disabled />
+            </div> : needsProgram && <div className="admin-add-user-field">
                 <label htmlFor="user-roles-edit-program">Program<span>*</span></label>
                 <ModalSelect id="user-roles-edit-program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
                     <option value="">Select Program</option>
@@ -141,6 +160,22 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
             {error && <p className="admin-add-user-submit-error" role="alert">{error}</p>}
             <button className="admin-add-user-submit" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
         </form>
+        {isProgramHead && confirmRoleChange && (
+            <div
+                className="user-role-change-confirm-backdrop"
+                onMouseDown={event => event.target === event.currentTarget && !saving && setConfirmRoleChange(false)}
+            >
+                <section className="user-role-change-confirm" role="alertdialog" aria-modal="true" aria-labelledby="user-role-change-confirm-title">
+                    <h3 id="user-role-change-confirm-title">Confirm role change</h3>
+                    <p>Change {user.name}'s role from <strong>{roleLabel(user.role)}</strong> to <strong>{roleLabel(form.role)}</strong>?</p>
+                    <p>Program will remain <strong>{assignedProgram || 'unassigned'}</strong>.</p>
+                    <div className="user-role-change-confirm-actions">
+                        <button type="button" className="admin-add-user-cancel" onClick={() => setConfirmRoleChange(false)} disabled={saving}>Cancel</button>
+                        <button type="button" className="admin-add-user-submit" onClick={saveChanges} disabled={saving}>{saving ? 'Saving…' : 'Confirm Change'}</button>
+                    </div>
+                </section>
+            </div>
+        )}
     </dialog>
 }
 
