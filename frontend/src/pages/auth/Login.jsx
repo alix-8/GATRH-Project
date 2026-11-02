@@ -195,9 +195,7 @@ function Login({ initialEmail = '' }) {
                         </h2>
 
                         <p className="welcome-message">
-                            Sign in to monitor and manage student
-                            <br />
-                            attendance.
+                            Sign in to monitor and manage student attendance.
                         </p>
                     </div>
 
