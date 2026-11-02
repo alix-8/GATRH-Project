@@ -30,6 +30,15 @@ function initials(name) {
     return name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()
 }
 
+function programLabels(user, activeProgramCodes) {
+    const assignedPrograms = (user.programs ?? [])
+        .map(program => program.code)
+        .filter(code => activeProgramCodes.has(code))
+
+    if (assignedPrograms.length > 0) return assignedPrograms.join(', ')
+    return activeProgramCodes.has(user.program) ? user.program : '---'
+}
+
 function roleLabel(role) {
     return {
         chancellor: 'Chancellor',
@@ -96,6 +105,7 @@ function UserRoles() {
         if (bIndex === -1) return -1
         return aIndex - bIndex
     })
+    const activeProgramCodes = new Set(orderedPrograms.map(program => program.code))
 
     function updateFilter(field, value) {
         setFilters(current => ({ ...current, [field]: value }))
@@ -185,6 +195,7 @@ function UserRoles() {
                                                 <td className="user-roles-email">{user.email}</td>
                                                 <td><span className={`user-roles-role ${user.role}`}>{roleLabel(user.role)}</span></td>
                                                 <td className="user-roles-program">{user.programs?.length ? user.programs.map(program => program.code).join(', ') : (user.program || '---')}</td>
+                                                                                                <td className="user-roles-program">{programLabels(user, activeProgramCodes)}</td>
                                                 <td><span className={`user-roles-status ${user.is_active ? 'active' : 'inactive'}`}>{user.is_active ? 'Active' : 'Inactive'}</span></td>
                                                 <td><button className="user-roles-edit-button" type="button" aria-label={`Edit ${user.name}`} onClick={() => setEditingUser(user)}><img src={EditIcon} alt="" /></button></td>
                                             </tr>)}

@@ -151,7 +151,9 @@ class AdminUserService
     private function getUsers(array $filters): LengthAwarePaginator
     {
         return User::query()
-            ->with('programs:id,code,name')
+            ->with(['programs' => fn ($programs) => $programs
+                ->active()
+                ->select(['programs.id', 'programs.code', 'programs.name'])])
             ->when($filters['role'] ?? null, fn ($query, $role) => $query->where('role', $role))
             ->when($filters['program'] ?? null, fn ($query, $program) => $query->where(function ($programQuery) use ($program) {
                 $programQuery->where('program', $program)
