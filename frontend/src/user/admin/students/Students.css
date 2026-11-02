@@ -438,6 +438,11 @@
     color: #bd9027;
 }
 
+.admin-students-status.graduated {
+    background: #f0e9ff;
+    color: #7350af;
+}
+
 .admin-students-edit-button {
     display: inline-grid;
     width: 28px;

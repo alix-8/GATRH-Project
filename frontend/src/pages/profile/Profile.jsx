@@ -254,12 +254,6 @@ function Profile() {
                                                 </button>
                                             )}
                                         </span>
-                                        <PasswordRequirements
-                                            password={passwordForm.password}
-                                            currentPassword={passwordForm.current_password}
-                                            confirmation={passwordForm.password_confirmation}
-                                            visible={showPasswordRequirements}
-                                        />
                                     </label>
 
                                     <label className="password-field-label">
@@ -284,6 +278,12 @@ function Profile() {
                                             )}
                                         </span>
                                     </label>
+                                    <PasswordRequirements
+                                        password={passwordForm.password}
+                                        currentPassword={passwordForm.current_password}
+                                        confirmation={passwordForm.password_confirmation}
+                                        visible={showPasswordRequirements}
+                                    />
                                 </div>
 
                                 {passwordMessage && (

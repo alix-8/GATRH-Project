@@ -28,7 +28,7 @@ class DashboardOptimizationTest extends TestCase
         });
         Schema::create('students', function (Blueprint $t) {
             $t->id(); $t->string('name'); $t->string('program'); $t->string('year_level');
-            $t->boolean('is_active')->default(true); $t->json('roster_history')->nullable(); $t->timestamps();
+            $t->boolean('is_active')->default(true); $t->string('inactive_reason')->nullable(); $t->json('roster_history')->nullable(); $t->timestamps();
         });
         Schema::create('users', function (Blueprint $t) {
             $t->id(); $t->string('name'); $t->string('email'); $t->string('password'); $t->string('role');

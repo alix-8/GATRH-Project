@@ -19,6 +19,7 @@ class Student extends Model
         'program',
         'year_level',
         'is_active',
+        'inactive_reason',
     ];
 
     protected $casts = [
@@ -29,6 +30,14 @@ class Student extends Model
     public function scopeActive($query)
     {
         return $query->where('students.is_active', true)->inActiveProgram();
+    }
+
+    public function scopeNotGraduated($query)
+    {
+        return $query->where(function ($studentQuery) {
+            $studentQuery->whereNull('students.inactive_reason')
+                ->orWhere('students.inactive_reason', '!=', 'graduated');
+        });
     }
 
     public function scopeInActiveProgram($query)

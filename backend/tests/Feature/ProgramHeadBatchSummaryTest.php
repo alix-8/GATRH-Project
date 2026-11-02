@@ -17,7 +17,7 @@ class ProgramHeadBatchSummaryTest extends TestCase
         Schema::create('programs', function (Blueprint $table) {
             $table->id();
             $table->string('code');
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true); $table->string('inactive_reason')->nullable();
         });
         Schema::create('students', function (Blueprint $table) {
             $table->id();
