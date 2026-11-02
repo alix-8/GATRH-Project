@@ -1,0 +1,445 @@
+.chancellor-login-skeleton-overlay {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    overflow-y: auto;
+    background: #fff;
+    opacity: 1;
+    transition: opacity 350ms ease-out;
+}
+
+.chancellor-login-skeleton-overlay.is-fading {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.chancellor-skeleton,
+.chancellor-skeleton-layout {
+    min-height: 100vh;
+    background: #fff;
+}
+
+.chancellor-skeleton-layout {
+    display: flex;
+}
+
+.chancellor-skeleton-block {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #e9ecf1;
+}
+
+.chancellor-skeleton-block::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent);
+    content: '';
+    transform: translateX(-100%);
+    animation: chancellor-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+.chancellor-skeleton-sidebar {
+    box-sizing: border-box;
+    display: flex;
+    width: 214px;
+    flex: 0 0 214px;
+    flex-direction: column;
+    gap: 28px;
+    padding: 18px 16px;
+    border-right: 1px solid #eef0f2;
+    background: #fafbfc;
+}
+
+.chancellor-skeleton-logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+}
+
+.chancellor-skeleton-nav-item,
+.chancellor-skeleton-sidebar-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chancellor-skeleton-nav-icon,
+.chancellor-skeleton-profile {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    border-radius: 50%;
+}
+
+.chancellor-skeleton-nav-label {
+    width: 98px;
+    height: 10px;
+}
+
+.chancellor-skeleton-sidebar-footer {
+    margin-top: auto;
+}
+
+.chancellor-skeleton-sign-out {
+    width: 126px;
+    height: 42px;
+    border-radius: 14px;
+}
+
+.chancellor-skeleton-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.chancellor-skeleton-header {
+    box-sizing: border-box;
+    display: flex;
+    min-height: 92px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #eef0f2;
+}
+
+.chancellor-skeleton-heading,
+.chancellor-skeleton-date {
+    display: grid;
+    gap: 8px;
+}
+
+.chancellor-skeleton-heading {
+    width: min(50%, 460px);
+}
+
+.chancellor-skeleton-title {
+    width: 140px;
+    height: 20px;
+}
+
+.chancellor-skeleton-subtitle {
+    width: 100%;
+    height: 12px;
+}
+
+.chancellor-skeleton-date {
+    width: 145px;
+}
+
+.chancellor-skeleton-date>span {
+    width: 100%;
+    height: 12px;
+}
+
+.chancellor-skeleton-date>span:last-child {
+    width: 62%;
+}
+
+.chancellor-skeleton-content {
+    box-sizing: border-box;
+    padding: 26px 28px 18px;
+}
+
+.chancellor-skeleton-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 26px;
+}
+
+.chancellor-skeleton-summary-card,
+.chancellor-skeleton-panel {
+    box-sizing: border-box;
+    border: 1px solid #dce3ed;
+    border-radius: 9px;
+    background: #fff;
+}
+
+.chancellor-skeleton-summary-card {
+    display: flex;
+    min-height: 116px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+}
+
+.chancellor-skeleton-summary-icon {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    border-radius: 50%;
+}
+
+.chancellor-skeleton-summary-copy {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 7px;
+}
+
+.chancellor-skeleton-summary-copy>span {
+    width: 72%;
+    height: 10px;
+}
+
+.chancellor-skeleton-summary-copy>span:nth-child(2) {
+    width: 36%;
+    height: 26px;
+}
+
+.chancellor-skeleton-summary-copy>span:last-child {
+    width: 85%;
+    height: 8px;
+}
+
+.chancellor-skeleton-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.72fr) minmax(300px, 1fr);
+    gap: 12px;
+}
+
+.chancellor-skeleton-column {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.chancellor-skeleton-panel {
+    padding: 14px 16px;
+}
+
+.chancellor-skeleton-panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.chancellor-skeleton-panel-heading>div {
+    display: grid;
+    width: 60%;
+    gap: 8px;
+}
+
+.chancellor-skeleton-panel-title {
+    width: 55%;
+    height: 16px;
+}
+
+.chancellor-skeleton-panel-subtitle {
+    width: 90%;
+    height: 10px;
+}
+
+.chancellor-skeleton-panel-action {
+    width: 112px;
+    height: 32px;
+}
+
+.chancellor-skeleton-overall {
+    min-height: 126px;
+    background: #f7fafc;
+}
+
+.chancellor-skeleton-overall-body {
+    display: flex;
+    align-items: flex-end;
+    gap: 22px;
+    margin-top: 16px;
+}
+
+.chancellor-skeleton-overall-body>div {
+    display: grid;
+    width: 44%;
+    gap: 8px;
+}
+
+.chancellor-skeleton-overall-body>div>span:first-child {
+    width: 64px;
+    height: 26px;
+}
+
+.chancellor-skeleton-overall-body>div>span:last-child {
+    width: 80%;
+    height: 9px;
+}
+
+.chancellor-skeleton-overall-track {
+    height: 10px;
+    flex: 1;
+    margin-bottom: 6px;
+    border-radius: 50px;
+}
+
+.chancellor-skeleton-attention {
+    min-height: 464px;
+    flex: 1;
+}
+
+.chancellor-skeleton-month {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 15px 0 10px;
+}
+
+.chancellor-skeleton-month>span:first-child,
+.chancellor-skeleton-month>span:last-child {
+    width: 30px;
+    height: 30px;
+}
+
+.chancellor-skeleton-month>span:nth-child(2) {
+    width: 130px;
+    height: 14px;
+}
+
+.chancellor-skeleton-table {
+    overflow: hidden;
+    border: 1px solid #dce3ed;
+    border-radius: 7px;
+}
+
+.chancellor-skeleton-table-head,
+.chancellor-skeleton-table-row {
+    display: grid;
+    grid-template-columns: minmax(115px, 2fr) repeat(4, minmax(35px, .65fr)) minmax(60px, 1fr) minmax(50px, .75fr);
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+}
+
+.chancellor-skeleton-table-head {
+    height: 36px;
+    background: #edf1f6;
+}
+
+.chancellor-skeleton-table-row {
+    height: 42px;
+    border-top: 1px solid #edf1f6;
+}
+
+.chancellor-skeleton-table-head>span,
+.chancellor-skeleton-table-row>span {
+    width: 78%;
+    height: 10px;
+}
+
+.chancellor-skeleton-table-head>span:not(:first-child),
+.chancellor-skeleton-table-row>span:not(:first-child) {
+    justify-self: center;
+}
+
+.chancellor-skeleton-table-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+.chancellor-skeleton-table-footer>span:first-child {
+    width: 210px;
+    height: 10px;
+}
+
+.chancellor-skeleton-table-footer>span:last-child {
+    width: 80px;
+    height: 10px;
+}
+
+.chancellor-skeleton-weekly {
+    min-height: 233px;
+}
+
+.chancellor-skeleton-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    height: 145px;
+    margin-top: 10px;
+}
+
+.chancellor-skeleton-chart-bars {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 100%;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e4eaf2;
+}
+
+.chancellor-skeleton-chart-bars>span {
+    width: 13%;
+    height: 65%;
+    border-radius: 2px 2px 0 0;
+}
+
+.chancellor-skeleton-chart-legend {
+    display: grid;
+    width: 66px;
+    gap: 12px;
+    padding-bottom: 20px;
+}
+
+.chancellor-skeleton-chart-legend>span {
+    width: 100%;
+    height: 9px;
+}
+
+.chancellor-skeleton-response {
+    min-height: 352px;
+    flex: 1;
+}
+
+.chancellor-skeleton-response-list {
+    display: grid;
+    gap: 14px;
+    margin-top: 17px;
+}
+
+.chancellor-skeleton-response-row>div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 7px;
+}
+
+.chancellor-skeleton-response-row>div>span:first-child {
+    width: 48%;
+    height: 10px;
+}
+
+.chancellor-skeleton-response-row>div>span:last-child {
+    width: 24px;
+    height: 10px;
+}
+
+.chancellor-skeleton-response-track {
+    width: 100%;
+    height: 12px;
+    border-radius: 50px;
+}
+
+@keyframes chancellor-skeleton-shimmer {
+    to { transform: translateX(100%); }
+}
+
+@media (max-width: 1000px) {
+    .chancellor-skeleton-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .chancellor-skeleton-sidebar { display: none; }
+    .chancellor-skeleton-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chancellor-login-skeleton-overlay { transition: none; }
+    .chancellor-skeleton-block::after { animation: none; }
+}

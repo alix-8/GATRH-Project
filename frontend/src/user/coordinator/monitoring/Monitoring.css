@@ -752,13 +752,14 @@
 }
 
 .monitoring-detail-week-tabs {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    display: flex;
     gap: 4px;
     margin-bottom: 18px;
 }
 
 .monitoring-detail-week-tabs button {
+    flex: 1;
+    min-width: 0;
     padding: 6px 2px;
     border: 1px solid #cfe8fb;
     border-radius: 8px;
@@ -940,29 +941,6 @@
 
 .monitoring-incomplete-details article button:hover {
     background: #087fc9;
-}
-
-.monitoring-no-response-details {
-    background: #fff0f0;
-    color: #c53030;
-}
-
-.monitoring-no-response-details .monitoring-incomplete-icon {
-    background: #ef4444;
-}
-
-.monitoring-no-response-details article button {
-    background: #e52328;
-    color: #fff;
-}
-
-.monitoring-no-response-details article button:hover {
-    background: #c51d22;
-}
-
-.monitoring-no-response-details article button:focus-visible {
-    outline: 2px solid #e52328;
-    outline-offset: 2px;
 }
 
 .monitoring-incomplete-details article ul {

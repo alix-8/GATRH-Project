@@ -3,6 +3,7 @@ import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
 import backendPercentage from '../../../utils/backendPercentage'
 import DropdownIcon from '../../../assets/icons/drop-down-icon.svg'
 import CompletedProgramsIcon from '../../../assets/icons/completed-programs-icon.svg'
@@ -12,7 +13,9 @@ import TotalProgramsIcon from '../../../assets/icons/total-programs-icon.svg'
 import CompletedReportsIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteReportsIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
+import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
 import MonitoringCourseDetailModal from '../../coordinator/monitoring/MonitoringCourseDetailModal'
+import DashboardSkeleton from './DashboardSkeleton'
 import './Dashboard.css'
 
 const YEAR_LEVEL_OPTIONS = ['1', '2', '3', '4']
@@ -33,7 +36,18 @@ const PROGRAM_DISPLAY_NAMES = {
 const REPORT_STATUS_LABELS = {
     completed: 'Completed',
     incomplete: 'Incomplete',
+    no_response: 'No Response',
     no_report: 'No Report',
+}
+const REPORT_STATUS_ICONS = {
+    completed: CompletedReportsIcon,
+    incomplete: IncompleteReportsIcon,
+    no_response: RecordedNoResponseIcon,
+    no_report: NoReportsIcon,
+}
+
+function getReportDisplayStatus(status, hasAttendance) {
+    return status === 'no_report' && hasAttendance ? 'no_response' : status
 }
 
 const WEEKLY_CHART = {
@@ -52,7 +66,7 @@ function formatMonthLabel(monthValue) {
 
 function getWeeklyChartScale(weeks) {
     const largestTotal = Math.max(1, ...weeks.map((week) =>
-        (Number(week.completed) || 0) + (Number(week.incomplete) || 0) + (Number(week.no_report) || 0)
+        (Number(week.completed) || 0) + (Number(week.incomplete) || 0) + (Number(week.no_response) || 0) + (Number(week.no_report) || 0)
     ))
     const roughStep = Math.max(1, largestTotal / 3)
     const magnitude = 10 ** Math.floor(Math.log10(roughStep))
@@ -62,12 +76,16 @@ function getWeeklyChartScale(weeks) {
 }
 
 function ChancellorDashboard() {
+    const showLoginSkeleton = useLoginSkeleton()
+    const loginSkeletonStartedAt = useRef(null)
+    const [showLoginOverlay, setShowLoginOverlay] = useState(showLoginSkeleton)
+    const [isLoginOverlayFading, setIsLoginOverlayFading] = useState(false)
+    const [initialLoading, setInitialLoading] = useState(true)
     const [yearLevel, setYearLevel] = useState('1')
     const [requestedYearLevel, setRequestedYearLevel] = useState('1')
     const [selectedMonth, setSelectedMonth] = useState(() => getMonthValue())
     const [programReporting, setProgramReporting] = useState([])
     const [programYearReporting, setProgramYearReporting] = useState([])
-    const [weeklyProgress, setWeeklyProgress] = useState([])
     const [reportingWeeks, setReportingWeeks] = useState([])
     const [activeCourse, setActiveCourse] = useState(null)
     const [summary, setSummary] = useState({
@@ -94,6 +112,10 @@ function ChancellorDashboard() {
         })
         return params.toString()
     }, [requestedYearLevel, selectedMonth])
+
+    useEffect(() => {
+        loginSkeletonStartedAt.current = Date.now()
+    }, [])
 
     function navigateMonth(offset) {
         setSelectedMonth((current) => {
@@ -129,12 +151,13 @@ function ChancellorDashboard() {
                 })
                 setProgramReporting(data.program_reporting || [])
                 setProgramYearReporting(data.program_year_reporting || [])
-                setWeeklyProgress(data.weekly_progress || [])
                 setReportingWeeks(data.reporting_weeks || [])
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     setLoadError(error.message || 'Could not load dashboard filters.')
                 }
+            } finally {
+                if (!controller.signal.aborted) setInitialLoading(false)
             }
         }
 
@@ -143,6 +166,23 @@ function ChancellorDashboard() {
             controller.abort()
         }
     }, [query, pollTick])
+
+    useEffect(() => {
+        if (!showLoginOverlay || initialLoading) return undefined
+
+        const minimumVisibleMs = 1100
+        const elapsedMs = loginSkeletonStartedAt.current === null ? 0 : Date.now() - loginSkeletonStartedAt.current
+        const remainingMs = Math.max(0, minimumVisibleMs - elapsedMs)
+        const timer = window.setTimeout(() => setIsLoginOverlayFading(true), remainingMs)
+        return () => window.clearTimeout(timer)
+    }, [showLoginOverlay, initialLoading])
+
+    useEffect(() => {
+        if (!isLoginOverlayFading) return undefined
+
+        const timer = window.setTimeout(() => setShowLoginOverlay(false), 350)
+        return () => window.clearTimeout(timer)
+    }, [isLoginOverlayFading])
 
     useEffect(() => {
         const closeOutside = (event) => {
@@ -166,6 +206,17 @@ function ChancellorDashboard() {
 
     const progressPercentage = backendPercentage(overallProgress.percentage)
     const completionOverview = programReporting
+    const weeklyProgress = useMemo(() => reportingWeeks.map((week, index) => {
+        const counts = { completed: 0, incomplete: 0, no_response: 0, no_report: 0 }
+        programYearReporting.forEach((report) => {
+            const status = getReportDisplayStatus(
+                report.weekly_statuses?.[index] || 'no_report',
+                report.weekly_has_attendance?.[index]
+            )
+            counts[Object.hasOwn(counts, status) ? status : 'no_report'] += 1
+        })
+        return { ...week, ...counts }
+    }), [programYearReporting, reportingWeeks])
     const weeklyChartScale = getWeeklyChartScale(weeklyProgress)
     const weeklyChartTicks = Array.from(
         { length: Math.floor(weeklyChartScale.maximum / weeklyChartScale.step) + 1 },
@@ -321,7 +372,9 @@ function ChancellorDashboard() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {programYearReporting.map((report) => (
+                                        {programYearReporting.map((report) => {
+                                            const monthlyStatus = getReportDisplayStatus(report.status, report.has_attendance)
+                                            return (
                                             <tr key={report.code}>
                                                 <th scope="row">
                                                     <span>
@@ -330,7 +383,10 @@ function ChancellorDashboard() {
                                                     </span>
                                                 </th>
                                                 {reportingWeeks.map((week, index) => {
-                                                    const status = report.weekly_statuses?.[index] || 'no_report'
+                                                    const status = getReportDisplayStatus(
+                                                        report.weekly_statuses?.[index] || 'no_report',
+                                                        report.weekly_has_attendance?.[index]
+                                                    )
                                                     return (
                                                     <td key={`${report.code}-${week.week_start}`} title={`${week.range_label}: ${REPORT_STATUS_LABELS[status] || 'No Report'}`}>
                                                         <span
@@ -339,11 +395,7 @@ function ChancellorDashboard() {
                                                             aria-label={REPORT_STATUS_LABELS[status] || 'No Report'}
                                                         >
                                                             <img
-                                                                src={status === 'completed'
-                                                                    ? CompletedReportsIcon
-                                                                    : status === 'incomplete'
-                                                                        ? IncompleteReportsIcon
-                                                                        : NoReportsIcon}
+                                                                src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
                                                                 alt=""
                                                             />
                                                         </span>
@@ -351,9 +403,9 @@ function ChancellorDashboard() {
                                                     )
                                                 })}
                                                 <td>
-                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${report.status}`}>
+                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${monthlyStatus}`}>
                                                         <span />
-                                                        {REPORT_STATUS_LABELS[report.status] || 'No Report'}
+                                                        {REPORT_STATUS_LABELS[monthlyStatus] || 'No Report'}
                                                     </span>
                                                 </td>
                                                 <td className="chancellor-program-reporting-action">
@@ -373,7 +425,8 @@ function ChancellorDashboard() {
                                                     </button>
                                                 </td>
                                             </tr>
-                                        ))}
+                                            )
+                                        })}
                                         {programYearReporting.length === 0 && (
                                             <tr>
                                                 <td className="chancellor-program-reporting-empty" colSpan={reportingWeeks.length + 3}>
@@ -390,11 +443,7 @@ function ChancellorDashboard() {
                                         <span key={status}>
                                             <span className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`} aria-hidden="true">
                                                 <img
-                                                    src={status === 'completed'
-                                                        ? CompletedReportsIcon
-                                                        : status === 'incomplete'
-                                                            ? IncompleteReportsIcon
-                                                            : NoReportsIcon}
+                                                    src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
                                                     alt=""
                                                 />
                                             </span>
@@ -409,11 +458,11 @@ function ChancellorDashboard() {
                     <aside className="chancellor-dashboard-side-column">
                         <section className="chancellor-progress-by-week" aria-labelledby="chancellor-progress-by-week-title">
                             <h2 id="chancellor-progress-by-week-title">Progress by Week</h2>
-                            <p>Number of programs with completed reports</p>
+                            <p>Number of programs by weekly reporting status</p>
                             <svg className="chancellor-weekly-chart" viewBox="0 0 616 275" role="img" aria-labelledby="chancellor-weekly-chart-title chancellor-weekly-chart-description">
                                 <title id="chancellor-weekly-chart-title">Progress by Week</title>
                                 <desc id="chancellor-weekly-chart-description">
-                                    {weeklyProgress.map((week) => `${week.label} (${week.range_label}): ${week.completed || 0} completed, ${week.incomplete || 0} in progress, ${week.no_report || 0} no report`).join('; ') || 'No weekly progress data available'}
+                                    {weeklyProgress.map((week) => `${week.label} (${week.range_label}): ${week.completed} completed, ${week.incomplete} in progress, ${week.no_response} no response, ${week.no_report} no report`).join('; ') || 'No weekly progress data available'}
                                 </desc>
                                 {weeklyChartTicks.map((tick) => (
                                     <text key={tick} className="chancellor-weekly-axis-label" x="58" y={220 - tick / weeklyChartScale.maximum * 123}>
@@ -429,6 +478,7 @@ function ChancellorDashboard() {
                                     const segments = [
                                         ['completed', week.completed],
                                         ['in-progress', week.incomplete],
+                                        ['no-response', week.no_response],
                                         ['no-report', week.no_report],
                                     ]
                                     return (
@@ -444,12 +494,14 @@ function ChancellorDashboard() {
                                     )
                                 })}
                                 <g className="chancellor-weekly-legend">
-                                    <circle className="chancellor-weekly-segment--completed" cx="530" cy="119" r="5.5" />
-                                    <text x="549" y="123">Completed</text>
-                                    <circle className="chancellor-weekly-segment--in-progress" cx="530" cy="153" r="5.5" />
-                                    <text x="549" y="157">In Progress</text>
-                                    <circle className="chancellor-weekly-segment--no-report" cx="530" cy="187" r="5.5" />
-                                    <text className="chancellor-weekly-no-report-label" x="549" y="191">No Report</text>
+                                    <circle className="chancellor-weekly-segment--completed" cx="516" cy="105" r="5.5" />
+                                    <text x="530" y="109">Completed</text>
+                                    <circle className="chancellor-weekly-segment--in-progress" cx="516" cy="135" r="5.5" />
+                                    <text className="chancellor-weekly-in-progress-label" x="530" y="139">In Progress</text>
+                                    <circle className="chancellor-weekly-segment--no-response" cx="516" cy="165" r="5.5" />
+                                    <text className="chancellor-weekly-no-response-label" x="530" y="169">No Response</text>
+                                    <circle className="chancellor-weekly-segment--no-report" cx="516" cy="195" r="5.5" />
+                                    <text className="chancellor-weekly-no-report-label" x="530" y="199">No Report</text>
                                 </g>
                             </svg>
                         </section>
@@ -481,6 +533,11 @@ function ChancellorDashboard() {
                     month={{ year: detailYear, month: detailMonth }}
                     onClose={() => setActiveCourse(null)}
                 />
+            )}
+            {showLoginOverlay && (
+                <div className={`chancellor-login-skeleton-overlay${isLoginOverlayFading ? ' is-fading' : ''}`}>
+                    <DashboardSkeleton />
+                </div>
             )}
         </div>
     )

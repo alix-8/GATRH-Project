@@ -120,7 +120,7 @@ function Sidebar() {
 
             <div className="sidebar-footer">
                 <button type="button" className="sidebar-signout" onClick={() => setIsLogoutModalOpen(true)}>
-                    <span>Sign Out</span>
+                    <span>Log Out</span>
                     <img
                         className="sign-out-icon"
                         src={LogoutIcon}
@@ -171,7 +171,7 @@ function Sidebar() {
                         <h2 id="logout-modal-title">Confirm logout?</h2>
                         <div className="logout-modal-divider" />
                         <p>
-                            Are you sure you want to log out? You will need to sign in again to access your account.
+                            Are you sure you want to log out? You will need to log in again to access your account.
                         </p>
                         <div className="logout-modal-actions">
                             <button

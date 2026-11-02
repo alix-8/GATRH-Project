@@ -32,8 +32,6 @@ const GATHERINGS = [
     { type: 'ws', label: 'Worship Service' },
     { type: 'tg', label: 'Thanksgiving' },
 ]
-const GATHERING_TYPES = GATHERINGS.map(({ type }) => type)
-
 function formatDate(value, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
     if (!value) return '—'
     const [year, month, day] = value.slice(0, 10).split('-').map(Number)
@@ -50,13 +48,6 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
     const currentDetails = courseDetails?.key === detailKey ? courseDetails.data : null
     const currentDetailError = detailFailure?.key === detailKey ? detailFailure.message : ''
     const detailLoading = Boolean(!currentDetails && !currentDetailError)
-    const noResponseEntries = (currentDetails?.week_details ?? []).filter(entry => (
-        entry.status === 'no_report'
-        && entry.has_attendance
-        && entry.no_response_students?.length > 0
-    ))
-        .sort((first, second) => GATHERING_TYPES.indexOf(first.gathering_type) - GATHERING_TYPES.indexOf(second.gathering_type))
-
     useEffect(() => {
         const previousPageOverflow = document.documentElement.style.overflow
         document.documentElement.style.overflow = 'hidden'
@@ -265,35 +256,6 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                                 )
                                             })}
                                     </div>}
-                                    {noResponseEntries.length > 0 && (
-                                        <div className="monitoring-incomplete-details monitoring-no-response-details">
-                                            <h4>
-                                                <span className="monitoring-incomplete-icon" aria-hidden="true">
-                                                    <img src={RecordedNoResponseIcon} alt="" />
-                                                </span>
-                                                No Response Details
-                                            </h4>
-                                            {noResponseEntries.map(entry => {
-                                                const entryKey = `no-response-${entry.gathering_type}`
-                                                const isOpen = activeIncompleteEntry === entryKey
-                                                return (
-                                                    <article key={entryKey}>
-                                                        <div>
-                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
-                                                            <small>{entry.no_response_students.length} students recorded as No Response</small>
-                                                        </div>
-                                                        <button type="button" aria-expanded={isOpen} onClick={() => setActiveIncompleteEntry(isOpen ? null : entryKey)}>
-                                                            {isOpen ? 'Hide' : 'View'}
-                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                            </svg>
-                                                        </button>
-                                                        {isOpen && <ul>{entry.no_response_students.map(student => <li key={student.id}>{student.name}</li>)}</ul>}
-                                                    </article>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
                                 </section>
                             </div>
                         )}
