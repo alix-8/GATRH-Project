@@ -24,6 +24,52 @@ const WEEKLY_GATHERING_TYPES = [
     { type: 'tg', abbreviation: 'TG', label: 'Thanksgiving' },
 ]
 
+function OverviewSkeletonBlock({ className = '' }) {
+    return <span className={`overview-skeleton-block ${className}`} aria-hidden="true" />
+}
+
+function OverviewHistorySkeletonRows({ count = 4 }) {
+    return Array.from({ length: count }, (_, index) => (
+        <tr key={`overview-history-skeleton-${index}`} aria-hidden="true">
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell overview-skeleton-gathering" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell overview-skeleton-time" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell overview-skeleton-date" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell overview-skeleton-location" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell overview-skeleton-status" /></td>
+        </tr>
+    ))
+}
+
+function OverviewHistorySkeleton({ count = 4 }) {
+    return (
+        <table className="overview-history-skeleton" aria-hidden="true">
+            <thead><tr><th>Gathering</th><th>Time</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
+            <tbody><OverviewHistorySkeletonRows count={count} /></tbody>
+        </table>
+    )
+}
+
+function OverviewStatsSkeleton() {
+    return (
+        <section className="overview-stats overview-stats-skeleton" aria-label="Loading attendance summary" aria-busy="true">
+            <div className="overview-stat-card">
+                <OverviewSkeletonBlock className="overview-skeleton-stat-label" />
+                <OverviewSkeletonBlock className="overview-skeleton-stat-value" />
+                <OverviewSkeletonBlock className="overview-skeleton-stat-detail" />
+            </div>
+            <div className="overview-stat-card">
+                <OverviewSkeletonBlock className="overview-skeleton-stat-label" />
+                <div className="overview-skeleton-week-dots"><i /><i /><i /></div>
+            </div>
+            <div className="overview-stat-card">
+                <OverviewSkeletonBlock className="overview-skeleton-stat-label" />
+                <OverviewSkeletonBlock className="overview-skeleton-stat-value" />
+                <OverviewSkeletonBlock className="overview-skeleton-stat-detail" />
+            </div>
+        </section>
+    )
+}
+
 function formatOverviewTime(value) {
     if (!value || value === '—') return '—'
 
@@ -63,6 +109,9 @@ function Students() {
     const [overview, setOverview] = useState(null)
     const [overviewLoading, setOverviewLoading] = useState(false)
     const [overviewError, setOverviewError] = useState(null)
+    const [overviewHistoryLoading, setOverviewHistoryLoading] = useState(false)
+    const [overviewHistoryError, setOverviewHistoryError] = useState(null)
+    const overviewRequestId = useRef(0)
     const [overviewGathering, setOverviewGathering] = useState('')
     const [overviewDate, setOverviewDate] = useState('')
     const [overviewStatus, setOverviewStatus] = useState('')
@@ -182,25 +231,55 @@ function Students() {
     const escalationGuide = `Weekly Escalation Level\n${escalationDateRange ? `Date range: ${escalationDateRange}` : ''}\n\n1 No-response = 1 level`
     const formatOverviewDate = (date) => date ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(`${date}T00:00:00`)) : '—'
     const openOverview = async (student) => {
+        const requestId = ++overviewRequestId.current
         setOverview({ student, month: '', summary: {}, history: [] })
         setOverviewLoading(true)
         setOverviewError(null)
+        setOverviewHistoryLoading(false)
+        setOverviewHistoryError(null)
         setOverviewGathering('')
         setOverviewDate('')
         setOverviewStatus('')
         setOverviewOpenFilter(null)
         try {
-            const response = await fetch(`${API_BASE_URL}/students/${student.id}/overview`, {
+            const response = await fetch(`${API_BASE_URL}/students/${student.id}/overview/current-week`, {
                 credentials: 'include',
                 headers: { Accept: 'application/json' },
             })
             if (!response.ok) throw new Error('Unable to load this student’s overview.')
-            setOverview(await response.json())
-        } catch (error) {
-            setOverviewError(error.message)
-        } finally {
+            const currentWeekOverview = await response.json()
+            if (requestId !== overviewRequestId.current) return
+
+            setOverview(currentWeekOverview)
             setOverviewLoading(false)
+            setOverviewHistoryLoading(true)
+
+            try {
+                const historyResponse = await fetch(`${API_BASE_URL}/students/${student.id}/overview/history`, {
+                    credentials: 'include',
+                    headers: { Accept: 'application/json' },
+                })
+                if (!historyResponse.ok) throw new Error('Unable to load older attendance history.')
+                const historyData = await historyResponse.json()
+                if (requestId === overviewRequestId.current) {
+                    setOverview(current => current ? { ...current, history: historyData.history || [] } : current)
+                }
+            } catch (error) {
+                if (requestId === overviewRequestId.current) setOverviewHistoryError(error.message)
+            } finally {
+                if (requestId === overviewRequestId.current) setOverviewHistoryLoading(false)
+            }
+        } catch (error) {
+            if (requestId === overviewRequestId.current) setOverviewError(error.message)
+        } finally {
+            if (requestId === overviewRequestId.current) setOverviewLoading(false)
         }
+    }
+    const closeOverview = () => {
+        overviewRequestId.current += 1
+        setOverview(null)
+        setOverviewLoading(false)
+        setOverviewHistoryLoading(false)
     }
     const overviewHistory = (overview?.history || [])
         .filter((record) => !overviewGathering || record.gathering_type === overviewGathering)
@@ -435,17 +514,21 @@ function Students() {
             </main>
 
             {overview && (
-                <div className="student-overview-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setOverview(null)}>
+                <div className="student-overview-backdrop" onMouseDown={(event) => event.target === event.currentTarget && closeOverview()}>
                     <aside className="student-overview-drawer" role="dialog" aria-modal="true" aria-label="Student overview">
                         <h2>Student Overview</h2>
-                        <p className="overview-month">{overview.month || 'Loading…'}</p>
+                        <p className="overview-month">
+                            {overviewLoading
+                                ? <OverviewSkeletonBlock className="overview-skeleton-month" />
+                                : overview.month}
+                        </p>
 
                         <section className="overview-student-card">
                             <UserAvatar className="overview-avatar" name={overview.student.name} program={overview.student.program} />
                             <div><strong>{overview.student.name}</strong><small>{overview.student.program} {normalizedYear(overview.student.year_level)}</small></div>
                         </section>
 
-                        <section className="overview-stats" aria-label="Attendance summary">
+                        {overviewLoading ? <OverviewStatsSkeleton /> : <section className="overview-stats" aria-label="Attendance summary">
                             <div className="overview-stat-card">
                                 <strong>This Month</strong>
                                 <div className="overview-stat-value">
@@ -484,7 +567,7 @@ function Students() {
                                     <b>{overview.summary?.escalation_count ?? 0}</b>
                                 </div>
                             </div>
-                        </section>
+                        </section>}
 
                         <div className="overview-filters" ref={overviewFiltersRef}>
                             <div className="overview-filter-container">
@@ -526,14 +609,19 @@ function Students() {
                         <div className="overview-history-header">
                             <h2>Attendance List</h2>
                         </div>
-                        <div className="overview-history">
-
-                            {overviewLoading && <p className="overview-state"><LoadingCircle label="Loading attendance history…" /></p>}
+                        <div className="overview-history" aria-busy={overviewLoading || overviewHistoryLoading}>
+                            {overviewLoading && !overviewError && <OverviewHistorySkeleton />}
                             {overviewError && <p className="overview-state overview-error">{overviewError}</p>}
-                            {!overviewLoading && !overviewError && overviewHistory.length === 0 && <p className="overview-state">No attendance records yet.</p>}
+                            {overviewHistoryError && <p className="overview-state overview-error">{overviewHistoryError}</p>}
+                            {!overviewLoading && overviewHistoryLoading && overviewHistory.length === 0 && <OverviewHistorySkeleton count={3} />}
+                            {!overviewLoading && !overviewError && !overviewHistoryLoading && !overviewHistoryError && overviewHistory.length === 0 && <p className="overview-state">No attendance records yet.</p>}
                             {!overviewLoading && !overviewError && overviewHistory.length > 0 && (
                                 <table><thead><tr><th>Gathering</th><th>Time</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
-                                    <tbody>{overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{formatOverviewTime(record.time)}</td><td><RecordDate value={record.date} tooltip="weekday" /></td><td><VenueLabel value={record.location} fallback="" /></td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : record.status === 'excused' ? 'Excused' : 'No Response'}</span></td></tr>)}</tbody></table>
+                                    <tbody>
+                                        {overviewHistory.map((record) => <tr key={record.id}><td>{record.gathering}</td><td>{formatOverviewTime(record.time)}</td><td><RecordDate value={record.date} tooltip="weekday" /></td><td><VenueLabel value={record.location} fallback="" /></td><td><span className={`overview-status ${record.status}`}>{record.status === 'present' ? 'Present' : record.status === 'excused' ? 'Excused' : 'No Response'}</span></td></tr>)}
+                                        {overviewHistoryLoading && <OverviewHistorySkeletonRows count={3} />}
+                                    </tbody>
+                                </table>
                             )}
                         </div>
                     </aside>

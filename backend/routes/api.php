@@ -85,6 +85,8 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
         ->middleware('role:secretary,program_head,program_secretary,cm_coordinator,chancellor');
     Route::get('/students', [StudentController::class, 'index']);
     Route::get('/students/attendance-snapshot', [StudentController::class, 'attendanceSnapshot']);
+    Route::get('/students/{id}/overview/current-week', [StudentController::class, 'overviewCurrentWeek']);
+    Route::get('/students/{id}/overview/history', [StudentController::class, 'overviewHistory']);
     Route::get('/students/{id}/overview', [StudentController::class, 'overview']);
 
     /* Reminders */
