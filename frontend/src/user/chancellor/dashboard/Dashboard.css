@@ -621,13 +621,11 @@
     background: #f5c52e;
 }
 
-.chancellor-report-status-label--zero_response,
 .chancellor-report-status-label--no_report {
     background: #fff0f0;
     color: #d02e2e;
 }
 
-.chancellor-report-status-label--zero_response>span,
 .chancellor-report-status-label--no_report>span {
     background: #e83c3c;
 }
@@ -635,6 +633,31 @@
 .chancellor-program-reporting-empty {
     padding: 24px !important;
     color: #71809a;
+}
+
+.chancellor-program-reporting-action button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: #159cf0;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 10px;
+}
+
+.chancellor-program-reporting-action button:hover,
+.chancellor-program-reporting-action button:focus-visible {
+    background: #087fc9;
+}
+
+.chancellor-program-reporting-action svg {
+    width: 10px;
+    height: 10px;
 }
 
 .chancellor-program-reporting-footer,

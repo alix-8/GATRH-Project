@@ -178,12 +178,12 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
     /* CM coordinator */
     Route::middleware('role:cm_coordinator')->group(function () {
         Route::get('/monitoring', [CmCoordinatorMonitoringController::class, 'index']);
-        Route::get('/monitoring/courses/{program}/{yearLevel}', [CmCoordinatorMonitoringController::class, 'showCourse'])
-            ->where(['program' => '[A-Za-z0-9_-]+', 'yearLevel' => '[0-9]+']);
     });
 
-    /* CM coordinator and chancellor reports */
+    /* CM coordinator and chancellor reporting details */
     Route::middleware('role:cm_coordinator,chancellor')->group(function () {
+        Route::get('/monitoring/courses/{program}/{yearLevel}', [CmCoordinatorMonitoringController::class, 'showCourse'])
+            ->where(['program' => '[A-Za-z0-9_-]+', 'yearLevel' => '[0-9]+']);
         Route::get('/reports/summary', [AttendanceController::class, 'summaryReport']);
     });
 });
