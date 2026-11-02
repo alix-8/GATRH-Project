@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../../api/request'
 import Sidebar from '../../components/layout/Sidebar'
 import Header from '../../components/layout/Header'
 import UserAvatar from '../../components/identity/UserAvatar'
+import PasswordRequirements from '../../components/forms/PasswordRequirements'
 import ShowPasswordIcon from '../../assets/icons/show-password-icon.svg'
 import './Profile.css'
 
@@ -49,10 +50,17 @@ function Profile() {
     })
     const [passwordMessage, setPasswordMessage] = useState('')
     const [passwordMessageType, setPasswordMessageType] = useState('success')
-    const passwordErrors = {
+    const [passwordErrors, setPasswordErrors] = useState({
         current_password: '',
         password: '',
         password_confirmation: '',
+    })
+    const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
+
+    function updatePasswordField(name, value) {
+        setPasswordForm(current => ({ ...current, [name]: value }))
+        setPasswordErrors(current => ({ ...current, [name]: '' }))
+        setPasswordMessage('')
     }
 
     useEffect(() => {
@@ -122,6 +130,20 @@ function Profile() {
                 const data = await response.json().catch(() => null)
 
                 if (!response.ok) {
+                    const errors = data?.errors ?? {}
+                    const fieldErrors = Object.fromEntries(Object.entries(errors).map(([field, messages]) => [
+                        field,
+                        messages?.[0] || 'Invalid value.',
+                    ]))
+                    setPasswordErrors(fieldErrors)
+                    if (Object.keys(errors).length) {
+                        setPasswordMessage('')
+                    }
+                    if (errors.password || errors.password_confirmation) {
+                        setShowPasswordRequirements(true)
+                        return
+                    }
+                    if (Object.keys(errors).length) return
                     setPasswordMessageType('error')
                     setPasswordMessage(data?.message || 'Unable to change password.')
                     return
@@ -136,6 +158,7 @@ function Profile() {
                     return
                 }
 
+                setShowPasswordRequirements(false)
                 window.location.reload()
             })
             .catch(() => {
@@ -192,7 +215,7 @@ function Profile() {
                                             <input
                                                 type={showPasswords.current ? 'text' : 'password'}
                                                 value={passwordForm.current_password}
-                                                onChange={event => setPasswordForm({ ...passwordForm, current_password: event.target.value })}
+                                                onChange={event => updatePasswordField('current_password', event.target.value)}
                                                 placeholder=""
                                             />
                                             {passwordForm.current_password && (
@@ -216,7 +239,7 @@ function Profile() {
                                             <input
                                                 type={showPasswords.new ? 'text' : 'password'}
                                                 value={passwordForm.password}
-                                                onChange={event => setPasswordForm({ ...passwordForm, password: event.target.value })}
+                                                onChange={event => updatePasswordField('password', event.target.value)}
                                                 placeholder=""
                                             />
                                             {passwordForm.password && (
@@ -231,7 +254,12 @@ function Profile() {
                                                 </button>
                                             )}
                                         </span>
-                                        {passwordErrors.password && <small className="profile-password-error">{passwordErrors.password}</small>}
+                                        <PasswordRequirements
+                                            password={passwordForm.password}
+                                            currentPassword={passwordForm.current_password}
+                                            confirmation={passwordForm.password_confirmation}
+                                            visible={showPasswordRequirements}
+                                        />
                                     </label>
 
                                     <label className="password-field-label">
@@ -240,7 +268,7 @@ function Profile() {
                                             <input
                                                 type={showPasswords.confirm ? 'text' : 'password'}
                                                 value={passwordForm.password_confirmation}
-                                                onChange={event => setPasswordForm({ ...passwordForm, password_confirmation: event.target.value })}
+                                                onChange={event => updatePasswordField('password_confirmation', event.target.value)}
                                                 placeholder=""
                                             />
                                             {passwordForm.password_confirmation && (
@@ -255,7 +283,6 @@ function Profile() {
                                                 </button>
                                             )}
                                         </span>
-                                        {passwordErrors.password_confirmation && <small className="profile-password-error">{passwordErrors.password_confirmation}</small>}
                                     </label>
                                 </div>
 

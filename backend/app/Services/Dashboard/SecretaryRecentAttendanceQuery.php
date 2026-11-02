@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\User;
 use App\Support\AttendanceReportingPeriod;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SecretaryRecentAttendanceQuery
 {
@@ -18,12 +19,17 @@ class SecretaryRecentAttendanceQuery
         $batch = "CASE WHEN {$hasBatch} THEN batch_id ELSE NULL END";
         $type = "CASE WHEN {$hasBatch} THEN NULL ELSE gathering_type END";
         $day = "CASE WHEN {$hasBatch} THEN NULL ELSE DATE(day) END";
-        $groups = (clone $base)
-            ->selectRaw("{$batch} as group_batch, {$type} as group_type, {$day} as group_day")
+        // Group the projected columns in an outer query. MySQL's strict
+        // GROUP BY mode does not accept the CASE expressions directly here.
+        $groupRows = (clone $base)
+            ->selectRaw("id, reporting_day, venue, {$batch} as group_batch, {$type} as group_type, {$day} as group_day");
+        $groups = DB::query()
+            ->fromSub($groupRows, 'recent_rows')
+            ->selectRaw('group_batch, group_type, group_day')
             ->selectRaw('MIN(id) as first_id')
             ->selectRaw('MIN(CASE WHEN reporting_day IS NOT NULL THEN id END) as reporting_id')
             ->selectRaw("MIN(CASE WHEN LOWER(TRIM(COALESCE(venue, ''))) <> 'special' THEN id END) as regular_id")
-            ->groupByRaw("{$batch}, {$type}, {$day}")
+            ->groupBy('group_batch', 'group_type', 'group_day')
             ->orderBy('first_id')->get()->toBase();
         if ($groups->isEmpty()) return collect();
 
