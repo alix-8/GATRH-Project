@@ -33,7 +33,7 @@ class ChancellorDashboardYearFilterTest extends TestCase
             $table->id();
             $table->string('code')->unique();
             $table->string('name')->nullable();
-            $table->boolean('is_active')->default(true); $table->string('inactive_reason')->nullable(); $table->json('roster_history')->nullable();
+            $table->boolean('is_active')->default(true); $table->json('roster_history')->nullable();
             $table->timestamps();
         });
 
@@ -140,9 +140,9 @@ class ChancellorDashboardYearFilterTest extends TestCase
             ->assertOk()
             ->assertJsonPath('program_year_reporting.0.year_level', 1)
             ->assertJsonPath('program_year_reporting.0.status', 'incomplete')
-            ->assertJsonPath('program_year_reporting.0.completion', 8)
-            ->assertJsonPath('program_reporting.0.completion', 8)
-            ->assertJsonPath('overall_progress.percentage', 8)
+            ->assertJsonPath('program_year_reporting.0.completion', 😎
+            ->assertJsonPath('program_reporting.0.completion', 😎
+            ->assertJsonPath('overall_progress.percentage', 😎
             ->assertJsonPath('summary.completed', 0);
 
         $secondYearResponse
@@ -241,10 +241,18 @@ class ChancellorDashboardYearFilterTest extends TestCase
         Program::create(['code' => 'BSIS', 'name' => 'Information Systems']);
         $first = Student::create(['name' => 'First', 'program' => 'BSIS', 'year_level' => 2]);
         Student::create(['name' => 'Second', 'program' => 'BSIS', 'year_level' => 2]);
+        $withoutAttendance = $this->chancellorPayload()['program_year_reporting'][0];
+        $this->assertFalse($withoutAttendance['has_attendance']);
+        $this->assertSame([false, false, false, false], $withoutAttendance['weekly_has_attendance']);
+
         foreach (['pm', 'ws', 'tg'] as $type) {
             $this->addResponse($first, $type, 'no_response');
         }
         $this->assertYearProgress('no_report', 0);
+        $noResponse = $this->chancellorPayload()['program_year_reporting'][0];
+        $this->assertTrue($noResponse['has_attendance']);
+        $this->assertSame([true, false, false, false], $noResponse['weekly_has_attendance']);
+
         foreach (['pm', 'ws', 'tg'] as $type) {
             $this->addResponse($first, $type);
             $this->addResponse($first, $type);

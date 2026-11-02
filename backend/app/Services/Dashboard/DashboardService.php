@@ -783,12 +783,14 @@ class DashboardService
             });
             $completed = $slots->where('status', 'completed')->count();
             $hasResponses = $slots->contains(fn ($slot) => $slot['responded_students'] > 0);
+            $hasAttendance = $slots->contains(fn ($slot) => $slot['has_attendance']);
             return $weeklySummaries[$key] = [
                 'status' => $completed === $slots->count() ? 'completed' : ($hasResponses ? 'incomplete' : 'no_report'),
                 'percentage' => (int) round($completed / max(1, $slots->count()) * 100),
                 'completed_slots' => $completed,
                 'total_slots' => $slots->count(),
                 'has_responses' => $hasResponses,
+                'has_attendance' => $hasAttendance,
                 'responded_students' => $slots->sum('responded_students'),
                 'expected_responses' => $slots->sum('total_students'),
             ];
@@ -801,10 +803,12 @@ class DashboardService
             $completed = $weeks->sum('completed_slots');
             $total = $weeks->sum('total_slots');
             $hasResponses = $weeks->contains(fn ($week) => $week['has_responses']);
+            $hasAttendance = $weeks->contains(fn ($week) => $week['has_attendance']);
             $responded = $weeks->sum('responded_students');
             $expected = $weeks->sum('expected_responses');
             return [
                 'status' => $total > 0 && $completed === $total ? 'completed' : ($hasResponses ? 'incomplete' : 'no_report'),
+                'has_attendance' => $hasAttendance,
                 'percentage' => (int) round($responded / max(1, $expected) * 100),
                 'responded_students' => $responded,
                 'expected_responses' => $expected,
@@ -817,15 +821,15 @@ class DashboardService
             function ($programCode) use (
                 $reportingWeekRecords,
                 $reportingWeeks,
-                $getProgramStatus,
+                $summarizeProgram,
                 $summarizeMonth,
                 $programNames
             ) {
-                $weeklyStatuses = $reportingWeeks
+                $weeklySummaries = $reportingWeeks
                     ->map(function (array $week) use (
                         $programCode,
                         $reportingWeekRecords,
-                        $getProgramStatus
+                        $summarizeProgram
                     ) {
                         $weekStart = Carbon::parse($week['week_start']);
                         $weekEnd = Carbon::parse($week['week_end'])->endOfDay();
@@ -837,22 +841,23 @@ class DashboardService
                             )
                         );
 
-                        return $getProgramStatus($programCode, $recordsForWeek, null, $weekStart);
+                        return $summarizeProgram($programCode, $recordsForWeek, null, $weekStart);
                     })
-                    ->values()
-                    ->toArray();
+                    ->values();
 
                 $monthly = $summarizeMonth($programCode);
                 return [
                     'code' => $programCode,
                     'name' => $programNames[$programCode] ?? $programCode,
                     'status' => $monthly['status'],
+                    'has_attendance' => $monthly['has_attendance'],
                     'completion' => $monthly['percentage'],
                     'responded_students' => $monthly['responded_students'],
                     'expected_responses' => $monthly['expected_responses'],
 
                     // Indexed in the same order as reporting_weeks.
-                    'weekly_statuses' => $weeklyStatuses,
+                    'weekly_statuses' => $weeklySummaries->pluck('status')->all(),
+                    'weekly_has_attendance' => $weeklySummaries->pluck('has_attendance')->all(),
                 ];
             }
         )->values();
@@ -870,16 +875,16 @@ class DashboardService
                     $reportingWeekYearRecords,
                     $reportingWeeks,
                     $selectedYearLevel,
-                    $getProgramStatus,
+                    $summarizeProgram,
                     $summarizeMonth,
                     $programNames
                 ) {
-                    $weeklyStatuses = $reportingWeeks
+                    $weeklySummaries = $reportingWeeks
                         ->map(function (array $week) use (
                             $programCode,
                             $reportingWeekYearRecords,
                             $selectedYearLevel,
-                            $getProgramStatus
+                            $summarizeProgram
                         ) {
                             $weekStart = Carbon::parse($week['week_start']);
                             $weekEnd = Carbon::parse($week['week_end'])->endOfDay();
@@ -890,10 +895,9 @@ class DashboardService
                                 )
                             );
 
-                            return $getProgramStatus($programCode, $recordsForWeek, $selectedYearLevel, $weekStart);
+                            return $summarizeProgram($programCode, $recordsForWeek, $selectedYearLevel, $weekStart);
                         })
-                        ->values()
-                        ->toArray();
+                        ->values();
 
                     $monthly = $summarizeMonth($programCode, $selectedYearLevel);
                     return [
@@ -901,10 +905,12 @@ class DashboardService
                         'name' => $programNames[$programCode] ?? $programCode,
                         'year_level' => (int) $selectedYearLevel,
                         'status' => $monthly['status'],
+                        'has_attendance' => $monthly['has_attendance'],
                         'completion' => $monthly['percentage'],
                         'responded_students' => $monthly['responded_students'],
                         'expected_responses' => $monthly['expected_responses'],
-                        'weekly_statuses' => $weeklyStatuses,
+                        'weekly_statuses' => $weeklySummaries->pluck('status')->all(),
+                        'weekly_has_attendance' => $weeklySummaries->pluck('has_attendance')->all(),
                     ];
                 }
             )->values();
