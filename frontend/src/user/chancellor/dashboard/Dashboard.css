@@ -525,7 +525,7 @@
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #51a362 0%, #7bd5a0 100%);
+    background: #1fa34a;
 }
 
 .chancellor-program-reporting-scroll {
