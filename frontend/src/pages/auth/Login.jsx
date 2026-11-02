@@ -396,8 +396,8 @@ function Login({ initialEmail = '' }) {
                                     <h3>Attendance Converter</h3>
 
                                     <p>
-                                        Easily record and monitor student attendance for every gathering.
-                                        Track responses and keep attendance information organized in one place.
+                                        Copy generated attendance text formats and paste it to convert into tables. 
+                                        Easily edit records in organized tables.
                                     </p>
 
                                     <div className="feature-footer">
