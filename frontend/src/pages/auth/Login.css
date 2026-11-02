@@ -255,12 +255,16 @@
 .admin-contact-link {
     display: inline-grid;
     color: #172b4d;
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    text-decoration: none;
 }
 
 .admin-contact-link span {
     grid-area: 1 / 1;
+}
+
+.admin-contact-email a, .admin-contact-label a {
+    text-decoration: none;
+    
 }
 
 .admin-contact-email,
