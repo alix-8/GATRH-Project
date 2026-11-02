@@ -18,6 +18,52 @@
     font-size: 20px;
 }
 
+.chancellor-month-navigation {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 8px;
+}
+
+.chancellor-month-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chancellor-month-controls strong {
+    min-width: 126px;
+    color: #172b4d;
+    font-size: 14px;
+    text-align: center;
+}
+
+.chancellor-month-controls button {
+    min-width: 30px;
+    min-height: 30px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #172b4d;
+    cursor: pointer;
+    font: inherit;
+    font-size: 21px;
+    line-height: 1;
+}
+
+.chancellor-month-controls button:not(:disabled):hover {
+    background: #eef2f8;
+}
+
+.chancellor-month-controls button:focus-visible {
+    outline: 2px solid #159fe8;
+    outline-offset: 2px;
+}
+
+.chancellor-month-controls button:disabled {
+    cursor: default;
+    opacity: .4;
+}
+
 .chancellor-summary-cards {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -129,11 +175,11 @@
 .chancellor-overall-progress {
     box-sizing: border-box;
     display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr);
-    align-items: end;
+    grid-template-columns: minmax(300px, max-content) minmax(0, 1fr);
+    align-items: center;
     width: 100%;
     margin: 0;
-    padding: 16px 18px;
+    padding: 10px 12px;
     border: 1px solid #c3e4ff;
     border-radius: 9px;
     background: #f7fafc;
@@ -145,18 +191,17 @@
 
 .chancellor-overall-progress-heading h2 {
     color: #172b4d;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: bold;
     text-align: left;
-    padding: 2px;
-    margin: 2px;
+    padding: 0;
+    margin: 0;
 }
 
 .chancellor-overall-progress-heading p {
     display: flex;
     font-size: 11px;
-    margin-left: 4px;
-    margin-bottom: 8px;
+    margin: 2px 0 4px;
 }
 
 .chancellor-overall-progress-value {
@@ -167,21 +212,23 @@
 }
 
 .chancellor-overall-progress-value strong {
-    font-size: 40px;
+    font-size: 28px;
     line-height: 1;
+    padding: 0;
 }
 
 .chancellor-overall-progress-value span {
     font-size: 11px;
-    margin-left: 4px;
+    margin-left: 0;
+    white-space: nowrap;
 }
 
 .chancellor-overall-progress-track {
     overflow: hidden;
-    height: 20px;
+    height: 10px;
     border-radius: 50px;
     background: #e2f1fa;
-    margin-bottom: 22px;
+    margin-bottom: 0;
 }
 
 .chancellor-overall-progress-track span {
@@ -190,6 +237,17 @@
     border-radius: inherit;
     background: #159df2;
     transition: width .2s ease;
+}
+
+@media (max-width: 700px) {
+    .chancellor-overall-progress {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .chancellor-overall-progress-track {
+        margin-top: 8px;
+    }
 }
 
 .chancellor-programs-attention {

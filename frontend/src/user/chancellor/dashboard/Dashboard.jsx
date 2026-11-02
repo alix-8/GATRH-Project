@@ -40,9 +40,13 @@ const WEEKLY_CHART = {
     top: 94,
 }
 
-function getTodayDateValue() {
-    const today = new Date()
-    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+function getMonthValue(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function formatMonthLabel(monthValue) {
+    const [year, month] = monthValue.split('-').map(Number)
+    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1))
 }
 
 function getWeeklyChartScale(weeks) {
@@ -59,6 +63,7 @@ function getWeeklyChartScale(weeks) {
 function ChancellorDashboard() {
     const [yearLevel, setYearLevel] = useState('1')
     const [requestedYearLevel, setRequestedYearLevel] = useState('1')
+    const [selectedMonth, setSelectedMonth] = useState(() => getMonthValue())
     const [programReporting, setProgramReporting] = useState([])
     const [programYearReporting, setProgramYearReporting] = useState([])
     const [weeklyProgress, setWeeklyProgress] = useState([])
@@ -78,13 +83,23 @@ function ChancellorDashboard() {
     const [pollTick, setPollTick] = useState(0)
     useLiveRefresh(() => setPollTick((current) => current + 1), 30_000)
     const yearRef = useRef(null)
+    const currentMonth = getMonthValue()
+    const monthLabel = formatMonthLabel(selectedMonth)
     const query = useMemo(() => {
         const params = new URLSearchParams({
-            date: getTodayDateValue(),
+            date: `${selectedMonth}-01`,
             year_level: requestedYearLevel,
         })
         return params.toString()
-    }, [requestedYearLevel])
+    }, [requestedYearLevel, selectedMonth])
+
+    function navigateMonth(offset) {
+        setSelectedMonth((current) => {
+            const [year, month] = current.split('-').map(Number)
+            const next = new Date(year, month - 1 + offset, 1)
+            return getMonthValue(next)
+        })
+    }
 
     useEffect(() => {
         const timer = window.setTimeout(() => setRequestedYearLevel(yearLevel), 300)
@@ -279,6 +294,13 @@ function ChancellorDashboard() {
                                     </div>
                                 </div>
                             </div>
+                            <nav className="chancellor-month-navigation" aria-label="Dashboard month">
+                                <div className="chancellor-month-controls">
+                                    <button type="button" onClick={() => navigateMonth(-1)} aria-label="Previous month">‹</button>
+                                    <strong aria-live="polite">{monthLabel}</strong>
+                                    <button type="button" onClick={() => navigateMonth(1)} disabled={selectedMonth >= currentMonth} aria-label="Next month">›</button>
+                                </div>
+                            </nav>
                             <div className="chancellor-program-reporting-scroll">
                                 <table className="chancellor-program-reporting-table">
                                     <thead>
