@@ -1,10 +1,16 @@
 .import {
     display: flex;
+    height: 100vh;
+    overflow: hidden;
     background-color: #ffffff;
 }
 
 .import-main {
     flex: 1;
+    min-width: 0;
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     background-color: #ffffff;
 }
 
@@ -885,4 +891,106 @@ textarea {
     }
 
     /* header responsiveness handled by Header component */
+}
+
+@media (min-width: 901px) and (max-width: 1150px) {
+    .import-content {
+        max-width: none;
+        margin-top: 20px;
+        padding: 0 20px 40px;
+    }
+
+    .import-period-banner {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+    }
+
+    .import-period-summary {
+        padding: 6px 8px;
+    }
+
+    .import-period-cards {
+        grid-column: 1 / -1;
+    }
+
+    .import-hint-week {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .import-panel {
+        padding: 20px;
+    }
+}
+
+@media (min-width: 1800px) and (min-height: 900px) {
+    .import > .sidebar {
+        width: clamp(240px, 12vw, 360px);
+        flex: 0 0 clamp(240px, 12vw, 360px);
+        padding: 28px clamp(16px, 1vw, 28px);
+    }
+
+    .import .sidebar-lvcc-logo {
+        top: 24px;
+        left: 50%;
+        width: clamp(112px, 6vw, 160px);
+        height: clamp(112px, 6vw, 160px);
+    }
+
+    .import .sidebar-nav {
+        margin-top: clamp(132px, 9vw, 200px);
+        gap: clamp(6px, .4vw, 12px);
+    }
+
+    .import .sidebar-link,
+    .import .sidebar-link.active {
+        padding: 14px 10px;
+        font-size: clamp(16px, .95vw, 22px);
+    }
+
+    .import .sidebar-signout {
+        font-size: clamp(15px, .9vw, 20px);
+    }
+
+    .import .app-header.page-header {
+        padding: 30px max(32px, calc((100% - 1800px) / 2));
+    }
+
+    .import-header .header-title h3 {
+        font-size: clamp(24px, 1.5vw, 36px);
+    }
+
+    .import-header .header-title p,
+    .import .app-header .header-meta .page-date {
+        font-size: clamp(17px, 1vw, 23px);
+    }
+
+    .import-content {
+        width: min(calc(100% - 64px), 1800px);
+        max-width: none;
+        margin-top: clamp(24px, 2vh, 40px);
+        padding: 0 0 40px;
+    }
+
+    .import-period-banner {
+        grid-template-columns: minmax(280px, .9fr) minmax(0, 2.2fr) max-content;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .import-period-banner-heading h2,
+    .import-panel-heading h2 {
+        font-size: clamp(20px, 1.1vw, 28px);
+    }
+
+    .import-period-eyebrow,
+    .import-period-card-heading,
+    .import-period-card-date,
+    .import-period-change-button {
+        font-size: clamp(14px, .85vw, 18px);
+    }
+
+    .import-panel {
+        padding: clamp(28px, 2vw, 44px);
+    }
 }

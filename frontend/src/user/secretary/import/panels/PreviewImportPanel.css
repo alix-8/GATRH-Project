@@ -129,3 +129,21 @@
     align-self: flex-start;
     margin-top: 4px;
 }
+
+@media (min-width: 1800px) and (min-height: 900px) {
+    .preview-header-row,
+    .preview-card {
+        gap: 16px;
+        padding: 16px 20px;
+        font-size: clamp(14px, .8vw, 18px);
+    }
+
+    .preview-card-name,
+    .preview-input {
+        font-size: clamp(14px, .8vw, 18px);
+    }
+
+    .preview-input {
+        max-width: 120px;
+    }
+}
