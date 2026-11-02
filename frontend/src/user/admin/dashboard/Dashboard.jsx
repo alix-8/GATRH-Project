@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../../../components/layout/Header'
 import Sidebar from '../../../components/layout/Sidebar'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
 import useAutoDismissNotice from '../../../hooks/useAutoDismissNotice'
 import ActiveUsersIcon from '../../../assets/icons/active-users-icon.svg'
 import AdminStudentsIcon from '../../../assets/icons/admin-students-icon.svg'
@@ -20,6 +21,7 @@ import AddUserModal from './AddUserModal'
 import AddStudentModal from './AddStudentModal'
 import AddProgramModal from './AddProgramModal'
 import ActivityTable from './ActivityTable'
+import DashboardSkeleton from './DashboardSkeleton'
 import './Dashboard.css'
 
 const accountRoleIcons = {
@@ -31,6 +33,11 @@ const accountRoleIcons = {
 }
 
 function AdminDashboard() {
+    const showLoginSkeleton = useLoginSkeleton()
+    const loginSkeletonStartedAt = useRef(null)
+    const [showLoginOverlay, setShowLoginOverlay] = useState(showLoginSkeleton)
+    const [isLoginOverlayFading, setIsLoginOverlayFading] = useState(false)
+    const [initialLoading, setInitialLoading] = useState(true)
     const [dashboard, setDashboard] = useState(null)
     const [error, setError] = useState('')
     const [notice, showNotice, clearNotice] = useAutoDismissNotice()
@@ -46,14 +53,40 @@ function AdminDashboard() {
     })
 
     useEffect(() => {
+        loginSkeletonStartedAt.current = Date.now()
+    }, [])
+
+    useEffect(() => {
         const controller = new AbortController()
         request('/admin/dashboard', { signal: controller.signal })
-            .then(setDashboard)
+            .then(data => {
+                setDashboard(data)
+                setError('')
+            })
             .catch(error => {
                 if (error.name !== 'AbortError') setError(error.message || 'Unable to load the admin dashboard.')
             })
+            .finally(() => {
+                if (!controller.signal.aborted) setInitialLoading(false)
+            })
         return () => controller.abort()
     }, [pollTick])
+
+    useEffect(() => {
+        if (!showLoginOverlay || initialLoading) return undefined
+
+        const elapsedMs = loginSkeletonStartedAt.current === null ? 0 : Date.now() - loginSkeletonStartedAt.current
+        const remainingMs = Math.max(0, 1100 - elapsedMs)
+        const timer = window.setTimeout(() => setIsLoginOverlayFading(true), remainingMs)
+        return () => window.clearTimeout(timer)
+    }, [showLoginOverlay, initialLoading])
+
+    useEffect(() => {
+        if (!isLoginOverlayFading) return undefined
+
+        const timer = window.setTimeout(() => setShowLoginOverlay(false), 350)
+        return () => window.clearTimeout(timer)
+    }, [isLoginOverlayFading])
 
     const summary = dashboard?.summary
     const accountRows = dashboard ? [
@@ -178,6 +211,11 @@ function AdminDashboard() {
             {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onCreated={handleUserCreated} />}
             {isAddStudentOpen && <AddStudentModal onClose={() => setIsAddStudentOpen(false)} onCreated={handleStudentCreated} />}
             {isAddProgramOpen && <AddProgramModal onClose={() => setIsAddProgramOpen(false)} onCreated={handleProgramCreated} />}
+            {showLoginOverlay && (
+                <div className={`admin-login-skeleton-overlay${isLoginOverlayFading ? ' is-fading' : ''}`}>
+                    <DashboardSkeleton />
+                </div>
+            )}
         </div>
     )
 }
