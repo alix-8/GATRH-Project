@@ -106,6 +106,63 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertNull(app(CmCoordinatorMonitoringService::class)->getCourseDetails('OLD', 1, ['year' => 2026, 'month' => 10]));
     }
 
+    public function test_student_overview_loads_current_week_before_full_history_without_changing_counts(): void
+    {
+        Schema::create('gathering_schedules', function (Blueprint $table) {
+            $table->id();
+            $table->string('gathering_type');
+            $table->json('days');
+            $table->timestamps();
+        });
+        $this->program('BSIS');
+        $student = $this->student('Overview student');
+        $user = new User(['role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1, 'is_active' => true]);
+        $user->id = 1;
+        $this->actingAs($user);
+
+        AttendanceRecord::create([
+            'student_id' => $student->id,
+            'gathering_type' => 'pm',
+            'day' => '2026-10-28',
+            'status' => 'present',
+        ]);
+        AttendanceRecord::create([
+            'student_id' => $student->id,
+            'gathering_type' => 'ws',
+            'day' => '2026-10-20',
+            'status' => 'present',
+        ]);
+        \App\Models\AttendanceDraft::create([
+            'user_id' => $user->id,
+            'gathering_type' => 'tg',
+            'day' => '2026-10-30',
+            'status' => 'draft',
+            'parsed_data' => [['student_id' => $student->id, 'day' => '2026-10-30', 'status' => 'present']],
+        ]);
+        \App\Models\AttendanceDraft::create([
+            'user_id' => $user->id,
+            'gathering_type' => 'pm',
+            'day' => '2026-10-20',
+            'status' => 'draft',
+            'parsed_data' => [['student_id' => $student->id, 'day' => '2026-10-20', 'status' => 'present']],
+        ]);
+        $escalationService = \Mockery::mock(\App\Services\Escalations\WeeklyEscalationService::class);
+        $escalationService->shouldReceive('countsForStudents')->andReturn(collect([$student->id => 1]));
+        $this->app->instance(\App\Services\Escalations\WeeklyEscalationService::class, $escalationService);
+
+        $this->getJson("/api/students/{$student->id}/overview/current-week")
+            ->assertOk()
+            ->assertJsonCount(2, 'history')
+            ->assertJsonPath('summary.attendance_count', 4);
+        $this->getJson("/api/students/{$student->id}/overview/history")
+            ->assertOk()
+            ->assertJsonCount(4, 'history');
+        $this->getJson("/api/students/{$student->id}/overview")
+            ->assertOk()
+            ->assertJsonCount(4, 'history')
+            ->assertJsonPath('summary.attendance_count', 4);
+    }
+
     public function test_admin_defaults_to_active_and_keeps_explicit_inactive_filter(): void
     {
         $this->program('BSIS'); $this->program('OLD', false);

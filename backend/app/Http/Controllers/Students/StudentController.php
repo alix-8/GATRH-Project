@@ -12,6 +12,7 @@ use App\Services\Escalations\WeeklyEscalationService;
 use App\Support\GatheringCycle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class StudentController extends Controller
 {
@@ -145,54 +146,43 @@ class StudentController extends Controller
     /** Return the selected student's attendance details for the overview drawer. */
     public function overview(Request $request, int $id)
     {
+        return $this->overviewResponse($request, $id);
+    }
+
+    public function overviewCurrentWeek(Request $request, int $id)
+    {
+        return $this->overviewResponse($request, $id, true);
+    }
+
+    public function overviewHistory(Request $request, int $id)
+    {
+        $student = Student::query()
+            ->accessibleTo($request->user())
+            ->findOrFail($id);
+
+        return response()->json(['history' => $this->attendanceHistory($request, $student)]);
+    }
+
+    private function overviewResponse(Request $request, int $id, bool $currentWeekOnly = false)
+    {
         $student = Student::query()
             ->accessibleTo($request->user())
             ->with('escalation')
             ->findOrFail($id);
 
-        $history = $student->attendanceRecords()
-            ->orderByDesc('day')
-            ->orderByDesc('created_at')
-            ->get()
-            ->map(fn (AttendanceRecord $record) => [
-                'id' => 'record-' . $record->id,
-                'program' => $record->program ?? $student->program,
-                'year_level' => $record->year_level ?? $student->year_level,
-                'gathering_type' => $record->gathering_type,
-                'gathering' => $this->gatheringLabel($record->gathering_type),
-                'time' => $record->batch ? substr($record->batch, 0, 5) : '—',
-                'date' => $record->day->toDateString(),
-                'location' => $record->venue ?: '—',
-                'status' => $record->status,
-            ]);
-
-        // Include each active draft containing this student, matching the
-        // attendance page where multiple gatherings can remain as drafts.
-        $drafts = AttendanceDraft::query()
-            ->where('user_id', $request->user()->id)
-            ->where('status', 'draft')
-            ->orderByDesc('day')
-            ->orderByDesc('updated_at')
-            ->get();
-
-        foreach ($drafts as $draft) {
-            $draftRecord = collect($draft->parsed_data ?? [])
-                ->first(fn (array $record) => (int) ($record['student_id'] ?? 0) === $student->id);
-
-            if ($draftRecord) {
-                $history->push([
-                    'id' => 'draft-' . $draft->id,
-                    'gathering_type' => $draft->gathering_type,
-                    'gathering' => $this->gatheringLabel($draft->gathering_type),
-                    'time' => $draftRecord['batch'] ?? '—',
-                    'date' => $draftRecord['day'] ?? optional($draft->day)->toDateString(),
-                    'location' => $draftRecord['venue'] ?? '—',
-                    'status' => $draftRecord['status'] ?? 'no_response',
-                ]);
-            }
-        }
-
-        $history = $history->sortByDesc('date')->values();
+        $weekStart = GatheringCycle::weekStartForDate(Carbon::now());
+        $weekEnd = GatheringCycle::weekEndForDate(Carbon::now());
+        $draftHistory = $this->draftHistory($request, $student);
+        $history = $this->attendanceHistory(
+            $request,
+            $student,
+            $draftHistory,
+            $currentWeekOnly ? $weekStart : null,
+            $currentWeekOnly ? $weekEnd : null,
+        );
+        $attendanceCount = $currentWeekOnly
+            ? $student->attendanceRecords()->count() + $draftHistory->count()
+            : $history->count();
         $weeklyEscalationCount = app(WeeklyEscalationService::class)
             ->countsForStudents([$student->id])
             ->get($student->id, 0);
@@ -232,11 +222,74 @@ class StudentController extends Controller
                 'this_month' => $thisMonth,
                 'this_month_total' => $thisMonthTotal,
                 'this_week' => $thisWeek,
-                'attendance_count' => $history->count(),
+                'attendance_count' => $attendanceCount,
                 'escalation_count' => $weeklyEscalationCount,
             ],
             'history' => $history,
         ]);
+    }
+
+    private function attendanceHistory(
+        Request $request,
+        Student $student,
+        ?Collection $draftHistory = null,
+        ?Carbon $start = null,
+        ?Carbon $end = null,
+    ): Collection {
+        $records = $student->attendanceRecords()
+            ->when($start && $end, fn ($query) => $query->whereBetween('day', [$start->toDateString(), $end->toDateString()]))
+            ->orderByDesc('day')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn ($record) => [
+                'id' => 'record-' . $record->id,
+                'program' => $record->program ?? $student->program,
+                'year_level' => $record->year_level ?? $student->year_level,
+                'gathering_type' => $record->gathering_type,
+                'gathering' => $this->gatheringLabel($record->gathering_type),
+                'time' => $record->batch ? substr($record->batch, 0, 5) : '—',
+                'date' => $record->day->toDateString(),
+                'location' => $record->venue ?: '—',
+                'status' => $record->status,
+            ]);
+
+        $drafts = $draftHistory ?? $this->draftHistory($request, $student);
+        if ($start && $end) {
+            $drafts = $drafts->filter(fn (array $record) => $record['date'] >= $start->toDateString()
+                && $record['date'] <= $end->toDateString());
+        }
+
+        return $records->concat($drafts)->sortByDesc('date')->values();
+    }
+
+    private function draftHistory(Request $request, Student $student): Collection
+    {
+        return AttendanceDraft::query()
+            ->where('user_id', $request->user()->id)
+            ->where('status', 'draft')
+            ->orderByDesc('day')
+            ->orderByDesc('updated_at')
+            ->get()
+            ->map(function ($draft) use ($student) {
+                $record = collect($draft->parsed_data ?? [])
+                    ->first(fn (array $record) => (int) ($record['student_id'] ?? 0) === $student->id);
+
+                if (! $record) {
+                    return null;
+                }
+
+                return [
+                    'id' => 'draft-' . $draft->id,
+                    'gathering_type' => $draft->gathering_type,
+                    'gathering' => $this->gatheringLabel($draft->gathering_type),
+                    'time' => $record['batch'] ?? '—',
+                    'date' => $record['day'] ?? optional($draft->day)->toDateString(),
+                    'location' => $record['venue'] ?? '—',
+                    'status' => $record['status'] ?? 'no_response',
+                ];
+            })
+            ->filter()
+            ->values();
     }
 
     private function gatheringLabel(?string $type): string
@@ -297,7 +350,7 @@ class StudentController extends Controller
             ->whereBetween('day', [$startDate, $endDate])
             ->orderByDesc('updated_at')
             ->get(['gathering_type', 'day', 'parsed_data'])
-            ->each(function (AttendanceDraft $draft) use ($student, &$entries, &$draftEntries, $startDate, $endDate) {
+            ->each(function ($draft) use ($student, &$entries, &$draftEntries, $startDate, $endDate) {
                 foreach ($draft->parsed_data ?? [] as $record) {
                     if ((int) ($record['student_id'] ?? 0) !== $student->id) {
                         continue;
