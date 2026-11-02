@@ -171,7 +171,7 @@ function ChancellorDashboard() {
         { length: Math.floor(weeklyChartScale.maximum / weeklyChartScale.step) + 1 },
         (_, index) => index * weeklyChartScale.step
     ).reverse()
-    const [detailYear, detailMonth] = (reportingWeeks[0]?.week_start?.slice(0, 7) || getTodayDateValue().slice(0, 7))
+    const [detailYear, detailMonth] = (reportingWeeks[0]?.week_start?.slice(0, 7) || selectedMonth)
         .split('-').map(Number)
 
     return (
