@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { request } from '../../../api/request'
 import ShowPasswordIcon from '../../../assets/icons/show-password-icon.svg'
 import SaveChangesIcon from '../../../assets/icons/save-changes-icon.svg'
+import PasswordRequirements from '../../../components/forms/PasswordRequirements'
 
 const emptyPasswords = { current_password: '', password: '', password_confirmation: '' }
 const passwordFields = [
@@ -17,6 +18,7 @@ function SecuritySettingsForm() {
     const [error, setError] = useState('')
     const [fieldErrors, setFieldErrors] = useState({})
     const [notice, setNotice] = useState('')
+    const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
 
     useEffect(() => {
         if (!notice) return undefined
@@ -37,6 +39,7 @@ function SecuritySettingsForm() {
         if (saving) return
         if (passwords.password !== passwords.password_confirmation) {
             setFieldErrors({ password_confirmation: 'Passwords do not match.' })
+            setShowPasswordRequirements(true)
             return
         }
 
@@ -51,10 +54,12 @@ function SecuritySettingsForm() {
             })
             setPasswords({ ...emptyPasswords })
             setVisible({})
+            setShowPasswordRequirements(false)
             setNotice(data.message || 'Password changed successfully.')
         } catch (requestError) {
             const errors = requestError.details?.errors ?? {}
             setFieldErrors(Object.fromEntries(Object.entries(errors).map(([field, messages]) => [field, messages?.[0] || 'Invalid value.'])))
+            if (errors.password || errors.password_confirmation) setShowPasswordRequirements(true)
             if (!Object.keys(errors).length) setError(requestError.message || 'Unable to update password.')
         } finally {
             setSaving(false)
@@ -82,7 +87,7 @@ function SecuritySettingsForm() {
                                 placeholder={field.placeholder}
                                 autoComplete={field.autoComplete}
                                 aria-invalid={Boolean(fieldErrors[field.name])}
-                                aria-describedby={fieldErrors[field.name] ? `admin-settings-${field.name}-error` : undefined}
+                                aria-describedby={field.name === 'current_password' && fieldErrors[field.name] ? `admin-settings-${field.name}-error` : undefined}
                                 required
                                 disabled={saving}
                             />
@@ -93,9 +98,15 @@ function SecuritySettingsForm() {
                                 disabled={saving}
                             ><img src={ShowPasswordIcon} alt="" />{!visible[field.name] && <span className="admin-settings-password-slash" aria-hidden="true" />}</button>}
                         </div>
-                        {fieldErrors[field.name] && <small id={`admin-settings-${field.name}-error`} className="admin-settings-field-error">{fieldErrors[field.name]}</small>}
+                        {field.name === 'current_password' && fieldErrors[field.name] && <small id={`admin-settings-${field.name}-error`} className="admin-settings-field-error">{fieldErrors[field.name]}</small>}
                     </div>)}
                 </div>
+                <PasswordRequirements
+                    password={passwords.password}
+                    currentPassword={passwords.current_password}
+                    confirmation={passwords.password_confirmation}
+                    visible={showPasswordRequirements}
+                />
             </div>
             <div className="admin-settings-form-footer">
                 <div className="admin-settings-message" role="status" aria-live="polite">

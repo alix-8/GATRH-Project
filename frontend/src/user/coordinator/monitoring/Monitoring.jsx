@@ -358,7 +358,207 @@ function CoordinatorMonitoring() {
                 </section>
             </main>
 
-            {activeCourse && <MonitoringCourseDetailModal course={activeCourse} weeks={weeks} month={monitoring.month} onClose={closeCourseDetails} />}
+            {activeCourse && (
+                <div className="monitoring-detail-backdrop" onMouseDown={(event) => {
+                    if (event.target === event.currentTarget) closeCourseDetails()
+                }}>
+                    <section
+                        className="monitoring-detail-panel"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="monitoring-detail-title"
+                    >
+                        <header className="monitoring-detail-header">
+                            <div className="monitoring-detail-heading">
+                                <span className={`monitoring-detail-program-type monitoring-course-type-pill--${activeCourse.program.toLowerCase()}`}>
+                                    {PROGRAM_TYPES[activeCourse.program.toUpperCase()] || activeCourse.program}
+                                </span>
+                                <h2 id="monitoring-detail-title">{activeCourse.label}</h2>
+                                <p>{currentDetails?.course?.program_name && currentDetails.course.program_name !== activeCourse.program
+                                    ? currentDetails.course.program_name
+                                    : PROGRAM_DISPLAY_NAMES[activeCourse.program.toUpperCase()] || activeCourse.program} {activeCourse.year_level}</p>
+                            </div>
+                        </header>
+
+                        {detailLoading && (
+                            <MonitoringDetailSkeleton weekTabs={weekTabs} week={selectedWeek} />
+                        )}
+                        {currentDetailError && (
+                            <div className="monitoring-detail-body">
+                                <h3 className="monitoring-detail-section-title">Week Details</h3>
+                                {weekTabs}
+                                <p className="monitoring-message monitoring-error" role="alert">{currentDetailError}</p>
+                            </div>
+                        )}
+                        {currentDetails && (
+                            <div className="monitoring-detail-body">
+                                {currentDetails.course.students_count === 0 && (
+                                    <p className="monitoring-empty-roster">
+                                        No students are currently enrolled in this year level.
+                                    </p>
+                                )}
+                                <div
+                                    className="monitoring-detail-progress"
+                                    title={`${currentDetails.progress.completed} out of ${currentDetails.progress.total} gathering attendance completed`}
+                                >
+                                    <div>
+                                        <span>Overall Progress</span>
+                                        <span>{backendPercentage(currentDetails.progress.percentage)}%</span>
+                                    </div>
+                                    <span className="monitoring-detail-progress-track" role="progressbar" aria-label="Completed gathering attendance" aria-valuemin="0" aria-valuemax="100" aria-valuenow={backendPercentage(currentDetails.progress.percentage)}>
+                                        <span style={{ width: `${backendPercentage(currentDetails.progress.percentage)}%` }} />
+                                    </span>
+                                </div>
+
+                                <div className="monitoring-program-head-card">
+                                    <img src={ProgramHeadIcon} alt="" />
+                                    <span>
+                                        <small>Program head</small>
+                                        <strong>{currentDetails.course.program_head || 'Not assigned'}</strong>
+                                    </span>
+                                </div>
+
+                                <h3 className="monitoring-detail-section-title">Week Details</h3>
+                                {weekTabs}
+
+                                <section className="monitoring-week-details">
+                                    <h4>
+                                        {currentDetails.week.label}
+                                        <small> - {currentDetails.week.description}</small>
+                                    </h4>
+                                    <div className="monitoring-week-detail-headings">
+                                        <span>Gathering</span>
+                                        <span>Date</span>
+                                        <span>Status</span>
+                                        <span>Remarks</span>
+                                    </div>
+                                    {GATHERINGS.map((gatheringItem) => {
+                                        const entry = currentDetails.week_details.find(
+                                            (item) => item.gathering_type === gatheringItem.type
+                                        )
+                                        const status = entry?.status || 'no_report'
+                                        const recordedNoResponses = status === 'no_report' && entry?.has_attendance
+                                        const statusLabel = status === 'completed'
+                                            ? 'Completed'
+                                            : status === 'incomplete'
+                                                ? 'Incomplete'
+                                                : 'No Response'
+                                        const responseCount = `${entry?.responded_students ?? 0}/${entry?.total_students ?? 0}`
+                                        const recordState = entry?.record_state || 'not_recorded'
+                                        const recordStateLabel = {
+                                            approved: 'Approved',
+                                            pending: 'Pending',
+                                            draft: 'Draft',
+                                            not_recorded: 'Not recorded',
+                                        }[recordState]
+                                        const recordedBy = entry?.recorded_by || 'The secretary'
+                                        const recordStateTooltip = recordState === 'approved'
+                                            ? `Approved by: ${recordedBy}`
+                                            : recordState === 'pending'
+                                                ? `Submitted by: ${recordedBy}`
+                                                : recordState === 'draft'
+                                                    ? `Recorded by: ${recordedBy}`
+                                                    : `${recordedBy} did not record anything yet`
+                                        const gatheringDates = entry?.dates?.length ? entry.dates : entry?.date ? [entry.date] : []
+                                        const scheduledRange = currentDetails.week.gathering_ranges?.[gatheringItem.type]
+                                        const gatheringDateRange = gatheringDates.length
+                                            ? `${formatDate(gatheringDates[0])}${gatheringDates.length > 1 ? ` – ${formatDate(gatheringDates[gatheringDates.length - 1])}` : ''}`
+                                            : `${formatDate(scheduledRange?.start || currentDetails.week.start)} – ${formatDate(scheduledRange?.end || currentDetails.week.end)}`
+                                        return (
+                                            <div className="monitoring-week-detail-row" key={gatheringItem.type}>
+                                                <span title={`${gatheringItem.label} · ${gatheringDateRange}`}>{gatheringItem.label}</span>
+                                                <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} compactRange />
+                                                <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`} title={statusLabel}>
+                                                    <img
+                                                        src={status === 'completed'
+                                                            ? CompletedIcon
+                                                            : status === 'incomplete'
+                                                                ? IncompleteIcon
+                                                            : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
+                                                        alt=""
+                                                    />
+                                                    {responseCount}
+                                                </span>
+                                                <span title={recordStateTooltip}>{recordStateLabel}</span>
+                                            </div>
+                                        )
+                                    })}
+
+                                    {currentDetails.incomplete_entries.length > 0 && <div className="monitoring-incomplete-details">
+                                        <h4>
+                                            <span className="monitoring-incomplete-icon" aria-hidden="true">
+                                                <img src={IncompleteEntryIcon} alt="" />
+                                            </span>
+                                            Incomplete Entry Details
+                                        </h4>
+                                        {currentDetails.incomplete_entries.map((entry) => {
+                                                const entryKey = entry.gathering_type
+                                                const isOpen = activeIncompleteEntry === entryKey
+                                                return (
+                                                    <article key={entryKey}>
+                                                        <div>
+                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
+                                                            <small>+{entry.missing_students.length} students did not submit attendance</small>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            aria-expanded={isOpen}
+                                                            onClick={() => setActiveIncompleteEntry(isOpen ? null : entryKey)}
+                                                        >
+                                                            {isOpen ? 'Hide' : 'View'}
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
+                                                        </button>
+                                                        {isOpen && (
+                                                            <ul>
+                                                                {entry.missing_students.map((student) => (
+                                                                    <li key={student.id}>{student.name}</li>
+                                                                ))}
+                                                            </ul>
+                                                        )}
+                                                    </article>
+                                                )
+                                            })}
+                                    </div>}
+                                    {noResponseEntries.length > 0 && (
+                                        <div className="monitoring-incomplete-details monitoring-no-response-details">
+                                            <h4>
+                                                <span className="monitoring-incomplete-icon" aria-hidden="true">
+                                                    <img src={RecordedNoResponseIcon} alt="" />
+                                                </span>
+                                                No Response Details
+                                            </h4>
+                                            {noResponseEntries.map(entry => {
+                                                const entryKey = `no-response-${entry.gathering_type}`
+                                                const isOpen = activeIncompleteEntry === entryKey
+                                                return (
+                                                    <article key={entryKey}>
+                                                        <div>
+                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
+                                                            <small>{entry.no_response_students.length} students recorded as No Response</small>
+                                                        </div>
+                                                        <button type="button" aria-expanded={isOpen} onClick={() => setActiveIncompleteEntry(isOpen ? null : entryKey)}>
+                                                            {isOpen ? 'Hide' : 'View'}
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
+                                                        </button>
+                                                        {isOpen && <ul>{entry.no_response_students.map(student => <li key={student.id}>{student.name}</li>)}</ul>}
+                                                    </article>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </section>
+                            </div>
+                        )}
+                        <button className="monitoring-detail-close" type="button" onClick={closeCourseDetails}>
+                            Close
+                        </button>
+                    </section>
+                </div>
+            )}
         </div>
     )
 }

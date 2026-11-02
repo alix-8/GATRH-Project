@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from './ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
 import './AddUserModal.css'
 import './AddStudentModal.css'
 
@@ -97,6 +98,7 @@ function AddStudentModal({ onClose, onCreated }) {
         event.preventDefault()
         if (!isSubmitting) onClose()
     }} onClick={event => {
+        if (!isBackdropClick(event)) return
         const bounds = event.currentTarget.getBoundingClientRect()
         const outside = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom
         if (outside && !isSubmitting) onClose()
@@ -104,7 +106,7 @@ function AddStudentModal({ onClose, onCreated }) {
         <button className="admin-add-user-close" type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close Add New Student">×</button>
         <h2 id="admin-add-student-title">Add New Student</h2>
         <p id="admin-add-student-description" className="admin-add-user-description">Create a new student record and assign a program.</p>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-student-lname">Last Name<span>*</span></label>
                 <input id="admin-add-student-lname" name="lname" autoFocus required maxLength={255} placeholder="Enter last name" value={form.lname} onChange={event => updateField('lname', event.target.value)} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
