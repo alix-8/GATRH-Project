@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../../api/request'
 import LVCCLogo from '../../assets/icons/lvcc-logo.svg'
-import Illustration from '../../assets/illustrations/login-illustration.webp'
 import { initializeCsrf, submitWithCsrf, xsrfHeaders } from '../../api/request'
 import { loadBranding } from '../../api/branding'
 import ShowPasswordIcon from '../../assets/icons/show-password-icon.svg'
@@ -343,19 +342,6 @@ function Login({ initialEmail = '' }) {
                 <div className="login-panel-content"
                     aria-live="polite"
                 >
-
-                    {activeNav === 'home' && (
-                        <div
-                            className="panel-content"
-                            key={activeNav}
-                        >
-                            <img
-                                className="login-illustration"
-                                src={Illustration}
-                                alt="Students attending class"
-                            />
-                        </div>
-                    )}
 
                     {activeNav === 'features' && (
                         <section
