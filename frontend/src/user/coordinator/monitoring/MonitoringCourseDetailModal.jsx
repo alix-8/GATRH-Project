@@ -70,6 +70,7 @@ function getRecordRemark(entry) {
 export default function MonitoringCourseDetailModal({ course: activeCourse, weeks, month, onClose: closeCourseDetails }) {
     const [selectedDetailWeek, setSelectedDetailWeek] = useState(weeks[0]?.number ?? null)
     const [activeIncompleteEntry, setActiveIncompleteEntry] = useState(null)
+    const [activeNoResponseEntry, setActiveNoResponseEntry] = useState(null)
     const [courseDetails, setCourseDetails] = useState(null)
     const [detailFailure, setDetailFailure] = useState(null)
     const detailWeek = selectedDetailWeek ?? weeks[0]?.number
@@ -128,6 +129,7 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                     onClick={() => {
                         setSelectedDetailWeek(item.number)
                         setActiveIncompleteEntry(null)
+                        setActiveNoResponseEntry(null)
                     }}
                 >
                     {item.label}
@@ -135,6 +137,9 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
             ))}
         </div>
     )
+    const noResponseEntries = currentDetails?.week_details?.filter(
+        (entry) => entry.status === 'no_report' && entry.has_attendance
+    ) || []
 
     return (
                 <div className="monitoring-detail-backdrop" onMouseDown={(event) => {
@@ -300,6 +305,48 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                                 )
                                             })}
                                     </div>}
+
+                                    {noResponseEntries.length > 0 && (
+                                        <div className="monitoring-incomplete-details monitoring-no-response-details">
+                                            <h4>
+                                                <span className="monitoring-incomplete-icon" aria-hidden="true">
+                                                    <img src={RecordedNoResponseIcon} alt="" />
+                                                </span>
+                                                No Response Details
+                                            </h4>
+                                            {noResponseEntries.map((entry) => {
+                                                const entryKey = entry.gathering_type
+                                                const isOpen = activeNoResponseEntry === entryKey
+                                                const studentsWithoutResponse = entry.missing_students || []
+
+                                                return (
+                                                    <article key={entryKey}>
+                                                        <div>
+                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
+                                                            <small>{studentsWithoutResponse.length} students did not respond</small>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            aria-expanded={isOpen}
+                                                            onClick={() => setActiveNoResponseEntry(isOpen ? null : entryKey)}
+                                                        >
+                                                            {isOpen ? 'Hide' : 'View'}
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
+                                                        </button>
+                                                        {isOpen && (
+                                                            <ul>
+                                                                {studentsWithoutResponse.map((student) => (
+                                                                    <li key={student.id}>{student.name}</li>
+                                                                ))}
+                                                            </ul>
+                                                        )}
+                                                    </article>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
                                 </section>
                             </div>
                         )}

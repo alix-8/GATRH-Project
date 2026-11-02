@@ -222,6 +222,34 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame([], $ws['no_response_students']->all());
     }
 
+    public function test_coordinator_no_response_gathering_exposes_every_student_without_a_response(): void
+    {
+        $this->program('BSIS');
+        $recordedNoResponse = $this->student('Recorded no response');
+        $withoutAttendanceRow = $this->student('No attendance row');
+        AttendanceRecord::create([
+            'student_id' => $recordedNoResponse->id,
+            'gathering_type' => 'pm',
+            'day' => '2026-10-28',
+            'reporting_day' => '2026-10-28',
+            'status' => 'no_response',
+        ]);
+
+        $details = app(CmCoordinatorMonitoringService::class)->getCourseDetails(
+            'BSIS',
+            1,
+            ['year' => 2026, 'month' => 10, 'week' => 4]
+        );
+        $pm = collect($details['week_details'])->firstWhere('gathering_type', 'pm');
+
+        $this->assertSame('no_report', $pm['status']);
+        $this->assertTrue($pm['has_attendance']);
+        $this->assertEqualsCanonicalizing(
+            [$recordedNoResponse->id, $withoutAttendanceRow->id],
+            $pm['missing_students']->pluck('id')->all()
+        );
+    }
+
     public function test_coordinator_gathering_rows_expose_their_own_record_state_and_owner(): void
     {
         $this->program('BSIS');
