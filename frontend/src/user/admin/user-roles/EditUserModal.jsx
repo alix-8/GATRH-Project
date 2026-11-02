@@ -22,7 +22,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
         is_active: user.is_active,
     })
     const [saving, setSaving] = useState(false)
-    const [confirmRoleChange, setConfirmRoleChange] = useState(false)
+    const [confirmSave, setConfirmSave] = useState(false)
     const [error, setError] = useState('')
     const [fieldErrors, setFieldErrors] = useState({})
 
@@ -40,6 +40,8 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
     const needsProgram = ['secretary', 'program_secretary', 'program_head'].includes(form.role)
     const needsYearLevel = form.role === 'secretary'
     const roleLabel = role => roles.find(option => option.value === role)?.label || role
+    const currentProgram = isProgramHead ? assignedProgram : initialProgram
+    const updatedProgram = isProgramHead ? assignedProgram : (needsProgram ? form.program : '')
 
     function updateField(field, value) {
         setForm(current => ({
@@ -87,11 +89,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
 
     function handleSubmit(event) {
         event.preventDefault()
-        if (isProgramHead && form.role !== user.role) {
-            setConfirmRoleChange(true)
-            return
-        }
-        saveChanges()
+        setConfirmSave(true)
     }
 
     return <dialog
@@ -160,17 +158,21 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
             {error && <p className="admin-add-user-submit-error" role="alert">{error}</p>}
             <button className="admin-add-user-submit" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
         </form>
-        {isProgramHead && confirmRoleChange && (
+        {confirmSave && (
             <div
-                className="user-role-change-confirm-backdrop"
-                onMouseDown={event => event.target === event.currentTarget && !saving && setConfirmRoleChange(false)}
+                className="admin-change-confirm-backdrop"
+                onMouseDown={event => event.target === event.currentTarget && !saving && setConfirmSave(false)}
             >
-                <section className="user-role-change-confirm" role="alertdialog" aria-modal="true" aria-labelledby="user-role-change-confirm-title">
-                    <h3 id="user-role-change-confirm-title">Confirm role change</h3>
-                    <p>Change {user.name}'s role from <strong>{roleLabel(user.role)}</strong> to <strong>{roleLabel(form.role)}</strong>?</p>
-                    <p>Program will remain <strong>{assignedProgram || 'unassigned'}</strong>.</p>
-                    <div className="user-role-change-confirm-actions">
-                        <button type="button" className="admin-add-user-cancel" onClick={() => setConfirmRoleChange(false)} disabled={saving}>Cancel</button>
+                <section className="admin-change-confirm" role="alertdialog" aria-modal="true" aria-labelledby="user-edit-confirm-title">
+                    <h3 id="user-edit-confirm-title">Confirm user changes</h3>
+                    <p>Save these changes for <strong>{user.name}</strong>?</p>
+                    <div className="admin-change-confirm-summary">
+                        <p>Role: <strong>{roleLabel(user.role)} → {roleLabel(form.role)}</strong></p>
+                        <p>Program: <strong>{currentProgram || 'Unassigned'} → {updatedProgram || 'Unassigned'}</strong></p>
+                        <p>Status: <strong>{user.is_active ? 'Active' : 'Inactive'} → {form.is_active ? 'Active' : 'Inactive'}</strong></p>
+                    </div>
+                    <div className="admin-change-confirm-actions">
+                        <button type="button" className="admin-add-user-cancel" onClick={() => setConfirmSave(false)} disabled={saving}>Cancel</button>
                         <button type="button" className="admin-add-user-submit" onClick={saveChanges} disabled={saving}>{saving ? 'Saving…' : 'Confirm Change'}</button>
                     </div>
                 </section>

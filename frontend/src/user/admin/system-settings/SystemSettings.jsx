@@ -20,6 +20,8 @@ function SystemSettings() {
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
     const [notice, setNotice] = useState('')
+    const [confirmSystemNameSave, setConfirmSystemNameSave] = useState(false)
+    const [confirmSystemNameError, setConfirmSystemNameError] = useState('')
     const [loadAttempt, setLoadAttempt] = useState(0)
     const [rolloverStatus, setRolloverStatus] = useState(null)
     const [rolloverPreview, setRolloverPreview] = useState(null)
@@ -87,15 +89,23 @@ function SystemSettings() {
         setError('')
     }
 
-    async function saveSettings(event) {
+    function saveSettings(event) {
         event.preventDefault()
         if (!form || saving) return
         if (!normalizeSystemName(form.system_name)) {
             setError('System name is required.')
             return
         }
+        setError('')
+        setConfirmSystemNameError('')
+        setConfirmSystemNameSave(true)
+    }
+
+    async function confirmSaveSettings() {
+        if (!form || saving) return
         setSaving(true)
         setError('')
+        setConfirmSystemNameError('')
         setNotice('')
         try {
             const data = await request('/admin/settings/general', {
@@ -109,8 +119,11 @@ function SystemSettings() {
                 system_name: data.settings.system_name,
             })
             setNotice('General settings saved successfully.')
+            setConfirmSystemNameSave(false)
         } catch (error) {
-            setError(error.message || 'Unable to save general settings.')
+            const message = error.message || 'Unable to save general settings.'
+            setError(message)
+            setConfirmSystemNameError(message)
         } finally {
             setSaving(false)
         }
@@ -269,6 +282,26 @@ function SystemSettings() {
                     </div>
                 </>}
             </dialog>
+            {confirmSystemNameSave && (
+                <div
+                    className="admin-change-confirm-backdrop"
+                    onMouseDown={event => event.target === event.currentTarget && !saving && setConfirmSystemNameSave(false)}
+                >
+                    <section className="admin-change-confirm" role="alertdialog" aria-modal="true" aria-labelledby="system-name-confirm-title">
+                        <h3 id="system-name-confirm-title">Confirm system name change</h3>
+                        <p>Update the system name?</p>
+                        <div className="admin-change-confirm-summary">
+                            <p>Current: <strong>{settings?.system_name || 'Not set'}</strong></p>
+                            <p>New: <strong>{normalizeSystemName(form?.system_name || '')}</strong></p>
+                        </div>
+                        {confirmSystemNameError && <p className="admin-add-user-submit-error" role="alert">{confirmSystemNameError}</p>}
+                        <div className="admin-change-confirm-actions">
+                            <button type="button" className="admin-add-user-cancel" onClick={() => { setConfirmSystemNameSave(false); setConfirmSystemNameError('') }} disabled={saving}>Cancel</button>
+                            <button type="button" className="admin-add-user-submit" onClick={confirmSaveSettings} disabled={saving}>{saving ? 'Saving…' : 'Confirm Change'}</button>
+                        </div>
+                    </section>
+                </div>
+            )}
         </div>
     )
 }
