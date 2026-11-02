@@ -43,19 +43,14 @@ class AttendanceController extends Controller
         $periods = [];
         foreach (['last', 'current'] as $period) {
             $ranges = GatheringCycle::getImportPeriodRanges($period);
+            $counts = $this->countImportEntries($user, $ranges);
             $gatherings = [];
             foreach ($ranges as $type => $range) {
                 $start = $range['start']->toDateString();
                 $end = $range['end']->toDateString();
-                $records = AttendanceRecord::where('gathering_type', $type)
-                    ->inReportingRange([$start, $end])
-                    ->whereHas('student', fn ($query) => $query->where('program', $user->program)->where('year_level', $user->year_level));
-                $drafts = AttendanceDraft::where('gathering_type', $type)->where('status', 'draft')
-                    ->inReportingRange([$start, $end])
-                    ->whereHas('user', fn ($query) => $query->where('program', $user->program)->where('year_level', $user->year_level));
-                $recordCount = (clone $records)->count();
-                $draftCount = (clone $drafts)->count();
-                $protectedCount = $this->addProtectedAttendanceStatuses(clone $records)->count();
+                $recordCount = (int) ($counts['records'][$type] ?? 0);
+                $draftCount = (int) ($counts['drafts'][$type] ?? 0);
+                $protectedCount = (int) ($counts['protected'][$type] ?? 0);
                 $hasProtected = $protectedCount > 0;
                 $gatherings[$type] = [
                     'start' => $start,
@@ -90,34 +85,26 @@ class AttendanceController extends Controller
         $types = $validated['gathering_type'] === 'week'
             ? ['pm', 'ws', 'tg']
             : [$validated['gathering_type']];
+        $ranges = [];
+        foreach ($types as $type) {
+            $ranges[$type] = $this->parsingService->getApplicableWeekRange($type, $cycle, $validated['raw_text']);
+        }
+        $counts = $this->countImportEntries($user, $ranges);
         $duplicates = [];
 
         foreach ($types as $type) {
-            $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $validated['raw_text']);
+            $range = $ranges[$type];
             $start = $range['start']->toDateString();
             $end = $range['end']->toDateString();
 
-            $recordQuery = AttendanceRecord::where('gathering_type', $type)
-                ->inReportingRange([$start, $end])
-                ->whereHas('student', function ($query) use ($user) {
-                    $query->where('program', $user->program)
-                        ->where('year_level', $user->year_level);
-                });
-            $recordCount = (clone $recordQuery)->count();
-            $protectedRecordCount = $this->addProtectedAttendanceStatuses(clone $recordQuery)->count();
+            $recordCount = (int) ($counts['records'][$type] ?? 0);
+            $protectedRecordCount = (int) ($counts['protected'][$type] ?? 0);
 
             if ($protectedRecordCount > 0) {
                 return $this->protectedAttendanceResponse($type, $validated['gathering_type'] === 'week');
             }
 
-            $draftCount = AttendanceDraft::where('gathering_type', $type)
-                ->where('status', 'draft')
-                ->inReportingRange([$start, $end])
-                ->whereHas('user', function ($query) use ($user) {
-                    $query->where('program', $user->program)
-                        ->where('year_level', $user->year_level);
-                })
-                ->count();
+            $draftCount = (int) ($counts['drafts'][$type] ?? 0);
 
             $count = $recordCount + $draftCount;
             if ($count > 0) {
@@ -150,6 +137,46 @@ class AttendanceController extends Controller
             'week_range'            => $weekRange,
             'duplicates_count'      => $totalDuplicates,
         ], 409);
+    }
+
+    private function countImportEntries($user, array $ranges): array
+    {
+        $applyRanges = static function ($query) use ($ranges): void {
+            $query->where(function ($rangeQuery) use ($ranges): void {
+                foreach ($ranges as $type => $range) {
+                    $start = $range['start']->toDateString();
+                    $end = $range['end']->toDateString();
+                    $rangeQuery->orWhere(fn ($typeQuery) => $typeQuery
+                        ->where('gathering_type', $type)
+                        ->inReportingRange([$start, $end]));
+                }
+            });
+        };
+
+        $records = AttendanceRecord::query();
+        $applyRanges($records);
+        $records->whereHas('student', fn ($query) => $query
+            ->where('program', $user->program)
+            ->where('year_level', $user->year_level));
+
+        $countByGathering = static fn ($query) => $query
+            ->select('gathering_type')
+            ->selectRaw('COUNT(*) AS total')
+            ->groupBy('gathering_type')
+            ->pluck('total', 'gathering_type');
+
+        $drafts = AttendanceDraft::query()
+            ->where('status', 'draft');
+        $applyRanges($drafts);
+        $drafts->whereHas('user', fn ($query) => $query
+            ->where('program', $user->program)
+            ->where('year_level', $user->year_level));
+
+        return [
+            'records' => $countByGathering(clone $records),
+            'protected' => $countByGathering($this->addProtectedAttendanceStatuses(clone $records)),
+            'drafts' => $countByGathering($drafts),
+        ];
     }
 
     /**
@@ -508,7 +535,7 @@ class AttendanceController extends Controller
             ->active()
             ->where('year_level', $yearLevel)
             ->orderBy('name', 'asc')
-            ->get();
+            ->get(['name']);
 
         if ($students->isEmpty()) {
             return response()->json([
@@ -585,6 +612,7 @@ class AttendanceController extends Controller
         $selectedRange = $this->parsingService->getApplicableWeekRange($metadata['gathering_type'], $cycle, $request->raw_text);
 
         $lines = explode("\n", trim($request->raw_text));
+        $matchingStudents = $this->parsingService->findStudentsMatchingLines($lines, $metadata['default_date']);
         $parsedSubmissions = [];
         $unmatchedLines = [];
         $outOfCourseStudents = [];
@@ -611,7 +639,8 @@ class AttendanceController extends Controller
                 $metadata['default_date'],
                 $metadata['gathering_type'],
                 $cycle,
-                $request->raw_text
+                $request->raw_text,
+                $matchingStudents,
             );
 
             if (!empty($result['format_errors'])) {
@@ -880,39 +909,28 @@ class AttendanceController extends Controller
 
         // Check for existing submissions in this week range FIRST
         $typesWithSubmissions = [];
-        $firstRange = null;
+        $ranges = [];
 
         foreach (['pm', 'ws', 'tg'] as $type) {
             if (empty($parsed['records'][$type])) continue;
 
-            $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->raw_text);
-            $startStr = $range['start']->toDateString();
-            $endStr = $range['end']->toDateString();
+            $ranges[$type] = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->raw_text);
+        }
 
-            if (!$firstRange) {
-                $firstRange = $range;
-            }
+        $existingCounts = $ranges === []
+            ? ['records' => collect(), 'protected' => collect(), 'drafts' => collect()]
+            : $this->countImportEntries($user, $ranges);
 
-            $existingRecordsQuery = AttendanceRecord::where('gathering_type', $type)
-                ->whereHas('student', function ($query) use ($user) {
-                    $query->where('program', $user->program)
-                        ->where('year_level', $user->year_level);
-                })
-                ->inReportingRange([$startStr, $endStr]);
-            $existingRecords = (clone $existingRecordsQuery)->count();
-            $protectedRecords = $this->addProtectedAttendanceStatuses(clone $existingRecordsQuery)->count();
+        foreach (['pm', 'ws', 'tg'] as $type) {
+            if (!isset($ranges[$type])) continue;
+
+            $existingRecords = (int) ($existingCounts['records'][$type] ?? 0);
+            $protectedRecords = (int) ($existingCounts['protected'][$type] ?? 0);
 
             if ($protectedRecords > 0) {
                 return $this->protectedAttendanceResponse($type, true);
             }
-            $existingDrafts = AttendanceDraft::where('gathering_type', $type)
-                ->where('status', 'draft')
-                ->inReportingRange([$startStr, $endStr])
-                ->whereHas('user', function ($query) use ($user) {
-                    $query->where('program', $user->program)
-                        ->where('year_level', $user->year_level);
-                })
-                ->count();
+            $existingDrafts = (int) ($existingCounts['drafts'][$type] ?? 0);
             $hasExisting = $existingRecords + $existingDrafts > 0;
 
             if ($hasExisting) {
@@ -922,7 +940,7 @@ class AttendanceController extends Controller
 
         if (!empty($typesWithSubmissions) && !$isOverride) {
             $typesLabels = array_map(fn ($t) => $this->gatheringLabel($t), $typesWithSubmissions);
-            $range = $firstRange ?? $this->parsingService->getApplicableWeekRange($typesWithSubmissions[0], $cycle, $request->raw_text);
+            $range = $ranges[$typesWithSubmissions[0]];
             $weekLabel = $range['start']->format('F j') . ' - ' . $range['end']->format('F j, Y');
 
             return response()->json([

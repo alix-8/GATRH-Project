@@ -13,7 +13,7 @@ function SelectAttendanceWeekModal({ periods, loading, error, onSelect, onCancel
     ]
 
     return (
-        <div className="import-week-overlay">
+        <div className="import-week-overlay" onMouseDown={event => event.target === event.currentTarget && onCancel()}>
             <section className="import-week-dialog" role="dialog" aria-modal="true" aria-labelledby="import-week-title">
                 <h2 id="import-week-title">Choose an attendance week</h2>
                 <p className="import-week-intro">The date ranges below will be used to format and save attendance.</p>
