@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../../api/request'
 import LVCCLogo from '../../assets/icons/lvcc-logo.svg'
-import Illustration from '../../assets/illustrations/login-illustration.webp'
 import { initializeCsrf, submitWithCsrf, xsrfHeaders } from '../../api/request'
 import { loadBranding } from '../../api/branding'
 import ShowPasswordIcon from '../../assets/icons/show-password-icon.svg'
@@ -14,6 +13,7 @@ import DropDownIcon from '../../assets/icons/drop-down-icon.svg'
 import './Login.css'
 import { prepareLoginSkeleton } from '../../utils/loginSkeletonState'
 
+const DEFAULT_SYSTEM_NAME = 'Gathering Attendance Tracking and Reporting Hub'
 
 export function AdminContactLink({ adminEmail }) {
     if (!adminEmail) return <span>Contact your administrator</span>
@@ -39,7 +39,7 @@ function Login({ initialEmail = '' }) {
     const navigate = useNavigate()
     const location = useLocation()
 
-    const [systemName, setSystemName] = useState('Gathering Attendance Tracking and Reporting Hub')
+    const [systemName, setSystemName] = useState(DEFAULT_SYSTEM_NAME)
     const [adminEmail, setAdminEmail] = useState('')
     useEffect(() => {
         let cancelled = false
@@ -163,126 +163,135 @@ function Login({ initialEmail = '' }) {
 
     return (
         <main className="login-page">
+            <div className="login-left">
 
-            {/* LEFT SIDE */}
-            <section className="login-content">
-                <img
-                    className="login-lvcc-logo"
-                    src={LVCCLogo}
-                    alt="LVCC Logo"
-                />
-
-                <h4 className="login-title">
-                    {systemName}
-                </h4>
-
-                <h2 className="welcome-title">
-                    Welcome
-                    <br />
-                    Back!
-                </h2>
-
-                <p className="welcome-message">
-                    Sign in to monitor and manage student
-                    <br />
-                    attendance.
-                </p>
-
-            </section>
-
-
-            {/* LOGIN FORM */}
-            <section className="login-form">
-                <form onSubmit={handleSubmit} autoComplete="on">
-                    <div className="form-group">
-                        <label htmlFor="email">Email Address</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            placeholder="example@laverdad.edu.ph"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            autoComplete="email"
-                            required
+                {/* LEFT SIDE */}
+                <section className="login-content">
+                    <div className="login-brand">
+                        <img
+                            className="login-lvcc-logo"
+                            src={LVCCLogo}
+                            alt="LVCC Logo"
                         />
+
+                        <h4 className="login-title">
+                            {systemName === DEFAULT_SYSTEM_NAME ? (
+                                <>
+                                    <span>Gathering Attendance</span>
+                                    <span>Tracking and Reporting Hub</span>
+                                </>
+                            ) : systemName}
+                        </h4>
+                    </div>
+                </section>
+
+                <div className="login-main">
+                    <div className="login-intro">
+                        <h2 className="welcome-title">
+                            Welcome
+                            <br />
+                            Back!
+                        </h2>
+
+                        <p className="welcome-message">
+                            Sign in to monitor and manage student attendance.
+                        </p>
                     </div>
 
-                    <div className="form-group password-group">
-                        <label htmlFor="password">Password</label>
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            id="password"
-                            name="password"
-                            placeholder="****************"
-                            value={password}
-                            onChange={(event) => { setPassword(event.target.value); if (!event.target.value) setShowPassword(false) }}
-                            autoComplete="current-password"
-                            required
-                        />
-                        {password.length > 0 && (
-                            <button
-                                type="button"
-                                className="show-password-toggle"
-                                onClick={() => setShowPassword(!showPassword)}
-                                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                            >
-                                <img
-                                    className="show-password-icon"
-                                    src={ShowPasswordIcon}
-                                    alt=""
+                    {/* LOGIN FORM */}
+                    <section className="login-form">
+                        <form onSubmit={handleSubmit} autoComplete="on">
+                            <div className="form-group">
+                                <label htmlFor="email">Email Address</label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    placeholder="example@laverdad.edu.ph"
+                                    value={email}
+                                    onChange={(event) => setEmail(event.target.value)}
+                                    autoComplete="email"
+                                    required
                                 />
-                                {showPassword && <span className="login-password-slash" />}
-                            </button>
-                        )}
-                    </div>
+                            </div>
 
-                    <div className="form-options">
-                        <label className="remember-option">
-                            <input
-                                type="checkbox"
-                                name="remember"
-                                checked={remember}
-                                onChange={(event) => setRemember(event.target.checked)}
-                            />
-                            <span>Remember Me</span>
-                        </label>
+                            <div className="form-group password-group">
+                                <label htmlFor="password">Password</label>
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    id="password"
+                                    name="password"
+                                    placeholder="****************"
+                                    value={password}
+                                    onChange={(event) => { setPassword(event.target.value); if (!event.target.value) setShowPassword(false) }}
+                                    autoComplete="current-password"
+                                    required
+                                />
+                                {password.length > 0 && (
+                                    <button
+                                        type="button"
+                                        className="show-password-toggle"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    >
+                                        <img
+                                            className="show-password-icon"
+                                            src={ShowPasswordIcon}
+                                            alt=""
+                                        />
+                                        {showPassword && <span className="login-password-slash" />}
+                                    </button>
+                                )}
+                            </div>
 
-                        <button
-                            className="forgot-password"
-                            type="button"
-                            onClick={handleForgotPassword}
-                        >
-                            Forgot Password?
-                        </button>
-                    </div>
+                            <div className="form-options">
+                                <label className="remember-option">
+                                    <input
+                                        type="checkbox"
+                                        name="remember"
+                                        checked={remember}
+                                        onChange={(event) => setRemember(event.target.checked)}
+                                    />
+                                    <span>Remember Me</span>
+                                </label>
 
-                    <p
-                        className={`login-error ${error ? 'visible' : ''} ${errorType === 'success' ? 'login-success' : ''}`}
-                        role={error ? 'alert' : undefined}
-                        aria-live={error ? 'polite' : undefined}
-                    >
-                        {error || ' '}
-                    </p>
+                                <button
+                                    className="forgot-password"
+                                    type="button"
+                                    onClick={handleForgotPassword}
+                                >
+                                    Forgot Password?
+                                </button>
+                            </div>
 
-                    <div className="form-actions">
-                        <button
-                            className="button login-button"
-                            type={retryAfter > 0 ? 'button' : 'submit'}
-                            onClick={retryAfter > 0 ? () => navigate(-1) : undefined}
-                            disabled={loading}
-                        >
-                            {loading ? 'Logging in...' : retryAfter > 0 ? 'Go Back' : 'Log In'}
-                        </button>
-                    </div>
-                </form>
-            </section>
+                            <p
+                                className={`login-error ${error ? 'visible' : ''} ${errorType === 'success' ? 'login-success' : ''}`}
+                                role={error ? 'alert' : undefined}
+                                aria-live={error ? 'polite' : undefined}
+                            >
+                                {error || ' '}
+                            </p>
 
-            {/* ACCOUNT HELP */}
-            <p className="account-help">
-                <span>Need help accessing your account?</span>
-                <AdminContactLink adminEmail={adminEmail} />
-            </p>
+                            <div className="form-actions">
+                                <button
+                                    className="button login-button"
+                                    type={retryAfter > 0 ? 'button' : 'submit'}
+                                    onClick={retryAfter > 0 ? () => navigate(-1) : undefined}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Logging in...' : retryAfter > 0 ? 'Go Back' : 'Log In'}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+
+                {/* ACCOUNT HELP */}
+                <p className="account-help">
+                    <span>Need help accessing your account?</span>
+                    <AdminContactLink adminEmail={adminEmail} />
+                </p>
+            </div>
 
             {/* RIGHT SIDE */}
             <section className="login-right">
@@ -334,19 +343,6 @@ function Login({ initialEmail = '' }) {
                     aria-live="polite"
                 >
 
-                    {activeNav === 'home' && (
-                        <div
-                            className="panel-content"
-                            key={activeNav}
-                        >
-                            <img
-                                className="login-illustration"
-                                src={Illustration}
-                                alt="Students attending class"
-                            />
-                        </div>
-                    )}
-
                     {activeNav === 'features' && (
                         <section
                             className="panel-content features-panel"
@@ -386,8 +382,8 @@ function Login({ initialEmail = '' }) {
                                     <h3>Attendance Converter</h3>
 
                                     <p>
-                                        Easily record and monitor student attendance for every gathering.
-                                        Track responses and keep attendance information organized in one place.
+                                        Copy generated attendance text formats and paste it to convert into tables. 
+                                        Easily edit records in organized tables.
                                     </p>
 
                                     <div className="feature-footer">

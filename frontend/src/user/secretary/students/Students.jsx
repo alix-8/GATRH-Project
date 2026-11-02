@@ -516,6 +516,8 @@ function Students() {
             {overview && (
                 <div className="student-overview-backdrop" onMouseDown={(event) => event.target === event.currentTarget && closeOverview()}>
                     <aside className="student-overview-drawer" role="dialog" aria-modal="true" aria-label="Student overview">
+                        <button type="button" className="student-overview-close-icon" aria-label="Close student overview" onClick={closeOverview}>×</button>
+                        <div className="student-overview-content">
                         <h2>Student Overview</h2>
                         <p className="overview-month">
                             {overviewLoading
@@ -623,6 +625,10 @@ function Students() {
                                     </tbody>
                                 </table>
                             )}
+                        </div>
+                        </div>
+                        <div className="student-overview-footer">
+                            <button type="button" className="student-overview-close-button" onClick={closeOverview}>Close</button>
                         </div>
                     </aside>
                 </div>

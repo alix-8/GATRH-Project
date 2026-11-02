@@ -987,7 +987,7 @@ function Reminders() {
     const reportNoResponseCount = escalationReport?.escalation.no_response_count ?? reportLevel
 
     return (
-        <div className="reminders">
+        <div className={`reminders reminders-${role || 'default'}`}>
             <Sidebar />
 
             <main className="reminders-main">

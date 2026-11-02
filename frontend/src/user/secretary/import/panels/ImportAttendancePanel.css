@@ -164,3 +164,49 @@
     font-size: 15px;
     font-weight: 600;
 }
+
+@media (min-width: 901px) and (max-width: 1150px) {
+    .import-columns {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+    }
+
+    .import-column {
+        min-width: 0;
+    }
+
+    .import-column-actions-row {
+        justify-content: flex-start;
+    }
+
+    .import-column-actions-row .import-hint-clear,
+    .import-column-actions-row .import-hint-generate {
+        width: min(50%, 180px);
+    }
+}
+
+@media (min-width: 1800px) and (min-height: 900px) {
+    .import-columns {
+        --import-preview-height: clamp(340px, 35vh, 520px);
+        gap: 24px;
+    }
+
+    .import-column {
+        font-size: clamp(16px, .9vw, 20px);
+    }
+
+    .import-column textarea {
+        font-size: clamp(15px, .85vw, 18px);
+    }
+
+    .import-gathering-select {
+        width: clamp(220px, 15vw, 300px);
+    }
+
+    .import-gathering-select .import-native-select,
+    .import-parse-preview-btn,
+    .import-process-btn,
+    .import-column-actions-row button {
+        font-size: clamp(16px, .9vw, 20px);
+    }
+}

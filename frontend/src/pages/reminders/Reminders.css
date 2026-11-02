@@ -6,6 +6,7 @@
 
 .reminders-main {
     flex: 1;
+    min-width: 0;
     overflow-y: auto;
     overflow-x: hidden;
     background-color: #DBDEE4;
@@ -1298,4 +1299,269 @@
 .monthly-export-modal .reminder-delete-confirm {
     border-color: #1da1f2;
     background: #1da1f2;
+}
+
+@media (min-width: 901px) and (max-width: 1150px) {
+    .reminders-secretary .reminders-cards,
+    .reminders-secretary .reminders-task-panel {
+        width: calc(100% - 40px);
+    }
+
+    .reminders-secretary .reminders-cards {
+        height: auto;
+        padding: 20px 0 0;
+    }
+
+    .reminders-secretary .reminders-card {
+        min-width: 0;
+        min-height: 140px;
+        padding: 16px;
+    }
+
+    .reminders-secretary .reminders-task-panel {
+        margin: 16px auto 40px;
+        padding: 20px;
+    }
+
+    .reminders-secretary .reminders-filter-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .reminders-secretary .reminders-filter {
+        width: 100%;
+    }
+
+    .reminders-secretary .reminders-task-item {
+        grid-template-columns: minmax(0, 1fr) minmax(140px, auto);
+        gap: 12px;
+        padding: 18px 16px;
+    }
+
+    .reminders-secretary .task-main,
+    .reminders-secretary .task-copy,
+    .reminders-secretary .task-status {
+        min-width: 0;
+    }
+
+    .reminders-secretary .task-copy {
+        overflow-wrap: anywhere;
+    }
+
+    .reminders-secretary .reminders-task-item.escalation {
+        padding: 12px 16px;
+    }
+
+    .reminders-secretary .reminder-modal {
+        max-width: 100%;
+        max-height: calc(100dvh - 48px);
+        overflow-y: auto;
+    }
+
+    .reminders-secretary .reminder-delete-overlay {
+        box-sizing: border-box;
+        padding: 20px;
+    }
+
+    .reminders-secretary .reminder-delete-modal {
+        width: min(440px, 100%);
+        max-height: calc(100dvh - 40px);
+        overflow-y: auto;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1050px) {
+    .reminders-secretary .reminders-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1800px) and (min-height: 900px) {
+    .reminders-secretary > .sidebar {
+        width: clamp(240px, 12vw, 360px);
+        flex: 0 0 clamp(240px, 12vw, 360px);
+        padding: 28px clamp(16px, 1vw, 28px);
+    }
+
+    .reminders-secretary .sidebar-lvcc-logo {
+        top: 24px;
+        left: 50%;
+        width: clamp(112px, 6vw, 160px);
+        height: clamp(112px, 6vw, 160px);
+    }
+
+    .reminders-secretary .sidebar-nav {
+        margin-top: clamp(132px, 9vw, 200px);
+        gap: clamp(6px, .4vw, 12px);
+    }
+
+    .reminders-secretary .sidebar-link,
+    .reminders-secretary .sidebar-link.active {
+        padding: 14px 10px;
+        font-size: clamp(16px, .95vw, 22px);
+    }
+
+    .reminders-secretary .sidebar-signout {
+        font-size: clamp(15px, .9vw, 20px);
+    }
+
+    .reminders-secretary .app-header.page-header {
+        padding: 30px max(32px, calc((100% - 1600px) / 2));
+    }
+
+    .reminders-secretary .reminders-header .header-title h3 {
+        font-size: clamp(24px, 1.5vw, 36px);
+    }
+
+    .reminders-secretary .reminders-header .header-title p,
+    .reminders-secretary .app-header .header-meta .page-date {
+        font-size: clamp(17px, 1vw, 23px);
+    }
+
+    .reminders-secretary .reminders-cards,
+    .reminders-secretary .reminders-task-panel {
+        box-sizing: border-box;
+        width: min(calc(100% - 64px), 1600px);
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    .reminders-secretary .reminders-cards {
+        height: auto;
+        gap: 20px;
+        margin-top: clamp(24px, 2vh, 40px);
+        padding: 0;
+    }
+
+    .reminders-secretary .reminders-card {
+        min-height: clamp(180px, 14vh, 250px);
+        padding: clamp(24px, 1.5vw, 36px);
+    }
+
+    .reminders-secretary .reminders-icon-wrap {
+        width: 48px;
+        height: 48px;
+    }
+
+    .reminders-secretary .reminders-card-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .reminders-secretary .reminders-card h4 {
+        font-size: clamp(16px, .9vw, 20px);
+    }
+
+    .reminders-secretary .reminders-card strong {
+        font-size: clamp(36px, 2vw, 48px);
+    }
+
+    .reminders-secretary .reminders-card p {
+        font-size: clamp(14px, .8vw, 18px);
+    }
+
+    .reminders-secretary .reminders-task-panel {
+        margin-top: 24px;
+        padding: clamp(24px, 1.5vw, 36px);
+    }
+
+    .reminders-secretary .reminders-task-heading h2 {
+        font-size: clamp(24px, 1.4vw, 32px);
+    }
+
+    .reminders-secretary .reminders-task-heading p {
+        font-size: clamp(16px, .9vw, 20px);
+    }
+
+    .reminders-secretary .add-reminder-button {
+        width: 220px;
+        height: 52px;
+        font-size: 16px;
+    }
+
+    .reminders-secretary .reminders-filter-row {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .reminders-secretary .reminders-filter {
+        width: 100%;
+        height: 44px;
+        font-size: 16px;
+    }
+
+    .reminders-secretary .reminders-task-item {
+        padding: 28px 32px;
+        gap: 24px;
+    }
+
+    .reminders-secretary .task-copy h3,
+    .reminders-secretary .reminders-task-item.escalation .task-copy h3,
+    .reminders-secretary .task-status strong {
+        font-size: clamp(17px, .9vw, 21px);
+    }
+
+    .reminders-secretary .task-copy p,
+    .reminders-secretary .reminders-task-item.escalation .task-copy p {
+        max-width: 75ch;
+        font-size: clamp(15px, .8vw, 18px);
+    }
+
+    .reminders-secretary .task-status > button {
+        min-width: 140px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .reminders-secretary .task-system-pin {
+        font-size: clamp(14px, .75vw, 18px);
+    }
+
+    .reminders-secretary .task-actions {
+        gap: 12px;
+    }
+
+    .reminders-secretary .task-complete-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .reminders-secretary .task-action-btn img {
+        width: 22px;
+        height: 22px;
+    }
+
+    .reminders-secretary .reminder-modal {
+        width: min(560px, 100%);
+        max-height: calc(100dvh - 48px);
+        overflow-y: auto;
+        padding: 28px;
+    }
+
+    .reminders-secretary .reminder-modal h2 {
+        font-size: 24px;
+    }
+
+    .reminders-secretary .reminder-modal-header p,
+    .reminders-secretary .reminder-field,
+    .reminders-secretary .reminder-modal input,
+    .reminders-secretary .reminder-modal textarea {
+        font-size: 16px;
+    }
+
+    .reminders-secretary .modal-cancel,
+    .reminders-secretary .modal-save {
+        height: 44px;
+        font-size: 16px;
+    }
+
+    .reminders-secretary .escalation-report-modal {
+        width: min(600px, 100%);
+    }
+
+    .reminders-secretary .reminder-detail-drawer {
+        width: min(700px, 100vw);
+    }
 }

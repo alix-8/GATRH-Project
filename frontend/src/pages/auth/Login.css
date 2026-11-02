@@ -286,6 +286,16 @@
     width: 50%;
     overflow: hidden;
     background-color: #172B4D;
+    background-image:
+        linear-gradient(
+            18deg,
+            rgba(23, 43, 77, 0.9) 72.4%,
+            rgba(48, 89, 160, 0.9) 93.2%,
+            rgba(53, 100, 179, 0.9) 98.3%
+        ),
+        url('../../assets/illustrations/right-panel-background.png');
+    background-position: center, center bottom;
+    background-size: cover, auto calc(100% + clamp(12px, 16vh, 100px));
 }
 
 .login-panel-content {
@@ -339,13 +349,6 @@
 
 .login-nav a.active::after {
     transform: scaleX(1);
-}
-
-.login-illustration {
-    position: absolute;
-    width: 90%;
-    right: -34px;
-    margin-top: 130px;
 }
 
 .features-panel {
@@ -495,6 +498,7 @@
     position: absolute;
     inset: var(--panel-content-top) 40px 14px;
     box-sizing: border-box;
+    height: auto;
     margin: 0;
 }
 
@@ -531,39 +535,34 @@
     font-size: 14px;
 }
 
-@media (min-width: 1600px) {
-    .login-page {
-        --login-scale: 1;
+/* Keep the form controls within the left panel at supported narrow widths. */
+@media (min-width: 901px) and (max-width: 1599px) {
+    .form-group,
+    .form-options,
+    .login-button {
+        width: 100%;
     }
 
-    .login-lvcc-logo {
-        left: 4.83vw;
-        width: calc(112px * var(--login-scale));
-        top: 4.41%;
-        margin-top: 0;
+    .form-options,
+    .account-help {
+        flex-wrap: wrap;
     }
 
-    .login-title {
-        max-width: calc(506px * var(--login-scale));
-        margin-left: 11.27vw;
-        top: 2.65%;
-        padding-top: 0;
-        font-size: calc(28px * var(--login-scale));
+    .form-options {
+        gap: 12px;
     }
 
-    .welcome-title {
-        top: 19.12%;
-        left: 5.71vw;
-        margin: 0;
-        font-size: calc(63px * var(--login-scale));
-        letter-spacing: calc(1.4px * var(--login-scale));
+    .admin-contact-link {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
     }
 
-    .welcome-message {
-        top: 37.5%;
-        left: 5.71vw;
-        margin: 0;
-        font-size: calc(22.5px * var(--login-scale));
+    .features-panel,
+    .process-panel,
+    .faq-panel {
+        overflow-y: auto;
+        overflow-wrap: anywhere;
     }
 
     .login-form {
@@ -581,7 +580,9 @@
 
     .form-group label,
     .form-group input,
-    .form-group input::placeholder {
+    .form-group input::placeholder,
+    .form-options,
+    .button {
         font-size: calc(17px * var(--login-scale));
     }
 
@@ -606,15 +607,9 @@
         height: calc(25px * var(--login-scale));
     }
 
-    .login-password-slash {
-        width: calc(3px * var(--login-scale));
-        height: calc(28px * var(--login-scale));
-    }
-
     .form-options {
         width: 100%;
         margin: calc(28px * var(--login-scale)) 0;
-        font-size: calc(17px * var(--login-scale));
     }
 
     .remember-option {
@@ -628,7 +623,6 @@
 
     .button {
         height: calc(63px * var(--login-scale));
-        font-size: calc(17px * var(--login-scale));
     }
 
     .login-button {
@@ -640,62 +634,30 @@
         margin-top: calc(11px * var(--login-scale));
         font-size: calc(20px * var(--login-scale));
     }
-
-    .account-help {
-        top: 89.7%;
-        left: 5.86vw;
-        gap: calc(6px * var(--login-scale));
-        font-size: calc(18px * var(--login-scale));
-    }
-
-    .login-nav {
-        top: 7.35%;
-        gap: calc(42px * var(--login-scale));
-        margin-left: 10.98vw;
-    }
-
-    .login-nav a {
-        font-size: calc(25px * var(--login-scale));
-    }
-
-    .login-nav a::after {
-        bottom: calc(-11px * var(--login-scale));
-    }
-
-    .login-illustration {
-        width: calc(864px * var(--login-scale));
-        right: -2.49vw;
-        top: 19.12%;
-        margin-top: 0;
-    }
 }
 
 @media (min-width: 1600px) and (max-width: 1799px) {
-    .login-page {
-        --login-scale: .85;
-    }
+    .login-page { --login-scale: .85; }
 }
 
 @media (min-width: 1600px) and (max-height: 800px) {
-    .login-page {
-        --login-scale: .75;
-    }
+    .login-page { --login-scale: .75; }
 }
 
-@media (min-width: 1600px) and (max-height: 950px) {
-    .login-illustration {
-        width: calc(740px * var(--login-scale));
-    }
+@media (min-width: 1600px) and (max-height: 680px) {
+    .login-page { --login-scale: .65; }
 }
 
-@media (min-width: 2400px) and (min-height: 1200px) {
-    .login-page {
-        --login-scale: 1.4;
+/* The minimum supported viewport needs shorter fields to keep the form in view. */
+@media (min-width: 901px) and (max-width: 1599px) and (max-height: 560px) {
+    .form-group {
+        height: 42px;
+        margin-bottom: 7px;
+        padding: 6px 12px 0;
     }
-}
 
-@media (min-width: 3200px) and (min-height: 1800px) {
-    .login-page {
-        --login-scale: 2;
+    .form-group label {
+        padding-top: 2px;
+        font-size: 10px;
     }
 }
