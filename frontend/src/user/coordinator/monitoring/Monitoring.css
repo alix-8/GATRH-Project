@@ -594,8 +594,29 @@
 }
 
 .monitoring-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
     flex: 0 0 auto;
     padding: 22px 20px 14px;
+}
+
+.monitoring-detail-dismiss {
+    flex: 0 0 auto;
+    border: 0;
+    padding: 0 4px;
+    background: transparent;
+    color: #667085;
+    cursor: pointer;
+    font: inherit;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.monitoring-detail-dismiss:hover,
+.monitoring-detail-dismiss:focus-visible {
+    color: #172b4d;
 }
 
 .monitoring-detail-program-type {
