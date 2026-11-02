@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\AttendanceDraft;
 use App\Models\Program;
 use App\Models\Student;
+use App\Models\User;
 use App\Support\GatheringCycle;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -166,8 +167,16 @@ class CmCoordinatorMonitoringService
             return null;
         }
 
+        $secretaryName = User::query()
+            ->where('role', 'secretary')
+            ->where('is_active', true)
+            ->whereRaw('UPPER(TRIM(program)) = ?', [$programCode])
+            ->where('year_level', $yearLevel)
+            ->orderBy('name')
+            ->value('name');
+
         $records = AttendanceRecord::query()
-            ->with(['validator:id,name'])
+            ->with(['submitter:id,name', 'validator:id,name'])
             ->whereIn('student_id', $roster->pluck('id'))
             ->whereIn('gathering_type', self::GATHERING_TYPES)
             ->inReportingRange([$rangeStart, $rangeEnd])
@@ -186,7 +195,7 @@ class CmCoordinatorMonitoringService
 
         $studentIds = $roster->pluck('id')->all();
         $entries = collect(self::GATHERING_TYPES)
-            ->map(function (string $type) use ($weekRecords, $roster, $studentIds, $week, $program) {
+            ->map(function (string $type) use ($weekRecords, $roster, $studentIds, $week, $program, $secretaryName) {
                 $gatheringRange = $week['gathering_ranges'][$type];
                 $eventRecords = $weekRecords->where('gathering_type', $type)
                     ->filter(fn ($record) => ($record->reporting_day ?? $record->day)->toDateString() >= $gatheringRange['start']
@@ -222,13 +231,25 @@ class CmCoordinatorMonitoringService
                     ->map(fn (Student $student) => ['id' => $student->id, 'name' => $student->name])
                     ->values();
 
-                $allValidated = $eventRecords->isNotEmpty() && $eventRecords->every(fn ($record) =>
+                $submittedRecords = $eventRecords->reject(fn ($record) => ($record->record_source ?? null) === 'draft');
+                $draftRecords = $eventRecords->filter(fn ($record) => ($record->record_source ?? null) === 'draft');
+                $allValidated = $submittedRecords->isNotEmpty() && $submittedRecords->every(fn ($record) =>
                     in_array($record->validation_status, ['validated', 'approved'], true)
                 );
-                $latestApproval = $eventRecords
+                $latestApproval = $submittedRecords
                     ->filter(fn ($record) => in_array($record->validation_status, ['validated', 'approved'], true))
                     ->sortByDesc('updated_at')
                     ->first();
+                $latestSubmission = $submittedRecords->sortByDesc('updated_at')->first();
+                $latestDraft = $draftRecords->sortByDesc('updated_at')->first();
+
+                [$recordState, $recordedBy] = match (true) {
+                    $allValidated => ['approved', $latestApproval?->validator?->name],
+                    $submittedRecords->isNotEmpty() => ['pending', $latestSubmission?->submitter?->name],
+                    ($latestDraft?->draft_status ?? null) === 'pending' => ['pending', $latestDraft?->recorded_by],
+                    $draftRecords->isNotEmpty() => ['draft', $latestDraft?->recorded_by],
+                    default => ['not_recorded', $secretaryName],
+                };
 
                 return [
                     'gathering_type' => $type,
@@ -237,11 +258,8 @@ class CmCoordinatorMonitoringService
                     'dates' => $dates,
                     'status' => $summary['status'],
                     'has_attendance' => $summary['has_attendance'],
-                    'approval_status' => $allValidated ? 'approved' : 'pending',
-                    'approved_on' => $allValidated ? $latestApproval?->updated_at?->toIso8601String() : null,
-                    'program_head' => $allValidated
-                        ? $latestApproval?->validator?->name
-                        : null,
+                    'record_state' => $recordState,
+                    'recorded_by' => $recordedBy,
                     'recorded_students' => $summary['responded_students'],
                     'responded_students' => $summary['responded_students'],
                     'total_students' => $summary['total_students'],
@@ -252,10 +270,6 @@ class CmCoordinatorMonitoringService
             })
             ->sortBy(fn (array $entry) => ($entry['date'] ?? '9999-12-31') . '|' . $entry['gathering_type'])
             ->values();
-        $latestApproval = $weekRecords
-            ->filter(fn ($record) => in_array($record->validation_status, ['validated', 'approved'], true))
-            ->sortByDesc(fn ($record) => ($record->approved_at ?? $record->updated_at)?->getTimestamp() ?? 0)
-            ->first();
         $completedEvents = $weeks->sum(function (array $monthWeek) use ($records, $studentIds, $roster, $program) {
             $recordsForWeek = $records->filter(fn ($record) =>
                 ($record->reporting_day ?? $record->day)->toDateString() >= $monthWeek['start']
@@ -282,6 +296,7 @@ class CmCoordinatorMonitoringService
                 'year_level' => $yearLevel,
                 'label' => $programCode . ' ' . $yearLevel,
                 'students_count' => $entries->max('total_students') ?? 0,
+                'program_head' => $programHeadNames ?: null,
             ],
             'month' => [
                 'month' => $month->month,
@@ -292,11 +307,6 @@ class CmCoordinatorMonitoringService
                 'completed' => $completedEvents,
                 'total' => $monthlyEventTotal,
                 'percentage' => (int) round(($completedEvents / max(1, $monthlyEventTotal)) * 100),
-            ],
-            'approval' => [
-                'has_report' => $weekRecords->isNotEmpty(),
-                'approved_on' => ($latestApproval?->approved_at ?? $latestApproval?->updated_at)?->toIso8601String(),
-                'program_head' => $programHeadNames ?: null,
             ],
             'week' => $week,
             'week_details' => $entries,
@@ -432,6 +442,7 @@ class CmCoordinatorMonitoringService
     private function getDraftAttendanceRows(string $start, string $end, ?array $studentIds = null): Collection
     {
         return AttendanceDraft::query()
+            ->with('user:id,name')
             ->whereIn('status', ['draft', 'pending'])
             ->whereBetween('day', [$start, $end])
             ->get()
@@ -451,6 +462,10 @@ class CmCoordinatorMonitoringService
                         'status' => $entry['status'] ?? 'no_response',
                         'validation_status' => 'unvalidated',
                         'validator' => null,
+                        'submitter' => null,
+                        'record_source' => 'draft',
+                        'draft_status' => $draft->status,
+                        'recorded_by' => $draft->user?->name,
                         'updated_at' => $draft->updated_at,
                     ]);
             })

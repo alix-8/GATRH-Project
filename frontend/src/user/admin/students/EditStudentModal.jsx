@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from '../dashboard/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
 import '../dashboard/AddUserModal.css'
 import '../dashboard/AddStudentModal.css'
 
@@ -53,6 +54,7 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
 
     async function handleSubmit(event) {
         event.preventDefault()
+        if (isSubmitting) return
         const lastName = form.lname.trim().replace(/\s+/g, ' ')
         const firstName = form.fname.trim().replace(/\s+/g, ' ')
         const name = `${lastName}, ${firstName}`
@@ -89,13 +91,14 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
         event.preventDefault()
         if (!isSubmitting) onClose()
     }} onClick={event => {
+        if (!isBackdropClick(event)) return
         const bounds = event.currentTarget.getBoundingClientRect()
         if (!isSubmitting && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) onClose()
     }}>
         <button className="admin-add-user-close" type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close Edit Student">×</button>
         <h2 id="admin-edit-student-title">Edit Student</h2>
         <p className="admin-add-user-description">Update the student record.</p>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-student-lname">Last Name<span>*</span></label>
                 <input id="admin-edit-student-lname" name="lname" autoFocus required maxLength={255} placeholder="Enter last name" value={form.lname} onChange={event => updateField('lname', event.target.value)} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />

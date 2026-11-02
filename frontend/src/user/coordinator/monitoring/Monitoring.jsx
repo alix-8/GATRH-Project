@@ -504,33 +504,12 @@ function CoordinatorMonitoring() {
                                     </span>
                                 </div>
 
-                                <div className="monitoring-approval-card">
-                                    <div>
-                                        <svg className="monitoring-calendar-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                            <path d="M18.5 5.5H5.5C4.4 5.5 3.5 6.4 3.5 7.5V18C3.5 19.1 4.4 20 5.5 20H18.5C19.6 20 20.5 19.1 20.5 18V7.5C20.5 6.4 19.6 5.5 18.5 5.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M8 4V7M16 4V7M3.5 9.5H20.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                        <span>
-                                            <small>Approved on</small>
-                                            <strong>{currentDetails.approval.has_report && (currentDetails.approval.approved_on
-                                                ? new Date(currentDetails.approval.approved_on).toLocaleString('en-US', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                })
-                                                : 'Not yet approved')}
-                                            </strong>
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <img className="monitoring-program-head-icon" src={ProgramHeadIcon} alt="" />
-                                        <span>
-                                            <small>Program head</small>
-                                            <strong>{currentDetails.approval.program_head || ''}</strong>
-                                        </span>
-                                    </div>
+                                <div className="monitoring-program-head-card">
+                                    <img src={ProgramHeadIcon} alt="" />
+                                    <span>
+                                        <small>Program head</small>
+                                        <strong>{currentDetails.course.program_head || 'Not assigned'}</strong>
+                                    </span>
                                 </div>
 
                                 <h3 className="monitoring-detail-section-title">Week Details</h3>
@@ -553,6 +532,27 @@ function CoordinatorMonitoring() {
                                         )
                                         const status = entry?.status || 'no_report'
                                         const recordedNoResponses = status === 'no_report' && entry?.has_attendance
+                                        const statusLabel = status === 'completed'
+                                            ? 'Completed'
+                                            : status === 'incomplete'
+                                                ? 'Incomplete'
+                                                : 'No Response'
+                                        const responseCount = `${entry?.responded_students ?? 0}/${entry?.total_students ?? 0}`
+                                        const recordState = entry?.record_state || 'not_recorded'
+                                        const recordStateLabel = {
+                                            approved: 'Approved',
+                                            pending: 'Pending',
+                                            draft: 'Draft',
+                                            not_recorded: 'Not recorded',
+                                        }[recordState]
+                                        const recordedBy = entry?.recorded_by || 'The secretary'
+                                        const recordStateTooltip = recordState === 'approved'
+                                            ? `Approved by: ${recordedBy}`
+                                            : recordState === 'pending'
+                                                ? `Submitted by: ${recordedBy}`
+                                                : recordState === 'draft'
+                                                    ? `Recorded by: ${recordedBy}`
+                                                    : `${recordedBy} did not record anything yet`
                                         const gatheringDates = entry?.dates?.length ? entry.dates : entry?.date ? [entry.date] : []
                                         const scheduledRange = currentDetails.week.gathering_ranges?.[gatheringItem.type]
                                         const gatheringDateRange = gatheringDates.length
@@ -562,7 +562,7 @@ function CoordinatorMonitoring() {
                                             <div className="monitoring-week-detail-row" key={gatheringItem.type}>
                                                 <span title={`${gatheringItem.label} · ${gatheringDateRange}`}>{gatheringItem.label}</span>
                                                 <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} compactRange />
-                                                <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
+                                                <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`} title={statusLabel}>
                                                     <img
                                                         src={status === 'completed'
                                                             ? CompletedIcon
@@ -571,13 +571,9 @@ function CoordinatorMonitoring() {
                                                             : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
                                                         alt=""
                                                     />
-                                                    {status === 'completed'
-                                                        ? 'Completed'
-                                                        : status === 'incomplete'
-                                                            ? 'Incomplete'
-                                                            : 'No Response'}
+                                                    {responseCount}
                                                 </span>
-                                                <span>{entry?.remarks || '—'}</span>
+                                                <span title={recordStateTooltip}>{recordStateLabel}</span>
                                             </div>
                                         )
                                     })}

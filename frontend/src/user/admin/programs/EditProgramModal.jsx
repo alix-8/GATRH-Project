@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from '../dashboard/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
 import '../dashboard/AddUserModal.css'
 import '../dashboard/AddProgramModal.css'
 
@@ -69,6 +70,7 @@ function EditProgramModal({ program, heads, onClose, onUpdated }) {
         event.preventDefault()
         if (!isSubmitting) onClose()
     }} onClick={event => {
+        if (!isBackdropClick(event)) return
         const bounds = event.currentTarget.getBoundingClientRect()
         const outside = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom
         if (outside && !isSubmitting) onClose()
@@ -76,7 +78,7 @@ function EditProgramModal({ program, heads, onClose, onUpdated }) {
         <button className="admin-add-user-close" type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close Edit Program">×</button>
         <h2 id="admin-edit-program-title">Edit Program</h2>
         <p className="admin-add-user-description">Update {program.code} and its program head.</p>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-program-name">Program Name<span>*</span></label>
                 <input id="admin-edit-program-name" autoFocus required maxLength={255} value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />

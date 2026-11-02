@@ -12,13 +12,9 @@ export default function MonitoringDetailSkeleton({ weekTabs, week }) {
                 <div><Line /><Line className="monitoring-detail-skeleton-percentage" /></div>
                 <Line className="monitoring-detail-skeleton-track" />
             </div>
-            <div className="monitoring-detail-skeleton-approval" aria-hidden="true">
-                {[0, 1].map(index => (
-                    <div key={index}>
-                        <span className="monitoring-skeleton-block monitoring-detail-skeleton-icon" />
-                        <div><Line /><Line /></div>
-                    </div>
-                ))}
+            <div className="monitoring-detail-skeleton-program-head" aria-hidden="true">
+                <span className="monitoring-skeleton-block monitoring-detail-skeleton-icon" />
+                <div><Line /><Line /></div>
             </div>
             <h3 className="monitoring-detail-section-title">Week Details</h3>
             {weekTabs}

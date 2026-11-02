@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from './ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
 import './AddUserModal.css'
 import './AddProgramModal.css'
 
@@ -76,6 +77,7 @@ function AddProgramModal({ onClose, onCreated }) {
         event.preventDefault()
         if (!isSubmitting) onClose()
     }} onClick={event => {
+        if (!isBackdropClick(event)) return
         const bounds = event.currentTarget.getBoundingClientRect()
         const outside = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom
         if (outside && !isSubmitting) onClose()
@@ -83,7 +85,7 @@ function AddProgramModal({ onClose, onCreated }) {
         <button className="admin-add-user-close" type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close Add New Program">×</button>
         <h2 id="admin-add-program-title">Add New Program</h2>
         <p id="admin-add-program-description" className="admin-add-user-description">Create a new academic program and assign a program head.</p>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-program-name">Program Name<span>*</span></label>
                 <input id="admin-add-program-name" name="name" autoFocus required maxLength={255} placeholder="Name of the program" value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />

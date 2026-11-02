@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from '../dashboard/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
 import '../dashboard/AddUserModal.css'
 import '../dashboard/AddStudentModal.css'
 import './ImportStudentsModal.css'
@@ -131,13 +132,14 @@ function ImportStudentsModal({ programs, onClose, onImported }) {
         event.preventDefault()
         if (!isSubmitting) onClose()
     }} onClick={event => {
+        if (!isBackdropClick(event)) return
         const bounds = event.currentTarget.getBoundingClientRect()
         if (!isSubmitting && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) onClose()
     }}>
         <button className="admin-add-user-close" type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close Import Students">×</button>
         <h2 id="admin-import-students-title">Import Students</h2>
         <p id="admin-import-students-description" className="admin-add-user-description">Upload a student list and assign its program, year level, and status.</p>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field admin-import-file-field">
                 <label htmlFor="admin-import-students-file">Attach an Excel File<span>*</span></label>
                 <input ref={fileRef} id="admin-import-students-file" className="admin-import-file-input" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onClick={event => event.stopPropagation()} onChange={event => selectFile(event.target.files?.[0])} />

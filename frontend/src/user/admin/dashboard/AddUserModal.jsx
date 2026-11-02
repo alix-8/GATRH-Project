@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from './ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
 import './AddUserModal.css'
 
 const roleOptions = [
@@ -121,6 +122,7 @@ function AddUserModal({ onClose, onCreated }) {
                 if (!isSubmitting) onClose()
             }}
             onClick={event => {
+                if (!isBackdropClick(event)) return
                 const bounds = event.currentTarget.getBoundingClientRect()
                 const outside = event.clientX < bounds.left || event.clientX > bounds.right
                     || event.clientY < bounds.top || event.clientY > bounds.bottom
@@ -131,7 +133,7 @@ function AddUserModal({ onClose, onCreated }) {
             <h2 id="admin-add-user-title">Add New User</h2>
             <p id="admin-add-user-description" className="admin-add-user-description">Create a new account and assign a role.</p>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
                 <div className="admin-add-user-field">
                     <label htmlFor="admin-add-user-name">Full Name<span>*</span></label>
                     <input id="admin-add-user-name" name="name" autoFocus required maxLength={255} placeholder="Enter full name" value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
