@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
@@ -12,13 +12,15 @@ import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
+import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
+import DashboardSkeleton from './DashboardSkeleton'
 import './Dashboard.css'
 
 const metrics = [
     { key: 'pending_review', label: 'Pending Review', detail: 'Awaiting your review', icon: PendingReviewIcon },
-    { key: 'approved', label: 'Approved', detail: 'Fully approved submissions', icon: ApprovedIcon },
-    { key: 'escalation_count', label: 'Escalations', detail: 'Students requiring intervention', icon: EscalationsIcon },
-    { key: 'total_submissions', label: 'Total Submissions', detail: 'Submitted attendance batches', icon: TotalSubmissionsIcon },
+    { key: 'approved', label: 'Approved', detail: 'Sucessfully reviewed', icon: ApprovedIcon },
+    { key: 'escalation_count', label: 'Escalations', detail: 'Students reminders', icon: EscalationsIcon },
+    { key: 'total_submissions', label: 'Total Submissions', detail: 'All submitted records', icon: TotalSubmissionsIcon },
 ]
 
 const activityIcons = {
@@ -35,6 +37,10 @@ function compactActivityTime(value = '') {
 }
 
 function ProgramHeadDashboard() {
+    const showLoginSkeleton = useLoginSkeleton()
+    const loginSkeletonStartedAt = useRef(null)
+    const [showLoginOverlay, setShowLoginOverlay] = useState(showLoginSkeleton)
+    const [isLoginOverlayFading, setIsLoginOverlayFading] = useState(false)
     const [summary, setSummary] = useState({})
     const [pending, setPending] = useState([])
     const [activities, setActivities] = useState([])
@@ -46,6 +52,10 @@ function ProgramHeadDashboard() {
     const visibleMetrics = role === 'program_secretary'
         ? metrics.filter(metric => metric.key !== 'escalation_count')
         : metrics
+
+    useEffect(() => {
+        loginSkeletonStartedAt.current = Date.now()
+    }, [])
 
     const loadDashboard = useCallback(async (signal, silent = false) => {
         if (!silent) {
@@ -76,6 +86,23 @@ function ProgramHeadDashboard() {
         loadDashboard(controller.signal)
         return () => controller.abort()
     }, [loadDashboard])
+
+    useEffect(() => {
+        if (!showLoginOverlay || loading) return undefined
+
+        const minimumVisibleMs = error ? 0 : 700
+        const elapsedMs = loginSkeletonStartedAt.current === null ? 0 : Date.now() - loginSkeletonStartedAt.current
+        const remainingMs = Math.max(0, minimumVisibleMs - elapsedMs)
+        const timer = window.setTimeout(() => setIsLoginOverlayFading(true), remainingMs)
+        return () => window.clearTimeout(timer)
+    }, [showLoginOverlay, loading, error])
+
+    useEffect(() => {
+        if (!isLoginOverlayFading) return undefined
+
+        const timer = window.setTimeout(() => setShowLoginOverlay(false), 250)
+        return () => window.clearTimeout(timer)
+    }, [isLoginOverlayFading])
 
     const refreshDashboard = useCallback((signal) => loadDashboard(signal, true), [loadDashboard])
     useLiveRefresh(refreshDashboard)
@@ -112,7 +139,7 @@ function ProgramHeadDashboard() {
                             <table className="ph-submission-table">
                                 <thead><tr><th>Secretary</th><th>Gathering</th><th>Program</th><th>Year</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
                                 <tbody>
-                                    {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.length === 0 ? <tr><td colSpan="7" className="ph-empty">You’re all caught up. No pending submissions.</td></tr> : pending.map((submission) => (
+                                    {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.map((submission) => (
                                         <tr key={submission.id}>
                                             <td><UserAvatar className="ph-secretary-avatar" name={submission.secretary} program={submission.program} />{submission.secretary}</td>
                                             <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td><RecordDate value={submission.date_iso || submission.date} /></td>
@@ -122,23 +149,31 @@ function ProgramHeadDashboard() {
                                     ))}
                                 </tbody>
                             </table>
+                            {!loading && pending.length === 0 && <div className="ph-pending-empty">No pending submissions yet.</div>}
                         </div>
                     </section>
 
                     <section className="ph-panel ph-activity-panel" aria-labelledby="ph-activity-title">
                         <div className="ph-panel-heading"><div><h2 id="ph-activity-title">Recent Activities</h2><p>Latest updates from attendance submissions and reviews.</p></div></div>
-                        {loading ? <p className="ph-empty"><LoadingCircle label="Loading recent activity…" /></p> : activities.length === 0 ? <p className="ph-empty">Recent submission activity will appear here.</p> : (
-                            <ul className="ph-activity-list">
-                                {activities.map((activity, index) => <li key={activity.id ?? index}>
-                                    <img className="ph-activity-icon" src={activityIcons[activity.icon_type] || SubmittedIcon} alt="" />
-                                    <div className="ph-activity-copy"><strong>{activity.title}</strong><p>{activity.description}</p></div>
-                                    <time>{compactActivityTime(activity.time_ago)}</time>
-                                </li>)}
-                            </ul>
-                        )}
+                        <div className="ph-activity-scroll">
+                            {loading ? <p className="ph-empty"><LoadingCircle label="Loading recent activity…" /></p> : activities.length === 0 ? <p className="ph-empty">Recent submission activity will appear here.</p> : (
+                                <ul className="ph-activity-list">
+                                    {activities.map((activity, index) => <li key={activity.id ?? index}>
+                                        <img className="ph-activity-icon" src={activityIcons[activity.icon_type] || SubmittedIcon} alt="" />
+                                        <div className="ph-activity-copy"><strong>{activity.title}</strong><p>{activity.description}</p></div>
+                                        <time>{compactActivityTime(activity.time_ago)}</time>
+                                    </li>)}
+                                </ul>
+                            )}
+                        </div>
                     </section>
                 </div>
             </main>
+            {showLoginOverlay && (
+                <div className={`ph-login-skeleton-overlay${isLoginOverlayFading ? ' is-fading' : ''}`}>
+                    <DashboardSkeleton programSecretary={role === 'program_secretary'} />
+                </div>
+            )}
         </div>
     )
 }

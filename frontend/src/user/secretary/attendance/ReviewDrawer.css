@@ -18,6 +18,29 @@
   padding: 0;
 }
 
+.review-drawer-panel .drawer-header {
+  position: relative;
+  padding-right: 30px;
+}
+
+.review-drawer-close {
+  position: absolute;
+  top: -8px;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: #44536a;
+  font: inherit;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.review-drawer-close:hover { color: #172b4d; }
+.review-drawer-close:focus-visible { outline: 2px solid #159fe8; outline-offset: 2px; }
+
 .drawer-header h2 {
   font-size: 18px;
   font-weight: 700;

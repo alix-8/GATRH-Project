@@ -1,96 +1,130 @@
 import './DashboardSkeleton.css'
 
-/**
- * Full-page animated loading skeleton for the dashboard.
- * Mirrors the sidebar + header + stat-cards + table/panel layout,
- * with a shimmering placeholder in place of real content.
- *
- * Usage:
- *   {loading ? <DashboardSkeleton /> : <Dashboard data={data} />}
- */
-function DashboardSkeleton({ contentOnly = false }) {
-    const Content = contentOnly ? 'div' : 'main'
+function Placeholder({ className = '' }) {
+    return <span className={`secretary-skeleton-block ${className}`} />
+}
+
+function DashboardContentSkeleton() {
     return (
-        <div className={`skeleton-page${contentOnly ? ' skeleton-page--content' : ''}`} aria-busy="true" aria-label="Loading dashboard">
-            {!contentOnly && <aside className="skeleton-sidebar">
-                <div className="sk sk-avatar" />
-                <div className="sk sk-line sk-w-70" />
-                <div className="sk sk-line sk-w-50" />
-                <div className="sk sk-line sk-w-60" />
-                <div className="sk sk-line sk-w-40" />
-                <div className="sk sk-line sk-w-55" />
-                <div className="skeleton-sidebar-footer">
-                    <div className="sk sk-line sk-w-40" />
-                    <div className="sk sk-circle-sm" />
+        <div className="secretary-skeleton-content" aria-hidden="true">
+            <section className="secretary-skeleton-hero">
+                <div className="secretary-skeleton-hero-copy">
+                    <Placeholder className="secretary-skeleton-hero-title" />
+                    <Placeholder className="secretary-skeleton-hero-subtitle" />
+                    <div className="secretary-skeleton-hero-stats">
+                        <Placeholder /><Placeholder />
+                    </div>
                 </div>
-            </aside>}
+                <Placeholder className="secretary-skeleton-hero-illustration" />
+            </section>
 
-            <Content className="skeleton-main">
-                {!contentOnly && <header className="skeleton-header">
-                    <div className="sk sk-line sk-w-30 sk-tall" />
-                    <div className="skeleton-header-right">
-                        <div className="sk sk-line sk-w-20" />
-                        <div className="sk sk-circle-sm" />
-                    </div>
-                </header>}
-
-                <section className="skeleton-hero">
-                    <div className="skeleton-hero-text">
-                        <div className="sk sk-line sk-w-80" />
-                        <div className="sk sk-line sk-w-60" />
-                        <div className="skeleton-hero-actions">
-                            <div className="sk sk-pill" />
-                            <div className="sk sk-pill" />
+            <section className="secretary-skeleton-kpis">
+                {[0, 1, 2, 3].map(index => (
+                    <div className="secretary-skeleton-kpi" key={index}>
+                        <Placeholder className="secretary-skeleton-kpi-icon" />
+                        <div className="secretary-skeleton-kpi-copy">
+                            <Placeholder /><Placeholder /><Placeholder />
                         </div>
                     </div>
-                    <div className="sk sk-block" />
-                </section>
+                ))}
+            </section>
 
-                <section className="skeleton-panels">
-                    <div className="skeleton-panel skeleton-panel-wide">
-                        <div className="skeleton-panel-head">
-                            <div className="sk sk-line sk-w-40" />
-                            <div className="sk sk-pill-sm" />
+            <div className="secretary-skeleton-grid">
+                <div className="secretary-skeleton-column">
+                    <section className="secretary-skeleton-panel secretary-skeleton-chart">
+                        <div className="secretary-skeleton-panel-heading">
+                            <Placeholder className="secretary-skeleton-heading-line" />
+                            <Placeholder className="secretary-skeleton-filter" />
                         </div>
-                        <div className="sk sk-block sk-block-tall" />
-                    </div>
+                        <Placeholder className="secretary-skeleton-legend" />
+                        <div className="secretary-skeleton-chart-bars">
+                            {[0, 1, 2].map(index => <Placeholder key={index} />)}
+                        </div>
+                    </section>
 
-                    <div className="skeleton-panel skeleton-panel-narrow">
-                        <div className="skeleton-panel-head">
-                            <div className="sk sk-line sk-w-50" />
+                    <section className="secretary-skeleton-panel secretary-skeleton-records">
+                        <div className="secretary-skeleton-panel-heading">
+                            <Placeholder className="secretary-skeleton-heading-line" />
+                            <Placeholder className="secretary-skeleton-filter" />
                         </div>
-                        <div className="skeleton-list-row">
-                            <div className="sk sk-circle-sm" />
-                            <div className="sk sk-line sk-w-60" />
-                        </div>
-                        <div className="skeleton-list-row">
-                            <div className="sk sk-circle-sm" />
-                            <div className="sk sk-line sk-w-70" />
-                        </div>
-                        <div className="skeleton-list-row">
-                            <div className="sk sk-circle-sm" />
-                            <div className="sk sk-line sk-w-45" />
-                        </div>
-                    </div>
-                </section>
+                        <Placeholder className="secretary-skeleton-records-header" />
+                        {[0, 1, 2].map(index => (
+                            <div className="secretary-skeleton-record-row" key={index}>
+                                {[0, 1, 2, 3, 4].map(column => <Placeholder key={column} />)}
+                            </div>
+                        ))}
+                    </section>
+                </div>
 
-                <section className="skeleton-table-card">
-                    <div className="skeleton-table-head">
-                        <div className="sk sk-line sk-w-40" />
-                        <div className="sk sk-line sk-w-20" />
-                    </div>
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div className="skeleton-table-row" key={i}>
-                            <div className="sk sk-line sk-w-30" />
-                            <div className="sk sk-line sk-w-20" />
-                            <div className="sk sk-line sk-w-25" />
-                            <div className="sk sk-pill-sm" />
+                <div className="secretary-skeleton-column">
+                    <section className="secretary-skeleton-panel secretary-skeleton-reminders">
+                        <div className="secretary-skeleton-panel-heading">
+                            <Placeholder className="secretary-skeleton-heading-line" />
+                            <Placeholder className="secretary-skeleton-filter" />
                         </div>
-                    ))}
-                </section>
-            </Content>
+                        {[0, 1, 2].map(index => (
+                            <div className="secretary-skeleton-reminder-row" key={index}>
+                                <Placeholder /><Placeholder /><Placeholder />
+                            </div>
+                        ))}
+                    </section>
+
+                    <section className="secretary-skeleton-panel secretary-skeleton-monthly">
+                        <Placeholder className="secretary-skeleton-heading-line" />
+                        <Placeholder className="secretary-skeleton-monthly-subtitle" />
+                        {[0, 1, 2].map(index => (
+                            <div className="secretary-skeleton-monthly-row" key={index}>
+                                <Placeholder /><Placeholder />
+                            </div>
+                        ))}
+                    </section>
+                </div>
+            </div>
         </div>
     )
 }
 
-export default DashboardSkeleton
+export default function DashboardSkeleton({ contentOnly = false }) {
+    if (contentOnly) {
+        return (
+            <div className="secretary-skeleton secretary-skeleton--content" role="status" aria-label="Loading secretary dashboard" aria-busy="true">
+                <DashboardContentSkeleton />
+            </div>
+        )
+    }
+
+    return (
+        <div className="secretary-skeleton" role="status" aria-label="Loading secretary dashboard" aria-busy="true">
+            <div className="secretary-skeleton-layout">
+                <aside className="secretary-skeleton-sidebar" aria-hidden="true">
+                    <Placeholder className="secretary-skeleton-logo" />
+                    <div className="secretary-skeleton-sidebar-links">
+                        {[0, 1, 2, 3, 4].map(index => (
+                            <div className="secretary-skeleton-sidebar-link" key={index}>
+                                <Placeholder className="secretary-skeleton-nav-icon" />
+                                <Placeholder className="secretary-skeleton-nav-label" />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="secretary-skeleton-sidebar-footer">
+                        <Placeholder className="secretary-skeleton-nav-label" />
+                        <Placeholder className="secretary-skeleton-nav-icon" />
+                    </div>
+                </aside>
+
+                <main className="secretary-skeleton-main">
+                    <header className="secretary-skeleton-header" aria-hidden="true">
+                        <div className="secretary-skeleton-heading">
+                            <Placeholder className="secretary-skeleton-title" />
+                            <Placeholder className="secretary-skeleton-subtitle" />
+                        </div>
+                        <div className="secretary-skeleton-date">
+                            <Placeholder /><Placeholder />
+                        </div>
+                    </header>
+                    <DashboardContentSkeleton />
+                </main>
+            </div>
+        </div>
+    )
+}

@@ -21,7 +21,7 @@ afterEach(() => {
 test('login enables the first full-page skeleton, but later navigation does not', () => {
     mockStorage()
     assert.equal(isLoginSkeletonPending(), false)
-    for (const role of ['secretary', 'cm_coordinator']) {
+    for (const role of ['secretary', 'program_secretary', 'program_head', 'cm_coordinator']) {
         prepareLoginSkeleton(role)
         assert.equal(isLoginSkeletonPending(), true)
         // Render checks must not consume the flag before the mounting effect.
@@ -37,7 +37,7 @@ test('a new login resets loading feedback and other roles clear stale flags', ()
     clearLoginSkeleton()
     prepareLoginSkeleton('secretary')
     assert.equal(isLoginSkeletonPending(), true)
-    prepareLoginSkeleton('program_head')
+    prepareLoginSkeleton('admin')
     assert.equal(isLoginSkeletonPending(), false)
 })
 

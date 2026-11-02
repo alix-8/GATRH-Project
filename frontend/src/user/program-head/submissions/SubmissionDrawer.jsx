@@ -9,14 +9,13 @@ import RecordApprovedIcon from '../../../assets/icons/RecordApprovedIcon.svg'
 import RecordCalendarIcon from '../../../assets/icons/RecordCalendarIcon.svg'
 import RecordClockIcon from '../../../assets/icons/RecordClockIcon.svg'
 import RecordProgramIcon from '../../../assets/icons/RecordProgramIcon.svg'
+import ExportIcon from '../../../assets/icons/export-icon.svg'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDay from '../../../components/RecordDay'
 import VenueLabel from '../../../components/VenueLabel'
 import SearchPill from '../../../components/search/SearchPill'
 import './SubmissionDrawer.css'
-
-const PAGE_SIZE = 10
 
 export default function SubmissionDrawer({ submission, onClose, onUpdated, onExport }) {
     const [detail, setDetail] = useState(null)
@@ -25,7 +24,6 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
     const [error, setError] = useState('')
     const [search, setSearch] = useState('')
     const [status, setStatus] = useState('all')
-    const [page, setPage] = useState(1)
 
     useEffect(() => {
         const controller = new AbortController()
@@ -77,10 +75,6 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
         })
     }, [detail, search, status, submission.year_level])
 
-    const pageCount = Math.max(1, Math.ceil(students.length / PAGE_SIZE))
-    const pageStudents = students.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-    const firstVisibleStudent = students.length ? (page - 1) * PAGE_SIZE + 1 : 0
-    const lastVisibleStudent = Math.min(page * PAGE_SIZE, students.length)
     const noResponseCount = detail?.no_response_count
         ?? Math.max(0, (detail?.total_students || 0) - (detail?.responded_count || 0))
 
@@ -179,6 +173,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                 ].filter(Boolean).join(' · ')}
                             </p>
                         </div>
+                        <button type="button" className="ph-drawer-header-close" aria-label="Close details" onClick={onClose}>×</button>
                     </header>
 
                     {loading && (
@@ -248,10 +243,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                     <select
                                         aria-label="Filter students by attendance status"
                                         value={status}
-                                        onChange={(event) => {
-                                            setStatus(event.target.value)
-                                            setPage(1)
-                                        }}
+                                        onChange={(event) => setStatus(event.target.value)}
                                     >
                                         <option value="all">All Status</option>
                                         <option value="present">Present</option>
@@ -262,10 +254,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         ariaLabel="Search students"
                                         placeholder="Search Student…"
                                         value={search}
-                                        onChange={(event) => {
-                                            setSearch(event.target.value)
-                                            setPage(1)
-                                        }}
+                                        onChange={(event) => setSearch(event.target.value)}
                                     />
                                 </div>
                             </div>
@@ -282,7 +271,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {pageStudents.length ? pageStudents.map((student, index) => (
+                                        {students.length ? students.map((student, index) => (
                                             <tr key={student.record_id || student.student_id || index}>
                                                 <td>{student.student_name}</td>
                                                 <td>{student.batch || '—'}</td>
@@ -306,30 +295,6 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                 </table>
                             </div>
 
-                            <div className="ph-drawer-pagination">
-                                <span>
-                                    Showing {firstVisibleStudent} to {lastVisibleStudent} of {students.length}
-                                </span>
-                                <div>
-                                    <button
-                                        type="button"
-                                        disabled={page <= 1}
-                                        aria-label="Previous students"
-                                        onClick={() => setPage((value) => Math.max(1, value - 1))}
-                                    >
-                                        ‹
-                                    </button>
-                                    <b>{page} / {pageCount}</b>
-                                    <button
-                                        type="button"
-                                        disabled={page >= pageCount}
-                                        aria-label="Next students"
-                                        onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
-                                    >
-                                        ›
-                                    </button>
-                                </div>
-                            </div>
                         </>
                     )}
                 </div>
@@ -363,7 +328,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                             className="ph-record-detail-export"
                             onClick={() => onExport(submission)}
                         >
-                            <span aria-hidden="true">↓</span> Export
+                            <img src={ExportIcon} alt="" /> Export
                         </button>
                     )}
                 </footer>

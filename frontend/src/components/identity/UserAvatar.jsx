@@ -1,3 +1,5 @@
+import './UserAvatar.css'
+
 const PROGRAM_COLORS = {
     bsis: { backgroundColor: '#f8d7da', color: '#9f2330' },
     act: { backgroundColor: '#ffe2cc', color: '#a84908' },
