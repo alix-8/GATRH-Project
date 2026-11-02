@@ -39,6 +39,12 @@ const REPORT_STATUS_LABELS = {
     no_response: 'No Response',
     no_report: 'No Report',
 }
+const REPORT_STATUS_DEFINITIONS = {
+    completed: 'All expected responses are recorded for all gatherings this week.',
+    incomplete: 'Some responses are recorded, but one or more gathering responses are still missing.',
+    no_response: 'Attendance was recorded, but no students responded this week.',
+    no_report: 'No attendance has been recorded for this week.',
+}
 const REPORT_STATUS_ICONS = {
     completed: CompletedReportsIcon,
     incomplete: IncompleteReportsIcon,
@@ -387,23 +393,37 @@ function ChancellorDashboard() {
                                                         report.weekly_statuses?.[index] || 'no_report',
                                                         report.weekly_has_attendance?.[index]
                                                     )
+                                                    const statusLabel = REPORT_STATUS_LABELS[status] || 'No Report'
+                                                    const statusDescription = REPORT_STATUS_DEFINITIONS[status] || REPORT_STATUS_DEFINITIONS.no_report
                                                     return (
-                                                    <td key={`${report.code}-${week.week_start}`} title={`${week.range_label}: ${REPORT_STATUS_LABELS[status] || 'No Report'}`}>
-                                                        <span
-                                                            className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`}
-                                                            role="img"
-                                                            aria-label={REPORT_STATUS_LABELS[status] || 'No Report'}
+                                                    <td key={`${report.code}-${week.week_start}`}>
+                                                        <button
+                                                            type="button"
+                                                            className="chancellor-week-status-trigger"
+                                                            title={`${week.range_label}: ${statusLabel}. ${statusDescription}`}
+                                                            aria-label={`View ${report.code} year ${report.year_level ?? yearLevel}, ${week.label}: ${statusLabel}. ${statusDescription}`}
+                                                            onClick={() => setActiveCourse({
+                                                                program: report.code,
+                                                                year_level: report.year_level ?? Number(yearLevel),
+                                                                label: `${report.code} ${report.year_level ?? yearLevel}`,
+                                                                initialWeek: week.number,
+                                                            })}
                                                         >
-                                                            <img
-                                                                src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
-                                                                alt=""
-                                                            />
-                                                        </span>
+                                                            <span className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`} aria-hidden="true">
+                                                                <img
+                                                                    src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
+                                                                    alt=""
+                                                                />
+                                                            </span>
+                                                        </button>
                                                     </td>
                                                     )
                                                 })}
                                                 <td>
-                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${monthlyStatus}`}>
+                                                    <span
+                                                        className={`chancellor-report-status-label chancellor-report-status-label--${monthlyStatus}`}
+                                                        title={REPORT_STATUS_DEFINITIONS[monthlyStatus] || REPORT_STATUS_DEFINITIONS.no_report}
+                                                    >
                                                         <span />
                                                         {REPORT_STATUS_LABELS[monthlyStatus] || 'No Report'}
                                                     </span>
@@ -447,7 +467,7 @@ function ChancellorDashboard() {
                                                     alt=""
                                                 />
                                             </span>
-                                            {label}
+                                            <span title={REPORT_STATUS_DEFINITIONS[status]}>{label}</span>
                                         </span>
                                     ))}
                                 </div>
