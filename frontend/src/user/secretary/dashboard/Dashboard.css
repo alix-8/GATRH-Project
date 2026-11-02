@@ -9,6 +9,7 @@
 
 .dashboard-main {
     flex: 1;
+    min-width: 0;
     overflow-y: auto;
     overflow-x: hidden;
     background-color: #ffffff;
@@ -935,4 +936,336 @@
     margin: 12px 6px;
     color: #999;
     font-size: 11px;
+}
+
+@media (min-width: 901px) and (max-width: 1150px) {
+    .dashboard-content {
+        margin: 20px;
+    }
+
+    .dashboard-text-upper {
+        width: min(52%, 440px);
+        min-width: 0;
+        max-width: none;
+    }
+
+    .dashboard-text-lower {
+        width: min(52%, 390px);
+    }
+
+    .dashboard-illustration {
+        width: min(58%, 475px);
+        height: auto;
+    }
+
+    .dashboard-kpis,
+    .dashboard-grid {
+        margin: 20px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dashboard-left-column,
+    .right-column {
+        grid-template-rows: none;
+        grid-auto-rows: auto;
+    }
+
+    .attendance-overview {
+        height: auto;
+        min-height: 360px;
+    }
+
+    .attendance-records {
+        height: auto;
+        min-height: 290px;
+        overflow: visible;
+    }
+
+    .records-table {
+        min-width: 560px;
+        table-layout: auto;
+    }
+
+    .dashboard-reminders {
+        height: auto;
+        min-height: 260px;
+    }
+
+    .monthly-gathering-card {
+        height: auto;
+        min-height: 320px;
+    }
+
+    .monthly-gathering-list {
+        height: auto;
+        min-height: 220px;
+        flex: 1;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1050px) {
+    .dashboard-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .kpi-card {
+        min-width: 0;
+        min-height: 112px;
+        box-sizing: border-box;
+        padding: 16px;
+    }
+
+    .kpi-copy {
+        min-width: 0;
+    }
+
+    .dashboard-content {
+        min-height: 210px;
+    }
+
+    .dashboard-text-upper {
+        top: 24px;
+        left: 24px;
+    }
+
+    .dashboard-text-lower {
+        bottom: 24px;
+        left: 24px;
+    }
+}
+
+@media (min-width: 1800px) and (min-height: 900px) {
+    .dashboard > .sidebar {
+        width: clamp(240px, 12vw, 360px);
+        flex: 0 0 clamp(240px, 12vw, 360px);
+        padding: 28px clamp(16px, 1vw, 28px);
+    }
+
+    .dashboard .sidebar-lvcc-logo {
+        top: 24px;
+        left: 50%;
+        width: clamp(112px, 6vw, 160px);
+        height: clamp(112px, 6vw, 160px);
+    }
+
+    .dashboard .sidebar-nav {
+        margin-top: clamp(132px, 9vw, 200px);
+        gap: clamp(6px, .4vw, 12px);
+    }
+
+    .dashboard .sidebar-link,
+    .dashboard .sidebar-link.active {
+        padding: 14px 10px;
+        font-size: clamp(16px, .95vw, 22px);
+    }
+
+    .dashboard .sidebar-signout {
+        font-size: clamp(15px, .9vw, 20px);
+    }
+
+    .dashboard .app-header.page-header {
+        padding: 30px max(32px, calc((100% - 2200px) / 2));
+    }
+
+    .dashboard-header .header-title h3 {
+        font-size: clamp(24px, 1.5vw, 36px);
+    }
+
+    .dashboard-header .header-title p,
+    .dashboard .app-header .header-meta .page-date {
+        font-size: clamp(17px, 1vw, 23px);
+    }
+
+    .dashboard-content,
+    .dashboard-kpis,
+    .dashboard-grid {
+        width: min(calc(100% - 64px), 2200px);
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    .dashboard-content {
+        min-height: clamp(260px, 22vh, 420px);
+        margin-top: clamp(24px, 2vh, 40px);
+        margin-bottom: 0;
+    }
+
+    .dashboard-text-upper {
+        top: clamp(32px, 3vh, 72px);
+        left: clamp(36px, 3vw, 72px);
+        width: min(56%, 900px);
+        min-width: 0;
+        max-width: none;
+    }
+
+    .dashboard-content h2 {
+        font-size: clamp(34px, 2vw, 48px);
+    }
+
+    .dashboard-text-upper p {
+        font-size: clamp(17px, 1vw, 22px);
+    }
+
+    .dashboard-text-lower {
+        bottom: clamp(28px, 3vh, 64px);
+        left: clamp(36px, 3vw, 72px);
+        width: min(50%, 900px);
+        grid-template-columns: 44px minmax(0, 1fr) 44px minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .dashboard-pencil-container,
+    .dashboard-eraser-container {
+        width: 44px;
+        height: 44px;
+    }
+
+    .dashboard-pencil-icon,
+    .dashboard-eraser-icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    .month-attendance,
+    .month-absences {
+        font-size: clamp(14px, .85vw, 20px);
+    }
+
+    .dashboard-illustration {
+        width: min(48%, 800px);
+        max-height: 100%;
+        object-fit: contain;
+        object-position: right bottom;
+    }
+
+    .dashboard-kpis {
+        gap: 20px;
+        margin-top: clamp(24px, 2vh, 40px);
+        margin-bottom: 0;
+    }
+
+    .kpi-card {
+        box-sizing: border-box;
+        min-height: clamp(150px, 12vh, 230px);
+        padding: clamp(22px, 1.5vw, 36px);
+    }
+
+    .kpi-copy h4 {
+        font-size: clamp(17px, 1vw, 24px);
+    }
+
+    .kpi-copy strong {
+        font-size: clamp(32px, 1.8vw, 48px);
+    }
+
+    .kpi-copy p {
+        font-size: clamp(14px, .9vw, 20px);
+    }
+
+    .dashboard-grid {
+        gap: 20px;
+        margin-top: clamp(24px, 2vh, 40px);
+        margin-bottom: 40px;
+    }
+
+    .dashboard-left-column {
+        grid-template-rows: clamp(440px, 40vh, 660px) auto;
+        gap: 20px;
+    }
+
+    .right-column {
+        grid-template-rows: clamp(300px, 30vh, 460px) auto;
+        gap: 20px;
+    }
+
+    .attendance-overview,
+    .attendance-records,
+    .dashboard-reminders {
+        padding: clamp(22px, 1.5vw, 36px);
+    }
+
+    .overview-heading h2,
+    .records-heading h2,
+    .dashboard-reminders-heading h3,
+    .monthly-gathering-card h3 {
+        font-size: clamp(19px, 1.1vw, 26px);
+        line-height: 1.2;
+    }
+
+    .overview-legend,
+    .records-heading p,
+    .dashboard-reminders-heading p,
+    .monthly-gathering-header p {
+        font-size: clamp(14px, .8vw, 18px);
+        line-height: 1.35;
+    }
+
+    .overview-chart {
+        height: calc(100% - 72px);
+    }
+
+    .overview-y-axis,
+    .overview-group small,
+    .records-table,
+    .monthly-gathering-label {
+        font-size: clamp(16px, .95vw, 24px);
+    }
+
+    .attendance-records {
+        height: auto;
+        min-height: 350px;
+    }
+
+    .records-table th,
+    .records-table td {
+        height: 56px;
+    }
+
+    .records-status {
+        width: clamp(118px, 7vw, 160px);
+        font-size: clamp(14px, .8vw, 20px);
+    }
+
+    .records-action {
+        width: clamp(108px, 6vw, 140px);
+        height: 40px;
+        font-size: clamp(15px, .8vw, 20px);
+    }
+
+    .dashboard-reminders-heading button,
+    .records-heading button {
+        font-size: clamp(14px, .8vw, 18px);
+    }
+
+    .dashboard-reminder-item {
+        grid-template-columns: 110px minmax(0, 1fr) 150px 80px;
+        flex-basis: 64px;
+        font-size: clamp(14px, .8vw, 18px);
+    }
+
+    .dashboard-reminder-item time {
+        font-size: clamp(14px, .8vw, 18px);
+    }
+
+    .dashboard-reminder-item button {
+        width: 80px;
+        height: 40px;
+        font-size: 15px;
+    }
+
+    .monthly-gathering-card {
+        height: auto;
+        min-height: 360px;
+        padding: clamp(18px, 1.2vw, 30px);
+    }
+
+    .monthly-gathering-list {
+        height: auto;
+        min-height: 240px;
+        flex: 1;
+    }
 }

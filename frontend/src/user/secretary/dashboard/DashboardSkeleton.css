@@ -367,6 +367,66 @@
     }
 }
 
+@media (min-width: 901px) and (max-width: 1150px) {
+    .secretary-skeleton-main {
+        min-width: 0;
+    }
+
+    .secretary-skeleton-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1050px) {
+    .secretary-skeleton-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1800px) and (min-height: 900px) {
+    .secretary-skeleton-sidebar {
+        width: clamp(240px, 12vw, 360px);
+        padding: 28px clamp(16px, 1vw, 28px);
+    }
+
+    .secretary-skeleton-logo {
+        width: clamp(112px, 6vw, 160px);
+        height: clamp(112px, 6vw, 160px);
+    }
+
+    .secretary-skeleton-main {
+        min-width: 0;
+    }
+
+    .secretary-skeleton-header {
+        padding: 30px max(32px, calc((100% - 2200px) / 2));
+    }
+
+    .secretary-skeleton-content {
+        box-sizing: border-box;
+        width: min(100%, 2264px);
+        margin: auto;
+        padding: clamp(24px, 2vh, 40px) 32px;
+    }
+
+    .secretary-skeleton-hero {
+        min-height: clamp(260px, 22vh, 420px);
+    }
+
+    .secretary-skeleton-kpi {
+        min-height: clamp(150px, 12vh, 230px);
+    }
+
+    .secretary-skeleton-grid,
+    .secretary-skeleton-kpis {
+        gap: 20px;
+    }
+
+    .secretary-skeleton-chart {
+        height: clamp(440px, 40vh, 660px);
+    }
+}
+
 @media (max-width: 900px) {
     .secretary-skeleton-sidebar {
         display: none;
