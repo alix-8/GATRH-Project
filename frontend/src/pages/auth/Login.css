@@ -702,10 +702,10 @@
 
 @media (min-width: 901px) and (max-width: 1599px) {
     .login-page {
-        height: auto;
-        min-height: max(100vh, 760px);
-        min-height: max(100svh, 760px);
-        overflow-x: hidden;
+        height: 100vh;
+        height: 100svh;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .login-lvcc-logo {
@@ -733,10 +733,11 @@
     }
 
     .welcome-message {
-        top: 37%;
+        top: 33%;
         right: calc(50% + 24px);
         left: clamp(32px, 5.7vw, 78px);
         margin: 0;
+        line-height: 1.2;
         overflow-wrap: anywhere;
     }
 
@@ -850,5 +851,233 @@
     .faq-list summary {
         gap: 12px;
         overflow-wrap: anywhere;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (max-height: 680px) {
+    .welcome-title {
+        top: 14%;
+        font-size: 38px;
+    }
+
+    .welcome-message {
+        top: 31%;
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (max-height: 560px) {
+    .welcome-title {
+        top: 10%;
+        font-size: 32px;
+    }
+
+    .welcome-message {
+        top: 25%;
+        font-size: 12px;
+        line-height: 1.15;
+    }
+
+    .login-form {
+        top: 34%;
+    }
+
+    .form-group {
+        height: 42px;
+        margin-bottom: 7px;
+        padding: 6px 12px 0;
+    }
+
+    .form-group label {
+        font-size: 10px;
+        padding-top: 2px;
+    }
+
+    .form-group input {
+        margin-top: 3px;
+        font-size: 11px;
+    }
+
+    .form-group input::placeholder {
+        font-size: 11px;
+    }
+
+    .password-group {
+        padding-right: 38px;
+    }
+
+    .form-options {
+        gap: 8px;
+        margin: 8px 0;
+        font-size: 11px;
+    }
+
+    .login-error {
+        margin-top: 3px;
+        font-size: 11px;
+        line-height: 1.15;
+    }
+
+    .login-button {
+        height: 34px;
+        border-radius: 12px;
+        font-size: 11px;
+    }
+
+    .account-help {
+        bottom: 12px;
+        font-size: 11px;
+        line-height: 1.2;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (max-height: 400px) {
+    .welcome-title {
+        top: 5%;
+        font-size: 28px;
+    }
+
+    .welcome-message {
+        top: 24%;
+    }
+
+    .login-form {
+        top: 39%;
+    }
+
+    .form-group {
+        height: 40px;
+        margin-bottom: 6px;
+        padding-top: 5px;
+    }
+
+    .form-options {
+        margin: 5px 0;
+    }
+
+    .login-error {
+        margin-top: 2px;
+        line-height: 1;
+    }
+
+    .login-button {
+        height: 32px;
+    }
+
+    .account-help {
+        bottom: 8px;
+    }
+}
+
+@media (min-width: 1600px) and (max-height: 680px) {
+    .login-page {
+        --login-scale: .65;
+    }
+
+    .account-help {
+        top: auto;
+        bottom: 2.5%;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) {
+    .welcome-title {
+        top: calc(23% + 34px);
+        line-height: 1.18;
+    }
+
+    .welcome-message {
+        top: calc(23% + 140px);
+    }
+
+    .login-form {
+        top: 48%;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (max-height: 680px) {
+    .welcome-title {
+        top: calc(16% + 26px);
+        line-height: 1.18;
+    }
+
+    .welcome-message {
+        top: calc(16% + 118px);
+    }
+
+    .login-form {
+        top: 45%;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (max-height: 560px) {
+    .welcome-title {
+        top: calc(13% + 22px);
+        line-height: 1.18;
+    }
+
+    .welcome-message {
+        top: calc(13% + 99px);
+    }
+
+    .login-form {
+        top: 39%;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (max-height: 400px) {
+    .welcome-title {
+        top: calc(8% + 18px);
+        line-height: 1.18;
+    }
+
+    .welcome-message {
+        top: calc(8% + 86px);
+    }
+
+    .login-form {
+        top: 42%;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (max-height: 350px) {
+    .welcome-title {
+        top: calc(6% + 18px);
+        line-height: 1.18;
+    }
+
+    .welcome-message {
+        top: calc(6% + 86px);
+    }
+
+    .login-form {
+        top: 43%;
+    }
+}
+
+@media (min-width: 1600px) {
+    .welcome-title {
+        top: calc(25.12% + 10px);
+        line-height: 1.18;
+    }
+
+    .welcome-message {
+        top: calc(25.12% + 10px + (149px * var(--login-scale)) + 4px);
+    }
+
+    .login-form {
+        top: 50.53%;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (min-height: 401px) and (max-height: 480px) {
+    .login-form {
+        top: 46%;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1599px) and (min-height: 481px) and (max-height: 500px) {
+    .login-form {
+        top: 42%;
     }
 }
