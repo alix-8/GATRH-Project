@@ -458,6 +458,24 @@
     position: relative;
 }
 
+.monitoring-status-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+}
+
+.monitoring-status-trigger:focus-visible {
+    outline: 2px solid #159fe8;
+    outline-offset: 3px;
+}
+
 .monitoring-status-cell-tooltip::after {
     position: absolute;
     z-index: 20;
@@ -806,7 +824,7 @@
 .monitoring-week-detail-headings,
 .monitoring-week-detail-row {
     display: grid;
-    grid-template-columns: 1fr 1.05fr 1fr .55fr;
+    grid-template-columns: 1fr 1.05fr 1fr .8fr;
     align-items: center;
     gap: 4px;
     padding: 9px 8px;
@@ -825,12 +843,26 @@
     border-bottom: 1px solid #edf0f4;
 }
 
+.monitoring-week-detail-row-highlighted {
+    outline: 3px solid #3b82f6;
+    outline-offset: -3px;
+    background: #dceaff !important;
+}
+
 .monitoring-detail-status-cell {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     color: #536580;
     white-space: nowrap;
+    cursor: help;
+}
+
+.monitoring-detail-status-cell:focus-visible,
+.monitoring-detail-record-remark:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid #159fe8;
+    outline-offset: 2px;
 }
 
 .monitoring-detail-status-cell img {
@@ -845,12 +877,37 @@
     background: #f8c43a;
 }
 
+.monitoring-detail-record-remark {
+    width: fit-content;
+    color: #536580;
+    cursor: help;
+    white-space: nowrap;
+}
+
+.monitoring-detail-record-remark--approved {
+    color: #16833a;
+}
+
+.monitoring-detail-record-remark--draft {
+    color: #a17a00;
+}
+
+.monitoring-detail-record-remark--pending,
+.monitoring-detail-record-remark--not_recorded {
+    color: #667085;
+}
+
 .monitoring-incomplete-details {
     min-height: 105px;
     margin-top: 34px;
     padding: 12px 9px;
     background: #fff6dc;
     color: #856404;
+}
+
+.monitoring-no-response-details {
+    background: #fff0f0;
+    color: #b4232d;
 }
 
 .monitoring-incomplete-details>h4 {
@@ -876,6 +933,10 @@
 .monitoring-incomplete-icon img {
     width: 19px;
     height: 19px;
+}
+
+.monitoring-no-response-details .monitoring-incomplete-icon {
+    background: #fd7c7c;
 }
 
 .monitoring-incomplete-details>p {
@@ -941,6 +1002,15 @@
 
 .monitoring-incomplete-details article button:hover {
     background: #087fc9;
+}
+
+.monitoring-no-response-details article button {
+    background: #d94343;
+    color: #ffffff;
+}
+
+.monitoring-no-response-details article button:hover {
+    background: #b4232d;
 }
 
 .monitoring-incomplete-details article ul {

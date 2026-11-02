@@ -38,9 +38,40 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
     return new Date(year, month - 1, day).toLocaleDateString('en-US', options)
 }
 
+function getRecordRemark(entry) {
+    const recordedBy = entry?.recorded_by
+
+    switch (entry?.record_state) {
+        case 'approved':
+            return {
+                label: 'Approved',
+                tooltip: recordedBy ? `Approved by: ${recordedBy}` : 'Approved',
+            }
+        case 'draft':
+            return {
+                label: 'Validating',
+                tooltip: recordedBy ? `${recordedBy} is still editing.` : 'The secretary is still editing.',
+            }
+        case 'pending':
+            return {
+                label: 'Pending',
+                tooltip: recordedBy ? `Recorded by: ${recordedBy}` : 'Pending review',
+            }
+        default:
+            return {
+                label: 'No Submission yet',
+                tooltip: recordedBy
+                    ? `No attendance submission yet. Awaiting submission from: ${recordedBy}`
+                    : 'No attendance submission yet.',
+            }
+    }
+}
+
 export default function MonitoringCourseDetailModal({ course: activeCourse, weeks, month, onClose: closeCourseDetails }) {
-    const [selectedDetailWeek, setSelectedDetailWeek] = useState(weeks[0]?.number ?? null)
+    const [selectedDetailWeek, setSelectedDetailWeek] = useState(activeCourse.initialWeek ?? weeks[0]?.number ?? null)
     const [activeIncompleteEntry, setActiveIncompleteEntry] = useState(null)
+    const [activeNoResponseEntry, setActiveNoResponseEntry] = useState(null)
+    const [highlightedGatheringType, setHighlightedGatheringType] = useState(activeCourse.initialGatheringType ?? null)
     const [courseDetails, setCourseDetails] = useState(null)
     const [detailFailure, setDetailFailure] = useState(null)
     const detailWeek = selectedDetailWeek ?? weeks[0]?.number
@@ -87,6 +118,18 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
         return () => document.removeEventListener('keydown', closeOnEscape)
     }, [closeCourseDetails])
 
+    useEffect(() => {
+        if (!highlightedGatheringType || !currentDetails) return undefined
+
+        document.getElementById(`monitoring-gathering-row-${highlightedGatheringType}`)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+        })
+
+        const timeoutId = window.setTimeout(() => setHighlightedGatheringType(null), 3500)
+        return () => window.clearTimeout(timeoutId)
+    }, [highlightedGatheringType, currentDetails])
+
     const selectedWeek = weeks.find((item) => item.number === detailWeek)
     const weekTabs = (
         <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
@@ -99,6 +142,8 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                     onClick={() => {
                         setSelectedDetailWeek(item.number)
                         setActiveIncompleteEntry(null)
+                        setActiveNoResponseEntry(null)
+                        setHighlightedGatheringType(null)
                     }}
                 >
                     {item.label}
@@ -106,6 +151,9 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
             ))}
         </div>
     )
+    const noResponseEntries = currentDetails?.week_details?.filter(
+        (entry) => entry.status === 'no_report' && entry.has_attendance
+    ) || []
 
     return (
                 <div className="monitoring-detail-backdrop" onMouseDown={(event) => {
@@ -189,17 +237,33 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                             (item) => item.gathering_type === gatheringItem.type
                                         )
                                         const status = entry?.status || 'no_report'
+                                        const statusLabel = status === 'completed'
+                                            ? 'Completed'
+                                            : status === 'incomplete'
+                                                ? 'Incomplete'
+                                                : 'No response'
                                         const recordedNoResponses = status === 'no_report' && entry?.has_attendance
                                         const gatheringDates = entry?.dates?.length ? entry.dates : entry?.date ? [entry.date] : []
                                         const scheduledRange = currentDetails.week.gathering_ranges?.[gatheringItem.type]
                                         const gatheringDateRange = gatheringDates.length
                                             ? `${formatDate(gatheringDates[0])}${gatheringDates.length > 1 ? ` – ${formatDate(gatheringDates[gatheringDates.length - 1])}` : ''}`
                                             : `${formatDate(scheduledRange?.start || currentDetails.week.start)} – ${formatDate(scheduledRange?.end || currentDetails.week.end)}`
+                                        const recordRemark = getRecordRemark(entry)
+                                        const responseCount = `${entry?.responded_students ?? 0}/${entry?.total_students ?? 0}`
                                         return (
-                                            <div className="monitoring-week-detail-row" key={gatheringItem.type}>
+                                            <div
+                                                id={`monitoring-gathering-row-${gatheringItem.type}`}
+                                                className={`monitoring-week-detail-row ${highlightedGatheringType === gatheringItem.type ? 'monitoring-week-detail-row-highlighted' : ''}`}
+                                                key={gatheringItem.type}
+                                            >
                                                 <span title={`${gatheringItem.label} · ${gatheringDateRange}`}>{gatheringItem.label}</span>
                                                 <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} compactRange />
-                                                <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
+                                                <span
+                                                    className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}
+                                                    title={statusLabel}
+                                                    aria-label={`${statusLabel}: ${responseCount} students responded`}
+                                                    tabIndex={0}
+                                                >
                                                     <img
                                                         src={status === 'completed'
                                                             ? CompletedIcon
@@ -208,13 +272,16 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                                             : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
                                                         alt=""
                                                     />
-                                                    {status === 'completed'
-                                                        ? 'Completed'
-                                                        : status === 'incomplete'
-                                                            ? 'Incomplete'
-                                                            : 'No Response'}
+                                                    {responseCount}
                                                 </span>
-                                                <span>{entry?.remarks || '—'}</span>
+                                                <span
+                                                    className={`monitoring-detail-record-remark monitoring-detail-record-remark--${entry?.record_state || 'not_recorded'}`}
+                                                    title={recordRemark.tooltip}
+                                                    aria-label={`${recordRemark.label}. ${recordRemark.tooltip}`}
+                                                    tabIndex={0}
+                                                >
+                                                    {recordRemark.label}
+                                                </span>
                                             </div>
                                         )
                                     })}
@@ -256,6 +323,48 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                                 )
                                             })}
                                     </div>}
+
+                                    {noResponseEntries.length > 0 && (
+                                        <div className="monitoring-incomplete-details monitoring-no-response-details">
+                                            <h4>
+                                                <span className="monitoring-incomplete-icon" aria-hidden="true">
+                                                    <img src={RecordedNoResponseIcon} alt="" />
+                                                </span>
+                                                No Response Details
+                                            </h4>
+                                            {noResponseEntries.map((entry) => {
+                                                const entryKey = entry.gathering_type
+                                                const isOpen = activeNoResponseEntry === entryKey
+                                                const studentsWithoutResponse = entry.missing_students || []
+
+                                                return (
+                                                    <article key={entryKey}>
+                                                        <div>
+                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
+                                                            <small>{studentsWithoutResponse.length} students did not respond</small>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            aria-expanded={isOpen}
+                                                            onClick={() => setActiveNoResponseEntry(isOpen ? null : entryKey)}
+                                                        >
+                                                            {isOpen ? 'Hide' : 'View'}
+                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
+                                                        </button>
+                                                        {isOpen && (
+                                                            <ul>
+                                                                {studentsWithoutResponse.map((student) => (
+                                                                    <li key={student.id}>{student.name}</li>
+                                                                ))}
+                                                            </ul>
+                                                        )}
+                                                    </article>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
                                 </section>
                             </div>
                         )}
