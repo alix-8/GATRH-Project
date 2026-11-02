@@ -12,7 +12,6 @@ import TotalProgramsIcon from '../../../assets/icons/total-programs-icon.svg'
 import CompletedReportsIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteReportsIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
-import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
 import './Dashboard.css'
 
 const YEAR_LEVEL_OPTIONS = ['1', '2', '3', '4']
@@ -33,18 +32,7 @@ const PROGRAM_DISPLAY_NAMES = {
 const REPORT_STATUS_LABELS = {
     completed: 'Completed',
     incomplete: 'Incomplete',
-    zero_response: 'Zero Response',
     no_report: 'No Report',
-}
-const REPORT_STATUS_ICONS = {
-    completed: CompletedReportsIcon,
-    incomplete: IncompleteReportsIcon,
-    zero_response: RecordedNoResponseIcon,
-    no_report: NoReportsIcon,
-}
-
-function getReportDisplayStatus(status, hasAttendance) {
-    return status === 'no_report' && hasAttendance ? 'zero_response' : status
 }
 
 const WEEKLY_CHART = {
@@ -305,9 +293,7 @@ function ChancellorDashboard() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {programYearReporting.map((report) => {
-                                            const monthlyStatus = getReportDisplayStatus(report.status, report.has_attendance)
-                                            return (
+                                        {programYearReporting.map((report) => (
                                             <tr key={report.code}>
                                                 <th scope="row">
                                                     <span>
@@ -316,10 +302,7 @@ function ChancellorDashboard() {
                                                     </span>
                                                 </th>
                                                 {reportingWeeks.map((week, index) => {
-                                                    const status = getReportDisplayStatus(
-                                                        report.weekly_statuses?.[index] || 'no_report',
-                                                        report.weekly_has_attendance?.[index]
-                                                    )
+                                                    const status = report.weekly_statuses?.[index] || 'no_report'
                                                     return (
                                                     <td key={`${report.code}-${week.week_start}`} title={`${week.range_label}: ${REPORT_STATUS_LABELS[status] || 'No Report'}`}>
                                                         <span
@@ -328,7 +311,11 @@ function ChancellorDashboard() {
                                                             aria-label={REPORT_STATUS_LABELS[status] || 'No Report'}
                                                         >
                                                             <img
-                                                                src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
+                                                                src={status === 'completed'
+                                                                    ? CompletedReportsIcon
+                                                                    : status === 'incomplete'
+                                                                        ? IncompleteReportsIcon
+                                                                        : NoReportsIcon}
                                                                 alt=""
                                                             />
                                                         </span>
@@ -336,14 +323,13 @@ function ChancellorDashboard() {
                                                     )
                                                 })}
                                                 <td>
-                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${monthlyStatus}`}>
+                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${report.status}`}>
                                                         <span />
-                                                        {REPORT_STATUS_LABELS[monthlyStatus] || 'No Report'}
+                                                        {REPORT_STATUS_LABELS[report.status] || 'No Report'}
                                                     </span>
                                                 </td>
                                             </tr>
-                                            )
-                                        })}
+                                        ))}
                                         {programYearReporting.length === 0 && (
                                             <tr>
                                                 <td className="chancellor-program-reporting-empty" colSpan={reportingWeeks.length + 2}>
@@ -360,7 +346,11 @@ function ChancellorDashboard() {
                                         <span key={status}>
                                             <span className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`} aria-hidden="true">
                                                 <img
-                                                    src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
+                                                    src={status === 'completed'
+                                                        ? CompletedReportsIcon
+                                                        : status === 'incomplete'
+                                                            ? IncompleteReportsIcon
+                                                            : NoReportsIcon}
                                                     alt=""
                                                 />
                                             </span>
