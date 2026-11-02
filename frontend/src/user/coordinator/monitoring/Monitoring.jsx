@@ -39,6 +39,24 @@ const PROGRAM_TYPES = {
 }
 const GATHERING_TYPES = ['pm', 'ws', 'tg']
 const EMPTY_COURSES = []
+const ATTENDANCE_STATUS_HELP = {
+    completed: {
+        label: 'Completed',
+        definition: 'All expected students responded.',
+    },
+    incomplete: {
+        label: 'Incomplete',
+        definition: 'Some student responses are still missing.',
+    },
+    no_response: {
+        label: 'No Response',
+        definition: 'Attendance was recorded, but no student responded.',
+    },
+    no_report: {
+        label: 'No Report',
+        definition: 'No attendance has been recorded.',
+    },
+}
 
 function formatDate(value, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
     if (!value) return '—'
@@ -267,33 +285,34 @@ function CoordinatorMonitoring() {
                                                         const courseWeek = course.weeks.find((entry) => entry.number === item.number)
                                                         return gatheringTypes.map((type) => {
                                                             const itemStatus = courseWeek?.gatherings.find((entry) => entry.type === type)
-                                                            const recordedNoResponses = itemStatus?.status === 'no_report' && itemStatus.has_attendance
-                                                            const noAttendanceRecorded = !itemStatus || (itemStatus.status === 'no_report' && !itemStatus.has_attendance)
+                                                            const hasAttendance = Boolean(itemStatus?.has_attendance)
+                                                            const status = itemStatus?.status === 'no_report' && hasAttendance
+                                                                ? 'no_response'
+                                                                : itemStatus?.status || 'no_report'
+                                                            const noAttendanceRecorded = status === 'no_report'
+                                                            const statusHelp = ATTENDANCE_STATUS_HELP[status] || ATTENDANCE_STATUS_HELP.no_report
+                                                            const responseCount = `${itemStatus?.responded_students ?? 0}/${itemStatus?.total_students ?? course.students_count}`
                                                             const statusTooltip = noAttendanceRecorded
-                                                                ? 'No attendance recorded yet'
-                                                                : `${itemStatus?.responded_students ?? 0}/${itemStatus?.total_students ?? course.students_count} students responded`
+                                                                ? `${statusHelp.label}: ${statusHelp.definition}`
+                                                                : `${statusHelp.label}: ${statusHelp.definition} (${responseCount} students responded)`
                                                             return (
                                                                 <td
                                                                     key={`${course.label}-${item.number}-${type}`}
                                                                     className={`monitoring-status-cell monitoring-status-cell-tooltip ${type === gatheringTypes[gatheringTypes.length - 1] ? 'monitoring-week-end' : ''}`}
                                                                     data-tooltip={statusTooltip}
-                                                                    data-tooltip-tone={noAttendanceRecorded || recordedNoResponses ? 'error' : undefined}
+                                                                    data-tooltip-tone={noAttendanceRecorded || status === 'no_response' ? 'error' : undefined}
                                                                 >
                                                                     <span
                                                                         className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'} ${noAttendanceRecorded ? 'monitoring-status-no-attendance' : ''}`}
                                                                         role="img"
-                                                                        aria-label={noAttendanceRecorded
-                                                                            ? `${item.label} ${GATHERING_LABELS[type]}: No attendance recorded yet`
-                                                                            : recordedNoResponses
-                                                                                ? `${item.label} ${GATHERING_LABELS[type]}: Attendance recorded, 0 students responded`
-                                                                            : `${item.label} ${GATHERING_LABELS[type]}: ${itemStatus?.status === 'no_report' || !itemStatus ? 'No response' : itemStatus.status}`}
+                                                                        aria-label={`${item.label} ${GATHERING_LABELS[type]}: ${statusHelp.label}. ${statusTooltip}`}
                                                                     >
                                                                         <img
-                                                                            src={itemStatus?.status === 'completed'
+                                                                            src={status === 'completed'
                                                                                 ? CompletedIcon
-                                                                                : itemStatus?.status === 'incomplete'
+                                                                                : status === 'incomplete'
                                                                                     ? IncompleteIcon
-                                                                                    : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
+                                                                                    : status === 'no_response' ? RecordedNoResponseIcon : NoReportsIcon}
                                                                             alt=""
                                                                         />
                                                                     </span>
@@ -332,25 +351,25 @@ function CoordinatorMonitoring() {
                                     <span className="monitoring-legend-icon monitoring-legend-completed">
                                         <img src={CompletedIcon} alt="" />
                                     </span>
-                                    Completed
+                                    <span title={ATTENDANCE_STATUS_HELP.completed.definition}>Completed</span>
                                 </span>
                                 <span>
                                     <span className="monitoring-legend-icon monitoring-legend-in-progress">
                                         <img src={IncompleteIcon} alt="" />
                                     </span>
-                                    Incomplete
+                                    <span title={ATTENDANCE_STATUS_HELP.incomplete.definition}>Incomplete</span>
                                 </span>
                                 <span>
                                     <span className="monitoring-legend-icon monitoring-legend-recorded-no-response">
                                         <img src={RecordedNoResponseIcon} alt="" />
                                     </span>
-                                    Zero Response
+                                    <span title={ATTENDANCE_STATUS_HELP.no_response.definition}>No Response</span>
                                 </span>
                                 <span>
                                     <span className="monitoring-legend-icon monitoring-legend-no-report">
                                         <img src={NoReportsIcon} alt="" />
                                     </span>
-                                    No Report
+                                    <span title={ATTENDANCE_STATUS_HELP.no_report.definition}>No Report</span>
                                 </span>
                             </div>
                         </div>

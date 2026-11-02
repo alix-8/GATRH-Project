@@ -806,7 +806,7 @@
 .monitoring-week-detail-headings,
 .monitoring-week-detail-row {
     display: grid;
-    grid-template-columns: 1fr 1.05fr 1fr .55fr;
+    grid-template-columns: 1fr 1.05fr 1fr .8fr;
     align-items: center;
     gap: 4px;
     padding: 9px 8px;
@@ -828,9 +828,17 @@
 .monitoring-detail-status-cell {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     color: #536580;
     white-space: nowrap;
+    cursor: help;
+}
+
+.monitoring-detail-status-cell:focus-visible,
+.monitoring-detail-record-remark:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid #159fe8;
+    outline-offset: 2px;
 }
 
 .monitoring-detail-status-cell img {
@@ -843,6 +851,26 @@
 .monitoring-detail-status-cell--incomplete img {
     border-radius: 50%;
     background: #f8c43a;
+}
+
+.monitoring-detail-record-remark {
+    width: fit-content;
+    color: #536580;
+    cursor: help;
+    white-space: nowrap;
+}
+
+.monitoring-detail-record-remark--approved {
+    color: #16833a;
+}
+
+.monitoring-detail-record-remark--draft {
+    color: #a17a00;
+}
+
+.monitoring-detail-record-remark--pending,
+.monitoring-detail-record-remark--not_recorded {
+    color: #667085;
 }
 
 .monitoring-incomplete-details {

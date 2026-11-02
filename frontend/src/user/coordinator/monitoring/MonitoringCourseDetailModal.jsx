@@ -38,6 +38,35 @@ function formatDate(value, options = { month: 'short', day: 'numeric', year: 'nu
     return new Date(year, month - 1, day).toLocaleDateString('en-US', options)
 }
 
+function getRecordRemark(entry) {
+    const recordedBy = entry?.recorded_by
+
+    switch (entry?.record_state) {
+        case 'approved':
+            return {
+                label: 'Approved',
+                tooltip: recordedBy ? `Approved by: ${recordedBy}` : 'Approved',
+            }
+        case 'draft':
+            return {
+                label: 'Validating',
+                tooltip: recordedBy ? `${recordedBy} is still editing.` : 'The secretary is still editing.',
+            }
+        case 'pending':
+            return {
+                label: 'Pending',
+                tooltip: recordedBy ? `Recorded by: ${recordedBy}` : 'Pending review',
+            }
+        default:
+            return {
+                label: 'No Submission yet',
+                tooltip: recordedBy
+                    ? `No attendance submission yet. Awaiting submission from: ${recordedBy}`
+                    : 'No attendance submission yet.',
+            }
+    }
+}
+
 export default function MonitoringCourseDetailModal({ course: activeCourse, weeks, month, onClose: closeCourseDetails }) {
     const [selectedDetailWeek, setSelectedDetailWeek] = useState(weeks[0]?.number ?? null)
     const [activeIncompleteEntry, setActiveIncompleteEntry] = useState(null)
@@ -189,17 +218,29 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                             (item) => item.gathering_type === gatheringItem.type
                                         )
                                         const status = entry?.status || 'no_report'
+                                        const statusLabel = status === 'completed'
+                                            ? 'Completed'
+                                            : status === 'incomplete'
+                                                ? 'Incomplete'
+                                                : 'No response'
                                         const recordedNoResponses = status === 'no_report' && entry?.has_attendance
                                         const gatheringDates = entry?.dates?.length ? entry.dates : entry?.date ? [entry.date] : []
                                         const scheduledRange = currentDetails.week.gathering_ranges?.[gatheringItem.type]
                                         const gatheringDateRange = gatheringDates.length
                                             ? `${formatDate(gatheringDates[0])}${gatheringDates.length > 1 ? ` – ${formatDate(gatheringDates[gatheringDates.length - 1])}` : ''}`
                                             : `${formatDate(scheduledRange?.start || currentDetails.week.start)} – ${formatDate(scheduledRange?.end || currentDetails.week.end)}`
+                                        const recordRemark = getRecordRemark(entry)
+                                        const responseCount = `${entry?.responded_students ?? 0}/${entry?.total_students ?? 0}`
                                         return (
                                             <div className="monitoring-week-detail-row" key={gatheringItem.type}>
                                                 <span title={`${gatheringItem.label} · ${gatheringDateRange}`}>{gatheringItem.label}</span>
                                                 <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} compactRange />
-                                                <span className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}>
+                                                <span
+                                                    className={`monitoring-detail-status-cell monitoring-detail-status-cell--${status}`}
+                                                    title={statusLabel}
+                                                    aria-label={`${statusLabel}: ${responseCount} students responded`}
+                                                    tabIndex={0}
+                                                >
                                                     <img
                                                         src={status === 'completed'
                                                             ? CompletedIcon
@@ -208,13 +249,16 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                                             : recordedNoResponses ? RecordedNoResponseIcon : NoReportsIcon}
                                                         alt=""
                                                     />
-                                                    {status === 'completed'
-                                                        ? 'Completed'
-                                                        : status === 'incomplete'
-                                                            ? 'Incomplete'
-                                                            : 'No Response'}
+                                                    {responseCount}
                                                 </span>
-                                                <span>{entry?.remarks || '—'}</span>
+                                                <span
+                                                    className={`monitoring-detail-record-remark monitoring-detail-record-remark--${entry?.record_state || 'not_recorded'}`}
+                                                    title={recordRemark.tooltip}
+                                                    aria-label={`${recordRemark.label}. ${recordRemark.tooltip}`}
+                                                    tabIndex={0}
+                                                >
+                                                    {recordRemark.label}
+                                                </span>
                                             </div>
                                         )
                                     })}

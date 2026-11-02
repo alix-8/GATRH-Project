@@ -531,6 +531,8 @@
 .chancellor-program-reporting-scroll {
     flex: 1;
     min-height: 0;
+    min-width: 0;
+    width: 100%;
     overflow-x: auto;
     border: 1px solid #d3d9e5;
     border-radius: 7px;
@@ -539,6 +541,8 @@
 .chancellor-program-reporting-table {
     height: 100%;
     width: 100%;
+    min-width: 720px;
+    table-layout: fixed;
     border-collapse: collapse;
     color: #172b4d;
     font-size: 11px;
@@ -559,8 +563,19 @@
 
 .chancellor-program-reporting-table thead th:first-child,
 .chancellor-program-reporting-table tbody th {
-    width: 34%;
+    width: 220px;
     text-align: left;
+}
+
+.chancellor-program-reporting-table thead th:nth-last-child(2),
+.chancellor-program-reporting-table tbody td:nth-last-child(2) {
+    width: 126px;
+    white-space: nowrap;
+}
+
+.chancellor-program-reporting-table thead th:last-child,
+.chancellor-program-reporting-table tbody td:last-child {
+    width: 88px;
 }
 
 .chancellor-program-reporting-table tbody th span,
@@ -612,6 +627,7 @@
     padding: 0 8px;
     border-radius: 12px;
     font-size: 9px;
+    white-space: nowrap;
 }
 
 .chancellor-report-status-label>span {
