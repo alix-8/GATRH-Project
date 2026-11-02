@@ -646,7 +646,10 @@
 
 .monitoring-empty-roster {
     margin: 8px 0;
-    color: #667085;
+    color: #E14953;
+    background: #FFEBEB;
+    border-radius: 8px;
+    border: 1px solid #E14953;
     font-size: 11px;
 }
 
@@ -676,38 +679,26 @@
     background: #f5ca45;
 }
 
-.monitoring-approval-card {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+.monitoring-program-head-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 14px;
-    padding: 14px 11px;
+    padding: 12px 14px;
     border: 1px solid #d5dfef;
     border-radius: 8px;
     background: #f4f7fc;
-}
-
-.monitoring-approval-card>div {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 6px;
     text-align: left;
 }
 
-.monitoring-approval-card img,
-.monitoring-approval-card svg {
+.monitoring-program-head-card img {
     width: 28px;
     height: 28px;
     flex: 0 0 28px;
     object-fit: contain;
 }
 
-.monitoring-approval-card .monitoring-calendar-icon {
-    color: #17a1fa;
-}
-
-.monitoring-approval-card span {
+.monitoring-program-head-card span {
     display: flex;
     min-width: 0;
     flex-direction: column;
@@ -715,15 +706,15 @@
     gap: 1px;
 }
 
-.monitoring-approval-card small {
+.monitoring-program-head-card small {
     color: #667085;
     font-size: 11px;
     line-height: 1.2;
 }
 
-.monitoring-approval-card strong {
-    max-width: 100%;
+.monitoring-program-head-card strong {
     overflow: hidden;
+    max-width: 100%;
     color: #172b4d;
     font-size: 12px;
     font-weight: 600;

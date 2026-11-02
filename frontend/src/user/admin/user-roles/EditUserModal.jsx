@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from '../dashboard/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
 import '../dashboard/AddUserModal.css'
 import './EditUserModal.css'
 
@@ -84,6 +85,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
         aria-describedby="user-roles-edit-description"
         onCancel={event => { event.preventDefault(); if (!saving) onClose() }}
         onClick={event => {
+            if (!isBackdropClick(event)) return
             const bounds = event.currentTarget.getBoundingClientRect()
             const outside = event.clientX < bounds.left || event.clientX > bounds.right
                 || event.clientY < bounds.top || event.clientY > bounds.bottom
@@ -94,7 +96,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
         <h2 id="user-roles-edit-title">Edit User</h2>
         <p id="user-roles-edit-description" className="admin-add-user-description">Update this account and its role assignment.</p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="user-roles-edit-name">Full Name<span>*</span></label>
                 <input id="user-roles-edit-name" autoFocus required maxLength={255} value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />

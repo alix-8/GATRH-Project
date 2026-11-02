@@ -27,31 +27,24 @@
     border-radius: 10px;
 }
 
-.monitoring-detail-skeleton-approval {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 14px;
-    padding: 14px 11px;
-    border: 1px solid #e9ecf1;
-    border-radius: 8px;
-}
-
-.monitoring-detail-skeleton-approval > div {
+.monitoring-detail-skeleton-program-head {
     display: flex;
     align-items: center;
-    gap: 6px;
-    min-width: 0;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid #e9ecf1;
+    border-radius: 8px;
 }
 
 .monitoring-detail-skeleton-icon {
     width: 28px;
     height: 28px;
-    flex-shrink: 0;
+    flex: 0 0 28px;
     border-radius: 50%;
 }
 
-.monitoring-detail-skeleton-approval > div > div {
+.monitoring-detail-skeleton-program-head > div {
     display: grid;
     flex: 1;
     min-width: 0;

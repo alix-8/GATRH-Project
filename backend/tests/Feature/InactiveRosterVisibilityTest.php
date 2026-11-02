@@ -20,7 +20,9 @@ class InactiveRosterVisibilityTest extends TestCase
         parent::setUp();
         Carbon::setTestNow('2026-10-31 12:00:00');
         $this->mock(AuditLogService::class)->shouldReceive('record', 'recordAction')->zeroOrMoreTimes();
-        $this->mock(\App\Services\Escalations\WeeklyEscalationService::class)->shouldReceive('syncStudent')->zeroOrMoreTimes();
+        $this->mock(\App\Services\Escalations\WeeklyEscalationService::class)
+            ->shouldReceive('syncStudent', 'syncDraft')
+            ->zeroOrMoreTimes();
         Schema::create('programs', function (Blueprint $t) {
             $t->id(); $t->string('code'); $t->string('name');
             $t->boolean('is_active')->default(true); $t->integer('max_year_level')->default(4);
@@ -139,6 +141,51 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame([$noResponse->id], $pm['no_response_students']->pluck('id')->all());
         $this->assertContains($missing->id, $pm['missing_students']->pluck('id')->all());
         $this->assertSame([], $ws['no_response_students']->all());
+    }
+
+    public function test_coordinator_gathering_rows_expose_their_own_record_state_and_owner(): void
+    {
+        $this->program('BSIS');
+        $student = $this->student('Student');
+        $secretary = User::create(['name' => 'Secretary Mel', 'email' => 'mel@example.com', 'password' => 'password',
+            'role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1]);
+        $approver = User::create(['name' => 'Head Jerreck', 'email' => 'jerreck@example.com', 'password' => 'password',
+            'role' => 'program_head', 'program' => 'BSIS']);
+        DB::table('program_user')->insert(['program_id' => Program::where('code', 'BSIS')->value('id'), 'user_id' => $approver->id]);
+
+        AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'pm', 'day' => '2026-10-28',
+            'reporting_day' => '2026-10-28', 'status' => 'present', 'validation_status' => 'validated',
+            'submitted_by' => $secretary->id, 'validated_by' => $approver->id]);
+        AttendanceRecord::create(['student_id' => $student->id, 'gathering_type' => 'ws', 'day' => '2026-10-31',
+            'reporting_day' => '2026-10-31', 'status' => 'present', 'validation_status' => 'unvalidated',
+            'submitted_by' => $secretary->id]);
+        \App\Models\AttendanceDraft::create(['user_id' => $secretary->id, 'gathering_type' => 'tg',
+            'day' => '2026-10-31', 'status' => 'draft',
+            'parsed_data' => [['student_id' => $student->id, 'gathering_type' => 'tg', 'day' => '2026-10-31', 'status' => 'present']]]);
+
+        $details = app(CmCoordinatorMonitoringService::class)->getCourseDetails('BSIS', 1, ['year' => 2026, 'month' => 10, 'week' => 4]);
+        $entries = collect($details['week_details'])->keyBy('gathering_type');
+
+        $this->assertSame('Head Jerreck', $details['course']['program_head']);
+        $this->assertSame('approved', $entries['pm']['record_state']);
+        $this->assertSame('Head Jerreck', $entries['pm']['recorded_by']);
+        $this->assertSame('pending', $entries['ws']['record_state']);
+        $this->assertSame('Secretary Mel', $entries['ws']['recorded_by']);
+        $this->assertSame('draft', $entries['tg']['record_state']);
+        $this->assertSame('Secretary Mel', $entries['tg']['recorded_by']);
+    }
+
+    public function test_coordinator_not_recorded_gathering_identifies_its_assigned_secretary(): void
+    {
+        $this->program('BSIS');
+        $this->student('Student');
+        User::create(['name' => 'Secretary Mel', 'email' => 'mel@example.com', 'password' => 'password',
+            'role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1]);
+
+        $details = app(CmCoordinatorMonitoringService::class)->getCourseDetails('BSIS', 1, ['year' => 2026, 'month' => 10, 'week' => 4]);
+
+        $this->assertSame('not_recorded', $details['week_details'][0]['record_state']);
+        $this->assertSame('Secretary Mel', $details['week_details'][0]['recorded_by']);
     }
 
     public function test_secretary_dashboard_prepends_recent_level_one_alerts_without_replacing_reminders(): void
