@@ -21,7 +21,7 @@ const roleCards = [
     { label: 'Chancellor', roles: ['chancellor'], detail: 'System Oversight', tone: 'purple', icon: ChancellorIcon },
     { label: 'MCGI Coordinator', roles: ['cm_coordinator'], detail: 'System Oversight and Monitoring', tone: 'navy', icon: McgiCoordinatorIcon },
     { label: 'Program Head', roles: ['program_head'], detail: 'Oversees programs and reviews records', tone: 'blue', icon: ProgramHeadIcon },
-    { label: 'Secretaries', roles: ['secretary'], detail: 'Manages Attendance', tone: 'green', icon: SecretariesIcon },
+    { label: 'Secretaries', roles: ['secretary', 'program_secretary'], detail: 'Manages Attendance', tone: 'green', icon: SecretariesIcon },
 ]
 
 const avatarTones = ['blue', 'pink', 'orange', 'yellow', 'slate', 'purple']
@@ -194,8 +194,7 @@ function UserRoles() {
                                                 <td><span className="user-roles-name"><span className={`user-roles-avatar ${avatarTones[user.id % avatarTones.length]}`} aria-hidden="true">{initials(user.name)}</span><strong>{user.name}</strong></span></td>
                                                 <td className="user-roles-email">{user.email}</td>
                                                 <td><span className={`user-roles-role ${user.role}`}>{roleLabel(user.role)}</span></td>
-                                                <td className="user-roles-program">{user.programs?.length ? user.programs.map(program => program.code).join(', ') : (user.program || '---')}</td>
-                                                                                                <td className="user-roles-program">{programLabels(user, activeProgramCodes)}</td>
+                                                <td className="user-roles-program">{programLabels(user, activeProgramCodes)}</td>
                                                 <td><span className={`user-roles-status ${user.is_active ? 'active' : 'inactive'}`}>{user.is_active ? 'Active' : 'Inactive'}</span></td>
                                                 <td><button className="user-roles-edit-button" type="button" aria-label={`Edit ${user.name}`} onClick={() => setEditingUser(user)}><img src={EditIcon} alt="" /></button></td>
                                             </tr>)}
