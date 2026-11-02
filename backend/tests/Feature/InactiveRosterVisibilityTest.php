@@ -199,6 +199,29 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame(['BSIS'], $pageData['programs']->pluck('code')->all());
     }
 
+    public function test_changing_user_role_keeps_existing_program_assignment(): void
+    {
+        $program = $this->program('BSIS');
+        $user = User::create([
+            'name' => 'Program Head',
+            'email' => 'head@laverdad.edu.ph',
+            'password' => 'password',
+            'role' => 'program_head',
+            'program' => 'BSIS',
+            'year_level' => 1,
+            'is_active' => true,
+        ]);
+        $user->programs()->sync([$program->id]);
+        $admin = new User(['role' => 'admin', 'is_active' => true]);
+        $admin->id = 999;
+
+        $updated = app(\App\Services\Admin\AdminUserService::class)->update($user, ['role' => 'chancellor'], $admin);
+
+        $this->assertSame('chancellor', $updated->role);
+        $this->assertSame('BSIS', $updated->program);
+        $this->assertSame([$program->id], $updated->programs()->pluck('programs.id')->all());
+    }
+
     public function test_recent_activities_keep_withdrawals_scoped_after_the_draft_is_gone(): void
     {
         Schema::create('audit_logs', function (Blueprint $table) {
