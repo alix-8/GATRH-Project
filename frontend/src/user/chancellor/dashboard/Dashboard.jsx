@@ -12,7 +12,7 @@ import TotalProgramsIcon from '../../../assets/icons/total-programs-icon.svg'
 import CompletedReportsIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteReportsIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
-import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
+import MonitoringCourseDetailModal from '../../coordinator/monitoring/MonitoringCourseDetailModal'
 import './Dashboard.css'
 
 const YEAR_LEVEL_OPTIONS = ['1', '2', '3', '4']
@@ -33,18 +33,7 @@ const PROGRAM_DISPLAY_NAMES = {
 const REPORT_STATUS_LABELS = {
     completed: 'Completed',
     incomplete: 'Incomplete',
-    zero_response: 'Zero Response',
     no_report: 'No Report',
-}
-const REPORT_STATUS_ICONS = {
-    completed: CompletedReportsIcon,
-    incomplete: IncompleteReportsIcon,
-    zero_response: RecordedNoResponseIcon,
-    no_report: NoReportsIcon,
-}
-
-function getReportDisplayStatus(status, hasAttendance) {
-    return status === 'no_report' && hasAttendance ? 'zero_response' : status
 }
 
 const WEEKLY_CHART = {
@@ -80,6 +69,7 @@ function ChancellorDashboard() {
     const [programYearReporting, setProgramYearReporting] = useState([])
     const [weeklyProgress, setWeeklyProgress] = useState([])
     const [reportingWeeks, setReportingWeeks] = useState([])
+    const [activeCourse, setActiveCourse] = useState(null)
     const [summary, setSummary] = useState({
         completed: 0,
         incomplete: 0,
@@ -181,6 +171,8 @@ function ChancellorDashboard() {
         { length: Math.floor(weeklyChartScale.maximum / weeklyChartScale.step) + 1 },
         (_, index) => index * weeklyChartScale.step
     ).reverse()
+    const [detailYear, detailMonth] = (reportingWeeks[0]?.week_start?.slice(0, 7) || getTodayDateValue().slice(0, 7))
+        .split('-').map(Number)
 
     return (
         <div className="chancellor-dashboard">
@@ -295,6 +287,7 @@ function ChancellorDashboard() {
                                                             onClick={() => {
                                                                 setYearLevel(year)
                                                                 setIsYearOpen(false)
+                                                                setActiveCourse(null)
                                                             }}
                                                         >
                                                             {YEAR_LEVEL_OPTION_LABELS[year]}
@@ -324,12 +317,11 @@ function ChancellorDashboard() {
                                                 </th>
                                             ))}
                                             <th scope="col">Status</th>
+                                            <th scope="col">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {programYearReporting.map((report) => {
-                                            const monthlyStatus = getReportDisplayStatus(report.status, report.has_attendance)
-                                            return (
+                                        {programYearReporting.map((report) => (
                                             <tr key={report.code}>
                                                 <th scope="row">
                                                     <span>
@@ -338,10 +330,7 @@ function ChancellorDashboard() {
                                                     </span>
                                                 </th>
                                                 {reportingWeeks.map((week, index) => {
-                                                    const status = getReportDisplayStatus(
-                                                        report.weekly_statuses?.[index] || 'no_report',
-                                                        report.weekly_has_attendance?.[index]
-                                                    )
+                                                    const status = report.weekly_statuses?.[index] || 'no_report'
                                                     return (
                                                     <td key={`${report.code}-${week.week_start}`} title={`${week.range_label}: ${REPORT_STATUS_LABELS[status] || 'No Report'}`}>
                                                         <span
@@ -350,7 +339,11 @@ function ChancellorDashboard() {
                                                             aria-label={REPORT_STATUS_LABELS[status] || 'No Report'}
                                                         >
                                                             <img
-                                                                src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
+                                                                src={status === 'completed'
+                                                                    ? CompletedReportsIcon
+                                                                    : status === 'incomplete'
+                                                                        ? IncompleteReportsIcon
+                                                                        : NoReportsIcon}
                                                                 alt=""
                                                             />
                                                         </span>
@@ -358,17 +351,32 @@ function ChancellorDashboard() {
                                                     )
                                                 })}
                                                 <td>
-                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${monthlyStatus}`}>
+                                                    <span className={`chancellor-report-status-label chancellor-report-status-label--${report.status}`}>
                                                         <span />
-                                                        {REPORT_STATUS_LABELS[monthlyStatus] || 'No Report'}
+                                                        {REPORT_STATUS_LABELS[report.status] || 'No Report'}
                                                     </span>
                                                 </td>
+                                                <td className="chancellor-program-reporting-action">
+                                                    <button
+                                                        type="button"
+                                                        aria-label={`View ${report.code} year ${report.year_level ?? yearLevel} details`}
+                                                        onClick={() => setActiveCourse({
+                                                            program: report.code,
+                                                            year_level: report.year_level ?? Number(yearLevel),
+                                                            label: `${report.code} ${report.year_level ?? yearLevel}`,
+                                                        })}
+                                                    >
+                                                        View
+                                                        <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                            <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                        </svg>
+                                                    </button>
+                                                </td>
                                             </tr>
-                                            )
-                                        })}
+                                        ))}
                                         {programYearReporting.length === 0 && (
                                             <tr>
-                                                <td className="chancellor-program-reporting-empty" colSpan={reportingWeeks.length + 2}>
+                                                <td className="chancellor-program-reporting-empty" colSpan={reportingWeeks.length + 3}>
                                                     No program reporting data is available.
                                                 </td>
                                             </tr>
@@ -382,7 +390,11 @@ function ChancellorDashboard() {
                                         <span key={status}>
                                             <span className={`chancellor-report-status-icon chancellor-report-status-icon--${status}`} aria-hidden="true">
                                                 <img
-                                                    src={REPORT_STATUS_ICONS[status] || NoReportsIcon}
+                                                    src={status === 'completed'
+                                                        ? CompletedReportsIcon
+                                                        : status === 'incomplete'
+                                                            ? IncompleteReportsIcon
+                                                            : NoReportsIcon}
                                                     alt=""
                                                 />
                                             </span>
@@ -462,6 +474,14 @@ function ChancellorDashboard() {
                 </div>
                 {loadError && <p className="chancellor-dashboard-error" role="alert">{loadError}</p>}
             </main>
+            {activeCourse && (
+                <MonitoringCourseDetailModal
+                    course={activeCourse}
+                    weeks={reportingWeeks}
+                    month={{ year: detailYear, month: detailMonth }}
+                    onClose={() => setActiveCourse(null)}
+                />
+            )}
         </div>
     )
 }

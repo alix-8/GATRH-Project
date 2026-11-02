@@ -83,6 +83,21 @@ class ChancellorDashboardYearFilterTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_program_week_details_are_available_to_chancellor_and_coordinator_only(): void
+    {
+        Student::create(['name' => 'Student', 'program' => 'BSIS', 'year_level' => 1]);
+        $path = '/api/monitoring/courses/BSIS/1?year=2026&month=10&week=1';
+
+        foreach (['cm_coordinator', 'chancellor'] as $role) {
+            $this->actingAs(new User(['role' => $role]))->getJson($path)
+                ->assertOk()
+                ->assertJsonPath('course.label', 'BSIS 1')
+                ->assertJsonCount(3, 'week_details');
+        }
+
+        $this->actingAs(new User(['role' => 'secretary']))->getJson($path)->assertForbidden();
+    }
+
     public function test_year_filter_scopes_program_reporting_and_the_overall_summary(): void
     {
         $chancellor = User::create([

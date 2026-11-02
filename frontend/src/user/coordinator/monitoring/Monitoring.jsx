@@ -5,15 +5,12 @@ import CompletedIcon from '../../../assets/icons/completed-reports-icon.svg'
 import IncompleteIcon from '../../../assets/icons/incomplete-reports-icon.svg'
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
 import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
-import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg'
-import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { request } from '../../../api/request'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
 import backendPercentage from '../../../utils/backendPercentage'
-import RecordDate from '../../../components/RecordDate'
 import MonitoringSkeleton from './skeleton/MonitoringSkeleton'
-import MonitoringDetailSkeleton from './skeleton/MonitoringDetailSkeleton'
+import MonitoringCourseDetailModal from './MonitoringCourseDetailModal'
 import './Monitoring.css'
 
 const GATHERING_LABELS = {
@@ -40,12 +37,7 @@ const PROGRAM_TYPES = {
     BSIS: 'Information Systems',
     BSSW: 'Social Work',
 }
-const GATHERINGS = [
-    { type: 'pm', label: 'Prayer Meeting' },
-    { type: 'ws', label: 'Worship Service' },
-    { type: 'tg', label: 'Thanksgiving' },
-]
-const GATHERING_TYPES = GATHERINGS.map(({ type }) => type)
+const GATHERING_TYPES = ['pm', 'ws', 'tg']
 const EMPTY_COURSES = []
 
 function formatDate(value, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
@@ -65,25 +57,8 @@ function CoordinatorMonitoring() {
     const [settledQuery, setSettledQuery] = useState(null)
     const [requestError, setRequestError] = useState(null)
     const [activeCourse, setActiveCourse] = useState(null)
-    const [selectedDetailWeek, setSelectedDetailWeek] = useState(null)
-    const [activeIncompleteEntry, setActiveIncompleteEntry] = useState(null)
-    const [courseDetails, setCourseDetails] = useState(null)
-    const [detailFailure, setDetailFailure] = useState(null)
     const [pollTick, setPollTick] = useState(0)
     useLiveRefresh(() => setPollTick((current) => current + 1), 30_000)
-
-    useEffect(() => {
-        if (!activeCourse) return undefined
-
-        const previousPageOverflow = document.documentElement.style.overflow
-        // Lock the root scroller only. Hiding overflow on body creates a new
-        // scroll container and displaces the sidebar's sticky positioning.
-        document.documentElement.style.overflow = 'hidden'
-
-        return () => {
-            document.documentElement.style.overflow = previousPageOverflow
-        }
-    }, [activeCourse])
 
     useEffect(() => {
         const controller = new AbortController()
@@ -121,19 +96,6 @@ function CoordinatorMonitoring() {
     const courses = monitoring?.courses ?? EMPTY_COURSES
     const weeks = monitoring?.weeks || []
     const gatheringTypes = GATHERING_TYPES
-    const detailWeek = selectedDetailWeek ?? weeks[0]?.number
-    const detailKey = activeCourse
-        ? `${activeCourse.program}-${activeCourse.year_level}-${monitoring?.month?.year}-${monitoring?.month?.month}-${detailWeek}`
-        : ''
-    const currentDetails = courseDetails?.key === detailKey ? courseDetails.data : null
-    const noResponseEntries = (currentDetails?.week_details ?? []).filter(entry => (
-        entry.status === 'no_report'
-        && entry.has_attendance
-        && entry.no_response_students?.length > 0
-    ))
-        .sort((first, second) => GATHERING_TYPES.indexOf(first.gathering_type) - GATHERING_TYPES.indexOf(second.gathering_type))
-    const currentDetailError = detailFailure?.key === detailKey ? detailFailure.message : ''
-    const detailLoading = Boolean(activeCourse && !currentDetails && !currentDetailError)
     const groupedCourses = useMemo(() => courses.reduce((groups, course) => {
         const key = course.program
         if (!groups[key]) groups[key] = []
@@ -154,45 +116,12 @@ function CoordinatorMonitoring() {
         )
     }
 
-    useEffect(() => {
-        if (!activeCourse || !detailWeek) return undefined
-
-        const controller = new AbortController()
-        const params = new URLSearchParams({
-            year: String(monitoring.month.year),
-            month: String(monitoring.month.month),
-            week: String(detailWeek),
-        })
-        const key = `${activeCourse.program}-${activeCourse.year_level}-${monitoring.month.year}-${monitoring.month.month}-${detailWeek}`
-
-        request(
-            `/monitoring/courses/${encodeURIComponent(activeCourse.program)}/${activeCourse.year_level}?${params}`,
-            { signal: controller.signal }
-        )
-            .then((data) => {
-                if (!controller.signal.aborted) setCourseDetails({ key, data })
-            })
-            .catch((detailError) => {
-                if (detailError.name !== 'AbortError') {
-                    setDetailFailure({
-                        key,
-                        message: detailError.message || 'Unable to load course details.',
-                    })
-                }
-            })
-
-        return () => controller.abort()
-    }, [activeCourse, monitoring?.month?.year, monitoring?.month?.month, detailWeek])
-
     const openCourseDetails = (course) => {
         setActiveCourse(course)
-        setSelectedDetailWeek(weeks[0]?.number ?? null)
-        setActiveIncompleteEntry(null)
     }
 
     const closeCourseDetails = () => {
         setActiveCourse(null)
-        setActiveIncompleteEntry(null)
     }
 
     const changeMonth = (month) => {
@@ -202,9 +131,6 @@ function CoordinatorMonitoring() {
         setRequestError(null)
         setSettledQuery(null)
         closeCourseDetails()
-        setSelectedDetailWeek(null)
-        setCourseDetails(null)
-        setDetailFailure(null)
     }
 
     const navigateMonth = (direction) => {
@@ -213,26 +139,6 @@ function CoordinatorMonitoring() {
         changeMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`)
     }
     const monthLabel = formatDate(`${selectedMonth}-01`, { month: 'long', year: 'numeric' })
-
-    const selectedWeek = weeks.find((item) => item.number === detailWeek)
-    const weekTabs = (
-        <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
-            {weeks.map((item) => (
-                <button
-                    key={item.number}
-                    type="button"
-                    className={item.number === detailWeek ? 'active' : ''}
-                    aria-pressed={item.number === detailWeek}
-                    onClick={() => {
-                        setSelectedDetailWeek(item.number)
-                        setActiveIncompleteEntry(null)
-                    }}
-                >
-                    {item.label}
-                </button>
-            ))}
-        </div>
-    )
 
     if (loading && !error && !hasLoadedMonitoring && showLoginSkeleton) return <MonitoringSkeleton month={selectedMonth} />
 
