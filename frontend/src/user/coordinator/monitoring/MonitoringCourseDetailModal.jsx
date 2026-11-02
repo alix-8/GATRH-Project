@@ -68,9 +68,10 @@ function getRecordRemark(entry) {
 }
 
 export default function MonitoringCourseDetailModal({ course: activeCourse, weeks, month, onClose: closeCourseDetails }) {
-    const [selectedDetailWeek, setSelectedDetailWeek] = useState(weeks[0]?.number ?? null)
+    const [selectedDetailWeek, setSelectedDetailWeek] = useState(activeCourse.initialWeek ?? weeks[0]?.number ?? null)
     const [activeIncompleteEntry, setActiveIncompleteEntry] = useState(null)
     const [activeNoResponseEntry, setActiveNoResponseEntry] = useState(null)
+    const [highlightedGatheringType, setHighlightedGatheringType] = useState(activeCourse.initialGatheringType ?? null)
     const [courseDetails, setCourseDetails] = useState(null)
     const [detailFailure, setDetailFailure] = useState(null)
     const detailWeek = selectedDetailWeek ?? weeks[0]?.number
@@ -117,6 +118,18 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
         return () => document.removeEventListener('keydown', closeOnEscape)
     }, [closeCourseDetails])
 
+    useEffect(() => {
+        if (!highlightedGatheringType || !currentDetails) return undefined
+
+        document.getElementById(`monitoring-gathering-row-${highlightedGatheringType}`)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+        })
+
+        const timeoutId = window.setTimeout(() => setHighlightedGatheringType(null), 3500)
+        return () => window.clearTimeout(timeoutId)
+    }, [highlightedGatheringType, currentDetails])
+
     const selectedWeek = weeks.find((item) => item.number === detailWeek)
     const weekTabs = (
         <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
@@ -130,6 +143,7 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                         setSelectedDetailWeek(item.number)
                         setActiveIncompleteEntry(null)
                         setActiveNoResponseEntry(null)
+                        setHighlightedGatheringType(null)
                     }}
                 >
                     {item.label}
@@ -237,7 +251,11 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                         const recordRemark = getRecordRemark(entry)
                                         const responseCount = `${entry?.responded_students ?? 0}/${entry?.total_students ?? 0}`
                                         return (
-                                            <div className="monitoring-week-detail-row" key={gatheringItem.type}>
+                                            <div
+                                                id={`monitoring-gathering-row-${gatheringItem.type}`}
+                                                className={`monitoring-week-detail-row ${highlightedGatheringType === gatheringItem.type ? 'monitoring-week-detail-row-highlighted' : ''}`}
+                                                key={gatheringItem.type}
+                                            >
                                                 <span title={`${gatheringItem.label} · ${gatheringDateRange}`}>{gatheringItem.label}</span>
                                                 <RecordDate value={entry?.dates?.length ? entry.dates : entry?.date} compactRange />
                                                 <span

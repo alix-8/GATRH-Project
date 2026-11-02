@@ -134,8 +134,8 @@ function CoordinatorMonitoring() {
         )
     }
 
-    const openCourseDetails = (course) => {
-        setActiveCourse(course)
+    const openCourseDetails = (course, weekNumber = weeks[0]?.number, gatheringType = null) => {
+        setActiveCourse({ ...course, initialWeek: weekNumber, initialGatheringType: gatheringType })
     }
 
     const closeCourseDetails = () => {
@@ -302,20 +302,26 @@ function CoordinatorMonitoring() {
                                                                     data-tooltip={statusTooltip}
                                                                     data-tooltip-tone={noAttendanceRecorded || status === 'no_response' ? 'error' : undefined}
                                                                 >
-                                                                    <span
-                                                                        className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'} ${noAttendanceRecorded ? 'monitoring-status-no-attendance' : ''}`}
-                                                                        role="img"
-                                                                        aria-label={`${item.label} ${GATHERING_LABELS[type]}: ${statusHelp.label}. ${statusTooltip}`}
+                                                                    <button
+                                                                        type="button"
+                                                                        className="monitoring-status-trigger"
+                                                                        aria-label={`View ${course.label}, ${item.label}, ${GATHERING_LABELS[type]} details. ${statusTooltip}`}
+                                                                        onClick={() => openCourseDetails(course, item.number, type)}
                                                                     >
-                                                                        <img
-                                                                            src={status === 'completed'
-                                                                                ? CompletedIcon
-                                                                                : status === 'incomplete'
-                                                                                    ? IncompleteIcon
-                                                                                    : status === 'no_response' ? RecordedNoResponseIcon : NoReportsIcon}
-                                                                            alt=""
-                                                                        />
-                                                                    </span>
+                                                                        <span
+                                                                            className={`monitoring-status monitoring-status-${itemStatus?.status || 'no_report'} ${noAttendanceRecorded ? 'monitoring-status-no-attendance' : ''}`}
+                                                                            aria-hidden="true"
+                                                                        >
+                                                                            <img
+                                                                                src={status === 'completed'
+                                                                                    ? CompletedIcon
+                                                                                    : status === 'incomplete'
+                                                                                        ? IncompleteIcon
+                                                                                        : status === 'no_response' ? RecordedNoResponseIcon : NoReportsIcon}
+                                                                                alt=""
+                                                                            />
+                                                                        </span>
+                                                                    </button>
                                                                 </td>
                                                             )
                                                         })
