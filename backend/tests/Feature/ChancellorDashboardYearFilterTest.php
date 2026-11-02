@@ -1,5 +1,3 @@
-
-Winston
 <?php
 
 namespace Tests\Feature;
@@ -142,9 +140,9 @@ class ChancellorDashboardYearFilterTest extends TestCase
             ->assertOk()
             ->assertJsonPath('program_year_reporting.0.year_level', 1)
             ->assertJsonPath('program_year_reporting.0.status', 'incomplete')
-            ->assertJsonPath('program_year_reporting.0.completion', 😎
-            ->assertJsonPath('program_reporting.0.completion', 😎
-            ->assertJsonPath('overall_progress.percentage', 😎
+            ->assertJsonPath('program_year_reporting.0.completion', 8)
+            ->assertJsonPath('program_reporting.0.completion', 8)
+            ->assertJsonPath('overall_progress.percentage', 8)
             ->assertJsonPath('summary.completed', 0);
 
         $secondYearResponse

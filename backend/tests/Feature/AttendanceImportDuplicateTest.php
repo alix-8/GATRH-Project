@@ -144,6 +144,173 @@ class AttendanceImportDuplicateTest extends TestCase
         $this->assertSame([], $parsed['format_errors']);
     }
 
+    public function test_weekly_parser_batches_sql_name_matches_and_preserves_student_classification(): void
+    {
+        Student::create(['name' => 'Maria Santos', 'program' => 'BSIT', 'year_level' => 1]);
+        Student::create(['name' => 'Inactive Student', 'program' => 'BSIS', 'year_level' => 1, 'is_active' => false]);
+        $queries = 0;
+        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$queries): void {
+            if (str_contains($query->sql, 'student_name_matches')) $queries++;
+        });
+
+        $parsed = app(AttendanceParsingService::class)->parseBatchText(
+            "1. Juan Dela\nPM: Wednesday | 8AM | Main Hall\n"
+                . "2. Maria\nPM: Wednesday | 9AM | Main Hall\n"
+                . "3. Inactive Student\nPM: Wednesday | 10AM | Main Hall\n"
+                . "4. Unknown Person\nPM: Wednesday | 11AM | Main Hall",
+            'BSIS', 1
+        );
+
+        $this->assertSame(1, $queries);
+        $this->assertSame('Juan Dela Cruz', $parsed['records']['pm'][0]['student_name']);
+        $this->assertSame('Maria Santos', $parsed['out_of_course_students'][0]['student_name']);
+        $this->assertSame('Inactive Student', $parsed['inactive_students'][0]['student_name']);
+        $this->assertSame('Unknown Person', $parsed['unmatched_lines'][0]['extracted_name']);
+    }
+
+    public function test_individual_import_batches_sql_name_matches_for_all_rows(): void
+    {
+        Student::create(['name' => 'Maria Santos', 'program' => 'BSIS', 'year_level' => 1]);
+        $queries = 0;
+        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$queries): void {
+            if (str_contains($query->sql, 'student_name_matches')) $queries++;
+        });
+        $request = Request::create('/attendance/parse-text', 'POST', [
+            'raw_text' => "1. Juan Dela | 8AM | Main Hall | Wednesday\n2. Maria | 9AM | Main Hall | Thursday",
+            'gathering_type' => 'pm',
+        ]);
+        $request->setUserResolver(fn () => $this->secretary());
+
+        $response = app(AttendanceController::class)->parseText($request);
+        $payload = $response->getData(true);
+
+        $this->assertSame(1, $queries);
+        $this->assertSame(200, $response->getStatusCode(), $response->getContent());
+        $this->assertSame(2, $payload['summary']['total_students']);
+        $this->assertCount(2, $payload['records']);
+        $this->assertDatabaseCount('attendance_drafts', 1);
+    }
+
+    public function test_import_periods_groups_counts_and_preserves_protected_attendance_state(): void
+    {
+        $ranges = \App\Support\GatheringCycle::getImportPeriodRanges('current');
+        AttendanceRecord::create([
+            'student_id' => Student::firstOrFail()->id,
+            'gathering_type' => 'pm',
+            'day' => $ranges['pm']['start']->toDateString(),
+            'reporting_day' => $ranges['pm']['start']->toDateString(),
+            'validation_status' => 'pending',
+        ]);
+        AttendanceRecord::create([
+            'student_id' => Student::firstOrFail()->id,
+            'gathering_type' => 'tg',
+            'day' => $ranges['tg']['start']->toDateString(),
+            'reporting_day' => $ranges['tg']['start']->toDateString(),
+            'validation_status' => 'validated',
+        ]);
+        AttendanceDraft::create([
+            'user_id' => 1,
+            'gathering_type' => 'ws',
+            'day' => $ranges['ws']['start']->toDateString(),
+            'status' => 'draft',
+            'parsed_data' => [],
+        ]);
+
+        $aggregateQueries = 0;
+        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$aggregateQueries): void {
+            if (str_contains(strtolower($query->sql), 'count(*) as total')) $aggregateQueries++;
+        });
+        $request = Request::create('/attendance/import-periods', 'GET');
+        $request->setUserResolver(fn () => $this->secretary());
+        $periods = app(AttendanceController::class)->importPeriods($request)->getData(true)['periods'];
+
+        $this->assertSame(6, $aggregateQueries);
+        $this->assertSame(1, $periods['current']['pm']['count']);
+        $this->assertTrue($periods['current']['pm']['submitted']);
+        $this->assertSame(1, $periods['current']['ws']['count']);
+        $this->assertSame(1, $periods['current']['tg']['count']);
+        $this->assertTrue($periods['current']['tg']['protected']);
+        $this->assertSame(0, $periods['current']['tg']['confirmable_count']);
+    }
+
+    public function test_weekly_duplicate_preflight_uses_grouped_counts_without_changing_result(): void
+    {
+        $text = "1. Juan Dela Cruz\nPM: Wednesday | 8AM | Main Hall";
+        $range = app(AttendanceParsingService::class)->getApplicableWeekRange('pm', null, $text);
+        AttendanceRecord::create([
+            'student_id' => Student::firstOrFail()->id,
+            'gathering_type' => 'pm',
+            'day' => $range['start']->toDateString(),
+            'reporting_day' => $range['start']->toDateString(),
+            'validation_status' => 'pending',
+        ]);
+
+        $aggregateQueries = 0;
+        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$aggregateQueries): void {
+            if (str_contains(strtolower($query->sql), 'count(*) as total')) $aggregateQueries++;
+        });
+        $request = Request::create('/attendance/check-duplicates', 'POST', [
+            'raw_text' => $text,
+            'gathering_type' => 'week',
+        ]);
+        $request->setUserResolver(fn () => $this->secretary());
+        $response = app(AttendanceController::class)->checkDuplicates($request);
+
+        $this->assertSame(3, $aggregateQueries);
+        $this->assertSame(409, $response->getStatusCode());
+        $this->assertSame('duplicate_detected', $response->getData(true)['status']);
+        $this->assertSame('pm', $response->getData(true)['gathering_type']);
+        $this->assertSame(1, $response->getData(true)['duplicates_count']);
+    }
+
+    public function test_weekly_submit_guard_groups_existing_counts_before_override_confirmation(): void
+    {
+        $text = "1. Juan Dela Cruz\n"
+            . "PM: Wednesday | 8AM | Main Hall\n"
+            . "WS: Saturday | 9AM | Main Hall\n"
+            . "TG: Saturday | 10AM | Main Hall";
+        foreach (['pm', 'ws'] as $type) {
+            $range = app(AttendanceParsingService::class)->getApplicableWeekRange($type, null, $text);
+            AttendanceRecord::create([
+                'student_id' => Student::firstOrFail()->id,
+                'gathering_type' => $type,
+                'day' => $range['start']->toDateString(),
+                'reporting_day' => $range['start']->toDateString(),
+                'validation_status' => 'pending',
+            ]);
+        }
+
+        $aggregateQueries = 0;
+        \Illuminate\Support\Facades\DB::listen(function ($query) use (&$aggregateQueries): void {
+            if (str_contains(strtolower($query->sql), 'count(*) as total')) $aggregateQueries++;
+        });
+        $request = Request::create('/attendance/parse-batch-text', 'POST', ['raw_text' => $text]);
+        $request->setUserResolver(fn () => $this->secretary());
+        $response = app(AttendanceController::class)->parseBatchText($request);
+
+        $this->assertSame(3, $aggregateQueries);
+        $this->assertSame(409, $response->getStatusCode());
+        $this->assertSame('pm/ws', $response->getData(true)['gathering_type']);
+        $this->assertSame(2, $response->getData(true)['duplicates_count']);
+    }
+
+    public function test_individual_and_weekly_templates_still_include_active_roster_names(): void
+    {
+        foreach (['pm', 'week'] as $gatheringType) {
+            $request = Request::create('/attendance/generate-template', 'GET', [
+                'gathering_type' => $gatheringType,
+                'week_period' => 'current',
+            ]);
+            $request->setUserResolver(fn () => $this->secretary());
+            $response = app(AttendanceController::class)->generateTemplate($request);
+            $payload = $response->getData(true);
+
+            $this->assertSame(200, $response->getStatusCode(), $response->getContent());
+            $this->assertSame(1, $payload['count']);
+            $this->assertStringContainsString('1. Juan Dela Cruz', $payload['template']);
+        }
+    }
+
     public function test_special_venue_accepts_past_dates_outside_each_gathering_range(): void
     {
         $service = app(AttendanceParsingService::class);

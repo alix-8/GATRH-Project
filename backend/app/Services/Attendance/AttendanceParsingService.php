@@ -6,6 +6,8 @@ use App\Models\Student;
 use App\Models\AttendanceDraft;
 use App\Models\AttendanceRecord;
 use App\Support\GatheringCycle;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 
 class AttendanceParsingService
 {
@@ -136,7 +138,7 @@ class AttendanceParsingService
             ->active()
             ->where('year_level', $yearLevel)
             ->orderBy('name', 'asc')
-            ->get();
+            ->get(['name']);
 
         if ($students->isEmpty()) {
             return ['count' => 0, 'template' => null];
@@ -238,6 +240,84 @@ class AttendanceParsingService
             ->first();
     }
 
+    private function findStudentsMatchingNames(array $names): array
+    {
+        $matchesByName = [];
+        $uniqueNames = array_values(array_unique($names));
+
+        foreach (array_chunk($uniqueNames, 20) as $nameChunk) {
+            $query = null;
+            foreach ($nameChunk as $name) {
+                $nameQuery = DB::table('students')
+                    ->selectRaw('? AS search_name', [$name])
+                    ->addSelect(['students.id', 'students.name', 'students.program', 'students.year_level', 'students.is_active'])
+                    ->where('students.name', 'LIKE', '%' . $name . '%')
+                    ->where(function ($statusQuery) {
+                        $statusQuery->where('students.is_active', false)
+                            ->orWhere(function ($activeQuery) {
+                                $activeQuery->where('students.is_active', true)
+                                    ->whereNotExists(function ($programs) {
+                                        $programs->selectRaw('1')
+                                            ->from('programs')
+                                            ->whereColumn('programs.code', 'students.program')
+                                            ->where('programs.is_active', false);
+                                    });
+                            });
+                    });
+
+                $query = $query ? $query->unionAll($nameQuery) : $nameQuery;
+            }
+
+            $candidates = DB::query()
+                ->fromSub($query, 'student_name_matches')
+                ->orderBy('search_name')
+                ->orderBy('id')
+                ->get();
+
+            foreach ($candidates as $candidate) {
+                $searchName = $candidate->search_name;
+                $attributes = (array) $candidate;
+                unset($attributes['search_name']);
+                $matchesByName[$searchName][] = (new Student())->newFromBuilder($attributes);
+            }
+        }
+
+        return $matchesByName;
+    }
+
+    public function findStudentsMatchingLines(array $lines, string $defaultDate): array
+    {
+        $names = [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (!preg_match('/^\d+[\.\)\-]?\s*(.+)$/i', $line)) {
+                continue;
+            }
+
+            $studentName = $this->extractLineParts($line, $defaultDate)['student_name'];
+            if ($studentName) {
+                $names[] = $studentName;
+            }
+        }
+
+        return $this->findStudentsMatchingNames($names);
+    }
+
+    private function classifyStudentMatches(Collection $candidates, string $program, int $yearLevel): array
+    {
+        $student = $candidates->first(fn (Student $candidate) => $candidate->is_active
+            && $candidate->program === $program
+            && (int) $candidate->year_level === $yearLevel);
+        $inactiveCandidates = $candidates->filter(fn (Student $candidate) => !$candidate->is_active);
+        $inactiveStudent = $inactiveCandidates->first(fn (Student $candidate) =>
+            $candidate->program === $program && (int) $candidate->year_level === $yearLevel
+        ) ?? ($inactiveCandidates->count() === 1 ? $inactiveCandidates->first() : null);
+        $outsideStudent = $candidates->first(fn (Student $candidate) => $candidate->is_active
+            && ($candidate->program !== $program || (int) $candidate->year_level !== $yearLevel));
+
+        return [$student, $inactiveStudent, $outsideStudent];
+    }
+
     /** Finds a matching active student outside the secretary's assigned course and year. */
     private function findMatchingStudentOutsideSection(string $program, int $yearLevel, string $studentName): ?Student
     {
@@ -315,7 +395,7 @@ class AttendanceParsingService
     /**
      * Parses a single text line and matches it against student records.
      */
-    public function buildRecordFromLine(string $line, string $program, int $yearLevel, string $defaultDate, string $gatheringType, $cycle = null, ?string $rawText = null): array
+    public function buildRecordFromLine(string $line, string $program, int $yearLevel, string $defaultDate, string $gatheringType, $cycle = null, ?string $rawText = null, ?array $matchingStudents = null): array
     {
         $parts = $this->extractLineParts($line, $defaultDate);
 
@@ -384,11 +464,19 @@ class AttendanceParsingService
         }
 
         $formattedBatch = $this->formatBatchTime($parts['raw_batch']);
-        $student = $this->findMatchingStudent($program, $yearLevel, $parts['student_name']);
-
-        if (!$student) {
+        if ($matchingStudents === null) {
+            $student = $this->findMatchingStudent($program, $yearLevel, $parts['student_name']);
             $inactiveStudent = $this->findMatchingInactiveStudent($program, $yearLevel, $parts['student_name']);
             $outsideStudent = $this->findMatchingStudentOutsideSection($program, $yearLevel, $parts['student_name']);
+        } else {
+            [$student, $inactiveStudent, $outsideStudent] = $this->classifyStudentMatches(
+                collect($matchingStudents[$parts['student_name']] ?? []),
+                $program,
+                $yearLevel,
+            );
+        }
+
+        if (!$student) {
             return [
                 'matched'        => false,
                 'inactive_student_data' => $inactiveStudent ? [
@@ -491,13 +579,17 @@ class AttendanceParsingService
         $formatErrorLines = [];
         $blankEntries = [];
         $matchedStudentIds = [];
+        $matchingStudents = $this->findStudentsMatchingNames(array_column($students, 'name'));
 
         foreach ($students as $entry) {
-            $student = $this->findMatchingStudent($program, $yearLevel, $entry['name']);
+            $candidates = collect($matchingStudents[$entry['name']] ?? []);
+            [$student, $inactiveStudent, $outsideStudent] = $this->classifyStudentMatches(
+                $candidates,
+                $program,
+                $yearLevel,
+            );
 
             if (!$student) {
-                $inactiveStudent = $this->findMatchingInactiveStudent($program, $yearLevel, $entry['name']);
-                $outsideStudent = $this->findMatchingStudentOutsideSection($program, $yearLevel, $entry['name']);
                 if ($inactiveStudent) {
                     $inactiveStudents[] = [
                         'extracted_name' => $entry['name'],
