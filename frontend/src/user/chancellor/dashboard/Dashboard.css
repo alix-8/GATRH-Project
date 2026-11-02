@@ -431,6 +431,10 @@
     fill: #f4ca4b;
 }
 
+.chancellor-weekly-segment--no-response {
+    fill: #fd7c7c;
+}
+
 .chancellor-weekly-segment--no-report {
     fill: #cbd4df;
 }
@@ -447,8 +451,13 @@
     font-size: 13px;
 }
 
-.chancellor-weekly-legend text:nth-of-type(2) {
+.chancellor-weekly-in-progress-label {
     fill: #f4ca4b;
+}
+
+.chancellor-weekly-no-response-label {
+    fill: #fd7c7c;
+    font-size: 13px;
 }
 
 .chancellor-weekly-no-report-label {

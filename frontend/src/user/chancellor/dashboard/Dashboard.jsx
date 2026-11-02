@@ -64,7 +64,7 @@ function formatMonthLabel(monthValue) {
 
 function getWeeklyChartScale(weeks) {
     const largestTotal = Math.max(1, ...weeks.map((week) =>
-        (Number(week.completed) || 0) + (Number(week.incomplete) || 0) + (Number(week.no_report) || 0)
+        (Number(week.completed) || 0) + (Number(week.incomplete) || 0) + (Number(week.no_response) || 0) + (Number(week.no_report) || 0)
     ))
     const roughStep = Math.max(1, largestTotal / 3)
     const magnitude = 10 ** Math.floor(Math.log10(roughStep))
@@ -79,7 +79,6 @@ function ChancellorDashboard() {
     const [selectedMonth, setSelectedMonth] = useState(() => getMonthValue())
     const [programReporting, setProgramReporting] = useState([])
     const [programYearReporting, setProgramYearReporting] = useState([])
-    const [weeklyProgress, setWeeklyProgress] = useState([])
     const [reportingWeeks, setReportingWeeks] = useState([])
     const [activeCourse, setActiveCourse] = useState(null)
     const [summary, setSummary] = useState({
@@ -141,7 +140,6 @@ function ChancellorDashboard() {
                 })
                 setProgramReporting(data.program_reporting || [])
                 setProgramYearReporting(data.program_year_reporting || [])
-                setWeeklyProgress(data.weekly_progress || [])
                 setReportingWeeks(data.reporting_weeks || [])
             } catch (error) {
                 if (error.name !== 'AbortError') {
@@ -178,6 +176,17 @@ function ChancellorDashboard() {
 
     const progressPercentage = backendPercentage(overallProgress.percentage)
     const completionOverview = programReporting
+    const weeklyProgress = useMemo(() => reportingWeeks.map((week, index) => {
+        const counts = { completed: 0, incomplete: 0, no_response: 0, no_report: 0 }
+        programYearReporting.forEach((report) => {
+            const status = getReportDisplayStatus(
+                report.weekly_statuses?.[index] || 'no_report',
+                report.weekly_has_attendance?.[index]
+            )
+            counts[Object.hasOwn(counts, status) ? status : 'no_report'] += 1
+        })
+        return { ...week, ...counts }
+    }), [programYearReporting, reportingWeeks])
     const weeklyChartScale = getWeeklyChartScale(weeklyProgress)
     const weeklyChartTicks = Array.from(
         { length: Math.floor(weeklyChartScale.maximum / weeklyChartScale.step) + 1 },
@@ -419,11 +428,11 @@ function ChancellorDashboard() {
                     <aside className="chancellor-dashboard-side-column">
                         <section className="chancellor-progress-by-week" aria-labelledby="chancellor-progress-by-week-title">
                             <h2 id="chancellor-progress-by-week-title">Progress by Week</h2>
-                            <p>Number of programs with completed reports</p>
+                            <p>Number of programs by weekly reporting status</p>
                             <svg className="chancellor-weekly-chart" viewBox="0 0 616 275" role="img" aria-labelledby="chancellor-weekly-chart-title chancellor-weekly-chart-description">
                                 <title id="chancellor-weekly-chart-title">Progress by Week</title>
                                 <desc id="chancellor-weekly-chart-description">
-                                    {weeklyProgress.map((week) => `${week.label} (${week.range_label}): ${week.completed || 0} completed, ${week.incomplete || 0} in progress, ${week.no_report || 0} no report`).join('; ') || 'No weekly progress data available'}
+                                    {weeklyProgress.map((week) => `${week.label} (${week.range_label}): ${week.completed} completed, ${week.incomplete} in progress, ${week.no_response} no response, ${week.no_report} no report`).join('; ') || 'No weekly progress data available'}
                                 </desc>
                                 {weeklyChartTicks.map((tick) => (
                                     <text key={tick} className="chancellor-weekly-axis-label" x="58" y={220 - tick / weeklyChartScale.maximum * 123}>
@@ -439,6 +448,7 @@ function ChancellorDashboard() {
                                     const segments = [
                                         ['completed', week.completed],
                                         ['in-progress', week.incomplete],
+                                        ['no-response', week.no_response],
                                         ['no-report', week.no_report],
                                     ]
                                     return (
@@ -454,12 +464,14 @@ function ChancellorDashboard() {
                                     )
                                 })}
                                 <g className="chancellor-weekly-legend">
-                                    <circle className="chancellor-weekly-segment--completed" cx="530" cy="119" r="5.5" />
-                                    <text x="549" y="123">Completed</text>
-                                    <circle className="chancellor-weekly-segment--in-progress" cx="530" cy="153" r="5.5" />
-                                    <text x="549" y="157">In Progress</text>
-                                    <circle className="chancellor-weekly-segment--no-report" cx="530" cy="187" r="5.5" />
-                                    <text className="chancellor-weekly-no-report-label" x="549" y="191">No Report</text>
+                                    <circle className="chancellor-weekly-segment--completed" cx="516" cy="105" r="5.5" />
+                                    <text x="530" y="109">Completed</text>
+                                    <circle className="chancellor-weekly-segment--in-progress" cx="516" cy="135" r="5.5" />
+                                    <text className="chancellor-weekly-in-progress-label" x="530" y="139">In Progress</text>
+                                    <circle className="chancellor-weekly-segment--no-response" cx="516" cy="165" r="5.5" />
+                                    <text className="chancellor-weekly-no-response-label" x="530" y="169">No Response</text>
+                                    <circle className="chancellor-weekly-segment--no-report" cx="516" cy="195" r="5.5" />
+                                    <text className="chancellor-weekly-no-report-label" x="530" y="199">No Report</text>
                                 </g>
                             </svg>
                         </section>
