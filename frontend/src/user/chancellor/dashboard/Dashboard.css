@@ -742,3 +742,63 @@
 .chancellor-program-reporting-legend>span {
     gap: 5px;
 }
+
+@media (max-width: 1150px) {
+    .chancellor-dashboard {
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .chancellor-dashboard-main {
+        height: 100vh;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .chancellor-summary-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin: 20px;
+    }
+
+    .chancellor-summary-content {
+        min-width: 0;
+    }
+
+    .chancellor-dashboard-content-grid {
+        grid-template-columns: minmax(0, 1fr);
+        margin-inline: 20px;
+    }
+
+    .chancellor-programs-attention-header {
+        flex-wrap: wrap;
+    }
+
+    .chancellor-program-reporting-scroll {
+        box-sizing: border-box;
+    }
+
+    .chancellor-program-reporting-table {
+        min-width: 590px;
+    }
+
+    .chancellor-program-reporting-table th,
+    .chancellor-program-reporting-table td {
+        padding-inline: 6px;
+    }
+
+    .chancellor-program-reporting-table thead th:first-child,
+    .chancellor-program-reporting-table tbody th {
+        width: 155px;
+        overflow-wrap: anywhere;
+    }
+
+    .chancellor-program-reporting-table thead th:nth-last-child(2),
+    .chancellor-program-reporting-table tbody td:nth-last-child(2) {
+        width: 108px;
+    }
+
+    .chancellor-program-reporting-table thead th:last-child,
+    .chancellor-program-reporting-table tbody td:last-child {
+        width: 70px;
+    }
+}
