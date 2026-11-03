@@ -163,6 +163,40 @@ class StudentController extends Controller
         return response()->json(['history' => $this->attendanceHistory($request, $student)]);
     }
 
+    /**
+     * Show only the current-week no-response entries that produce the
+     * escalation. This intentionally differs from the full Student Overview.
+     */
+    public function escalationEvidence(Request $request, int $id)
+    {
+        $user = $request->user();
+        $student = Student::query()
+            ->active()
+            ->accessibleTo($user)
+            ->findOrFail($id);
+
+        $includeDrafts = in_array($user->role, ['secretary', 'cm_coordinator'], true);
+        $draftOwnerId = $user->role === 'secretary' ? $user->id : null;
+        $evidence = app(WeeklyEscalationService::class)
+            ->evidenceForStudent($student->id, $includeDrafts, $draftOwnerId);
+        $weekStart = GatheringCycle::weekStartForDate(Carbon::now())->toDateString();
+        $weekEnd = GatheringCycle::weekEndForDate(Carbon::now())->toDateString();
+
+        return response()->json([
+            'week_range' => ['start' => $weekStart, 'end' => $weekEnd],
+            'history' => $evidence->map(fn (array $entry) => [
+                'id' => $entry['id'],
+                'gathering_type' => $entry['gathering_type'],
+                'gathering' => $this->gatheringLabel($entry['gathering_type']),
+                'time' => $entry['time'],
+                'date' => $entry['day'],
+                'location' => $entry['location'],
+                'status' => 'no_response',
+                'source' => $entry['source'],
+            ])->values(),
+        ]);
+    }
+
     private function overviewResponse(Request $request, int $id, bool $currentWeekOnly = false)
     {
         $student = Student::query()

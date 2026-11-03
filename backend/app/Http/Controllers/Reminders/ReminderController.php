@@ -117,6 +117,7 @@ class ReminderController extends Controller
                 'program' => $student->program,
                 'year_level' => $student->year_level,
                 'escalation_level' => $displayLevel,
+                'no_response_count' => $escalation->no_response_count,
                 'description' => "{$programYear} {$student->name} has reached Escalation {$level} and requires a follow up.",
             ];
         })->values();
