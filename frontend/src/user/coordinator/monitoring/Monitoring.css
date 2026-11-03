@@ -905,11 +905,6 @@
     color: #856404;
 }
 
-.monitoring-no-response-details {
-    background: #fff0f0;
-    color: #b4232d;
-}
-
 .monitoring-incomplete-details>h4 {
     display: flex;
     align-items: center;
@@ -933,10 +928,6 @@
 .monitoring-incomplete-icon img {
     width: 19px;
     height: 19px;
-}
-
-.monitoring-no-response-details .monitoring-incomplete-icon {
-    background: #fd7c7c;
 }
 
 .monitoring-incomplete-details>p {
@@ -1002,15 +993,6 @@
 
 .monitoring-incomplete-details article button:hover {
     background: #087fc9;
-}
-
-.monitoring-no-response-details article button {
-    background: #d94343;
-    color: #ffffff;
-}
-
-.monitoring-no-response-details article button:hover {
-    background: #b4232d;
 }
 
 .monitoring-incomplete-details article ul {
