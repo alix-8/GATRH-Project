@@ -593,6 +593,7 @@
 }
 
 .monitoring-detail-backdrop {
+    --monitoring-detail-width: 34%;
     overscroll-behavior: contain;
     position: fixed;
     inset: 0;
@@ -606,9 +607,13 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    width: 34%;
+    width: var(--monitoring-detail-width);
     background: #ffffff;
     box-shadow: -8px 0 28px rgb(15 23 42 / 14%);
+}
+
+.monitoring-detail-backdrop > .ph-submission-drawer.ph-record-detail {
+    width: var(--monitoring-detail-width);
 }
 
 .monitoring-detail-header {
@@ -987,24 +992,13 @@
     flex: 0 0 10px;
 }
 
-.monitoring-incomplete-details article button[aria-expanded="true"] svg {
-    transform: rotate(90deg);
-}
-
 .monitoring-incomplete-details article button:hover {
     background: #087fc9;
 }
 
-.monitoring-incomplete-details article ul {
-    grid-column: 1 / -1;
-    max-height: 120px;
-    overflow-y: auto;
-    margin: 4px 0 0;
-    padding: 8px 8px 8px 24px;
-    border-radius: 5px;
-    background: #ffffff;
-    color: #475467;
-    font-size: 10px;
+.monitoring-incomplete-details article button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .monitoring-detail-close {
