@@ -1,4 +1,12 @@
 export default function WalkthroughArrow({ target, headerBottom, viewport }) {
+    if (
+        !target ||
+        (target.width === 0 && target.height === 0) ||
+        (target.top === 0 && target.bottom === 0 && target.left === 0 && target.right === 0)
+    ) {
+        return null
+    }
+
     const size = 28
     const gap = 12
     let left = target.left - size - gap
@@ -21,7 +29,12 @@ export default function WalkthroughArrow({ target, headerBottom, viewport }) {
         }
     }
 
-    if (target.bottom <= headerBottom || target.top >= viewport.height || top < headerBottom || top + size > viewport.height) {
+    if (
+        target.bottom <= headerBottom ||
+        target.top >= viewport.height ||
+        top < headerBottom ||
+        top + size > viewport.height
+    ) {
         return null
     }
 

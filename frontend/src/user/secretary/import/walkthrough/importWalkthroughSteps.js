@@ -98,7 +98,8 @@ export function importWalkthroughCanAdvance(step, { modal, hasText }) {
     return step.advance === 'next' || (step.advance === 'when-text' && hasText)
 }
 
-export function importWalkthroughPaused({ modal, busy }) {
+export function importWalkthroughPaused({ modal, busy, screenWidth, isSmallScreen }) {
+    if (isSmallScreen || (typeof screenWidth === 'number' && screenWidth <= 900)) return true
     return busy || ['error', 'confirm-blank', 'confirm-override'].includes(modal)
 }
 
@@ -107,12 +108,33 @@ export function importWalkthroughPosition(rect, viewport, options = {}) {
     const height = Math.min(300, viewport.height * .45)
     const gap = 12
     if (options.belowSection) {
-        const top = Math.max(gap, options.belowSection.bottom + gap)
+        const minUsableHeight = Math.min(140, Math.max(80, viewport.height - gap * 2))
+        let top = Math.max(gap, options.belowSection.bottom + gap)
+        let maxHeight = Math.min(height, viewport.height - top - gap)
+
+        // On short viewports or when the section sits low, check if placing above is better
+        if (maxHeight < minUsableHeight && options.belowSection.top !== undefined) {
+            const spaceAbove = options.belowSection.top - gap * 2
+            if (spaceAbove >= minUsableHeight) {
+                const aboveHeight = Math.min(height, spaceAbove)
+                top = Math.max(gap, options.belowSection.top - gap - aboveHeight)
+                maxHeight = aboveHeight
+            }
+        }
+
+        // Clamp top and maxHeight so the card stays within the viewport and avoids being cut off
+        if (top + minUsableHeight > viewport.height - gap) {
+            top = Math.max(gap, viewport.height - minUsableHeight - gap)
+            maxHeight = Math.max(0, viewport.height - top - gap)
+        } else {
+            maxHeight = Math.max(0, maxHeight)
+        }
+
         return {
             width,
             left: Math.max(gap, Math.min(viewport.width - width - gap, rect.right - width)),
             top,
-            maxHeight: Math.max(0, Math.min(height, viewport.height - top - gap)),
+            maxHeight,
         }
     }
     let left = rect.left

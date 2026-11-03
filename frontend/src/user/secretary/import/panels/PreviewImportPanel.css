@@ -130,6 +130,45 @@
     margin-top: 4px;
 }
 
+@media (min-width: 901px) and (max-width: 1150px) {
+    .preview-cards {
+        overflow-x: auto;
+    }
+
+    .preview-header-row,
+    .preview-card {
+        min-width: 640px;
+        grid-template-columns: minmax(160px, 1.4fr) repeat(3, minmax(130px, 1fr));
+        gap: 8px;
+        padding: 10px 12px;
+    }
+
+    .preview-card-name {
+        font-size: 0.78rem;
+        word-break: break-word;
+    }
+
+    .preview-slot-col {
+        gap: 5px;
+    }
+
+    .preview-input {
+        max-width: none;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 5px 6px;
+        font-size: 0.72rem;
+    }
+
+    .preview-header-row-single,
+    .preview-card-single {
+        min-width: 580px;
+        grid-template-columns: minmax(160px, 1.4fr) repeat(3, minmax(120px, 1fr));
+        gap: 8px;
+        padding: 8px 12px;
+    }
+}
+
 @media (min-width: 1800px) and (min-height: 900px) {
     .preview-header-row,
     .preview-card {
