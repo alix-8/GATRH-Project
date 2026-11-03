@@ -635,6 +635,7 @@
     }
 
     .login-left {
+        --login-column-width: 374px;
         position: absolute;
         inset: 0 50% 0 0;
         box-sizing: border-box;
@@ -643,6 +644,13 @@
         min-width: 0;
         padding: 28px clamp(32px, 5vw, 80px);
         text-align: left;
+    }
+
+    .login-content,
+    .login-main,
+    .account-help {
+        box-sizing: border-box;
+        width: min(100%, var(--login-column-width));
     }
 
     .login-brand {
@@ -699,7 +707,7 @@
     .login-form {
         position: static;
         width: 100%;
-        max-width: 420px;
+        max-width: var(--login-column-width);
         margin-top: 26px;
     }
 
@@ -719,13 +727,6 @@
 
     .login-left {
         align-items: center;
-    }
-
-    .login-content,
-    .login-main,
-    .account-help {
-        box-sizing: border-box;
-        width: min(100%, 420px);
     }
 
     .form-group,
