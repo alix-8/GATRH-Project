@@ -727,7 +727,7 @@ function Reminders() {
         setEscalationReport({ escalation, loading: true, details: null, error: '' })
 
         try {
-            const details = await request(`/students/${escalation.student_id}/overview`, { signal: controller.signal })
+            const details = await request(`/students/${escalation.student_id}/escalation-evidence`, { signal: controller.signal })
             if (!controller.signal.aborted) {
                 setEscalationReport({ escalation, loading: false, details, error: '' })
             }

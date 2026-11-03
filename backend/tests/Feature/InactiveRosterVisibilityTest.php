@@ -445,6 +445,45 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
     }
 
+    public function test_cm_coordinator_escalation_evidence_includes_the_secretarys_draft_gatherings(): void
+    {
+        $this->program('BSIS');
+        $student = $this->student('Escalation evidence');
+        $coordinator = new User(['role' => 'cm_coordinator']);
+
+        AttendanceRecord::create([
+            'student_id' => $student->id,
+            'gathering_type' => 'pm',
+            'day' => '2026-10-28',
+            'status' => 'no_response',
+            'batch' => '06:00 PM',
+            'venue' => 'Chapel',
+        ]);
+        foreach (['ws' => '2026-10-31', 'tg' => '2026-10-31'] as $type => $day) {
+            AttendanceDraft::withoutEvents(fn () => AttendanceDraft::create([
+                'user_id' => 99,
+                'gathering_type' => $type,
+                'day' => $day,
+                'status' => 'draft',
+                'parsed_data' => [[
+                    'student_id' => $student->id,
+                    'status' => 'no_response',
+                    'batch' => '06:30 PM',
+                    'venue' => 'Chapel',
+                ]],
+            ]));
+        }
+
+        $request = \Illuminate\Http\Request::create("/api/students/{$student->id}/escalation-evidence");
+        $request->setUserResolver(fn () => $coordinator);
+        $payload = app(\App\Http\Controllers\Students\StudentController::class)
+            ->escalationEvidence($request, $student->id)
+            ->getData(true);
+
+        $this->assertSame(['pm', 'ws', 'tg'], array_column($payload['history'], 'gathering_type'));
+        $this->assertSame(['submitted', 'draft', 'draft'], array_column($payload['history'], 'source'));
+    }
+
     public function test_deleting_drafts_refreshes_escalation_and_preserves_other_owners_drafts(): void
     {
         $this->app->instance(\App\Services\Escalations\WeeklyEscalationService::class, new \App\Services\Escalations\WeeklyEscalationService());

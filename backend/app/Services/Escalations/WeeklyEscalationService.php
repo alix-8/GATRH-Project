@@ -71,6 +71,75 @@ class WeeklyEscalationService
         );
     }
 
+    /**
+     * Return the distinct current-week no-response gathering entries that
+     * contribute to one student's escalation level. Saved attendance takes
+     * precedence over a draft for the same gathering type.
+     */
+    public function evidenceForStudent(int $studentId, bool $includeDrafts = true, ?int $draftOwnerId = null): Collection
+    {
+        $now = SystemTimezone::now();
+        $start = GatheringCycle::weekStartForDate($now)->toDateString();
+        $end = GatheringCycle::weekEndForDate($now)->toDateString();
+        $evidenceByGathering = [];
+
+        AttendanceRecord::query()
+            ->where('student_id', $studentId)
+            ->whereIn('gathering_type', ['pm', 'ws', 'tg'])
+            ->whereBetween('day', [$start, $end])
+            ->where('status', 'no_response')
+            ->orderByDesc('created_at')
+            ->get(['id', 'gathering_type', 'day', 'batch', 'venue'])
+            ->each(function (AttendanceRecord $record) use (&$evidenceByGathering): void {
+                if (isset($evidenceByGathering[$record->gathering_type])) {
+                    return;
+                }
+
+                $evidenceByGathering[$record->gathering_type] = [
+                    'id' => 'record-' . $record->id,
+                    'gathering_type' => $record->gathering_type,
+                    'day' => $record->day->toDateString(),
+                    'time' => $record->batch ? substr($record->batch, 0, 5) : '—',
+                    'location' => $record->venue ?: '—',
+                    'source' => 'submitted',
+                ];
+            });
+
+        if ($includeDrafts) {
+            AttendanceDraft::query()
+                ->where('status', 'draft')
+                ->when($draftOwnerId, fn ($query) => $query->where('user_id', $draftOwnerId))
+                ->whereBetween('day', [$start, $end])
+                ->orderByDesc('updated_at')
+                ->get(['id', 'gathering_type', 'day', 'parsed_data'])
+                ->each(function (AttendanceDraft $draft) use ($studentId, &$evidenceByGathering): void {
+                    $type = $draft->gathering_type;
+                    $entry = collect($draft->parsed_data ?? [])->first(fn (array $record) =>
+                        (int) ($record['student_id'] ?? 0) === $studentId
+                        && ($record['status'] ?? 'no_response') === 'no_response'
+                    );
+
+                    if (! $entry || ! in_array($type, ['pm', 'ws', 'tg'], true) || isset($evidenceByGathering[$type])) {
+                        return;
+                    }
+
+                    $evidenceByGathering[$type] = [
+                        'id' => 'draft-' . $draft->id,
+                        'gathering_type' => $type,
+                        'day' => $entry['day'] ?? $draft->day->toDateString(),
+                        'time' => $entry['batch'] ?? '—',
+                        'location' => $entry['venue'] ?? '—',
+                        'source' => 'draft',
+                    ];
+                });
+        }
+
+        return collect(['pm', 'ws', 'tg'])
+            ->map(fn (string $type) => $evidenceByGathering[$type] ?? null)
+            ->filter()
+            ->values();
+    }
+
     public function syncDraft(AttendanceDraft $draft, ?array $previousData = null): void
     {
         $studentIds = collect($previousData ?? [])
