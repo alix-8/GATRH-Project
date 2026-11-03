@@ -249,11 +249,29 @@
     background: #e9f8ed;
 }
 
+.reminders-task-item.escalation,
+.escalation-report-modal {
+    --escalation-fill: var(--escalation-level-3);
+    --escalation-text: #dc2626;
+    --escalation-surface: #fff0f0;
+    --escalation-border: #f5b8b8;
+}
+
+.reminders-task-item.escalation.escalation-level-1,
+.escalation-report-modal.escalation-level-1 {
+    --escalation-fill: var(--escalation-level-1);
+}
+
+.reminders-task-item.escalation.escalation-level-2,
+.escalation-report-modal.escalation-level-2 {
+    --escalation-fill: var(--escalation-level-2);
+}
+
 .reminders-task-item.escalation {
     min-height: 92px;
     padding: 1px 22px 12px 14px;
     gap: 12px;
-    background: #fff0f0;
+    background: var(--escalation-surface);
 }
 
 .reminders-task-item.escalation .task-main {
@@ -261,10 +279,12 @@
     margin-top: 12px;
 }
 
-.reminders-task-item.escalation .task-icon {
+.reminders-task-item.escalation .escalation-task-icon {
+    display: block;
     width: 22px;
     height: 22px;
-    filter: brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(5200%) hue-rotate(341deg) brightness(102%) contrast(101%);
+    background: var(--escalation-level-3);
+    mask: url('../../assets/icons/escalations-icon.svg') center / contain no-repeat;
 }
 
 .reminders-task-item.escalation .task-copy h3 {
@@ -283,7 +303,7 @@
 }
 
 .escalation-level {
-    color: #ed3347;
+    color: var(--escalation-text, #dc2626);
 }
 
 .reminders-task-item.escalation .task-status {
@@ -293,7 +313,7 @@
 }
 
 .reminders-task-item.escalation .task-status strong {
-    color: #ed3347;
+    color: var(--escalation-text);
     font-size: 12px;
 }
 
@@ -682,22 +702,24 @@
     box-sizing: border-box;
     margin: 16px 0 18px;
     padding: 10px 12px;
-    border: 1px solid #f5b8b8;
+    border: 1px solid var(--escalation-border);
     border-radius: 3px;
-    background: #fae9e9;
+    background: var(--escalation-surface);
     color: #172b4d;
     font-size: 13px;
 }
 
 .escalation-report-alert-icon {
+    display: block;
     width: 20px;
     height: 20px;
     flex: 0 0 20px;
-    filter: brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(5200%) hue-rotate(341deg) brightness(102%) contrast(101%);
+    background: var(--escalation-level-3);
+    mask: url('../../assets/icons/escalations-icon.svg') center / contain no-repeat;
 }
 
-.escalation-report-message span {
-    color: #f03232;
+.escalation-report-message > span:last-child {
+    color: var(--escalation-text);
 }
 
 .escalation-report-message strong {
@@ -762,7 +784,7 @@
 }
 
 .escalation-level-bars i.filled {
-    background: #22c55e;
+    background: var(--escalation-fill);
 }
 
 .escalation-no-response-icon,

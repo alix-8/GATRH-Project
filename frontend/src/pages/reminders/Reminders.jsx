@@ -50,6 +50,10 @@ const GATHERING_OPTIONS = [
     { value: 'tg', label: 'Thanksgiving' },
 ]
 
+function escalationLevelNumber(value) {
+    return Math.min(3, Math.max(0, Number(value?.match(/\d+/)?.[0]) || 0))
+}
+
 function SelectChevron() {
     return (
         <svg className="select-chevron" viewBox="0 0 16 10" fill="none" aria-hidden="true" focusable="false">
@@ -632,6 +636,7 @@ function Reminders() {
         id: `escalation-${escalation.id}`,
         reminderId: `escalation-${escalation.id}`,
         type: 'escalation',
+        escalationLevel: escalationLevelNumber(escalation.escalation_level),
         icon: EscalationsIcon,
         title: 'Student Requires Attention',
         description: escalation.description,
@@ -978,7 +983,7 @@ function Reminders() {
     }
 
     const showReminderList = !loading && (!error || isAddOpen)
-    const reportLevel = Math.min(3, Number(escalationReport?.escalation.escalation_level?.match(/\d+/)?.[0]) || 0)
+    const reportLevel = escalationLevelNumber(escalationReport?.escalation.escalation_level)
     const reportFor = ['—', 'Spiritual Secretary', 'Program Head', 'CM Coordinator'][reportLevel]
     const reportStudentName = escalationReport?.escalation.student_name ?? ''
     const reportAlertName = reportStudentName.includes(',')
@@ -1054,16 +1059,14 @@ function Reminders() {
                         {showReminderList && visibleItems.map(item => (
                             <article
                                 id={item.reminderId ? `reminder-item-${item.reminderId}` : undefined}
-                                className={`reminders-task-item ${item.tone} ${String(item.reminderId) === highlightedReminderId ? 'reminders-task-item-highlighted' : ''}`}
+                                className={`reminders-task-item ${item.tone} ${item.type === 'escalation' ? `escalation-level-${item.escalationLevel}` : ''} ${String(item.reminderId) === highlightedReminderId ? 'reminders-task-item-highlighted' : ''}`}
                                 key={item.id}
                             >
                                 <div className="task-main">
                                     <span className={`task-icon-wrap ${item.type === 'custom' ? 'my-reminder' : item.type === 'gathering' ? 'calendar' : item.type === 'escalation' ? 'escalation-icon' : 'attendance-task'}`} aria-hidden="true">
-                                        <img
-                                            className="task-icon"
-                                            src={item.type === 'escalation' ? EscalationsIcon : item.icon ?? NotificationIcon}
-                                            alt=""
-                                        />
+                                        {item.type === 'escalation'
+                                            ? <span className="task-icon escalation-task-icon" />
+                                            : <img className="task-icon" src={item.icon ?? NotificationIcon} alt="" />}
                                     </span>
 
                                     <div className="task-copy">
@@ -1085,7 +1088,7 @@ function Reminders() {
                                                 <span className="escalation-student">
                                                     {item.sourceEscalation.program}-{item.sourceEscalation.year_level} {item.sourceEscalation.student_name}
                                                 </span>{' '}
-                                                has reached <span className="escalation-level">Escalation {item.sourceEscalation.escalation_level.toLowerCase()}</span> and requires a follow up.
+                                                has reached <span className="escalation-level">Escalation {item.sourceEscalation.escalation_level.toLowerCase()}</span> and requires follow up.
                                             </p>
                                         ) : (
                                             <p>
@@ -1187,7 +1190,7 @@ function Reminders() {
                 <div className="escalation-report-backdrop" onMouseDown={event => {
                     if (event.target === event.currentTarget) closeEscalationReport()
                 }}>
-                    <section className="escalation-report-modal" role="dialog" aria-modal="true" aria-labelledby="escalation-report-title">
+                    <section className={`escalation-report-modal escalation-level-${reportLevel}`} role="dialog" aria-modal="true" aria-labelledby="escalation-report-title">
                         <div className="escalation-report-header">
                             <div>
                                 <h2 id="escalation-report-title">Escalation Report</h2>
@@ -1196,7 +1199,7 @@ function Reminders() {
                             <button type="button" onClick={closeEscalationReport} aria-label="Close escalation report">×</button>
                         </div>
                         <div className="escalation-report-message">
-                            <img className="escalation-report-alert-icon" src={EscalationsIcon} alt="" aria-hidden="true" />
+                            <span className="escalation-report-alert-icon" aria-hidden="true" />
                             <span><strong>{reportAlertName}</strong> has reached Escalation Level {reportLevel}.</span>
                         </div>
                         {escalationReport.loading && <p className="escalation-report-state"><LoadingCircle label="Loading attendance history…" /></p>}

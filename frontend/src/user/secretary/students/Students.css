@@ -410,7 +410,7 @@
 }
 
 .escalation-bars i.filled {
-    background: #2ed258;
+    background: var(--escalation-fill, var(--escalation-level-1));
 }
 
 .student-view-button {
@@ -654,19 +654,22 @@
 }
 
 .overview-escalation-indicator i.filled {
-    background: #22c55e;
+    background: var(--escalation-fill, var(--escalation-level-1));
 }
 
-.students .escalation-level-1 i.filled {
-    background: #22c55e;
+.escalation-bars.escalation-level-1,
+.overview-escalation-indicator.escalation-level-1 {
+    --escalation-fill: var(--escalation-level-1);
 }
 
-.students .escalation-level-2 i.filled {
-    background: #facc15;
+.escalation-bars.escalation-level-2,
+.overview-escalation-indicator.escalation-level-2 {
+    --escalation-fill: var(--escalation-level-2);
 }
 
-.students .escalation-level-3 i.filled {
-    background: #ef4444;
+.escalation-bars.escalation-level-3,
+.overview-escalation-indicator.escalation-level-3 {
+    --escalation-fill: var(--escalation-level-3);
 }
 
 .overview-escalation-bars {
