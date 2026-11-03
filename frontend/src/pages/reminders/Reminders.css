@@ -1399,6 +1399,69 @@
     }
 }
 
+@media (max-width: 1150px) {
+    .reminders-program_head .reminders-cards,
+    .reminders-program_head .reminders-task-panel,
+    .reminders-program_secretary .reminders-cards,
+    .reminders-program_secretary .reminders-task-panel {
+        width: calc(100% - 40px);
+    }
+
+    .reminders-program_head .reminders-cards,
+    .reminders-program_secretary .reminders-cards {
+        height: auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding-top: 20px;
+    }
+
+    .reminders-program_head .reminders-card,
+    .reminders-program_secretary .reminders-card {
+        min-width: 0;
+        min-height: 140px;
+        padding: 16px;
+    }
+
+    .reminders-program_head .reminders-task-panel,
+    .reminders-program_secretary .reminders-task-panel {
+        margin-top: 16px;
+        padding: 20px;
+    }
+
+    .reminders-program_head .reminders-filter-row,
+    .reminders-program_secretary .reminders-filter-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .reminders-program_head .reminders-filter,
+    .reminders-program_secretary .reminders-filter {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .reminders-program_head .reminders-task-item,
+    .reminders-program_secretary .reminders-task-item {
+        grid-template-columns: minmax(0, 1fr) minmax(140px, auto);
+        gap: 12px;
+        padding: 18px 16px;
+    }
+
+    .reminders-program_head .task-main,
+    .reminders-program_head .task-copy,
+    .reminders-program_head .task-status,
+    .reminders-program_secretary .task-main,
+    .reminders-program_secretary .task-copy,
+    .reminders-program_secretary .task-status {
+        min-width: 0;
+    }
+
+    .reminders-program_head .task-copy,
+    .reminders-program_secretary .task-copy {
+        overflow-wrap: anywhere;
+    }
+}
+
 @media (min-width: 1800px) and (min-height: 900px) {
     .reminders-secretary > .sidebar {
         width: clamp(240px, 12vw, 360px);

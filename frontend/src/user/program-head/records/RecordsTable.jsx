@@ -202,7 +202,7 @@ export default function RecordsTable() {
                                 </tr>
                             ) : rows.map((row) => (
                                 <tr key={row.id}>
-                                    <td>
+                                    <td title={row.secretary}>
                                         <UserAvatar
                                             className="ph-submitter-avatar"
                                             name={row.secretary}
@@ -210,7 +210,7 @@ export default function RecordsTable() {
                                         />
                                         {row.secretary}
                                     </td>
-                                    <td>{row.gathering}</td>
+                                    <td title={row.gathering}>{row.gathering}</td>
                                     <td>{row.program}</td>
                                     <td>{row.year_label}</td>
                                     <td><RecordDate value={row.date_iso || row.date} /></td>
