@@ -232,6 +232,7 @@
     margin: 8px 0 0;
     color: transparent;
     font-size: 14px;
+    text-align: center;
 }
 
 .login-error.visible {
