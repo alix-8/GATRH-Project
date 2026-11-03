@@ -85,7 +85,7 @@
     text-align: center;
 }
 
-@media (max-width: 780px) {
+@media (max-width: 1150px) {
     .admin-activity-table {
         min-width: 760px;
     }
