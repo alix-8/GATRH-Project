@@ -96,8 +96,8 @@
     padding: 16px;
     border: 1px solid #cbd9ec;
     border-radius: 10px;
-    background: #fff;
-    color: #172b4d;
+    background: #17366f;
+    color: #e9ebee;
     box-shadow: 0 6px 24px #172b4d26;
     text-align: left;
     font: 13px/1.5 system-ui, sans-serif;
@@ -108,7 +108,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    color: #69758a;
+    color: #e1e3e8;
     font-size: 11px;
 }
 
@@ -134,6 +134,8 @@
 .import-walkthrough-meta button {
     padding: 0;
     border: 0;
+    background: none;
+    color: #e1e3e8;
     text-decoration: underline;
     font-size: 11px;
 }
@@ -148,31 +150,4 @@
 .import-walkthrough-actions span {
     font-size: 11px;
     color: #69758a;
-}
-
-@media (max-width: 900px) {
-    .import-walkthrough-card {
-        padding: 14px;
-    }
-}
-
-@media (max-width: 720px) {
-    .import-walkthrough-card {
-        padding: 12px;
-        font-size: 12px;
-    }
-
-    .import-walkthrough-card h3 {
-        font-size: 14px;
-    }
-}
-
-@media (max-width: 460px) {
-    .import-walkthrough-card {
-        border-radius: 8px;
-    }
-
-    .import-walkthrough-meta {
-        gap: 8px;
-    }
 }

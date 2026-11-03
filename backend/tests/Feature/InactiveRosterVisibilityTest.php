@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{AttendanceRecord, Program, Student, User};
+use App\Models\{AttendanceDraft, AttendanceRecord, Program, Student, User};
 use App\Services\Admin\{AdminProgramService, AdminStudentService};
 use App\Services\Audit\AuditLogService;
 use App\Services\Dashboard\{CmCoordinatorMonitoringService, DashboardService, ReportingRoster};
@@ -20,7 +20,7 @@ class InactiveRosterVisibilityTest extends TestCase
         parent::setUp();
         Carbon::setTestNow('2026-10-31 12:00:00');
         $this->mock(AuditLogService::class)->shouldReceive('record', 'recordAction')->zeroOrMoreTimes();
-        $this->mock(\App\Services\Escalations\WeeklyEscalationService::class)
+        $this->partialMock(\App\Services\Escalations\WeeklyEscalationService::class)
             ->shouldReceive('syncStudent', 'syncDraft')
             ->zeroOrMoreTimes();
         Schema::create('programs', function (Blueprint $t) {
@@ -340,7 +340,7 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame('Secretary Mel', $details['week_details'][0]['recorded_by']);
     }
 
-    public function test_secretary_dashboard_prepends_recent_level_one_alerts_without_replacing_reminders(): void
+    public function test_secretary_dashboard_keeps_level_one_follow_up_after_student_reaches_level_two(): void
     {
         Schema::create('reminders', function (Blueprint $table) {
             $table->id(); $table->integer('user_id'); $table->string('reminder_type');
@@ -362,7 +362,7 @@ class InactiveRosterVisibilityTest extends TestCase
             $student = $this->student($name, $program, $active);
             $student->update(['year_level' => $year]);
             DB::table('escalations')->insert(['student_id' => $student->id, 'escalation_level' => $level,
-                'no_response_count' => 1, 'updated_at' => now()]);
+                'no_response_count' => $level === 'Level 2' ? 2 : 1, 'updated_at' => now()]);
         }
         foreach (range(1, 5) as $index) {
             \App\Models\Reminder::create(['user_id' => 1, 'reminder_type' => 'custom', 'title' => 'Task '.$index,
@@ -373,8 +373,9 @@ class InactiveRosterVisibilityTest extends TestCase
         $method = new \ReflectionMethod(DashboardService::class, 'getSecretaryTasksAndReminders');
         $items = $method->invoke(app(DashboardService::class), $user);
         $this->assertCount(7, $items);
-        $this->assertSame(['Newest', 'Second', 'Third', 'Task 1', 'Task 2', 'Task 3', 'Task 4'], array_column($items, 'title'));
+        $this->assertSame(['Level two', 'Newest', 'Second', 'Task 1', 'Task 2', 'Task 3', 'Task 4'], array_column($items, 'title'));
         $this->assertSame('escalation', $items[0]['type']);
+        $this->assertStringContainsString('Level 1 follow up', $items[0]['description']);
         $this->assertSame('Escalation Report', $items[0]['status_label']);
         $this->assertSame('custom', $items[3]['type']);
     }
@@ -402,47 +403,39 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame('The record was approved', $service->getProgramHeadRecentActivity($head, $range)[0]['description']);
     }
 
-    public function test_program_head_escalation_uses_only_submitted_gatherings_and_preserves_secretary_level(): void
+    public function test_escalation_visibility_retains_each_roles_follow_up_level(): void
     {
         $this->program('BSIS');
         $student = $this->student('Submitted responses');
         $head = new User(['role' => 'program_head', 'program' => 'BSIS']);
         $secretary = new User(['role' => 'secretary', 'program' => 'BSIS', 'year_level' => 1]);
+        $coordinator = new User(['role' => 'cm_coordinator']);
         $escalation = \App\Models\Escalation::create(['student_id' => $student->id,
-            'escalation_level' => 'Level 2', 'no_response_count' => 2]);
-        \App\Models\AttendanceDraft::withoutEvents(fn () => \App\Models\AttendanceDraft::create([
-            'user_id' => 1, 'gathering_type' => 'ws', 'day' => '2026-10-28', 'status' => 'draft',
-            'parsed_data' => [['student_id' => $student->id, 'status' => 'no_response']],
-        ]));
+            'escalation_level' => 'Level 1', 'no_response_count' => 1]);
         $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
         $this->assertSame(1, \App\Models\Escalation::visibleTo($secretary)->count());
-        $record = fn ($type, $day = '2026-10-28') => AttendanceRecord::create([
-            'student_id' => $student->id, 'gathering_type' => $type, 'day' => $day,
-            'status' => 'no_response', 'validation_status' => 'unvalidated',
-        ]);
-        $record('pm');
-        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
-        $record('pm'); // Duplicate rows must not count as another gathering.
-        $record('tg', '2026-10-21'); // Previous week must not contribute.
-        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
-        $ws = $record('ws');
+        $this->assertSame(0, \App\Models\Escalation::visibleTo($coordinator)->count());
+
+        $escalation->update(['escalation_level' => 'Level 2', 'no_response_count' => 2]);
         $this->assertSame(1, \App\Models\Escalation::visibleTo($head)->count());
-        // A third gathering in drafts can raise the secretary level but must
-        // not hide the head's two submitted no-response gatherings.
+        $this->assertSame(1, \App\Models\Escalation::visibleTo($secretary)->count());
+        $this->assertSame(0, \App\Models\Escalation::visibleTo($coordinator)->count());
+
         $escalation->update(['escalation_level' => 'Level 3', 'no_response_count' => 3]);
         $this->assertSame(1, \App\Models\Escalation::visibleTo($head)->count());
-        $request = \Illuminate\Http\Request::create('/api/escalations');
-        $request->setUserResolver(fn () => $head);
-        $payload = app(\App\Http\Controllers\Escalations\EscalationController::class)->index($request)->getData(true);
-        $this->assertSame('Level 2', $payload['data'][0]['escalation_level']);
-        $this->assertSame(2, $payload['data'][0]['no_response_count']);
+        $this->assertSame(1, \App\Models\Escalation::visibleTo($secretary)->count());
+        $this->assertSame(1, \App\Models\Escalation::visibleTo($coordinator)->count());
+        foreach ([[$secretary, 'Level 1'], [$head, 'Level 2'], [$coordinator, 'Level 3']] as [$user, $level]) {
+            $request = \Illuminate\Http\Request::create('/api/escalations');
+            $request->setUserResolver(fn () => $user);
+            $payload = app(\App\Http\Controllers\Escalations\EscalationController::class)->index($request)->getData(true);
+            $this->assertSame($level, $payload['data'][0]['escalation_level']);
+            $this->assertSame(3, $payload['data'][0]['no_response_count']);
+            $request = \Illuminate\Http\Request::create('/api/escalations?level='.$level);
+            $request->setUserResolver(fn () => $user);
+            $this->assertSame(1, app(\App\Http\Controllers\Escalations\EscalationController::class)->index($request)->getData(true)['count']);
+        }
         $this->assertSame('Level 3', $escalation->fresh()->escalation_level);
-        $tg = $record('tg');
-        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
-        $tg->delete();
-        $this->assertSame(1, \App\Models\Escalation::visibleTo($head)->count());
-        $ws->delete();
-        $this->assertSame(0, \App\Models\Escalation::visibleTo($head)->count());
     }
 
     public function test_cm_coordinator_escalation_evidence_includes_the_secretarys_draft_gatherings(): void
@@ -628,3 +621,4 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertDatabaseCount('students', 0);
     }
 }
+

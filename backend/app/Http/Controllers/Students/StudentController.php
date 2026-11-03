@@ -175,7 +175,7 @@ class StudentController extends Controller
             ->accessibleTo($user)
             ->findOrFail($id);
 
-        $includeDrafts = in_array($user->role, ['secretary', 'cm_coordinator'], true);
+        $includeDrafts = in_array($user->role, ['secretary', 'program_head', 'cm_coordinator'], true);
         $draftOwnerId = $user->role === 'secretary' ? $user->id : null;
         $evidence = app(WeeklyEscalationService::class)
             ->evidenceForStudent($student->id, $includeDrafts, $draftOwnerId);
@@ -412,3 +412,4 @@ class StudentController extends Controller
         return array_values($entries);
     }
 }
+

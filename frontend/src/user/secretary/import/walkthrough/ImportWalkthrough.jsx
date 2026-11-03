@@ -21,15 +21,30 @@ const shouldShowGuide = () => {
     }
 }
 
+const isElementVisible = el => {
+    if (!el) return false
+    if (typeof el.checkVisibility === 'function') {
+        return el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+    }
+    return Boolean(el.offsetWidth || el.offsetHeight || el.getClientRects().length)
+}
+
 export default function ImportWalkthrough({ modal, isPreviewing, hasText, busy, gatheringType }) {
     const [active, setActive] = useState(shouldShowGuide)
     const [manual, setManual] = useState(null)
     const [anchor, setAnchor] = useState(null)
+    const [isSmallScreen, setIsSmallScreen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 900 : false))
+    const [portalContainer, setPortalContainer] = useState(null)
     const titleId = useId()
     const phase = importWalkthroughPhase({ modal, isPreviewing, hasText })
     const context = `${modal}|${isPreviewing}|${hasText}|${gatheringType}`
     const step = manual?.context === context ? manual.step : phase
-    const visible = active && !importWalkthroughPaused({ modal, busy })
+    const visible = active && !importWalkthroughPaused({
+        modal,
+        busy,
+        isSmallScreen,
+        screenWidth: typeof window !== 'undefined' ? window.innerWidth : undefined,
+    })
     const configuredStep = importWalkthroughSteps[step]
     const instruction = {
         ...configuredStep,
@@ -58,6 +73,18 @@ export default function ImportWalkthrough({ modal, isPreviewing, hasText, busy, 
         if (nextStep < 0 || nextStep >= importWalkthroughSteps.length) return
         setManual({ context, step: nextStep })
     }
+
+    useEffect(() => {
+        const updateScreenSize = () => {
+            setIsSmallScreen(window.innerWidth <= 900)
+        }
+        window.addEventListener('resize', updateScreenSize)
+        return () => window.removeEventListener('resize', updateScreenSize)
+    }, [])
+
+    useEffect(() => {
+        setPortalContainer(document.getElementById('import-walkthrough-portal') || document.querySelector('.import'))
+    }, [])
 
     useEffect(() => {
         if (!active) return undefined
@@ -97,7 +124,7 @@ export default function ImportWalkthrough({ modal, isPreviewing, hasText, busy, 
     useEffect(() => {
         if (!visible) return undefined
         const target = document.querySelector(instruction.target)
-        if (!target) return undefined
+        if (!target || !isElementVisible(target)) return undefined
 
         // A step can keep its surrounding inputs clear while outlining one action.
         const stepSpotlight = instruction.spotlight
@@ -130,8 +157,16 @@ export default function ImportWalkthrough({ modal, isPreviewing, hasText, busy, 
         const measure = () => {
             cancelAnimationFrame(frame)
             frame = requestAnimationFrame(() => {
+                if (!isElementVisible(target) || !isElementVisible(spotlightTarget)) {
+                    setAnchor(null)
+                    return
+                }
                 updateScrollMargin()
                 const rect = spotlightTarget.getBoundingClientRect()
+                if (rect.width === 0 && rect.height === 0) {
+                    setAnchor(null)
+                    return
+                }
                 // Never let the clear spotlight window expose content behind the header.
                 const headerBottom = header
                     ? Math.max(0, Math.min(window.innerHeight, header.getBoundingClientRect().bottom))
@@ -166,12 +201,17 @@ export default function ImportWalkthrough({ modal, isPreviewing, hasText, busy, 
         if (spotlightTarget !== target) {
             observer.observe(spotlightTarget)
         }
+        const bannerCards = spotlightTarget.querySelector?.('.import-period-cards')
+        if (bannerCards) {
+            observer.observe(bannerCards)
+        }
         if (header) observer.observe(header)
         window.addEventListener('resize', measure)
         window.addEventListener('scroll', measure, true)
         return () => {
             cancelAnimationFrame(frame)
             observer.disconnect()
+            setAnchor(null)
             target.removeAttribute('data-import-guide-active')
             clearTarget?.removeAttribute('data-import-guide-clear')
             header?.removeAttribute('data-import-guide-header')
@@ -185,48 +225,52 @@ export default function ImportWalkthrough({ modal, isPreviewing, hasText, busy, 
     const isLastStep = step === importWalkthroughSteps.length - 1
     const canAdvanceManually = importWalkthroughCanAdvance(instruction, { modal, hasText })
 
+    const targetPortal = portalContainer || (typeof document !== 'undefined' ? (document.getElementById('import-walkthrough-portal') || document.querySelector('.import')) : null)
+
+    const overlay = showCard ? (
+        <div className="import-walkthrough-overlay" aria-hidden={!visible}>
+            <WalkthroughSpotlight bounds={anchor.spotlight} />
+            <WalkthroughArrow target={anchor.arrowTarget} headerBottom={anchor.headerBottom} viewport={anchor.viewport} />
+            <section
+                className="import-walkthrough-card"
+                style={{ left: anchor.left, width: anchor.width, top: anchor.top, maxHeight: anchor.maxHeight }}
+                aria-labelledby={titleId}
+                aria-live="polite"
+                role="region"
+            >
+                <div className="import-walkthrough-meta">
+                    <span>Import guide · {step + 1} of {importWalkthroughSteps.length}</span>
+                    <button type="button" onClick={finish}>Skip guide</button>
+                </div>
+
+                <h3 id={titleId}>{instruction.title}</h3>
+                <p>{instruction.text}</p>
+
+                <div className="import-walkthrough-actions">
+                    {step > phase && (
+                        <button type="button" onClick={() => goToStep(step - 1)}>Back</button>
+                    )}
+                    {isLastStep && (
+                        <button type="button" onClick={finish}>Finish guide</button>
+                    )}
+                    {!isLastStep && canAdvanceManually && (
+                        <button type="button" onClick={() => goToStep(step + 1)}>Next</button>
+                    )}
+                    {!isLastStep && !canAdvanceManually && (
+                        <span>Continue using the highlighted control.</span>
+                    )}
+                </div>
+            </section>
+        </div>
+    ) : null
+
     return (
         <>
             <div className="import-walkthrough-launcher">
                 <button type="button" onClick={start}>Help / Start guide</button>
             </div>
 
-            {showCard && createPortal(
-                <>
-                    <WalkthroughSpotlight bounds={anchor.spotlight} />
-                    <WalkthroughArrow target={anchor.arrowTarget} headerBottom={anchor.headerBottom} viewport={anchor.viewport} />
-                    <section
-                        className="import-walkthrough-card"
-                        style={{ left: anchor.left, width: anchor.width, top: anchor.top, maxHeight: anchor.maxHeight }}
-                        aria-labelledby={titleId}
-                        aria-live="polite"
-                    >
-                        <div className="import-walkthrough-meta">
-                            <span>Import guide · {step + 1} of {importWalkthroughSteps.length}</span>
-                            <button type="button" onClick={finish}>Skip guide</button>
-                        </div>
-
-                        <h3 id={titleId}>{instruction.title}</h3>
-                        <p>{instruction.text}</p>
-
-                        <div className="import-walkthrough-actions">
-                            {step > phase && (
-                                <button type="button" onClick={() => goToStep(step - 1)}>Back</button>
-                            )}
-                            {isLastStep && (
-                                <button type="button" onClick={finish}>Finish guide</button>
-                            )}
-                            {!isLastStep && canAdvanceManually && (
-                                <button type="button" onClick={() => goToStep(step + 1)}>Next</button>
-                            )}
-                            {!isLastStep && !canAdvanceManually && (
-                                <span>Continue using the highlighted control.</span>
-                            )}
-                        </div>
-                    </section>
-                </>,
-                document.body,
-            )}
+            {overlay && (targetPortal ? createPortal(overlay, targetPortal) : overlay)}
         </>
     )
 }

@@ -18,19 +18,22 @@ class EscalationController extends Controller
 
         $query = Escalation::query()->visibleTo($user)->with('student');
 
-        // Optional filter by escalation level (e.g., Level 1, Level 2, Level 3)
+        $recipientLevel = match ($user->role) {
+            'secretary' => 'Level 1',
+            'program_head' => 'Level 2',
+            'cm_coordinator', 'chancellor' => 'Level 3',
+            default => null,
+        };
+
         if ($request->has('level')) {
-            if ($user->role === 'program_head') {
-                $query->when($request->level !== 'Level 2', fn ($query) => $query->whereRaw('1 = 0'));
-            } else {
-                $escalations = $query->mostRecentFirst()->get();
-                $query->where('escalation_level', $request->level);
+            if ($recipientLevel !== $request->level) {
+                $query->whereRaw('1 = 0');
             }
         }
 
         $escalations = $query->orderBy('no_response_count', 'desc')->get();
-        if ($user->role === 'program_head') {
-            $escalations->each(fn ($escalation) => $escalation->forceFill(['escalation_level' => 'Level 2', 'no_response_count' => 2]));
+        if ($recipientLevel !== null) {
+            $escalations->each(fn ($escalation) => $escalation->forceFill(['escalation_level' => $recipientLevel]));
         }
 
         return response()->json([
@@ -48,8 +51,14 @@ class EscalationController extends Controller
         $escalation = Escalation::query()->visibleTo($request->user())
             ->with(['student', 'student.attendanceRecords'])
             ->findOrFail($id);
-        if ($request->user()->role === 'program_head') {
-            $escalation->forceFill(['escalation_level' => 'Level 2', 'no_response_count' => 2]);
+        $recipientLevel = match ($request->user()->role) {
+            'secretary' => 'Level 1',
+            'program_head' => 'Level 2',
+            'cm_coordinator', 'chancellor' => 'Level 3',
+            default => null,
+        };
+        if ($recipientLevel !== null) {
+            $escalation->forceFill(['escalation_level' => $recipientLevel]);
         }
 
         return response()->json([
@@ -83,3 +92,4 @@ class EscalationController extends Controller
     //     ]);
     // }
 }
+

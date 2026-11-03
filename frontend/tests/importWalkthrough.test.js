@@ -21,6 +21,13 @@ test('errors, confirmations and loading pause the guide', () => {
     assert.equal(importWalkthroughPaused({ modal: null, busy: false }), false)
 })
 
+test('screen width <= 900px pauses the guide automatically', () => {
+    assert.equal(importWalkthroughPaused({ modal: null, busy: false, screenWidth: 900 }), true)
+    assert.equal(importWalkthroughPaused({ modal: null, busy: false, screenWidth: 720 }), true)
+    assert.equal(importWalkthroughPaused({ modal: null, busy: false, isSmallScreen: true }), true)
+    assert.equal(importWalkthroughPaused({ modal: null, busy: false, screenWidth: 901 }), false)
+})
+
 test('week guide sits below the section and aligns with Change week', () => {
     const section = { left: 20, right: 1380, top: 20, bottom: 180 }
     const button = { left: 1200, right: 1360, top: 60, bottom: 110 }
@@ -35,6 +42,21 @@ test('week guide sits below the section and aligns with Change week', () => {
     )
     assert.ok(mobile.top > 340)
     assert.ok(mobile.top + mobile.maxHeight <= 556)
+})
+
+test('belowSection positioning on short viewports stays inside viewport and preserves usable scroll area', () => {
+    const button = { left: 800, right: 950, top: 40, bottom: 80 }
+    const shortViewport = { width: 1024, height: 450 }
+    const lowSection = { top: 260, bottom: 380 }
+    const card = importWalkthroughPosition(button, shortViewport, { belowSection: lowSection })
+    assert.ok(card.top >= 12, 'card top is within viewport')
+    assert.ok(card.top + card.maxHeight <= shortViewport.height - 12, 'card does not overflow viewport bottom')
+    assert.ok(card.maxHeight >= 80, 'card maintains usable height')
+
+    const tinyViewport = { width: 950, height: 350 }
+    const tinyCard = importWalkthroughPosition(button, tinyViewport, { belowSection: { top: 50, bottom: 250 } })
+    assert.ok(tinyCard.top >= 12)
+    assert.ok(tinyCard.top + tinyCard.maxHeight <= tinyViewport.height - 12)
 })
 
 test('selected week remains available for validation before continuing', () => {
@@ -63,7 +85,6 @@ test('instruction card stays inside mobile, tablet, desktop and short viewports'
         }
     }
 })
-
 
 test('inserting another step does not shift workflow destinations', () => {
     const steps = [...importWalkthroughSteps]

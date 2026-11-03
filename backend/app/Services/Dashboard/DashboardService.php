@@ -204,7 +204,6 @@ class DashboardService
 
         $escalations = Escalation::query()
             ->visibleTo($user)
-            ->where('escalation_level', 'Level 1')
             ->with('student')
             ->mostRecentFirst()
             ->limit(3)
@@ -217,7 +216,7 @@ class DashboardService
                     'type' => 'escalation',
                     'category' => 'Escalation',
                     'title' => $student->name,
-                    'description' => "{$student->name} has reached Escalation {$escalation->escalation_level} and requires a follow up.",
+                    'description' => "{$student->name} requires an Escalation Level 1 follow up.",
                     'date' => $escalation->updated_at?->toIso8601String(),
                     'status' => 'escalation',
                     'status_label' => 'Escalation Report',
@@ -1060,3 +1059,4 @@ class DashboardService
             ->values();
     }
 }
+

@@ -29,6 +29,8 @@
 }
 
 .import-period-banner {
+    position: relative;
+    z-index: 10;
     display: grid;
     grid-template-columns: minmax(220px, 1fr) minmax(0, 2.4fr) max-content;
     align-items: center;
@@ -61,7 +63,12 @@
     line-height: 1.25;
 }
 
-.import-period-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.import-period-cards {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+}
 .import-period-date-card {
     position: relative;
     min-width: 0;
@@ -71,6 +78,10 @@
     background: #fff;
     color: #183052;
     text-align: center;
+}
+.import-period-date-card:hover,
+.import-period-date-card:focus-visible {
+    z-index: 100;
 }
 .import-period-card-heading {
     display: flex;
@@ -107,8 +118,7 @@
 .import-period-date-submitted:hover::after,
 .import-period-date-submitted:focus-visible::after {
     position: absolute;
-    z-index: 20;
-    right: 0;
+    z-index: 100;
     top: calc(100% + 9px);
     width: max-content;
     max-width: min(320px, 80vw);
@@ -122,6 +132,57 @@
     line-height: 1.4;
     white-space: normal;
     box-shadow: 0 4px 14px rgba(15, 34, 71, .18);
+    pointer-events: none;
+}
+
+.import-period-date-upcoming:hover::before,
+.import-period-date-upcoming:focus-visible::before,
+.import-period-date-submitted:hover::before,
+.import-period-date-submitted:focus-visible::before {
+    position: absolute;
+    z-index: 101;
+    top: calc(100% + 3px);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid #253248;
+    content: '';
+    pointer-events: none;
+}
+
+/* Align tooltips so they never extend towards or beneath the sidebar */
+.import-period-date-card:first-child::after {
+    left: 0;
+    right: auto;
+}
+
+.import-period-date-card:first-child::before {
+    left: 24px;
+    right: auto;
+}
+
+.import-period-date-card:nth-child(2)::after {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+}
+
+.import-period-date-card:nth-child(2)::before {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+}
+
+.import-period-date-card:last-child::after {
+    right: 0;
+    left: auto;
+    transform: none;
+}
+
+.import-period-date-card:last-child::before {
+    right: 24px;
+    left: auto;
 }
 .import-period-change-button {
     flex: 0 0 auto;
@@ -141,18 +202,6 @@
 .import-period-change-button:disabled {
     opacity: .5;
     cursor: not-allowed;
-}
-
-@media (max-width: 900px) {
-    .import-period-banner { grid-template-columns: 1fr auto; }
-    .import-period-summary { grid-column: 1 / -1; padding: 6px 8px; }
-    .import-period-cards { grid-column: 1 / -1; }
-    .import-period-change-button { grid-column: 2; grid-row: 1; }
-}
-@media (max-width: 460px) {
-    .import-period-cards { grid-template-columns: 1fr; }
-    .import-period-card-date { white-space: normal; }
-    .import-period-change-button { grid-column: 1 / -1; grid-row: auto; justify-self: end; }
 }
 
 .import-panel {
@@ -885,14 +934,6 @@ textarea {
     margin: 0.15rem 0;
 }
 
-@media (max-width: 720px) {
-    .import-fields {
-        grid-template-columns: 1fr;
-    }
-
-    /* header responsiveness handled by Header component */
-}
-
 @media (min-width: 901px) and (max-width: 1150px) {
     .import-content {
         max-width: none;
@@ -913,9 +954,11 @@ textarea {
         grid-column: 1 / -1;
     }
 
-    .import-hint-week {
+    .import-hint-week,
+    .import-period-change-button {
         grid-column: 2;
         grid-row: 1;
+        justify-self: end;
     }
 
     .import-panel {

@@ -566,6 +566,7 @@ function Import({ onGoToAttendance = () => {} }) {
                     onClose={() => setModal(null)}
                 />
             )}
+            <div id="import-walkthrough-portal" />
         </div>
     )
 }
