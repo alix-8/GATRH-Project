@@ -1462,6 +1462,68 @@
     }
 }
 
+@media (min-width: 901px) and (max-width: 1150px) {
+    .reminders-cm_coordinator .reminders-cards,
+    .reminders-cm_coordinator .reminders-task-panel {
+        width: calc(100% - 40px);
+    }
+
+    .reminders-cm_coordinator .reminders-cards {
+        height: auto;
+        padding-top: 20px;
+    }
+
+    .reminders-cm_coordinator .reminders-card {
+        min-width: 0;
+        min-height: 140px;
+        padding: 16px;
+    }
+
+    .reminders-cm_coordinator .reminders-task-panel {
+        margin-top: 16px;
+        padding: 20px;
+    }
+
+    .reminders-cm_coordinator .reminders-filter-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .reminders-cm_coordinator .reminders-filter {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .reminders-cm_coordinator .reminders-task-item {
+        grid-template-columns: minmax(0, 1fr) minmax(140px, auto);
+        gap: 12px;
+        padding: 18px 16px;
+    }
+
+    .reminders-cm_coordinator .task-main,
+    .reminders-cm_coordinator .task-copy,
+    .reminders-cm_coordinator .task-status {
+        min-width: 0;
+    }
+
+    .reminders-cm_coordinator .task-copy {
+        overflow-wrap: anywhere;
+    }
+
+    .reminders-cm_coordinator .reminder-modal {
+        max-width: 100%;
+        max-height: calc(100dvh - 48px);
+        overflow-y: auto;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1050px) {
+    .reminders-cm_coordinator .reminders-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (min-width: 1800px) and (min-height: 900px) {
     .reminders-secretary > .sidebar {
         width: clamp(240px, 12vw, 360px);

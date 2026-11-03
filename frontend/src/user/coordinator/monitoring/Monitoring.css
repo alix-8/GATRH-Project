@@ -1017,3 +1017,42 @@
 .monitoring-detail-close:hover {
     background: #f1f9ff;
 }
+
+@media (min-width: 901px) and (max-width: 1150px) {
+    .coordinator-dashboard {
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .coordinator-dashboard-main {
+        height: 100vh;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .monitoring-content {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .monitoring-table-scroll {
+        max-width: 100%;
+        padding-inline: 0;
+    }
+
+    .monitoring-program-toggle {
+        position: sticky;
+        left: 0;
+        width: 280px;
+        z-index: 2;
+    }
+
+    .monitoring-status-legend {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #ffffff;
+    }
+}
