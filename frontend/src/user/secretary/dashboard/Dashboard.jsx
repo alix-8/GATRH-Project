@@ -510,7 +510,7 @@ function Dashboard() {
                         <section className="monthly-gathering-card">
                             <div className="monthly-gathering-header">
                                 <h3>Monthly Attendance by Gathering</h3>
-                                <p>Overall student response across the month of {selectedMonthLabel.split(' ')[0]}.</p>
+                                <p>Overall student response across the month.</p>
                             </div>
 
                             <div className="monthly-gathering-list">

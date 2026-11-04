@@ -98,21 +98,37 @@ class DashboardService
 
     private function getSecretaryMonthlySummary($user, Carbon $month, ?SecretaryDashboardData $data = null): array
     {
+        $monthRange = [
+            'start' => $month->copy()->startOfMonth(),
+            'end' => $month->copy()->endOfMonth(),
+        ];
+
         $records = AttendanceRecord::query()
             ->whereHas(
                 'student',
                 fn ($query) => $query->accessibleTo($user)
             )
             ->inReportingRange([
-                $month->copy()->startOfMonth(),
-                $month->copy()->endOfMonth(),
+                $monthRange['start'],
+                $monthRange['end'],
             ]);
 
-        $counts = $data?->statusCounts(['start' => $month->copy()->startOfMonth(), 'end' => $month->copy()->endOfMonth()])
+        $monthDrafts = $data?->draftsIn($monthRange) ?? AttendanceDraft::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['draft', 'pending'])
+            ->inReportingRange([
+                $monthRange['start'],
+                $monthRange['end'],
+            ])
+            ->get();
+        $monthDraftResponses = $monthDrafts->flatMap(fn ($draft) => $data?->entriesFor($draft) ?? collect($draft->parsed_data ?? []));
+
+        $counts = $data?->statusCounts($monthRange)
             ?? $records->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status')->all();
+
         return [
-            'attendance' => (int) ($counts['present'] ?? 0),
-            'no_response' => (int) ($counts['no_response'] ?? 0),
+            'attendance' => (int) ($counts['present'] ?? 0) + $monthDraftResponses->where('status', 'present')->count(),
+            'no_response' => (int) ($counts['no_response'] ?? 0) + $monthDraftResponses->where('status', 'no_response')->count(),
 
             'month_label' => $month->format('F Y'),
         ];
