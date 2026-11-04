@@ -333,6 +333,10 @@
     padding: 2px 20px;
 }
 
+.students-table tbody tr:nth-child(even) td {
+    background-color: #edf8fc;
+}
+
 .student-name-cell {
     display: inline-block;
     text-align: left;
@@ -391,7 +395,7 @@
 
 .escalation-bars {
     align-items: center;
-    border: 1px solid #d9e2da;
+    border: 1px solid #9e9e9e;
     border-radius: 999px;
     display: inline-flex;
     gap: 3px;
