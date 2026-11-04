@@ -857,6 +857,10 @@
     white-space: nowrap;
 }
 
+.escalation-report-table tbody tr:nth-child(even) td {
+    background-color: #edf8fc;
+}
+
 .escalation-report-table td:first-child,
 .escalation-report-table th:first-child {
     text-align: left;

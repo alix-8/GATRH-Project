@@ -356,6 +356,10 @@
     color: #243b60;
 }
 
+.user-roles-table tbody tr:nth-child(even) td {
+    background-color: #edf8fc;
+}
+
 .user-roles-table tr:last-child td {
     border-bottom: 0;
 }

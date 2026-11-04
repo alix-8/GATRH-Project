@@ -365,6 +365,10 @@
     vertical-align: middle;
 }
 
+.admin-programs-table tbody tr:nth-child(even) td {
+    background-color: #edf8fc;
+}
+
 .admin-programs-table th:last-child,
 .admin-programs-table td:last-child {
     text-align: center;
