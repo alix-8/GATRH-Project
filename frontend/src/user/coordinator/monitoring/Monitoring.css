@@ -848,6 +848,10 @@
     border-bottom: 1px solid #edf0f4;
 }
 
+.monitoring-week-detail-row:nth-of-type(odd) {
+    background-color: #edf8fc;
+}
+
 .monitoring-week-detail-row-highlighted {
     outline: 3px solid #3b82f6;
     outline-offset: -3px;

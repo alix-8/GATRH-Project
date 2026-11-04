@@ -306,6 +306,10 @@
     border-bottom: 1px solid #f0f2f5;
 }
 
+.ph-drawer-table tbody tr:nth-child(even) td {
+    background-color: #edf8fc;
+}
+
 .ph-drawer-table tbody tr:last-child {
     border-bottom: 0;
 }

@@ -354,6 +354,10 @@
     white-space: nowrap;
 }
 
+.admin-students-table tbody tr:nth-child(even) td {
+    background-color: #e6f4fa;
+}
+
 .admin-students-table th:first-child {
     width: 36%;
 }

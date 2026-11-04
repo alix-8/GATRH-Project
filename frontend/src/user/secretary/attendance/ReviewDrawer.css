@@ -409,6 +409,10 @@
   border-bottom: 1px solid #f0f2f5;
 }
 
+.drawer-table tbody tr:nth-child(even) td {
+  background-color: #edf8fc;
+}
+
 .status-indicator {
   display: inline-flex;
   align-items: center;

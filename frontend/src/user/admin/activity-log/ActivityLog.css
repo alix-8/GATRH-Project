@@ -272,6 +272,10 @@
     vertical-align: middle;
 }
 
+.admin-activity-history-table tbody tr:nth-child(even) td {
+    background-color: #edf8fc;
+}
+
 .admin-activity-history-table th:nth-child(1) {
     width: 14%;
 }

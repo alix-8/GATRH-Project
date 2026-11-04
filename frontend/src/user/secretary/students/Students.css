@@ -333,6 +333,10 @@
     padding: 2px 20px;
 }
 
+.students-table tbody tr:nth-child(even) td {
+    background-color: #edf8fc;
+}
+
 .student-name-cell {
     display: inline-block;
     text-align: left;
@@ -391,7 +395,7 @@
 
 .escalation-bars {
     align-items: center;
-    border: 1px solid #d9e2da;
+    border: 1px solid #9e9e9e;
     border-radius: 999px;
     display: inline-flex;
     gap: 3px;
@@ -841,6 +845,10 @@
     padding: 9px 7px;
 }
 
+.overview-history tbody tr:nth-child(even) td {
+    background-color: #edf8fc;
+}
+
 .overview-state {
     color: #718096;
     font-size: 12px;
@@ -986,7 +994,7 @@
         padding: 0;
     }
 
-    .filter-section > div,
+    .filter-section>div,
     .filter-section-row,
     .search-students-container {
         width: 100%;
@@ -1048,7 +1056,7 @@
 }
 
 @media (min-width: 1800px) and (min-height: 900px) {
-    .students > .sidebar {
+    .students>.sidebar {
         width: clamp(240px, 12vw, 360px);
         flex: 0 0 clamp(240px, 12vw, 360px);
         padding: 28px clamp(16px, 1vw, 28px);
@@ -1106,7 +1114,7 @@
         padding: 0;
     }
 
-    .filter-section > div,
+    .filter-section>div,
     .filter-section-row,
     .search-students-container {
         width: 100%;
