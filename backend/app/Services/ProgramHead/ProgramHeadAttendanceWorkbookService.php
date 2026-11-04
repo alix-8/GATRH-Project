@@ -409,7 +409,7 @@ class ProgramHeadAttendanceWorkbookService
 
         foreach ($records as $record) {
             $rowNumber = count($rows) + 1;
-            $present = $record->status === 'present';
+            $present = in_array($record->status, ['present', 'excused'], true);
             $style = $present ? $this->attendanceStyle($record) : 7;
             $student = $record->student;
             $escalationLevel = $student?->escalation?->escalation_level ?? 'None';
@@ -622,3 +622,4 @@ class ProgramHeadAttendanceWorkbookService
             . '</styleSheet>';
     }
 }
+
