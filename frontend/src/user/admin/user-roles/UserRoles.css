@@ -14,12 +14,12 @@
 }
 
 .user-roles-header .header-title h3 {
-    font-size: 20px; 
+    font-size: 20px;
 }
 
 .user-roles-header .header-title p {
-    color: #77839a; 
-    font-size: 13px; 
+    color: #77839a;
+    font-size: 13px;
 }
 
 .user-roles-content {
@@ -184,9 +184,17 @@
     flex: 0 0 auto;
 }
 
-.user-roles-select.role { width: 140px; }
-.user-roles-select.program { width: 168px; }
-.user-roles-select.status { width: 147px; }
+.user-roles-select.role {
+    width: 140px;
+}
+
+.user-roles-select.program {
+    width: 168px;
+}
+
+.user-roles-select.status {
+    width: 147px;
+}
 
 .user-roles-select .admin-modal-select {
     position: relative;
@@ -352,12 +360,29 @@
     border-bottom: 0;
 }
 
-.user-roles-table th:nth-child(1) { width: 18%; }
-.user-roles-table th:nth-child(2) { width: 26%; }
-.user-roles-table th:nth-child(3) { width: 18%; }
-.user-roles-table th:nth-child(4) { width: 18%; }
-.user-roles-table th:nth-child(5) { width: 17%; }
-.user-roles-table th:nth-child(6) { width: 11%; }
+.user-roles-table th:nth-child(1) {
+    width: 18%;
+}
+
+.user-roles-table th:nth-child(2) {
+    width: 26%;
+}
+
+.user-roles-table th:nth-child(3) {
+    width: 18%;
+}
+
+.user-roles-table th:nth-child(4) {
+    width: 18%;
+}
+
+.user-roles-table th:nth-child(5) {
+    width: 17%;
+}
+
+.user-roles-table th:nth-child(6) {
+    width: 11%;
+}
 
 .user-roles-table th:nth-child(3),
 .user-roles-table th:nth-child(4),
@@ -395,12 +420,29 @@
     font-size: 10px;
 }
 
-.user-roles-avatar.blue { background: #1c9ff3; }
-.user-roles-avatar.pink { background: #cd64ea; }
-.user-roles-avatar.orange { background: #f28a30; }
-.user-roles-avatar.yellow { background: #e9bc46; }
-.user-roles-avatar.slate { background: #687d9e; }
-.user-roles-avatar.purple { background: #8c68ca; }
+.user-roles-avatar.blue {
+    background: #1c9ff3;
+}
+
+.user-roles-avatar.pink {
+    background: #cd64ea;
+}
+
+.user-roles-avatar.orange {
+    background: #f28a30;
+}
+
+.user-roles-avatar.yellow {
+    background: #e9bc46;
+}
+
+.user-roles-avatar.slate {
+    background: #687d9e;
+}
+
+.user-roles-avatar.purple {
+    background: #8c68ca;
+}
 
 .user-roles-email {
     overflow: hidden;
@@ -492,4 +534,34 @@
 
 .user-roles-edit-button:hover {
     background: #eef8ff;
+}
+
+@media (min-width: 901px) and (max-width: 1150px) {
+    .user-role-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1050px) {
+    .user-roles-filter-bar {
+        flex-wrap: wrap;
+    }
+
+    .user-roles-filter-controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        gap: 8px;
+    }
+
+    .user-roles-select.role,
+    .user-roles-select.program,
+    .user-roles-select.status,
+    .user-roles-search {
+        width: 100%;
+    }
+
+    .user-roles-add-button {
+        margin-left: auto;
+    }
 }

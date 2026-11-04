@@ -5,10 +5,11 @@ import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
 import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
 import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg'
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
-import { request } from '../../../api/request'
+import { API_BASE_URL, request } from '../../../api/request'
 import backendPercentage from '../../../utils/backendPercentage'
 import RecordDate from '../../../components/RecordDate'
 import MonitoringDetailSkeleton from './skeleton/MonitoringDetailSkeleton'
+import SubmissionDrawer from '../../program-head/submissions/SubmissionDrawer'
 import './Monitoring.css'
 
 const PROGRAM_DISPLAY_NAMES = {
@@ -70,7 +71,6 @@ function getRecordRemark(entry) {
 export default function MonitoringCourseDetailModal({ course: activeCourse, weeks, month, onClose: closeCourseDetails }) {
     const [selectedDetailWeek, setSelectedDetailWeek] = useState(activeCourse.initialWeek ?? weeks[0]?.number ?? null)
     const [activeIncompleteEntry, setActiveIncompleteEntry] = useState(null)
-    const [activeNoResponseEntry, setActiveNoResponseEntry] = useState(null)
     const [highlightedGatheringType, setHighlightedGatheringType] = useState(activeCourse.initialGatheringType ?? null)
     const [courseDetails, setCourseDetails] = useState(null)
     const [detailFailure, setDetailFailure] = useState(null)
@@ -112,11 +112,11 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
 
     useEffect(() => {
         const closeOnEscape = (event) => {
-            if (event.key === 'Escape') closeCourseDetails()
+            if (event.key === 'Escape' && !activeIncompleteEntry) closeCourseDetails()
         }
         document.addEventListener('keydown', closeOnEscape)
         return () => document.removeEventListener('keydown', closeOnEscape)
-    }, [closeCourseDetails])
+    }, [activeIncompleteEntry, closeCourseDetails])
 
     useEffect(() => {
         if (!highlightedGatheringType || !currentDetails) return undefined
@@ -131,6 +131,33 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
     }, [highlightedGatheringType, currentDetails])
 
     const selectedWeek = weeks.find((item) => item.number === detailWeek)
+    const exportIncompleteEntry = async () => {
+        const params = new URLSearchParams({
+            year: String(month.year),
+            month: String(month.month),
+            week: String(detailWeek),
+            gathering_type: activeIncompleteEntry.gathering_type,
+        })
+        const response = await fetch(
+            `${API_BASE_URL}/monitoring/courses/${encodeURIComponent(activeCourse.program)}/${activeCourse.year_level}/export?${params}`,
+            { credentials: 'include', headers: { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } }
+        )
+        if (!response.ok) {
+            const result = await response.json().catch(() => ({}))
+            throw new Error(result.message || 'Could not export the attendance record.')
+        }
+
+        const url = URL.createObjectURL(await response.blob())
+        const link = document.createElement('a')
+        const disposition = response.headers.get('Content-Disposition') || ''
+        link.href = url
+        link.download = disposition.match(/filename="?([^";]+)"?/i)?.[1]
+            || `${activeCourse.program}-${activeCourse.year_level}-${activeIncompleteEntry.gathering_type}.xlsx`
+        document.body.append(link)
+        link.click()
+        link.remove()
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    }
     const weekTabs = (
         <div className="monitoring-detail-week-tabs" aria-label="Select reporting week">
             {weeks.map((item) => (
@@ -142,7 +169,6 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                     onClick={() => {
                         setSelectedDetailWeek(item.number)
                         setActiveIncompleteEntry(null)
-                        setActiveNoResponseEntry(null)
                         setHighlightedGatheringType(null)
                     }}
                 >
@@ -151,14 +177,28 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
             ))}
         </div>
     )
-    const noResponseEntries = currentDetails?.week_details?.filter(
-        (entry) => entry.status === 'no_report' && entry.has_attendance
-    ) || []
-
     return (
                 <div className="monitoring-detail-backdrop" onMouseDown={(event) => {
                     if (event.target === event.currentTarget) closeCourseDetails()
                 }}>
+                    {activeIncompleteEntry?.record_details ? (
+                        <SubmissionDrawer
+                            key={`${detailKey}-${activeIncompleteEntry.gathering_type}`}
+                            submission={{
+                                id: `${detailKey}-${activeIncompleteEntry.gathering_type}`,
+                                status: activeIncompleteEntry.record_state === 'approved' ? 'approved' : 'details',
+                                gathering: activeIncompleteEntry.gathering,
+                                program: activeCourse.program,
+                                year_level: activeCourse.year_level,
+                                year_label: `${activeCourse.year_level}${{ 1: 'st', 2: 'nd', 3: 'rd' }[activeCourse.year_level] || 'th'} Year`,
+                            }}
+                            detailOverride={activeIncompleteEntry.record_details}
+                            readOnly
+                            embedded
+                            onClose={() => setActiveIncompleteEntry(null)}
+                            onExport={exportIncompleteEntry}
+                        />
+                    ) : (
                     <section
                         className="monitoring-detail-panel"
                         role="dialog"
@@ -295,7 +335,6 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                         </h4>
                                         {currentDetails.incomplete_entries.map((entry) => {
                                                 const entryKey = entry.gathering_type
-                                                const isOpen = activeIncompleteEntry === entryKey
                                                 return (
                                                     <article key={entryKey}>
                                                         <div>
@@ -304,67 +343,20 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                                                         </div>
                                                         <button
                                                             type="button"
-                                                            aria-expanded={isOpen}
-                                                            onClick={() => setActiveIncompleteEntry(isOpen ? null : entryKey)}
+                                                            aria-label={`View ${entry.gathering} record details`}
+                                                            disabled={!entry.record_details}
+                                                            onClick={() => setActiveIncompleteEntry(entry)}
                                                         >
-                                                            {isOpen ? 'Hide' : 'View'}
+                                                            View
                                                             <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
                                                                 <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                             </svg>
                                                         </button>
-                                                        {isOpen && (
-                                                            <ul>
-                                                                {entry.missing_students.map((student) => (
-                                                                    <li key={student.id}>{student.name}</li>
-                                                                ))}
-                                                            </ul>
-                                                        )}
                                                     </article>
                                                 )
                                             })}
                                     </div>}
 
-                                    {noResponseEntries.length > 0 && (
-                                        <div className="monitoring-incomplete-details monitoring-no-response-details">
-                                            <h4>
-                                                <span className="monitoring-incomplete-icon" aria-hidden="true">
-                                                    <img src={RecordedNoResponseIcon} alt="" />
-                                                </span>
-                                                No Response Details
-                                            </h4>
-                                            {noResponseEntries.map((entry) => {
-                                                const entryKey = entry.gathering_type
-                                                const isOpen = activeNoResponseEntry === entryKey
-                                                const studentsWithoutResponse = entry.missing_students || []
-
-                                                return (
-                                                    <article key={entryKey}>
-                                                        <div>
-                                                            <strong>{entry.gathering} - {currentDetails.week.label}</strong>
-                                                            <small>{studentsWithoutResponse.length} students did not respond</small>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            aria-expanded={isOpen}
-                                                            onClick={() => setActiveNoResponseEntry(isOpen ? null : entryKey)}
-                                                        >
-                                                            {isOpen ? 'Hide' : 'View'}
-                                                            <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                                                <path d="m4 2 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                            </svg>
-                                                        </button>
-                                                        {isOpen && (
-                                                            <ul>
-                                                                {studentsWithoutResponse.map((student) => (
-                                                                    <li key={student.id}>{student.name}</li>
-                                                                ))}
-                                                            </ul>
-                                                        )}
-                                                    </article>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
                                 </section>
                             </div>
                         )}
@@ -372,6 +364,7 @@ export default function MonitoringCourseDetailModal({ course: activeCourse, week
                             Close
                         </button>
                     </section>
+                    )}
                 </div>
     )
 }

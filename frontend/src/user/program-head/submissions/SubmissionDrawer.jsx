@@ -17,24 +17,24 @@ import VenueLabel from '../../../components/VenueLabel'
 import SearchPill from '../../../components/search/SearchPill'
 import './SubmissionDrawer.css'
 
-export default function SubmissionDrawer({ submission, onClose, onUpdated, onExport }) {
-    const [detail, setDetail] = useState(null)
-    const [loading, setLoading] = useState(true)
+export default function SubmissionDrawer({ submission, onClose, onUpdated, onExport, detailOverride = null, readOnly = false, embedded = false }) {
+    const [fetchedDetail, setFetchedDetail] = useState(null)
+    const [loading, setLoading] = useState(!detailOverride)
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState('')
     const [search, setSearch] = useState('')
     const [status, setStatus] = useState('all')
+    const detail = detailOverride ?? fetchedDetail
+    const isRecordView = readOnly || submission.status === 'approved'
 
     useEffect(() => {
+        if (detailOverride) return undefined
         const controller = new AbortController()
-
-        setLoading(true)
-        setError('')
 
         request(`/attendance/review/${encodeURIComponent(submission.id)}`, {
             signal: controller.signal,
         })
-            .then((result) => setDetail(result.data))
+            .then((result) => setFetchedDetail(result.data))
             .catch((err) => {
                 if (err.name !== 'AbortError') {
                     setError(err.message)
@@ -47,7 +47,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
             })
 
         return () => controller.abort()
-    }, [submission.id])
+    }, [submission.id, detailOverride])
 
     useEffect(() => {
         const onKeyDown = (event) => {
@@ -67,9 +67,9 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
             const studentName = String(student.student_name ?? '').toLowerCase()
             const matchesSearch = studentName.includes(String(search).toLowerCase())
             const matchesStatus = status === 'all'
-                || (status === 'present'
-                    ? student.status === 'present'
-                    : student.status !== 'present')
+                || (status === 'present' && student.status === 'present')
+                || (status === 'excused' && student.status === 'excused')
+                || (status === 'absent' && !['present', 'excused'].includes(student.status))
 
             return matchesYear && matchesSearch && matchesStatus
         })
@@ -94,6 +94,18 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
         }
     }
 
+    const exportRecord = async () => {
+        setBusy(true)
+        setError('')
+        try {
+            await onExport(submission)
+        } catch (err) {
+            setError(err.message || 'Could not export the attendance record.')
+        } finally {
+            setBusy(false)
+        }
+    }
+
     const renderSubmittedBy = () => {
         const isApproved = submission.status === 'approved'
         const displayedUser = isApproved ? detail.approved_by : detail.submitted_by
@@ -108,16 +120,16 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                 program={isApproved ? displayedUser?.program : submission.program}
             />
             <section>
-                {isApproved && (
+                {isRecordView && (
                     <strong>{detail.gathering || submission.gathering}</strong>
                 )}
-                {isApproved ? (
-                    <span>Approved by: {displayedName}</span>
+                {isRecordView ? (
+                    <span>{isApproved ? 'Approved by' : 'Recorded by'}: {displayedName}</span>
                 ) : (
                     <strong>{displayedName}</strong>
                 )}
 
-                {isApproved ? (
+                {isRecordView ? (
                     <>
                         <small className="ph-record-date-time">
                             <img src={RecordCalendarIcon} alt="" />
@@ -144,13 +156,9 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
         )
     }
 
-    return (
-        <div
-            className="ph-submission-drawer-backdrop"
-            onMouseDown={(event) => event.target === event.currentTarget && onClose()}
-        >
+    const drawer = (
             <section
-                className={`ph-submission-drawer ${submission.status === 'approved' ? 'ph-record-detail' : ''}`}
+                className={`ph-submission-drawer ${isRecordView ? 'ph-record-detail' : ''} ${readOnly && submission.status !== 'approved' ? 'ph-record-detail--monitoring' : ''}`}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="ph-drawer-title"
@@ -159,17 +167,17 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                     <header className="ph-drawer-header">
                         <div>
                             <h2 id="ph-drawer-title">
-                                {submission.status === 'pending'
+                                {isRecordView
+                                    ? 'Record Details'
+                                    : submission.status === 'pending'
                                     ? 'Review Submission'
-                                    : submission.status === 'approved'
-                                        ? 'Record Details'
-                                        : 'Submission Details'}
+                                    : 'Submission Details'}
                             </h2>
                             <p>
                                 {[
                                     detail?.gathering || submission.gathering,
                                     detail?.week_range?.label || submission.week_range?.label || detail?.day || submission.date,
-                                    submission.status === 'approved' ? null : detail?.time,
+                                    isRecordView ? null : detail?.time,
                                 ].filter(Boolean).join(' · ')}
                             </p>
                         </div>
@@ -192,7 +200,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                         Sent to Chancellor &amp; Coordinator
                                     </div>
                                 )}
-                                {submission.status !== 'approved' && (
+                                {!isRecordView && (
                                     <span className="ph-drawer-submitted-label">Submitted by</span>
                                 )}
                                 {renderSubmittedBy()}
@@ -216,8 +224,8 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                 )}
                             </div>
 
-                            <section className={submission.status === 'approved' ? 'ph-record-summary' : undefined}>
-                                {submission.status === 'approved' && <h3>Attendance Summary</h3>}
+                            <section className={isRecordView ? 'ph-record-summary' : undefined}>
+                                {isRecordView && <h3>Attendance Summary</h3>}
                                 <div className="ph-drawer-kpis">
                                     <article>
                                         <i><TotalStudentsIcon /></i>
@@ -238,7 +246,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                             </section>
 
                             <div className="ph-drawer-list-heading">
-                                <h3>{submission.status === 'approved' ? 'Student List' : 'Attendance List'}</h3>
+                                <h3>{isRecordView ? 'Student List' : 'Attendance List'}</h3>
                                 <div className="ph-drawer-controls">
                                     <select
                                         aria-label="Filter students by attendance status"
@@ -247,6 +255,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                     >
                                         <option value="all">All Status</option>
                                         <option value="present">Present</option>
+                                        <option value="excused">Excused</option>
                                         <option value="absent">No response</option>
                                     </select>
                                     <SearchPill
@@ -278,9 +287,9 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                                                 <td><VenueLabel value={student.venue} /></td>
                                                 <td><RecordDay value={student.day || detail.day} status={student.status} /></td>
                                                 <td>
-                                                    <span className={`ph-drawer-attendance-status ${student.status === 'present' ? 'present' : 'no-response'}`}>
+                                                    <span className={`ph-drawer-attendance-status ${['present', 'excused'].includes(student.status) ? 'present' : 'no-response'}`}>
                                                         <i />
-                                                        {student.status === 'present' ? 'Present' : 'No response'}
+                                                        {student.status === 'present' ? 'Present' : student.status === 'excused' ? 'Excused' : 'No response'}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -300,7 +309,10 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                 </div>
 
                 <footer className="ph-drawer-footer">
-                    {submission.status === 'pending' && (
+                    {readOnly && !onExport && (
+                        <button type="button" className="ph-drawer-close" onClick={onClose}>Close</button>
+                    )}
+                    {!readOnly && submission.status === 'pending' && (
                         <>
                             <button
                                 type="button"
@@ -322,17 +334,28 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                         </>
                     )}
 
-                    {submission.status === 'approved' && onExport && (
+                    {isRecordView && onExport && (
                         <button
                             type="button"
                             className="ph-record-detail-export"
-                            onClick={() => onExport(submission)}
+                            disabled={busy}
+                            onClick={exportRecord}
                         >
-                            <img src={ExportIcon} alt="" /> Export
+                            <img src={ExportIcon} alt="" /> {busy ? 'Exporting…' : 'Export'}
                         </button>
                     )}
                 </footer>
             </section>
+    )
+
+    if (embedded) return drawer
+
+    return (
+        <div
+            className="ph-submission-drawer-backdrop"
+            onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+        >
+            {drawer}
         </div>
     )
 }

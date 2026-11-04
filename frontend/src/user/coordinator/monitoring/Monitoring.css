@@ -593,6 +593,7 @@
 }
 
 .monitoring-detail-backdrop {
+    --monitoring-detail-width: 34%;
     overscroll-behavior: contain;
     position: fixed;
     inset: 0;
@@ -606,9 +607,13 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    width: 34%;
+    width: var(--monitoring-detail-width);
     background: #ffffff;
     box-shadow: -8px 0 28px rgb(15 23 42 / 14%);
+}
+
+.monitoring-detail-backdrop > .ph-submission-drawer.ph-record-detail {
+    width: var(--monitoring-detail-width);
 }
 
 .monitoring-detail-header {
@@ -905,11 +910,6 @@
     color: #856404;
 }
 
-.monitoring-no-response-details {
-    background: #fff0f0;
-    color: #b4232d;
-}
-
 .monitoring-incomplete-details>h4 {
     display: flex;
     align-items: center;
@@ -933,10 +933,6 @@
 .monitoring-incomplete-icon img {
     width: 19px;
     height: 19px;
-}
-
-.monitoring-no-response-details .monitoring-incomplete-icon {
-    background: #fd7c7c;
 }
 
 .monitoring-incomplete-details>p {
@@ -996,33 +992,13 @@
     flex: 0 0 10px;
 }
 
-.monitoring-incomplete-details article button[aria-expanded="true"] svg {
-    transform: rotate(90deg);
-}
-
 .monitoring-incomplete-details article button:hover {
     background: #087fc9;
 }
 
-.monitoring-no-response-details article button {
-    background: #d94343;
-    color: #ffffff;
-}
-
-.monitoring-no-response-details article button:hover {
-    background: #b4232d;
-}
-
-.monitoring-incomplete-details article ul {
-    grid-column: 1 / -1;
-    max-height: 120px;
-    overflow-y: auto;
-    margin: 4px 0 0;
-    padding: 8px 8px 8px 24px;
-    border-radius: 5px;
-    background: #ffffff;
-    color: #475467;
-    font-size: 10px;
+.monitoring-incomplete-details article button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .monitoring-detail-close {
@@ -1040,4 +1016,43 @@
 
 .monitoring-detail-close:hover {
     background: #f1f9ff;
+}
+
+@media (min-width: 901px) and (max-width: 1150px) {
+    .coordinator-dashboard {
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .coordinator-dashboard-main {
+        height: 100vh;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .monitoring-content {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .monitoring-table-scroll {
+        max-width: 100%;
+        padding-inline: 0;
+    }
+
+    .monitoring-program-toggle {
+        position: sticky;
+        left: 0;
+        width: 280px;
+        z-index: 2;
+    }
+
+    .monitoring-status-legend {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #ffffff;
+    }
 }

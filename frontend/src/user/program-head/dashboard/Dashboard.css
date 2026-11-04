@@ -398,7 +398,7 @@
     cursor: pointer;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 1150px) {
     .ph-metrics {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -406,7 +406,9 @@
     .ph-metrics-program-secretary {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
 
+@media (max-width: 700px) {
     .ph-submission-table {
         min-width: 720px;
     }

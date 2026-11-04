@@ -438,6 +438,10 @@
     background: #f1f4f9;
 }
 
+.ph-record-detail--monitoring .ph-drawer-submitted-card {
+    padding-top: 14px;
+}
+
 .ph-record-approved-banner {
     display: flex;
     min-height: 38px;

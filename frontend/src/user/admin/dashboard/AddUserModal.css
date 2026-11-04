@@ -12,6 +12,12 @@
     text-align: left;
 }
 
+@media (min-width: 901px) and (max-width: 1150px) {
+    .admin-add-user-modal {
+        width: min(430px, calc(100vw - 40px));
+    }
+}
+
 .admin-add-user-modal::backdrop {
     background: rgba(6, 14, 27, .64);
 }
@@ -112,7 +118,7 @@
     border-radius: 4px;
 }
 
-.admin-add-user-note > span {
+.admin-add-user-note>span {
     display: grid;
     width: 15px;
     height: 15px;
@@ -142,7 +148,7 @@
     background: #fff9e8;
 }
 
-.admin-add-user-note.warning > span {
+.admin-add-user-note.warning>span {
     background: #f1c74b;
 }
 
@@ -152,7 +158,7 @@
     background: #e8f6ff;
 }
 
-.admin-add-user-note.permissions > span {
+.admin-add-user-note.permissions>span {
     background: #159ff2;
 }
 
@@ -162,7 +168,7 @@
     font-weight: 600;
 }
 
-.admin-add-user-status > div {
+.admin-add-user-status>div {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -197,7 +203,7 @@
     background: #189ff4;
 }
 
-.admin-add-user-switch > span {
+.admin-add-user-switch>span {
     display: block;
     width: 22px;
     height: 22px;

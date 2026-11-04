@@ -9,6 +9,7 @@
 .ph-submissions-main {
     flex: 1;
     min-width: 0;
+    overflow-x: hidden;
     overflow-y: auto;
     background: #fff;
 }
@@ -30,6 +31,8 @@
 
 .ph-submissions-content {
     display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
     padding: 14px 15px 20px;
 }
@@ -96,7 +99,7 @@
 }
 
 .ph-pending-banner h2 {
-    text-align: left;    
+    text-align: left;
 }
 
 .ph-pending-count {
@@ -126,6 +129,7 @@
 }
 
 .ph-submissions-table-panel {
+    min-width: 0;
     overflow: hidden;
     border: 1px solid #dedede;
     border-radius: 7px;
@@ -133,6 +137,8 @@
 }
 
 .ph-submissions-table-scroll {
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
 }
 
@@ -238,4 +244,34 @@
 
 .ph-submissions-error {
     color: #b42318;
+}
+
+@media (max-width: 1150px) {
+    .ph-submission-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ph-submission-filters .ph-search-control {
+        grid-column: 1 / -1;
+    }
+
+    .ph-submissions-table {
+        table-layout: fixed;
+    }
+
+    .ph-submissions-table th,
+    .ph-submissions-table td {
+        overflow: hidden;
+        padding-inline: 6px;
+        text-overflow: ellipsis;
+        font-size: 12px;
+    }
+
+    .ph-submissions-table th:nth-child(1) { width: 20%; }
+    .ph-submissions-table th:nth-child(2) { width: 18%; }
+    .ph-submissions-table th:nth-child(3) { width: 10%; }
+    .ph-submissions-table th:nth-child(4) { width: 11%; }
+    .ph-submissions-table th:nth-child(5) { width: 15%; }
+    .ph-submissions-table th:nth-child(6) { width: 13%; }
+    .ph-submissions-table th:nth-child(7) { width: 13%; }
 }
