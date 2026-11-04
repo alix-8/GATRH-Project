@@ -187,6 +187,8 @@ Route::middleware(['auth:sanctum', ApplySystemTimezone::class])->group(function 
     Route::middleware('role:cm_coordinator,chancellor')->group(function () {
         Route::get('/monitoring/courses/{program}/{yearLevel}', [CmCoordinatorMonitoringController::class, 'showCourse'])
             ->where(['program' => '[A-Za-z0-9_-]+', 'yearLevel' => '[0-9]+']);
+        Route::get('/monitoring/courses/{program}/{yearLevel}/export', [CmCoordinatorMonitoringController::class, 'exportIncompleteEntry'])
+            ->where(['program' => '[A-Za-z0-9_-]+', 'yearLevel' => '[0-9]+']);
         Route::get('/reports/summary', [AttendanceController::class, 'summaryReport']);
     });
 });

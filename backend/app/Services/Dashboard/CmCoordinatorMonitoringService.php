@@ -176,7 +176,7 @@ class CmCoordinatorMonitoringService
             ->value('name');
 
         $records = AttendanceRecord::query()
-            ->with(['submitter:id,name', 'validator:id,name'])
+            ->with(['submitter:id,name', 'validator:id,name,program'])
             ->whereIn('student_id', $roster->pluck('id'))
             ->whereIn('gathering_type', self::GATHERING_TYPES)
             ->inReportingRange([$rangeStart, $rangeEnd])
@@ -212,24 +212,15 @@ class CmCoordinatorMonitoringService
                     ->filter(fn ($record) => in_array($record->status ?? 'no_response', ['present', 'excused'], true))
                     ->pluck('student_id')
                     ->unique();
-                $missingStudents = $roster
-                    ->filter(fn (Student $student) => in_array((int) $student->id, $eligibleIds, true))
-                    ->reject(fn (Student $student) => $respondedStudentIds->contains($student->id))
-                    ->map(fn (Student $student) => [
-                        'id' => $student->id,
-                        'name' => $student->name,
-                    ])->values();
-
-                $noResponseIds = $eventRecords
-                    ->where('status', 'no_response')
-                    ->pluck('student_id')
-                    ->unique()
-                    ->reject(fn ($id) => $respondedStudentIds->contains($id));
-                $noResponseStudents = $roster
-                    ->filter(fn (Student $student) => in_array((int) $student->id, $eligibleIds, true)
-                        && $noResponseIds->contains($student->id))
-                    ->map(fn (Student $student) => ['id' => $student->id, 'name' => $student->name])
-                    ->values();
+                $missingStudents = $summary['status'] === 'incomplete'
+                    ? $roster
+                        ->filter(fn (Student $student) => in_array((int) $student->id, $eligibleIds, true))
+                        ->reject(fn (Student $student) => $respondedStudentIds->contains($student->id))
+                        ->map(fn (Student $student) => [
+                            'id' => $student->id,
+                            'name' => $student->name,
+                        ])->values()
+                    : collect();
 
                 $submittedRecords = $eventRecords->reject(fn ($record) => ($record->record_source ?? null) === 'draft');
                 $draftRecords = $eventRecords->filter(fn ($record) => ($record->record_source ?? null) === 'draft');
@@ -251,6 +242,50 @@ class CmCoordinatorMonitoringService
                     default => ['not_recorded', $secretaryName],
                 };
 
+                $recordDetails = null;
+                if ($summary['status'] === 'incomplete') {
+                    $studentRows = $roster
+                        ->filter(fn (Student $student) => in_array((int) $student->id, $eligibleIds, true))
+                        ->map(function (Student $student) use ($eventRecords) {
+                            $studentRecords = $eventRecords->where('student_id', $student->id);
+                            $record = $studentRecords
+                                ->filter(fn ($row) => in_array($row->status, ['present', 'excused'], true))
+                                ->last() ?? $studentRecords->last();
+
+                            return [
+                                'student_id' => $student->id,
+                                'student_name' => $student->name,
+                                'year_level' => $student->year_level,
+                                'status' => $record->status ?? 'no_response',
+                                'day' => $record?->day?->toDateString(),
+                                'batch' => filled($record->batch ?? null)
+                                    ? Carbon::parse($record->batch)->format('g:ia') : '---',
+                                'venue' => $record->venue ?? '---',
+                            ];
+                        })->values();
+                    $recordDetails = [
+                        'gathering' => self::GATHERING_LABELS[$type] ?? ucfirst($type),
+                        'day' => $dates[0] ?? null,
+                        'submission_date' => $latestSubmission?->created_at?->format('F j, Y'),
+                        'time' => $latestSubmission?->created_at?->format('g:i A'),
+                        'week_range' => [
+                            'label' => GatheringCycle::formatRangeLabel(
+                                Carbon::parse($gatheringRange['start']), Carbon::parse($gatheringRange['end'])
+                            ),
+                        ],
+                        'submitted_by' => ['name' => $latestSubmission?->submitter?->name
+                            ?? $latestDraft?->recorded_by ?? $secretaryName ?? 'Unknown'],
+                        'approved_by' => $latestApproval?->validator ? [
+                            'name' => $latestApproval->validator->name,
+                            'program' => $latestApproval->validator->program,
+                        ] : null,
+                        'total_students' => $summary['total_students'],
+                        'responded_count' => $summary['responded_students'],
+                        'no_response_count' => $summary['total_students'] - $summary['responded_students'],
+                        'students' => $studentRows,
+                    ];
+                }
+
                 return [
                     'gathering_type' => $type,
                     'gathering' => self::GATHERING_LABELS[$type] ?? ucfirst($type),
@@ -265,7 +300,7 @@ class CmCoordinatorMonitoringService
                     'total_students' => $summary['total_students'],
                     'remarks' => $summary['responded_students'] . '/' . $summary['total_students'],
                     'missing_students' => $missingStudents,
-                    'no_response_students' => $noResponseStudents,
+                    'record_details' => $recordDetails,
                 ];
             })
             ->sortBy(fn (array $entry) => ($entry['date'] ?? '9999-12-31') . '|' . $entry['gathering_type'])
@@ -502,3 +537,5 @@ class CmCoordinatorMonitoringService
         return $weeks;
     }
 }
+
+

@@ -249,7 +249,7 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertSame(0, \App\Models\AttendanceDraft::count());
     }
 
-    public function test_coordinator_no_response_details_list_recorded_students_without_missing_or_responded_students(): void
+    public function test_coordinator_incomplete_details_keep_missing_students_without_a_no_response_list(): void
     {
         $this->program('BSIS');
         $responded = $this->student('Responded');
@@ -262,16 +262,43 @@ class InactiveRosterVisibilityTest extends TestCase
         $details = app(CmCoordinatorMonitoringService::class)->getCourseDetails('BSIS', 1, ['year' => 2026, 'month' => 10, 'week' => 4]);
         $pm = collect($details['week_details'])->firstWhere('gathering_type', 'pm');
         $ws = collect($details['week_details'])->firstWhere('gathering_type', 'ws');
-        $this->assertSame([$noResponse->id], $pm['no_response_students']->pluck('id')->all());
+        $this->assertSame('incomplete', $pm['status']);
+        $this->assertArrayNotHasKey('no_response_students', $pm);
+        $this->assertContains($noResponse->id, $pm['missing_students']->pluck('id')->all());
         $this->assertContains($missing->id, $pm['missing_students']->pluck('id')->all());
-        $this->assertSame([], $ws['no_response_students']->all());
+        $this->assertArrayNotHasKey('no_response_students', $ws);
+
+        $recordDetails = $pm['record_details'];
+        $this->assertSame(3, $recordDetails['total_students']);
+        $this->assertSame(1, $recordDetails['responded_count']);
+        $this->assertSame(2, $recordDetails['no_response_count']);
+        $this->assertSame('present', $recordDetails['students']->firstWhere('student_id', $responded->id)['status']);
+        $this->assertSame('no_response', $recordDetails['students']->firstWhere('student_id', $noResponse->id)['status']);
+        $this->assertSame('no_response', $recordDetails['students']->firstWhere('student_id', $missing->id)['status']);
+
+        foreach (['cm_coordinator', 'chancellor'] as $role) {
+            $viewer = new User(['role' => $role]);
+            $viewer->id = 1;
+            $this->actingAs($viewer)->getJson('/api/monitoring/courses/BSIS/1?year=2026&month=10&week=4')
+                ->assertOk()
+                ->assertJsonPath('incomplete_entries.0.record_details.total_students', 3)
+                ->assertJsonPath('incomplete_entries.0.record_details.responded_count', 1);
+            $this->actingAs($viewer)->get('/api/monitoring/courses/BSIS/1/export?year=2026&month=10&week=4&gathering_type=pm')
+                ->assertOk()
+                ->assertDownload()
+                ->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        }
+
+        $this->actingAs(new User(['role' => 'secretary']))
+            ->get('/api/monitoring/courses/BSIS/1/export?year=2026&month=10&week=4&gathering_type=pm')
+            ->assertForbidden();
     }
 
-    public function test_coordinator_no_response_gathering_exposes_every_student_without_a_response(): void
+    public function test_coordinator_no_response_gathering_omits_student_details(): void
     {
         $this->program('BSIS');
         $recordedNoResponse = $this->student('Recorded no response');
-        $withoutAttendanceRow = $this->student('No attendance row');
+        $this->student('No attendance row');
         AttendanceRecord::create([
             'student_id' => $recordedNoResponse->id,
             'gathering_type' => 'pm',
@@ -289,10 +316,14 @@ class InactiveRosterVisibilityTest extends TestCase
 
         $this->assertSame('no_report', $pm['status']);
         $this->assertTrue($pm['has_attendance']);
-        $this->assertEqualsCanonicalizing(
-            [$recordedNoResponse->id, $withoutAttendanceRow->id],
-            $pm['missing_students']->pluck('id')->all()
-        );
+        $this->assertSame([], $pm['missing_students']->all());
+        $this->assertArrayNotHasKey('no_response_students', $pm);
+        $this->assertNull($pm['record_details']);
+        $viewer = new User(['role' => 'chancellor']);
+        $viewer->id = 1;
+        $this->actingAs($viewer)
+            ->get('/api/monitoring/courses/BSIS/1/export?year=2026&month=10&week=4&gathering_type=pm')
+            ->assertNotFound();
     }
 
     public function test_coordinator_gathering_rows_expose_their_own_record_state_and_owner(): void
@@ -621,4 +652,3 @@ class InactiveRosterVisibilityTest extends TestCase
         $this->assertDatabaseCount('students', 0);
     }
 }
-
