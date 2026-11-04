@@ -10,6 +10,9 @@ import AttendanceConverterIcon from '../../assets/icons/attendance-converter-ico
 import RecordManagementIcon from '../../assets/icons/record-management.svg'
 import ReportSubmissionIcon from '../../assets/icons/report-submission-icon.svg'
 import DropDownIcon from '../../assets/icons/drop-down-icon.svg'
+import HomeAttendanceIcon from '../../assets/icons/home-attendance-icon.svg'
+import HomeReportsIcon from '../../assets/icons/home-reports-icon.svg'
+import HomeFollowUpsIcon from '../../assets/icons/home-follow-ups-icon.svg'
 import './Login.css'
 import { prepareLoginSkeleton } from '../../utils/loginSkeletonState'
 
@@ -342,6 +345,31 @@ function Login({ initialEmail = '' }) {
                 <div className="login-panel-content"
                     aria-live="polite"
                 >
+                    {activeNav === 'home' && (
+                        <section className="panel-content home-panel" aria-labelledby="home-title">
+                            <div className="home-introduction">
+                                <h2 id="home-title" className="home-headline">
+                                    <span>Track Attendance.</span>
+                                    <span>Stay Informed.</span>
+                                </h2>
+                                <p className="home-description">
+                                    Monitor student participation, organize
+                                    <br/>
+                                    spiritual reports, and provide timely,
+                                    compassionate support—all in one place.
+                                </p>
+                                <button className="home-how-link" type="button" onClick={() => setActiveNav('how-it-works')}>
+                                    See how GATRH works <span aria-hidden="true">→</span>
+                                </button>
+                            </div>
+                            <div className="home-feature-divider" aria-hidden="true" />
+                            <ul className="home-feature-list" aria-label="GATRH highlights">
+                                <li><img src={HomeAttendanceIcon} alt="" /><span>Attendance</span></li>
+                                <li><img src={HomeReportsIcon} alt="" /><span>Reports</span></li>
+                                <li><img src={HomeFollowUpsIcon} alt="" /><span>Follow-ups</span></li>
+                            </ul>
+                        </section>
+                    )}
 
                     {activeNav === 'features' && (
                         <section
