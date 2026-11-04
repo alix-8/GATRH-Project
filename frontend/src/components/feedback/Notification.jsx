@@ -6,7 +6,7 @@ import MyReminderIcon from '../../assets/icons/my-reminder-icon.svg'
 import EscalationsIcon from '../../assets/icons/escalations-icon.svg'
 import { request } from '../../api/request'
 import RecordDate from '../RecordDate'
-import { getSeenNotificationIds, markNotificationIdsSeen } from './notificationReadState'
+import { dismissNotificationIds, getDismissedNotificationIds, getSeenNotificationIds, markNotificationIdsSeen } from './notificationReadState'
 import useLiveRefresh from '../../hooks/useLiveRefresh'
 import './Notification.css'
 
@@ -156,7 +156,6 @@ function Notification() {
                         target: '/reminders',
                         targetState: { highlightReminderId: reminder.id },
                         tracksBellDot: true,
-                        clearOnClick: false,
                     }))
 
                 const dueAttendanceItems = (remindersData.data ?? [])
@@ -173,7 +172,6 @@ function Notification() {
                         target: '/reminders',
                         targetState: { highlightDeadlineId: reminder.id },
                         tracksBellDot: true,
-                        clearOnClick: false,
                     }))
 
                 const attendanceItems = (attendanceData.data ?? [])
@@ -195,7 +193,9 @@ function Notification() {
                         }
                     })
 
+                const dismissedIds = getDismissedNotificationIds()
                 const nextItems = [...escalationItems, ...dueAttendanceItems, ...dueMyReminderItems, ...reminderItems, ...attendanceItems]
+                    .filter(item => !dismissedIds.has(item.id))
                 const trackedIds = nextItems.filter(item => item.tracksBellDot).map(item => item.id)
                 trackedNotificationIdsRef.current = trackedIds
                 const seenIds = getSeenNotificationIds()
@@ -262,7 +262,16 @@ function Notification() {
     }
 
     const openTarget = (target, state = null, notificationId = null) => {
-        if (notificationId) markNotificationIdsSeen([notificationId])
+        if (notificationId) {
+            const reminderId = state?.highlightReminderId
+            const ids = reminderId == null
+                ? [notificationId]
+                : [`reminder-${reminderId}`, `my-reminder-due-${reminderId}`]
+
+            markNotificationIdsSeen(ids)
+            dismissNotificationIds(ids)
+            setItems(current => current.filter(item => !ids.includes(item.id)))
+        }
         setIsOpen(false)
         navigate(target, { state })
     }
@@ -299,7 +308,7 @@ function Notification() {
                                 onClick={() => openTarget(
                                     item.target,
                                     item.targetState,
-                                    item.clearOnClick === false ? null : item.id
+                                    item.id
                                 )}
                             >
                                 <span className={`notification-item-icon ${item.iconType}`} aria-hidden="true">
