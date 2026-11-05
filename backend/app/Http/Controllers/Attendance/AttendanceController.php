@@ -1075,7 +1075,7 @@ class AttendanceController extends Controller
             'records'                  => 'required|array|min:1',
             'records.*.student_id'     => 'required|exists:students,id',
             'records.*.gathering_type' => 'required|in:pm,ws,tg',
-            'records.*.day'            => 'required|date_format:Y-m-d|before_or_equal:today',
+            'records.*.day'            => 'required|date_format:Y-m-d|before_or_equal:today'|'max:9',
             'records.*.status'         => 'required|in:present,no_response,excused',
             'records.*.batch'          => 'nullable|string|max:10',
             'records.*.venue'          => 'nullable|string|max:25',

@@ -120,7 +120,7 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                         />
                         <input
                             type="text"
-                            maxLength={10}
+                            maxLength={9}
                             className={`preview-input ${fieldHasFormatError(s.name, 'day', s.slot.day) ? 'preview-input-error' : ''} ${incomplete && !s.slot.day ? 'preview-input-warning' : ''}`}
                             placeholder="Day"
                             value={s.slot.day}

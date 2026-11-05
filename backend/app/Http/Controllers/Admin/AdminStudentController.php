@@ -22,7 +22,7 @@ class AdminStudentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'search' => ['nullable', 'string', 'max:100'],
+            'search' => ['nullable', 'string', 'max:50'],
             'program' => ['nullable', 'string', Rule::exists('programs', 'code')],
             'year_level' => ['nullable', 'string', 'max:20'],
             'status' => ['nullable', Rule::in(['active', 'inactive', 'graduated'])],
@@ -48,7 +48,7 @@ class AdminStudentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:50'],
             'program' => ['required', 'string', Rule::exists('programs', 'code')->where('is_active', true)],
             'year_level' => ['required', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],
@@ -225,7 +225,7 @@ class AdminStudentController extends Controller
     public function update(Request $request, Student $student): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'name' => ['sometimes', 'required', 'string', 'max:50'],
             'program' => ['sometimes', 'required', 'string', Rule::exists('programs', 'code')],
             'year_level' => ['sometimes', 'required', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],

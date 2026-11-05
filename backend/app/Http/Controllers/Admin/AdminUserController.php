@@ -43,8 +43,8 @@ class AdminUserController extends Controller
             $request->merge(['email' => strtolower(trim($request->input('email')))]);
         }
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['bail', 'required', 'email', 'max:255', new LaVerdadEmail(), 'unique:users,email'],
+            'name' => ['required', 'string', 'max:25'],
+            'email' => ['bail', 'required', 'email', 'max:50', new LaVerdadEmail(), 'unique:users,email'],
             'role' => ['required', Rule::in(User::ROLES)],
             'contact_number' => ['nullable', 'string', 'regex:/^09\d{9}$/'],
             'password' => ['prohibited'],
@@ -85,8 +85,8 @@ class AdminUserController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'name' => ['sometimes', 'required', 'string', 'max:50'],
+            'email' => ['sometimes', 'required', 'email', 'max:50', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => ['sometimes', 'required', Rule::in(User::ROLES)],
             'contact_number' => ['sometimes', 'required', 'string', 'regex:/^09\d{9}$/'],
             'password' => ['sometimes', 'required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
