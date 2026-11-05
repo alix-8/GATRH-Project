@@ -410,7 +410,7 @@
 }
 
 .ph-submission-drawer.ph-record-detail {
-    width: min(412px, 100vw);
+    width: min(100vw, max(450px, 34vw));
     height: 100dvh;
     align-self: stretch;
     margin: 0;
