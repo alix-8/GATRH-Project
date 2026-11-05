@@ -34,6 +34,8 @@ function ActivityDetails({ activity, onClose }) {
                 <div><dt>Affected Record</dt><dd>{activity.affected_record}</dd></div>
                 <div><dt>Performed By</dt><dd>Administrator{activity.performed_by_email ? ` · ${activity.performed_by_email}` : ` · ${activity.performed_by}`}</dd></div>
                 <div><dt>Result</dt><dd className={activity.result === 'Failed' ? 'admin-activity-history-failure' : 'admin-activity-history-success'}>{activity.result}</dd></div>
+                {activity.changes?.length > 0 && <div><dt>Changed</dt><dd><ul className="admin-activity-history-changes">{activity.changes.map(change => <li key={change.label}><strong>{change.label}:</strong> {change.from} → {change.to}</li>)}</ul></dd></div>}
+                {activity.changes?.length === 0 && activity.snapshot?.length > 0 && <div><dt>Record Details</dt><dd><ul className="admin-activity-history-snapshot">{activity.snapshot.map(item => <li key={item.label}><strong>{item.label}:</strong> {item.value}</li>)}</ul></dd></div>}
                 {activity.result === 'Failed' && activity.details && <div><dt>Failure Details</dt><dd className="admin-activity-history-failure-detail">{activity.details}</dd></div>}
             </dl>
             <button className="admin-activity-history-done" type="button" onClick={onClose}>Close</button>
