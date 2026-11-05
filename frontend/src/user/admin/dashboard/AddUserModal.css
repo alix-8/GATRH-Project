@@ -100,6 +100,14 @@
     border-color: #d84242;
 }
 
+.admin-add-user-field input:disabled,
+.admin-add-user-field select:disabled {
+    background: #f3f6fa;
+    color: #64748b;
+    cursor: not-allowed;
+    border-color: #d6dce7;
+}
+
 .admin-add-user-field-error {
     display: block;
     margin-top: 4px;
@@ -228,6 +236,12 @@
 .admin-add-user-submit:disabled {
     opacity: .65;
     cursor: wait;
+}
+
+.admin-add-user-helper-note {
+    margin: 0 0 9px;
+    font-size: 11px;
+    color: #64748b;
 }
 
 .admin-add-user-submit-error {

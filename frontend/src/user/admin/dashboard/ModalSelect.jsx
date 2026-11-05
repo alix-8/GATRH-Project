@@ -1,19 +1,25 @@
 import { useState } from 'react'
 import './ModalSelect.css'
 
-function ModalSelect({ children, onChange, onBlur, onKeyDown, onPointerDown, ...props }) {
+function ModalSelect({ children, onChange, onBlur, onKeyDown, onPointerDown, disabled, ...props }) {
     const [isOpen, setIsOpen] = useState(false)
 
     function handleKeyDown(event) {
+        if (disabled) return
         if (event.key === 'Escape' || event.key === 'Tab' || event.key === 'Enter') setIsOpen(false)
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === ' ') setIsOpen(true)
         onKeyDown?.(event)
     }
 
-    return <div className={`admin-modal-select${isOpen ? ' is-open' : ''}`}>
+    return <div className={`admin-modal-select${isOpen && !disabled ? ' is-open' : ''}${disabled ? ' is-disabled' : ''}`}>
         <select
             {...props}
-            onPointerDown={event => { setIsOpen(current => !current); onPointerDown?.(event) }}
+            disabled={disabled}
+            onPointerDown={event => {
+                if (disabled) return
+                setIsOpen(current => !current)
+                onPointerDown?.(event)
+            }}
             onKeyDown={handleKeyDown}
             onChange={event => { setIsOpen(false); onChange?.(event) }}
             onBlur={event => { setIsOpen(false); onBlur?.(event) }}

@@ -25,3 +25,15 @@
 .admin-modal-select.is-open .admin-modal-select-chevron {
     transform: translateY(-50%) rotate(180deg);
 }
+
+.admin-modal-select.is-disabled {
+    cursor: not-allowed;
+}
+
+.admin-modal-select.is-disabled select {
+    cursor: not-allowed;
+}
+
+.admin-modal-select.is-disabled .admin-modal-select-chevron {
+    opacity: 0.35;
+}
