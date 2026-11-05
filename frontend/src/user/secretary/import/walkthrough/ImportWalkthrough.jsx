@@ -100,7 +100,7 @@ export default function ImportWalkthrough({ modal, isPreviewing, hasText, busy, 
             if (event.target.closest('.import-week-option')) {
                 setManual({
                     context: `null|${isPreviewing}|${hasText}|${gatheringType}`,
-                    step: importWalkthroughStepIndex('week'),
+                    step: importWalkthroughStepIndex('gathering'),
                 })
             }
 

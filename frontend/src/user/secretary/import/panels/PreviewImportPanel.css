@@ -67,6 +67,19 @@
     background: #fff;
 }
 
+.preview-input-field {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.preview-inline-error {
+    margin-top: 3px;
+    color: #b64c4c;
+    font-size: 0.68rem;
+    line-height: 1.2;
+}
+
 .preview-input::placeholder {
     color: #b8c0cc;
 }
@@ -123,6 +136,10 @@
     max-width: none;
     min-width: 0;
     box-sizing: border-box;
+}
+
+.preview-card-single .preview-input-field {
+    width: 100%;
 }
 
 .import-parse-preview-btn {

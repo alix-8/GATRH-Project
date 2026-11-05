@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { attendanceTimeError } from '../../attendance/attendanceEditValidation'
+import { inlineImportError } from './inlineImportError'
 import './PreviewImportPanel.css'
 
 const ENTRY_RE = /^(\d+)[.)]\s*(.+)$/
@@ -46,9 +46,7 @@ function preserveHeader(rawText, serializedStudents) {
     return header ? `${header}\n\n${serializedStudents}` : serializedStudents
 }
 
-const TIME_RE = /^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}\s*(?:AM|PM)?)$/i
-
-export default function PreviewIndividualPanel({ rawText, onChange, errors, gatheringType, onRowsParsed }) {
+export default function PreviewIndividualPanel({ rawText, onChange, errors, gatheringType, gatheringRange, gatheringRangeLabel, onRowsParsed }) {
     const [students, setStudents] = useState([])
 
     useEffect(() => {
@@ -69,20 +67,6 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
         onChange?.(preserveHeader(rawText, serializeStudents(next)))
     }
 
-    const fieldHasFormatError = (studentName, field, value, venue) => {
-        if (field === 'batch' && value && (!TIME_RE.test(value.trim()) || attendanceTimeError(value, gatheringType, venue))) return true
-        const targetField = field === 'batch' ? 'batch' : field
-        return errors?.format_errors?.some(
-            (e) => (e.student_name === studentName || e.raw_line?.includes(studentName)) &&
-                   (!e.gathering_type || e.gathering_type === gatheringType) &&
-                   (e.field === targetField || (e.errors || []).some((err) => err.field === targetField))
-        )
-    }
-
-    const isIncomplete = (studentName) =>
-        errors?.incomplete_records?.some((r) => r.student_name === studentName &&
-            (!r.gathering_type || r.gathering_type === gatheringType))
-
     return (
         <div className="preview-cards">
             <div className="preview-header-row preview-header-row-single">
@@ -94,7 +78,9 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
 
             {students.map((s, i) => {
                 const isUnmatched = errors?.unmatched_lines?.some((u) => u.extracted_name === s.name)
-                const incomplete = isIncomplete(s.name)
+                const timeError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'batch', value: s.slot.batch, venue: s.slot.venue, range: gatheringRange, rangeLabel: gatheringRangeLabel })
+                const venueError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'venue', value: s.slot.venue, venue: s.slot.venue, range: gatheringRange, rangeLabel: gatheringRangeLabel })
+                const dayError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'day', value: s.slot.day, venue: s.slot.venue, range: gatheringRange, rangeLabel: gatheringRangeLabel })
 
                 return (
                     <div key={i} className={`preview-card preview-card-single ${isUnmatched ? 'preview-card-error' : ''}`}>
@@ -103,31 +89,18 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                             <span className="preview-student-name">{s.name}</span>
                         </div>
 
-                        <input
-                            type="text"
-                            maxLength={10}
-                            className={`preview-input ${fieldHasFormatError(s.name, 'batch', s.slot.batch, s.slot.venue) ? 'preview-input-error' : ''} ${incomplete && !s.slot.batch ? 'preview-input-warning' : ''}`}
-                            placeholder="Time"
-                            value={s.slot.batch}
-                            title={attendanceTimeError(s.slot.batch, gatheringType, s.slot.venue) || ''}
-                            onChange={(e) => updateField(i, 'batch', e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            maxLength={25}
-                            className={`preview-input ${incomplete && !s.slot.venue ? 'preview-input-warning' : ''}`}
-                            placeholder="Venue"
-                            value={s.slot.venue}
-                            onChange={(e) => updateField(i, 'venue', e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            maxLength={9}
-                            className={`preview-input ${fieldHasFormatError(s.name, 'day', s.slot.day) ? 'preview-input-error' : ''} ${incomplete && !s.slot.day ? 'preview-input-warning' : ''}`}
-                            placeholder="Day"
-                            value={s.slot.day}
-                            onChange={(e) => updateField(i, 'day', e.target.value)}
-                        />
+                        <label className="preview-input-field">
+                            <input type="text" maxLength={10} className={`preview-input ${timeError ? 'preview-input-error' : ''}`} placeholder="Time" aria-invalid={Boolean(timeError)} value={s.slot.batch} onChange={(e) => updateField(i, 'batch', e.target.value)} />
+                            {timeError && <span className="preview-inline-error">{timeError}</span>}
+                        </label>
+                        <label className="preview-input-field">
+                            <input type="text" maxLength={25} className={`preview-input ${venueError ? 'preview-input-error' : ''}`} placeholder="Venue" aria-invalid={Boolean(venueError)} value={s.slot.venue} onChange={(e) => updateField(i, 'venue', e.target.value)} />
+                            {venueError && <span className="preview-inline-error">{venueError}</span>}
+                        </label>
+                        <label className="preview-input-field">
+                            <input type="text" maxLength={9} className={`preview-input ${dayError ? 'preview-input-error' : ''}`} placeholder="Day" aria-invalid={Boolean(dayError)} value={s.slot.day} onChange={(e) => updateField(i, 'day', e.target.value)} />
+                            {dayError && <span className="preview-inline-error">{dayError}</span>}
+                        </label>
                     </div>
                 )
             })}
