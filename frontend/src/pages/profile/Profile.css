@@ -5,11 +5,17 @@
 
 .profile-main {
     flex: 1;
+    min-width: 0;
 }
 
-/* .profile-header handled by reusable Header component */
+.profile-header .header-title h3 {
+    font-size: 20px;
+}
 
 .profile-content {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 830px;
     margin: 18px auto 28px;
     padding: 0 20px;
 }
