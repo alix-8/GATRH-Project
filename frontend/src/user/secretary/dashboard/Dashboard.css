@@ -15,6 +15,10 @@
     background-color: #ffffff;
 }
 
+.dashboard > .review-drawer-backdrop .review-drawer-panel {
+    width: min(100vw, max(450px, 34vw));
+}
+
 .dashboard-header .header-title h3 {
     font-size: 20px;
 }
@@ -734,6 +738,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
 }
 
 .dashboard-reminder-item time {

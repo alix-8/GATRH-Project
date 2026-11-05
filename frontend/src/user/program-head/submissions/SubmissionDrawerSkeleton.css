@@ -1,0 +1,82 @@
+.ph-drawer-skeleton-block {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 5px;
+    background: #e9ecf1;
+}
+
+.ph-drawer-skeleton-block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 60%), transparent);
+    transform: translateX(-100%);
+    animation: ph-drawer-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.ph-drawer-skeleton-submitted { min-height: 60px; }
+.ph-record-detail .ph-drawer-skeleton-submitted { min-height: 116px; }
+
+.ph-drawer-skeleton-person {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.ph-drawer-skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 50%;
+}
+
+.ph-drawer-skeleton-person > div {
+    display: grid;
+    flex: 1;
+    gap: 6px;
+    min-width: 0;
+}
+
+.ph-drawer-skeleton-person-name { width: 57%; height: 12px; }
+.ph-drawer-skeleton-person-role { width: 78%; height: 9px; }
+.ph-drawer-skeleton-person-date { width: 70%; height: 9px; }
+.ph-drawer-skeleton-person-program { width: 50%; height: 9px; }
+
+.ph-drawer-skeleton-kpis article { gap: 7px; }
+.ph-drawer-skeleton-kpi-icon { width: 32px; height: 32px; border-radius: 50%; }
+.ph-drawer-skeleton-kpi-value { width: 35%; height: 15px; }
+.ph-drawer-skeleton-kpi-label { width: 75%; height: 8px; }
+
+.ph-drawer-skeleton-list-heading { min-width: 0; }
+.ph-drawer-skeleton-controls { display: flex; gap: 6px; min-width: 0; }
+.ph-drawer-skeleton-filter,
+.ph-drawer-skeleton-search {
+    height: 28px;
+    border: 1px solid #e5e8ed;
+    border-radius: 6px;
+    background: #f6f8fb;
+}
+.ph-drawer-skeleton-filter { width: 102px; }
+.ph-drawer-skeleton-search { width: 126px; }
+
+.ph-drawer-skeleton-table td .ph-drawer-skeleton-block {
+    width: 85%;
+    height: 8px;
+}
+
+.ph-drawer-skeleton-table tbody tr { height: 42px; }
+
+@keyframes ph-drawer-skeleton-shimmer {
+    to { transform: translateX(100%); }
+}
+
+@media (max-width: 700px) {
+    .ph-drawer-skeleton-controls { width: 100%; }
+    .ph-drawer-skeleton-filter,
+    .ph-drawer-skeleton-search { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ph-drawer-skeleton-block::after { animation: none; }
+}

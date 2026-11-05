@@ -269,7 +269,7 @@ function ResponsiveApp() {
   }, [])
 
   const isPasswordFlow = ['/forgot-password', '/reset-password'].includes(location.pathname)
-  const showScreenSizeNotice = isCompactScreen && !isPasswordFlow && location.pathname !== '/'
+  const showScreenSizeNotice = isCompactScreen && !isPasswordFlow
 
   return (
     <>
