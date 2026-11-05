@@ -142,15 +142,24 @@
 }
 
 .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     width: 76px;
     box-sizing: border-box;
-    padding: 6px 14px;
+    padding: 6px 8px;
     border-radius: 8px;
     border: none;
     background: #1d9bf0;
     color: #ffffff;
     cursor: pointer;
     font-size: 12px;
+}
+
+.action-btn span {
+    font-size: 18px;
+    line-height: 0.8;
 }
 
 .action-btn:hover {

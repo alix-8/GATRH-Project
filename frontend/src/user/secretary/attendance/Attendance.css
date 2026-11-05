@@ -62,3 +62,7 @@
         font-size: clamp(17px, 1vw, 23px);
     }
 }
+
+.attendance .review-drawer-panel {
+    width: min(100vw, max(450px, 34vw));
+}
