@@ -469,11 +469,11 @@ class AttendanceParsingService
 
         $hasAnyDetails = !empty($parts['raw_batch']) || !empty($parts['venue']) || !empty($parts['raw_date']);
 
-        if (mb_strlen((string) $parts['raw_date']) > 9) {
+        if (mb_strlen((string) $parts['raw_date']) > 10) {
             $formatErrors[] = [
                 'field'  => 'day',
                 'value'  => $parts['raw_date'],
-                'reason' => 'Day must be 9 characters or fewer.',
+                'reason' => 'Day must be 10 characters or fewer.',
             ];
         } elseif (!empty($parts['raw_date'])) {
             $range = $this->getApplicableWeekRange($gatheringType, $cycle, $rawText);
@@ -757,11 +757,11 @@ class AttendanceParsingService
                     continue;
                 }
 
-                if ($hasDay && mb_strlen((string) $slot['day']) > 9) {
+                if ($hasDay && mb_strlen((string) $slot['day']) > 10) {
                     $dayErr = [
                         'field' => 'day',
                         'value' => $slot['day'],
-                        'reason' => 'Day must be 9 characters or fewer.',
+                        'reason' => 'Day must be 10 characters or fewer.',
                     ];
                     $formatErrorLines[] = [
                         'student_name' => $student->name,
