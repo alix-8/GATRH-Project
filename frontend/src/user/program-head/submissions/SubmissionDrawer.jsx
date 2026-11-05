@@ -10,7 +10,7 @@ import RecordCalendarIcon from '../../../assets/icons/RecordCalendarIcon.svg'
 import RecordClockIcon from '../../../assets/icons/RecordClockIcon.svg'
 import RecordProgramIcon from '../../../assets/icons/RecordProgramIcon.svg'
 import ExportIcon from '../../../assets/icons/export-icon.svg'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
+import SubmissionDrawerSkeleton from './SubmissionDrawerSkeleton'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDay from '../../../components/RecordDay'
 import VenueLabel from '../../../components/VenueLabel'
@@ -184,11 +184,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                         <button type="button" className="ph-drawer-header-close" aria-label="Close details" onClick={onClose}>×</button>
                     </header>
 
-                    {loading && (
-                        <p className="ph-drawer-state">
-                            <LoadingCircle label="Loading submission…" />
-                        </p>
-                    )}
+                    {loading && <SubmissionDrawerSkeleton isRecordView={isRecordView} approved={submission.status === 'approved'} />}
                     {error && <p className="ph-drawer-error" role="alert">{error}</p>}
 
                     {!loading && detail && (
@@ -338,7 +334,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                         <button
                             type="button"
                             className="ph-record-detail-export"
-                            disabled={busy}
+                            disabled={loading || !detail || busy}
                             onClick={exportRecord}
                         >
                             <img src={ExportIcon} alt="" /> {busy ? 'Exporting…' : 'Export'}
