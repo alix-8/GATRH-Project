@@ -133,10 +133,10 @@ function NotFoundPage({ homePath }) {
   const navigate = useNavigate()
 
   return (
-    <main style={{ display: 'grid', minHeight: '100vh', placeContent: 'center', gap: 12, padding: 24, color: '#172b4d', textAlign: 'center' }}>
-      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, letterSpacing: '0.12em' }}>404</p>
-      <h1 style={{ margin: 0 }}>Page not found</h1>
-      <p style={{ margin: 0 }}>That page address doesn’t exist or may have changed.</p>
+    <main style={{ display: 'grid', minHeight: '100vh', placeContent: 'center', gap: 12, padding: 24, color: '#ffffff', textAlign: 'center', background: 'linear-gradient(180deg, #0b1e3a 0%, #172b4d 100%)' }}>
+      <p style={{ margin: 0, fontSize: 80, fontWeight: 700, letterSpacing: '0.12em' }}>404</p>
+      <h1 style={{ margin: 0, fontSize: 24}}>Page not found</h1>
+      <p style={{ margin: 0, padding: '16px 0 ', fontSize: 16}}>That link might be broken or the page address doesn’t exist.</p>
       <button type="button" onClick={() => navigate(homePath)} style={{ justifySelf: 'center', marginTop: 8, padding: '10px 18px', cursor: 'pointer' }}>
         {homePath === '/' ? 'Go to login' : 'Go to your dashboard'}
       </button>
