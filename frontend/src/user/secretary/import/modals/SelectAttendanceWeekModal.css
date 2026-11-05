@@ -36,6 +36,12 @@
     text-align: center;
 }
 
+.import-week-loading {
+    display: grid;
+    min-height: 150px;
+    place-items: center;
+}
+
 .import-week-error {
     color: #b42318;
 }

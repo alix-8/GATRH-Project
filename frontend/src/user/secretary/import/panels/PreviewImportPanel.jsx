@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { inlineImportError } from './inlineImportError'
 import './PreviewImportPanel.css'
 
@@ -99,8 +99,15 @@ function preserveHeader(rawText, serializedStudents) {
 
 export default function PreviewImportPanel({ rawText, onChange, errors, gatheringRanges, gatheringRangeLabels, onRowsParsed }) {
     const [students, setStudents] = useState([])
+    const lastEmittedText = useRef(null)
 
     useEffect(() => {
+        // Editing a field emits a serialized version of this same preview. Do not
+        // parse it back immediately: parsing trims trailing spaces while typing.
+        if (rawText === lastEmittedText.current) {
+            lastEmittedText.current = null
+            return
+        }
         const parsedStudents = parseStudents(rawText || '')
         setStudents(parsedStudents)
         onRowsParsed?.(parsedStudents.length)
@@ -115,7 +122,9 @@ export default function PreviewImportPanel({ rawText, onChange, errors, gatherin
             i === index ? { ...s, [slotType]: { ...s[slotType], [field]: value } } : s
         )
         setStudents(next)
-        onChange?.(preserveHeader(rawText, serializeStudents(next)))
+        const nextRawText = preserveHeader(rawText, serializeStudents(next))
+        lastEmittedText.current = nextRawText
+        onChange?.(nextRawText)
     }
 
     return (
