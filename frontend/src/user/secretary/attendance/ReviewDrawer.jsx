@@ -73,7 +73,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
         return draft.students.filter((s) => {
             const matchesSearch = s.student_name.toLowerCase().includes(search.toLowerCase())
             const attendanceStatus = editing || record.source === 'draft'
-                ? getAutomaticAttendanceStatus(s, draft.week_range)
+                ? getAutomaticAttendanceStatus(s, draft.week_range, record.gathering_type)
                 : s.status
             const matchesStatus =
                 statusFilter === 'all' ||
@@ -120,7 +120,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const handleSubmit = async (opts = {}) => {
         if (!draft) return
 
-        const editErrors = getAttendanceEditErrors(draft.students, draft.week_range)
+        const editErrors = getAttendanceEditErrors(draft.students, draft.week_range, record.gathering_type)
         if (hasAttendanceEditErrors(editErrors)) {
             setEditing(true)
             setEditError({
@@ -137,7 +137,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 student_id: s.student_id,
                 gathering_type: record.gathering_type,
                 day: s.day_provided === false ? draft.day_iso : (s.day || draft.day_iso),
-                status: getAutomaticAttendanceStatus(s, draft.week_range),
+                status: getAutomaticAttendanceStatus(s, draft.week_range, record.gathering_type),
                 batch: s.batch === '---' ? '' : s.batch,
                 venue: s.venue === '---' ? '' : s.venue,
             }))
@@ -174,7 +174,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
 
     const handleDoneEditing = async () => {
         if (!draft) return
-        const editErrors = getAttendanceEditErrors(draft.students, draft.week_range)
+        const editErrors = getAttendanceEditErrors(draft.students, draft.week_range, record.gathering_type)
         if (hasAttendanceEditErrors(editErrors)) {
             setEditError({
                 message: 'Fix the attendance format issues before leaving edit mode.',
@@ -348,7 +348,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                     <div className="kpi-icon">
                                         <RespondedIcon/>
                                     </div>
-                                    <div className="kpi-value">{draft.students.filter((student) => getAutomaticAttendanceStatus(student, draft.week_range) === 'present').length}</div>
+                                    <div className="kpi-value">{draft.students.filter((student) => getAutomaticAttendanceStatus(student, draft.week_range, record.gathering_type) === 'present').length}</div>
                                     <div className="kpi-title">Responded</div>
                                 </div>
 
@@ -356,7 +356,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                     <div className="kpi-icon">
                                         <NoResponseIcon/>
                                     </div>
-                                    <div className="kpi-value">{draft.students.filter((student) => getAutomaticAttendanceStatus(student, draft.week_range) !== 'present').length}</div>
+                                    <div className="kpi-value">{draft.students.filter((student) => getAutomaticAttendanceStatus(student, draft.week_range, record.gathering_type) !== 'present').length}</div>
                                     <div className="kpi-title">No Response</div>
                                 </div>
                             </div>
@@ -422,6 +422,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                                     students={filteredStudents}
                                     day={draft.day_iso}
                                     weekRange={draft.week_range}
+                                    gatheringType={record.gathering_type}
                                     editing={editing}
                                     onStudentChange={handleStudentChange}
                                     emptyMessage="No students match these filters."

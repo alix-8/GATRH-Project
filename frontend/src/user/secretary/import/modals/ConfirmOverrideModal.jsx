@@ -1,4 +1,3 @@
-import React from 'react'
 import './ConfirmOverrideModal.css'
 
 function ConfirmOverrideModal({ duplicateData, onCancel, onOverride, isSubmitting = false }) {
@@ -38,7 +37,7 @@ function ConfirmOverrideModal({ duplicateData, onCancel, onOverride, isSubmittin
                     Attendance Already Exists
                 </h2>
                 <p className="confirm-override-text import-modal-subtext">
-                    An attendance record already exists for <strong>{gatheringTypeLabel}</strong> for {weekLabel}.
+                    An attendance record already exists for <strong className="confirm-override-gathering">{gatheringTypeLabel}</strong> for {weekLabel}.
                     {count > 0 && ` (${count} student record${count > 1 ? 's' : ''} already recorded)`}
                 </p>
                 <p className="confirm-override-subtext">

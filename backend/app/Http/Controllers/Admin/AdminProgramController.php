@@ -19,7 +19,7 @@ class AdminProgramController extends Controller
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'search' => ['nullable', 'string', 'max:100'],
+            'search' => ['nullable', 'string', 'max:50'],
             'program' => ['nullable', 'string', Rule::exists('programs', 'code')],
             'year_level' => ['nullable', 'string', 'max:20'],
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
@@ -57,8 +57,8 @@ class AdminProgramController extends Controller
     {
         $request->merge(['name' => trim((string) $request->input('name'))]);
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:programs,code'],
-            'name' => ['required', 'string', 'max:255', Rule::unique('programs', 'name')],
+            'code' => ['required', 'string', 'max:6', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:programs,code'],
+            'name' => ['required', 'string', 'max:50', Rule::unique('programs', 'name')],
             'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['nullable', 'array'],
             'program_head_ids.*' => [
@@ -85,8 +85,8 @@ class AdminProgramController extends Controller
             $request->merge(['code' => strtoupper(trim((string) $request->input('code')))]);
         }
         $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('programs', 'name')->ignore($program->id)],
-            'code' => ['sometimes', 'required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('programs', 'code')->ignore($program->id)],
+            'name' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('programs', 'name')->ignore($program->id)],
+            'code' => ['sometimes', 'required', 'string', 'max:6', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('programs', 'code')->ignore($program->id)],
             'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['sometimes', 'nullable', 'array'],
             'program_head_ids.*' => [

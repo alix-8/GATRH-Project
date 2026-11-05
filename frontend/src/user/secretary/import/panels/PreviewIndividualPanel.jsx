@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { attendanceTimeError } from '../../attendance/attendanceEditValidation'
 import './PreviewImportPanel.css'
 
 const ENTRY_RE = /^(\d+)[.)]\s*(.+)$/
-const SKIP_RE = /^(gathering|prayer meeting|worship service|thanksgiving)\s*[:\-]/i
+const SKIP_RE = /^(gathering|prayer meeting|worship service|thanksgiving)\s*[:-]/i
 
 function parseLine(rest) {
     const parts = rest.split('|').map((p) => p.trim())
@@ -68,8 +69,8 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
         onChange?.(preserveHeader(rawText, serializeStudents(next)))
     }
 
-    const fieldHasFormatError = (studentName, field, value) => {
-        if (field === 'batch' && value && !TIME_RE.test(value.trim())) return true
+    const fieldHasFormatError = (studentName, field, value, venue) => {
+        if (field === 'batch' && value && (!TIME_RE.test(value.trim()) || attendanceTimeError(value, gatheringType, venue))) return true
         const targetField = field === 'batch' ? 'batch' : field
         return errors?.format_errors?.some(
             (e) => (e.student_name === studentName || e.raw_line?.includes(studentName)) &&
@@ -105,9 +106,10 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                         <input
                             type="text"
                             maxLength={10}
-                            className={`preview-input ${fieldHasFormatError(s.name, 'batch', s.slot.batch) ? 'preview-input-error' : ''} ${incomplete && !s.slot.batch ? 'preview-input-warning' : ''}`}
+                            className={`preview-input ${fieldHasFormatError(s.name, 'batch', s.slot.batch, s.slot.venue) ? 'preview-input-error' : ''} ${incomplete && !s.slot.batch ? 'preview-input-warning' : ''}`}
                             placeholder="Time"
                             value={s.slot.batch}
+                            title={attendanceTimeError(s.slot.batch, gatheringType, s.slot.venue) || ''}
                             onChange={(e) => updateField(i, 'batch', e.target.value)}
                         />
                         <input
@@ -120,7 +122,7 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
                         />
                         <input
                             type="text"
-                            maxLength={10}
+                            maxLength={9}
                             className={`preview-input ${fieldHasFormatError(s.name, 'day', s.slot.day) ? 'preview-input-error' : ''} ${incomplete && !s.slot.day ? 'preview-input-warning' : ''}`}
                             placeholder="Day"
                             value={s.slot.day}

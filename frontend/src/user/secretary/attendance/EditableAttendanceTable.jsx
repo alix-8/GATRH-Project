@@ -2,6 +2,7 @@ import RecordDay from '../../../components/RecordDay'
 import VenueLabel from '../../../components/VenueLabel'
 import {
     ATTENDANCE_TIME_RE,
+    attendanceTimeError,
     attendanceDayError,
     displayAttendanceDay,
     getAutomaticAttendanceStatus,
@@ -13,7 +14,7 @@ function editableValue(value) {
     return value && value !== '---' ? value : ''
 }
 
-export default function EditableAttendanceTable({ students, day, weekRange, editing, onStudentChange, emptyMessage }) {
+export default function EditableAttendanceTable({ students, day, weekRange, gatheringType, editing, onStudentChange, emptyMessage }) {
     return (
         <table className={`drawer-table ${editing ? 'drawer-table-editing' : ''}`}>
             <thead>
@@ -27,15 +28,16 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
             </thead>
             <tbody>
                 {students.map((student, index) => {
-                    const status = editing ? getAutomaticAttendanceStatus(student, weekRange) : (student.status || getAutomaticAttendanceStatus(student, weekRange))
+                    const status = editing ? getAutomaticAttendanceStatus(student, weekRange, gatheringType) : (student.status || getAutomaticAttendanceStatus(student, weekRange, gatheringType))
                     const hasDay = student.day_provided === false ? false : Boolean(student.day && student.day !== '---')
                     const hasBatch = Boolean(student.batch && student.batch !== '---')
                     const hasVenue = Boolean(student.venue && student.venue !== '---')
                     const hasAnyAttendanceValue = hasDay || hasBatch || hasVenue
                     const incomplete = hasAnyAttendanceValue && (!hasDay || !hasBatch || !hasVenue)
-                    const invalidTime = hasBatch && !ATTENDANCE_TIME_RE.test(student.batch.trim())
+                    const timeError = attendanceTimeError(student.batch, gatheringType, student.venue)
+                    const invalidTime = hasBatch && (!ATTENDANCE_TIME_RE.test(student.batch.trim()) || Boolean(timeError))
                     const invalidDay = hasDay && !resolveAttendanceDay(student.day, weekRange, student.venue)
-                    const timeError = invalidTime ? 'Batch time must be in a valid time format, e.g. "8AM" or "8:30 AM".' : ''
+                    const timeErrorMessage = invalidTime ? (timeError || 'Batch time must be in a valid time format, e.g. "8AM" or "8:30 AM".') : ''
                     const dayError = invalidDay
                         ? attendanceDayError(student.day, weekRange, student.venue)
                         : ''
@@ -52,7 +54,7 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                                     className={`${invalidTime ? 'drawer-edit-field-error' : ''} ${incomplete && !hasBatch ? 'drawer-edit-field-warning' : ''}`}
                                     value={editableValue(student.batch)}
                                     placeholder="Time"
-                                    title={timeError || (incomplete && !hasBatch ? 'Time is required when any attendance details are entered.' : '')}
+                                    title={timeErrorMessage || (incomplete && !hasBatch ? 'Time is required when any attendance details are entered.' : '')}
                                     onChange={(event) => onStudentChange(student, 'batch', event.target.value)}
                                 />
                             ) : <span title={student.batch || '—'}>{student.batch || '—'}</span>}
@@ -62,7 +64,7 @@ export default function EditableAttendanceTable({ students, day, weekRange, edit
                                 <input
                                     aria-label={`Day for ${student.student_name}`}
                                     type="text"
-                                    maxLength={10}
+                                    maxLength={9}
                                     className={`${invalidDay ? 'drawer-edit-field-error' : ''} ${incomplete && !hasDay ? 'drawer-edit-field-warning' : ''}`}
                                     value={student.day_provided === false ? '' : displayAttendanceDay(editableValue(student.day || day), student.venue)}
                                     placeholder="Day"

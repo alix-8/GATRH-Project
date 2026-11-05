@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
+import { attendanceTimeError } from '../../attendance/attendanceEditValidation'
 import './PreviewImportPanel.css'
 
 const SLOT_RE = /^(PM|WS|TG)[:\s]\s*(.*)$/i
 const ENTRY_RE = /^(\d+)[.)]\s*(.+)$/
-const SKIP_RE = /^(gathering|prayer meeting|worship service|thanksgiving)\s*[:\-]/i
+const SKIP_RE = /^(gathering|prayer meeting|worship service|thanksgiving)\s*[:-]/i
 const NAME_RE = /^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N}'’.,()& -]*$/u
 
 function isUnnumberedStudentName(line) {
@@ -98,12 +99,17 @@ function preserveHeader(rawText, serializedStudents) {
 
 const TIME_RE = /^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}\s*(?:AM|PM)?)$/i
 
-function fieldError(studentName, slotType, field, value, errors) {
-    if (!errors) return false
-    if (field === 'time' && value && !TIME_RE.test(value.trim())) return true
-    return errors.format_errors?.some((e) =>
+function fieldError(studentName, slotType, field, value, venue, errors) {
+    if (field === 'time' && value && (!TIME_RE.test(value.trim()) || attendanceTimeError(value, slotType, venue))) return true
+    return errors?.format_errors?.some((e) =>
         e.student_name === studentName && e.gathering_type === slotType && e.field === field
     )
+}
+
+function fieldErrorMessage(slotType, field, value, venue) {
+    if (field !== 'time' || !value) return ''
+    if (!TIME_RE.test(value.trim())) return 'Time must be in a valid format, e.g. "8AM" or "8:30 AM".'
+    return attendanceTimeError(value, slotType, venue)
 }
 
 function isIncomplete(studentName, slotType, errors) {
@@ -150,15 +156,17 @@ export default function PreviewImportPanel({ rawText, onChange, errors, onRowsPa
                         {['pm', 'ws', 'tg'].map((slotType) => (
                             <div className="preview-slot-col" key={slotType}>
                                 {['day', 'time', 'venue'].map((field) => {
-                                    const hasError = fieldError(s.name, slotType, field, s[slotType][field], errors)
+                                    const hasError = fieldError(s.name, slotType, field, s[slotType][field], s[slotType].venue, errors)
+                                    const errorMessage = fieldErrorMessage(slotType, field, s[slotType][field], s[slotType].venue)
                                     const incomplete = isIncomplete(s.name, slotType, errors)
                                     return (
                                         <input
                                             key={field}
                                             type="text"
-                                            maxLength={field === 'venue' ? 25 : 10}
+                                            maxLength={field === 'venue' ? 25 : field === 'day' ? 9 : 10}
                                             className={`preview-input ${hasError ? 'preview-input-error' : ''} ${incomplete && !s[slotType][field] ? 'preview-input-warning' : ''}`}
                                             placeholder={field === 'day' ? 'Day' : field === 'time' ? 'Time' : 'Venue'}
+                                            title={errorMessage}
                                             value={s[slotType][field]}
                                             onChange={(e) => updateSlot(i, slotType, field, e.target.value)}
                                         />

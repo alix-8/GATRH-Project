@@ -217,6 +217,18 @@ class AttendanceDraftController extends Controller
                 ];
             }
 
+            if ($timeError = $parsingService->minimumGatheringTimeError($batch, (string) $draft->gathering_type, $venue)) {
+                $formatErrors[] = [
+                    'student_name' => $original['student_name'] ?? 'Unknown student',
+                    'raw_line' => $original['student_name'] ?? 'Unknown student',
+                    'errors' => [[
+                        'field' => 'batch',
+                        'value' => $batch,
+                        'reason' => $timeError,
+                    ]],
+                ];
+            }
+
             $dayResolution = $dayProvided
                 ? $parsingService->resolveWeekdayToDate($day, $range['start'], $range['end'], $venue)
                 : null;

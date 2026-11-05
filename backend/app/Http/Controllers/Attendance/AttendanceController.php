@@ -1075,7 +1075,7 @@ class AttendanceController extends Controller
             'records'                  => 'required|array|min:1',
             'records.*.student_id'     => 'required|exists:students,id',
             'records.*.gathering_type' => 'required|in:pm,ws,tg',
-            'records.*.day'            => 'required|date_format:Y-m-d|before_or_equal:today',
+            'records.*.day'            => 'required|date_format:Y-m-d|before_or_equal:today'|'max:9',
             'records.*.status'         => 'required|in:present,no_response,excused',
             'records.*.batch'          => 'nullable|string|max:10',
             'records.*.venue'          => 'nullable|string|max:25',
@@ -1137,7 +1137,7 @@ class AttendanceController extends Controller
 
         // Preserve the student's course and year at the time attendance is submitted.
         $studentsById = Student::whereKey($studentIds)
-            ->get(['id', 'program', 'year_level'])
+            ->get(['id', 'name', 'program', 'year_level'])
             ->keyBy('id');
 
         $submittedBy = $request->user()->id;
@@ -1149,9 +1149,28 @@ class AttendanceController extends Controller
 
         $duplicateRecords = [];
         $recordsToProcess = [];
+        $formatErrors = [];
 
         foreach ($validated['records'] as $index => $recordData) {
             $type = $recordData['gathering_type'];
+            $timeError = $this->parsingService->minimumGatheringTimeError(
+                $recordData['batch'] ?? null,
+                $type,
+                $recordData['venue'] ?? null,
+            );
+            if ($timeError) {
+                $studentName = $studentsById->get($recordData['student_id'])?->name ?? 'Unknown student';
+                $formatErrors[] = [
+                    'student_name' => $studentName,
+                    'raw_line' => $studentName,
+                    'errors' => [[
+                        'field' => 'batch',
+                        'value' => $recordData['batch'] ?? null,
+                        'reason' => $timeError,
+                    ]],
+                ];
+                continue;
+            }
             $range = $this->parsingService->getApplicableWeekRange($type, $cycle, $request->input('raw_text'));
             $startStr = $range['start']->toDateString();
             $endStr = $range['end']->toDateString();
@@ -1192,6 +1211,14 @@ class AttendanceController extends Controller
                     'existing' => null,
                 ];
             }
+        }
+
+        if ($formatErrors !== []) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Fix the attendance format issues before submitting.',
+                'format_errors' => $formatErrors,
+            ], 422);
         }
 
         if ($isOverride && collect($recordsToProcess)->contains(function (array $item): bool {

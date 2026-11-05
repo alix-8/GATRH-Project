@@ -67,7 +67,7 @@ class AdminSystemSettingController extends Controller
         }
 
         $validated = $request->validate([
-            'system_name' => ['sometimes', 'required', 'string', 'max:120'],
+            'system_name' => ['sometimes', 'required', 'string', 'max:100'],
             'academic_year' => ['sometimes', 'required', 'string', 'regex:/^\d{4}-\d{4}$/'],
             'timezone' => ['sometimes', 'required', 'string', 'timezone'],
         ]);
