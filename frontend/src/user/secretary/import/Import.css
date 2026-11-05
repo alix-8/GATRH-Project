@@ -21,7 +21,6 @@
 /* .import-header handled by reusable Header component */
 
 .import-content {
-    max-width: 1040px;
     margin: 2rem auto 0;
     width: 100%;
     padding: 0 1.5rem 2rem;
@@ -936,7 +935,6 @@ textarea {
 
 @media (min-width: 901px) and (max-width: 1150px) {
     .import-content {
-        max-width: none;
         margin-top: 20px;
         padding: 0 20px 40px;
     }
@@ -1010,7 +1008,6 @@ textarea {
 
     .import-content {
         width: min(calc(100% - 64px), 1800px);
-        max-width: none;
         margin-top: clamp(24px, 2vh, 40px);
         padding: 0 0 40px;
     }
