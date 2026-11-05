@@ -1202,7 +1202,27 @@ function Reminders() {
                             <span className="escalation-report-alert-icon" aria-hidden="true" />
                             <span><strong>{reportAlertName}</strong> has reached Escalation Level {reportLevel}.</span>
                         </div>
-                        {escalationReport.loading && <p className="escalation-report-state"><LoadingCircle label="Loading attendance history…" /></p>}
+                        {escalationReport.loading && (
+                            <div className="escalation-report-skeleton" role="status" aria-label="Loading attendance history" aria-busy="true">
+                                <div className="escalation-report-summary" aria-hidden="true">
+                                    {[0, 1, 2].map((card) => (
+                                        <div className="escalation-report-card escalation-report-skeleton-card" key={card}>
+                                            <span className="escalation-report-skeleton-block escalation-report-skeleton-label" />
+                                            <span className="escalation-report-skeleton-block escalation-report-skeleton-icon" />
+                                            <span className="escalation-report-skeleton-block escalation-report-skeleton-value" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="escalation-report-history" aria-hidden="true">
+                                    <div className="escalation-report-skeleton-head">{['Gathering', 'Time', 'Date', 'Location', 'Status'].map((heading) => <span key={heading}>{heading}</span>)}</div>
+                                    {[0, 1, 2, 3].map((row) => (
+                                        <div className="escalation-report-skeleton-row" key={row}>
+                                            {[0, 1, 2, 3, 4].map((cell) => <span className="escalation-report-skeleton-block" key={cell} />)}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {escalationReport.error && <p className="escalation-report-state escalation-report-error" role="alert">{escalationReport.error}</p>}
                         {escalationReport.details && (
                             <>

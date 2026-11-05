@@ -5,7 +5,7 @@ import './ReviewDrawer.css'
 import { headerTitle } from './header-title'
 import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../components/Icons/AttendanceIcons'
 import { FilterIcon, ChevronDownIcon } from '../../../components/Icons/Reusables'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
+import ReviewDrawerSkeleton from './ReviewDrawerSkeleton'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import SearchPill from '../../../components/search/SearchPill'
 import ConfirmOverrideModal from '../import/modals/ConfirmOverrideModal'
@@ -285,8 +285,8 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 }
                 return (
                     <div className="drawer-footer-actions">
-                        {record.source === 'draft' && <AttendanceEditButton editing={false} disabled={submitting} onClick={() => setEditing(true)} />}
-                        <button type="button" className="drawer-submit-btn" onClick={handleSubmit} disabled={submitting}>
+                        {record.source === 'draft' && <AttendanceEditButton editing={false} disabled={loading || !draft || submitting} onClick={() => setEditing(true)} />}
+                        <button type="button" className="drawer-submit-btn" onClick={handleSubmit} disabled={loading || !draft || submitting}>
                             {submitting ? 'Submitting…' : '✓ Submit'}
                         </button>
                     </div>
@@ -307,7 +307,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                         </p>
                     </div>
 
-                    {loading && <p><LoadingCircle label="Loading attendance details…" /></p>}
+                    {loading && <ReviewDrawerSkeleton />}
                     {error && <p style={{ color: '#e52328' }}>{error}</p>}
 
                     {!loading && draft && !duplicateConfirm && (
