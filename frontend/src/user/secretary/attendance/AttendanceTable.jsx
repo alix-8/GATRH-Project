@@ -11,7 +11,6 @@ import { TrashIcon } from '../../../components/Icons/Reusables'
 import Calendar from '../../../components/Calendar/Calendar'
 import './AttendanceTable.css'
 import ReviewDrawer from './ReviewDrawer'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
 
 const STATUS_META = {
@@ -32,6 +31,21 @@ const SORT_OPTIONS = [
     { value: 'status', label: 'Sort by Status' },
     { value: 'gathering_type', label: 'Sort by Gathering' },
 ]
+
+function AttendanceTableSkeletonRows({ count = 6, deleteMode = false }) {
+    return Array.from({ length: count }, (_, index) => (
+        <tr key={`attendance-table-skeleton-${index}`} className="attendance-skeleton-row" aria-hidden="true">
+            {deleteMode && <td><span className="attendance-skeleton-block attendance-skeleton-checkbox" /></td>}
+            <td><span className="attendance-skeleton-block attendance-skeleton-course" /></td>
+            <td><span className="attendance-skeleton-block attendance-skeleton-year" /></td>
+            <td><span className="attendance-skeleton-block attendance-skeleton-date" /></td>
+            <td><span className="attendance-skeleton-block attendance-skeleton-gathering" /></td>
+            <td><span className="attendance-skeleton-block attendance-skeleton-time" /></td>
+            <td><span className="attendance-skeleton-block attendance-skeleton-status" /></td>
+            <td><span className="attendance-skeleton-block attendance-skeleton-action" /></td>
+        </tr>
+    ))
+}
 
 // Local YYYY-MM-DD (avoids the UTC-shift bug from toISOString())
 function toDateParam(date) {
@@ -350,8 +364,8 @@ function AttendanceTable() {
                 </button>
             </div>
 
-            <div className="attendance-table-wrapper">
-                <table className="attendance-table">
+            <div className="attendance-table-wrapper" role="region" aria-label="Attendance records" tabIndex="0" aria-busy={loading}>
+                <table className="attendance-table" aria-busy={loading}>
                     <thead>
                         <tr>
                             {deleteMode && (
@@ -370,7 +384,7 @@ function AttendanceTable() {
                     </thead>
                     <tbody>
                         {loading && (
-                            <tr><td colSpan={deleteMode ? 8 : 7} className="table-state"><LoadingCircle label="Loading attendance records…" /></td></tr>
+                            <AttendanceTableSkeletonRows deleteMode={deleteMode} />
                         )}
                         {!loading && error && (
                             <tr><td colSpan={deleteMode ? 8 : 7} className="table-state table-state-error">{error}</td></tr>

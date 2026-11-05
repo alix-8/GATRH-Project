@@ -61,12 +61,27 @@ const navigationByRole = {
 function Sidebar() {
     const navigate = useNavigate()
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
-    let role = ''
-    try { role = JSON.parse(localStorage.getItem('user') || 'null')?.role || '' } catch { /* invalid session */ }
+    const [role, setRole] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('user') || 'null')?.role || '' } catch { return '' }
+    })
     const navigationItems = navigationByRole[role] || []
+
+    useEffect(() => {
+        const setVerifiedRole = event => setRole(event.detail?.user?.role || '')
+        const clearRole = () => setRole('')
+        window.addEventListener('auth:verified', setVerifiedRole)
+        window.addEventListener('auth:changed', setVerifiedRole)
+        window.addEventListener('auth:expired', clearRole)
+        return () => {
+            window.removeEventListener('auth:verified', setVerifiedRole)
+            window.removeEventListener('auth:changed', setVerifiedRole)
+            window.removeEventListener('auth:expired', clearRole)
+        }
+    }, [])
 
     const handleSignOut = () => {
         localStorage.removeItem('user')
+        window.dispatchEvent(new CustomEvent('auth:changed', { detail: { user: null } }))
         clearLoginSkeleton()
         setIsLogoutModalOpen(false)
         navigate('/', { replace: true })

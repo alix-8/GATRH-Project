@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from './ModalSelect'
 import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
+import { sanitizePersonName } from '../adminTextValidation'
 import './AddUserModal.css'
 import './AddStudentModal.css'
 
@@ -109,12 +110,12 @@ function AddStudentModal({ onClose, onCreated }) {
         <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-student-lname">Last Name<span>*</span></label>
-                <input id="admin-add-student-lname" name="lname" autoFocus required maxLength={255} placeholder="Enter last name" value={form.lname} onChange={event => updateField('lname', event.target.value)} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
+                <input id="admin-add-student-lname" name="lname" autoFocus required maxLength={255} placeholder="Enter last name" value={form.lname} onChange={event => updateField('lname', sanitizePersonName(event.target.value))} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
                 {fieldErrors.lname && <small className="admin-add-user-field-error">{fieldErrors.lname[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-student-fname">First Name<span>*</span></label>
-                <input id="admin-add-student-fname" name="fname" required maxLength={255} placeholder="Enter first name" value={form.fname} onChange={event => updateField('fname', event.target.value)} aria-invalid={Boolean(fieldErrors.fname || fieldErrors.name)} />
+                <input id="admin-add-student-fname" name="fname" required maxLength={255} placeholder="Enter first name" value={form.fname} onChange={event => updateField('fname', sanitizePersonName(event.target.value))} aria-invalid={Boolean(fieldErrors.fname || fieldErrors.name)} />
                 {fieldErrors.fname && <small className="admin-add-user-field-error">{fieldErrors.fname[0]}</small>}
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
             </div>

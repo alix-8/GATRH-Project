@@ -8,7 +8,7 @@ import StatusIcon from '../../../assets/icons/FilterStatusIcon.svg'
 import SubmissionDrawer from './SubmissionDrawer'
 import FilterDropdown from '../../../components/Filters/FilterDropdown'
 import CalendarFilter from '../../../components/Filters/CalendarFilter'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
+import ProgramTableSkeleton from '../shared/ProgramTableSkeleton'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
@@ -148,7 +148,7 @@ export default function SubmissionTable() {
                 </section>
                 <section className="ph-submissions-table-panel" aria-label="Submissions list">
                     <div className="ph-submissions-table-scroll">
-                        <table className="ph-submissions-table">
+                        <table className="ph-submissions-table" aria-busy={loading}>
                             <thead>
                                 <tr>
                                     <th>Secretary</th>
@@ -162,11 +162,7 @@ export default function SubmissionTable() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr>
-                                        <td className="ph-submissions-state" colSpan="7">
-                                            <LoadingCircle label="Loading submissions…" />
-                                        </td>
-                                    </tr>
+                                    <ProgramTableSkeleton count={6} />
                                 ) : error ? (
                                     <tr>
                                         <td className="ph-submissions-state ph-submissions-error" colSpan="7">

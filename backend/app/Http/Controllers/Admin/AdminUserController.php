@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Program;
 use App\Models\User;
 use App\Rules\LaVerdadEmail;
+use App\Rules\PersonName;
 use App\Services\Admin\AdminUserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class AdminUserController extends Controller
             $request->merge(['email' => strtolower(trim($request->input('email')))]);
         }
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:25'],
+            'name' => ['required', 'string', 'max:25', new PersonName()],
             'email' => ['bail', 'required', 'email', 'max:50', new LaVerdadEmail(), 'unique:users,email'],
             'role' => ['required', Rule::in(User::ROLES)],
             'contact_number' => ['nullable', 'string', 'regex:/^09\d{9}$/'],
@@ -85,7 +86,7 @@ class AdminUserController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:50'],
+            'name' => ['sometimes', 'required', 'string', 'max:50', new PersonName()],
             'email' => ['sometimes', 'required', 'email', 'max:50', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => ['sometimes', 'required', Rule::in(User::ROLES)],
             'contact_number' => ['sometimes', 'required', 'string', 'regex:/^09\d{9}$/'],

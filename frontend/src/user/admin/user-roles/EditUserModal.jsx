@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from '../dashboard/ModalSelect'
 import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
+import { sanitizePersonName } from '../adminTextValidation'
 import '../dashboard/AddUserModal.css'
 import './EditUserModal.css'
 
@@ -42,6 +43,10 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
     const roleLabel = role => roles.find(option => option.value === role)?.label || role
     const currentProgram = isProgramHead ? assignedProgram : initialProgram
     const updatedProgram = isProgramHead ? assignedProgram : (needsProgram ? form.program : '')
+    const isInitialInactive = !user.is_active
+    const areFieldsDisabled = isInitialInactive || !form.is_active
+    const isStatusChanged = form.is_active !== Boolean(user.is_active)
+    const isSaveDisabled = saving || (isInitialInactive && !isStatusChanged)
 
     function updateField(field, value) {
         setForm(current => ({
@@ -113,17 +118,17 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
         <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="user-roles-edit-name">Full Name<span>*</span></label>
-                <input id="user-roles-edit-name" autoFocus required maxLength={255} value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
+                <input id="user-roles-edit-name" autoFocus={!areFieldsDisabled} required maxLength={255} value={form.name} disabled={areFieldsDisabled} onChange={event => updateField('name', sanitizePersonName(event.target.value))} aria-invalid={Boolean(fieldErrors.name)} />
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="user-roles-edit-email">Email Address<span>*</span></label>
-                <input id="user-roles-edit-email" type="email" required maxLength={255} value={form.email} onChange={event => updateField('email', event.target.value)} aria-invalid={Boolean(fieldErrors.email)} />
+                <input id="user-roles-edit-email" type="email" required maxLength={255} value={form.email} disabled={areFieldsDisabled} onChange={event => updateField('email', event.target.value)} aria-invalid={Boolean(fieldErrors.email)} />
                 {fieldErrors.email && <small className="admin-add-user-field-error">{fieldErrors.email[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="user-roles-edit-role">Role<span>*</span></label>
-                <ModalSelect id="user-roles-edit-role" required value={form.role} onChange={event => updateField('role', event.target.value)} aria-invalid={Boolean(fieldErrors.role)}>
+                <ModalSelect id="user-roles-edit-role" required value={form.role} disabled={areFieldsDisabled} onChange={event => updateField('role', event.target.value)} aria-invalid={Boolean(fieldErrors.role)}>
                     {roles.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
                 </ModalSelect>
                 {fieldErrors.role && <small className="admin-add-user-field-error">{fieldErrors.role[0]}</small>}
@@ -133,7 +138,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
                 <input id="user-roles-edit-program" value={assignedProgram || 'No program assigned'} disabled />
             </div> : needsProgram && <div className="admin-add-user-field">
                 <label htmlFor="user-roles-edit-program">Program<span>*</span></label>
-                <ModalSelect id="user-roles-edit-program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
+                <ModalSelect id="user-roles-edit-program" required value={form.program} disabled={areFieldsDisabled} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
                     <option value="">Select Program</option>
                     {initialProgram && !programs.some(program => program.code === initialProgram) && <option value={initialProgram} disabled>{initialProgram} (inactive)</option>}
                     {programs.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}
@@ -142,7 +147,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
             </div>}
             {needsYearLevel && <div className="admin-add-user-field">
                 <label htmlFor="user-roles-edit-year">Year Level<span>*</span></label>
-                <ModalSelect id="user-roles-edit-year" required value={form.year_level} onChange={event => updateField('year_level', event.target.value)} aria-invalid={Boolean(fieldErrors.year_level)}>
+                <ModalSelect id="user-roles-edit-year" required value={form.year_level} disabled={areFieldsDisabled} onChange={event => updateField('year_level', event.target.value)} aria-invalid={Boolean(fieldErrors.year_level)}>
                     <option value="">Select Year Level</option>
                     {[1, 2, 3, 4].map(year => <option key={year} value={String(year)}>{year}{['st', 'nd', 'rd', 'th'][year - 1]} Year</option>)}
                 </ModalSelect>
@@ -155,8 +160,15 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
                     <span className={form.is_active ? 'active' : 'inactive'}>{form.is_active ? 'Active' : 'Inactive'}</span>
                 </div>
             </div>
+            {isInitialInactive && (
+                <p className="admin-add-user-helper-note">
+                    {form.is_active
+                        ? 'Save changes to activate this user account. Details can be edited once active.'
+                        : 'This user account is currently inactive. Turn on Account Status and save to activate before editing.'}
+                </p>
+            )}
             {error && <p className="admin-add-user-submit-error" role="alert">{error}</p>}
-            <button className="admin-add-user-submit" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
+            <button className="admin-add-user-submit" type="submit" disabled={isSaveDisabled}>{saving ? 'Saving…' : 'Save Changes'}</button>
         </form>
         {confirmSave && (
             <div

@@ -93,13 +93,30 @@
 }
 
 .attendance-table-wrapper {
-    overflow-x: auto;
+    max-height: 476px;
+    overflow: auto;
     border-radius: 12px;
     border: 1px solid #e5e4e7;
+    scrollbar-color: #c9d2de #e8edf4;
+}
+
+.attendance-table-wrapper::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.attendance-table-wrapper::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: #c9d2de;
+}
+
+.attendance-table-wrapper::-webkit-scrollbar-track {
+    background: #e8edf4;
 }
 
 .attendance-table {
     width: 100%;
+    min-width: 820px;
     border-collapse: collapse;
     font-size: 13px;
 }
@@ -110,6 +127,9 @@
 }
 
 .attendance-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     text-align: center;
 }
 
@@ -178,6 +198,45 @@
 
 .table-state-error {
     color: #e52328;
+}
+
+.attendance-skeleton-row td {
+    height: 22px;
+}
+
+.attendance-skeleton-block {
+    animation: attendance-skeleton-pulse 1.4s ease-in-out infinite;
+    background: #e9ecf1;
+    border-radius: 5px;
+    display: block;
+    height: 9px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.attendance-skeleton-course { width: 76%; }
+.attendance-skeleton-year { width: 42%; }
+.attendance-skeleton-date { width: 72%; }
+.attendance-skeleton-gathering { width: 68%; }
+.attendance-skeleton-time { width: 50%; }
+.attendance-skeleton-status { width: 58%; }
+.attendance-skeleton-action {
+    border-radius: 8px;
+    height: 24px;
+    width: 68px;
+}
+.attendance-skeleton-checkbox {
+    border-radius: 3px;
+    height: 14px;
+    width: 14px;
+}
+
+@keyframes attendance-skeleton-pulse {
+    50% { opacity: .52; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .attendance-skeleton-block { animation: none; }
 }
 
 .checkbox-col {

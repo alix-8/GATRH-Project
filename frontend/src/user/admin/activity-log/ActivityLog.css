@@ -482,6 +482,20 @@
     color: #74829b;
 }
 
+.admin-activity-history-changes,
+.admin-activity-history-snapshot {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding-left: 18px;
+}
+
+.admin-activity-history-changes li,
+.admin-activity-history-snapshot li {
+    color: #314563;
+    font-size: 14px;
+}
+
 .admin-activity-history-dialog dd.admin-activity-history-success {
     color: #11a349;
 }
