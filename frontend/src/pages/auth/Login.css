@@ -5,268 +5,287 @@
 }
 
 .login-page {
-    --panel-content-top: clamp(112px, 18vh, 150px);
-    --home-accent: #e9bd55;
-    position: relative;
-    height: 100vh;
-    min-height: 100vh;
-    background: linear-gradient(to right,
-            white 0%,
-            white 50%,
-            #172B4D 50%,
-            #172B4D 100%);
+    --login-navy: #172b4d;
+    --login-gold: #e9bd55;
+    --login-muted: #53677f;
+    --login-paper: #fff;
+    display: grid;
+    grid-template-columns: minmax(0, 42.7fr) minmax(0, 57.3fr);
+    min-height: 100svh;
+    background: var(--login-paper);
+    color: var(--login-navy);
+    color-scheme: light;
+    text-align: left;
 }
 
-.login-title {
-    max-width: min(360px, calc(100vw - 180px));
-    overflow-wrap: anywhere;
-    position: absolute;
-    color: #172B4D;
-    font-weight: 600;
-    font-size: 20px;
-    text-align: left;
-    margin-left: 154px;
-    padding-top: 18px;
+.login-page,
+.login-page * {
+    box-sizing: border-box;
+}
+
+.login-left {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    justify-items: start;
+    min-width: 0;
+    gap: 24px;
+    padding: clamp(18px, 3vh, 28px) clamp(24px, 3.4vw, 64px);
+}
+
+.login-brand,
+.login-content,
+.login-main,
+.account-help {
+    width: min(100%, calc(22.4vw + 130px));
+}
+
+.login-brand {
+    --login-logo-size: clamp(76px, 7.3vw, 116px);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
 }
 
 .login-lvcc-logo {
-    position: absolute;
-    left: 66px;
-    width: 80px;
-    margin-top: 30px;
+    display: block;
+    width: var(--login-logo-size);
+    height: var(--login-logo-size);
+    flex: 0 0 var(--login-logo-size);
+}
+
+.login-title {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: clamp(16px, 1.75vw, 32px);
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.login-title span {
+    display: block;
+    white-space: nowrap;
+}
+
+.login-main {
+    align-self: center;
 }
 
 .welcome-title {
-    position: absolute;
-    color: #172B4D;
+    margin: 0;
+    color: var(--login-navy);
+    font-family: 'Open Sans', sans-serif;
+    font-size: clamp(40px, min(4.45vw, 6.5vh), 64px);
     font-weight: 700;
-    font-size: 2.8rem;
-    text-align: left;
-    letter-spacing: 1px;
-    margin: 130px 78px;
+    letter-spacing: 0.01em;
+    line-height: 1.12;
 }
 
 .welcome-message {
-    position: absolute;
-    text-align: left;
-    color: #7c7a7a;
-    margin: 255px 78px;
+    max-width: 34ch;
+    margin: 6px 0 0;
+    color: #626b78;
+    font-size: 14px;
     line-height: 1.4;
 }
 
 .login-form {
-    position: absolute;
-    top: 330px;
-    left: 80px;
-    width: 370px;
+    width: 100%;
+    margin-top: 26px;
 }
 
 .login-form form {
     width: 100%;
 }
 
-.form-group::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: -1px;
-    height: calc(100% + 2px);
-    width: 3px;
-    background-color: #172B4D;
-    opacity: 0;
-    transition: opacity 180ms ease;
-}
-
-.form-group:has(input:focus)::before {
-    opacity: 1;
-}
-
 .form-group {
     position: relative;
-    box-sizing: border-box;
-    border: 1px solid rgb(184, 180, 180);
-    width: 370px;
-    height: 55px;
+    width: 100%;
+    min-height: 58px;
     margin-bottom: 16px;
-    padding: 8px 16px 0;
-    text-align: left;
+    padding: 8px 16px 9px;
+    border: 1px solid #a7aeb8;
+    background: var(--login-paper);
 }
 
-.password-group {
-    padding-right: 42px;
+.form-group::before {
+    position: absolute;
+    inset: -1px auto -1px -1px;
+    width: 3px;
+    background: var(--login-navy);
+    content: '';
+    opacity: 0;
+}
+
+.form-group:focus-within::before {
+    opacity: 1;
 }
 
 .form-group label {
     display: block;
+    color: #526174;
     font-size: 12px;
-    color: #6b7280;
-    line-height: 1;
-    padding-top: 4px;
+    line-height: 1.25;
 }
 
 .form-group input {
-    box-sizing: border-box;
     display: block;
     width: 100%;
-    border: none;
-    outline: none;
-    font-size: 12px;
-    font-weight: 700;
-    color: #172B4D;
-    background: transparent;
-    margin-top: 7px;
+    margin-top: 4px;
     padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--login-navy);
+    font-weight: 600;
+    line-height: 1.4;
 }
 
 .form-group input::placeholder {
-    color: #94A3B8;
-    font-weight: 700;
-    font-size: 12px;
-
-}
-
-.form-group input::selection {
-    color: #172B4D;
-    background: #e9edf2;
+    color: #687b97;
+    font-weight: 400;
+    opacity: 1;
 }
 
 .form-group input:-webkit-autofill,
 .form-group input:-webkit-autofill:hover,
 .form-group input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #172B4D;
-    -webkit-box-shadow: 0 0 0 1000px #fff inset;
-    transition: background-color 9999s ease-out;
+    -webkit-text-fill-color: var(--login-navy);
+    -webkit-box-shadow: 0 0 0 1000px var(--login-paper) inset;
+}
+
+.password-group {
+    padding-right: 52px;
 }
 
 .show-password-toggle {
     position: absolute;
     top: 50%;
-    right: 12px;
+    right: 4px;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
     transform: translateY(-50%);
-    border: none;
+    border: 0;
     background: transparent;
     cursor: pointer;
 }
 
 .show-password-icon {
+    display: block;
     width: 18px;
     height: 18px;
-    display: block;
-    opacity: 0.8;
 }
 
 .login-password-slash {
     position: absolute;
-    left: 50%;
     top: 50%;
+    left: 50%;
     width: 2px;
     height: 20px;
-    background: #172b4d;
     transform: translate(-50%, -50%) rotate(45deg);
+    background: var(--login-navy);
 }
 
 .form-options {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 370px;
-    margin: 20px 0;
-    color: #5f5f5f;
-    font-size: 12px;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    width: 100%;
+    margin: 12px 0;
+    color: #46546a;
+    font-size: 13px;
 }
 
 .remember-option {
-    display: flex;
+    display: inline-flex;
+    min-height: 44px;
     align-items: center;
     gap: 8px;
     cursor: pointer;
 }
 
 .remember-option input {
-    appearance: none;
-    width: 11px;
-    height: 11px;
+    width: 16px;
+    height: 16px;
     margin: 0;
-    border: 1px solid #000;
-    background-color: #fff;
+    accent-color: var(--login-navy);
 }
 
-.remember-option input:checked {
-    appearance: auto;
-}
-
-.forgot-password,
-.button {
+.forgot-password {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--login-navy);
     font: inherit;
     cursor: pointer;
 }
 
-.forgot-password {
-    padding: 0;
-    color: #5f5f5f;
-    border: 0;
-    background: transparent;
-}
-
-.form-actions {
-    display: flex;
-    gap: 6px;
-    margin-top: 0;
-}
-
-.button {
-    box-sizing: border-box;
-    height: 45px;
-    font-size: 12px;
-}
-
-.login-button {
-    color: #fff;
-    background-color: #172b4d;
-    border: 1px solid #172b4d;
-    border-radius: 16px;
-    width: 370px;
-    box-shadow: 0 2px 3px rgb(0 0 0 / 25%);
-}
-
 .login-error {
-    margin: 8px 0 0;
+    min-height: 8px;
+    margin: 0 0 8px;
     color: transparent;
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.4;
     text-align: center;
 }
 
 .login-error.visible {
-    color: #c0392b;
+    color: #a3281e;
 }
 
 .login-error.login-success {
-    color: #2f9d68;
+    color: #216f4b;
+}
+
+.login-button {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid var(--login-navy);
+    border-radius: 16px;
+    background: var(--login-navy);
+    box-shadow: 0 2px 4px rgb(0 0 0 / 20%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.login-button:hover {
+    background: #23416e;
+}
+
+.login-button:disabled {
+    opacity: 0.65;
+    cursor: default;
 }
 
 .account-help {
-    position: absolute;
-    top: 610px;
-    left: 80px;
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
-    color: #7c7a7a;
-    font-size: 13px;
+    margin: 0;
+    color: #626b78;
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .admin-contact-link {
     display: inline-grid;
-    color: #172b4d;
+    min-width: 0;
+    max-width: 100%;
+    color: var(--login-navy);
     text-decoration: none;
+    overflow-wrap: anywhere;
 }
 
 .admin-contact-link span {
     grid-area: 1 / 1;
-}
-
-.admin-contact-email a, .admin-contact-label a {
-    text-decoration: none;
-    
 }
 
 .admin-contact-email,
@@ -281,88 +300,82 @@
 }
 
 .login-right {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 50%;
-    overflow: hidden;
-    background-color: #172B4D;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-width: 0;
+    gap: 28px;
+    padding: 48px clamp(24px, 2.2vw, 48px) 32px clamp(28px, 6vw, 120px);
+    background-color: var(--login-navy);
     background-image:
-        linear-gradient(
-            18deg,
-            rgba(23, 43, 77, 0.9) 72.4%,
-            rgba(48, 89, 160, 0.9) 93.2%,
-            rgba(53, 100, 179, 0.9) 98.3%
-        ),
+        linear-gradient(18deg, rgb(23 43 77 / 90%) 72.4%, rgb(48 89 160 / 90%) 93.2%, rgb(53 100 179 / 90%) 98.3%),
         url('../../assets/illustrations/right-panel-background.png');
     background-position: center, center bottom;
-    background-size: cover, auto calc(100% + clamp(12px, 16vh, 100px));
-}
-
-.login-panel-content {
-    position: absolute;
-    inset: 0;
-}
-
-.panel-content {
-    height: 100%;
-    animation: panel-enter 260ms ease-out both;
-}
-
-@keyframes panel-enter {
-    from {
-        opacity: 0;
-        transform: translateX(18px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    background-size: cover, cover;
+    color: #eef2f8;
 }
 
 .login-nav {
     display: flex;
-    position: absolute;
-    z-index: 1;
-    gap: 30px;
-    top: 50px;
-    margin-left: 150px;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px clamp(20px, 3.5vw, 56px);
 }
 
-.login-nav a {
-    font-size: 18px;
-    line-height: 1.2;
-    text-decoration: none;
-    color: white;
+.login-nav button {
     position: relative;
+    min-height: 44px;
+    padding: 0 0 8px;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font-size: clamp(16px, 1.32vw, 26px);
+    white-space: nowrap;
+    cursor: pointer;
 }
 
-.login-nav a::after {
+.login-nav button::after {
     position: absolute;
     right: 0;
-    bottom: -7px;
+    bottom: 4px;
     left: 0;
     height: 2px;
+    background: var(--login-gold);
     content: '';
-    background: var(--home-accent);
     transform: scaleX(0);
 }
 
-.login-nav a.active::after {
+.login-nav button.active::after {
     transform: scaleX(1);
 }
 
+.login-panel-content {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    place-items: center;
+}
+
+.panel-content {
+    width: min(100%, 1100px);
+    max-height: 100%;
+    overflow-y: auto;
+    animation: panel-enter 260ms ease-out both;
+}
+
+.info-panel {
+    position: relative;
+    left: clamp(-36px, -1.9vw, -14px);
+    min-height: min(100%, 440px);
+}
+
+@keyframes panel-enter {
+    from { opacity: 0; transform: translateX(18px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
 .home-panel {
-    position: absolute;
-    top: min(29.36vh, 298px);
-    right: 0;
-    left: min(16vh, 132px);
-    width: auto;
-    height: auto;
-    color: #eef2f8;
-    text-align: left;
+    --home-inset: clamp(24px, 3vw, 56px);
+    padding: 4px 0 4px var(--home-inset);
 }
 
 .home-introduction {
@@ -370,79 +383,75 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: min(2.36vh, 24px);
-    max-width: min(60.1vh, 610px);
+    gap: clamp(18px, 1.3vw, 26px);
 }
 
 .home-introduction::before {
     position: absolute;
     top: 0;
     bottom: 0;
-    left: max(-3.94vh, -40px);
-    width: min(0.4vh, 4px);
+    left: calc(-1 * var(--home-inset));
+    width: 3px;
+    background: var(--login-gold);
     content: '';
-    background: var(--home-accent);
 }
 
 .home-headline {
     display: flex;
     flex-direction: column;
     margin: 0;
-    font-family: 'GATRH Home Poppins', sans-serif;
-    font-size: min(6.28vh, 48px);
+    color: #fff;
+    font-size: clamp(32px, 3.34vw, 68px);
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
+    line-height: 1.25;
 }
 
-.home-headline span:first-child {
-    color: #fff;
+.home-headline,
+.home-headline span {
+    font-family: 'Poppins', sans-serif;
 }
 
 .home-headline span:last-child {
-    color: var(--home-accent);
+    color: var(--login-gold);
 }
 
 .home-description {
-    max-width: min(57.14vh, 580px);
+    max-width: 44ch;
     margin: 0;
-    font-size: min(2.56vh, 26px);
-    letter-spacing: 0.025em;
-    line-height: 1.38;
-}
-
-.home-how-link {
-    display: inline-flex;
-    align-items: center;
-    gap: min(0.79vh, 8px);
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--home-accent);
-    cursor: pointer;
-    font-size: min(2.27vh, 23px);
-    font-weight: 400;
-    letter-spacing: 0.02em;
+    font-size: clamp(16px, 1.25vw, 26px);
     line-height: 1.4;
 }
 
-.home-how-link:hover,
-.home-how-link:focus-visible {
+.home-how-link {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--login-gold);
+    font-size: clamp(16px, 1.25vw, 26px);
+    text-align: left;
+    cursor: pointer;
+}
+
+.home-how-link:hover {
     text-decoration: underline;
+    text-underline-offset: 4px;
 }
 
 .home-feature-divider {
-    width: min(8.28vh, 84px);
+    width: clamp(54px, 3.75vw, 80px);
     height: 1px;
-    margin-top: min(3.55vh, 36px);
+    margin-top: 24px;
     background: rgb(238 242 248 / 65%);
 }
 
 .home-feature-list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: min(2.36vh, 24px);
-    max-width: min(57.14vh, 580px);
-    margin: min(2.56vh, 26px) 0 0;
+    gap: 16px;
+    max-width: min(100%, clamp(450px, 31.25vw, 600px));
+    margin: 18px 0 0;
     padding: 0;
     list-style: none;
 }
@@ -452,118 +461,100 @@
     min-width: 0;
     flex-direction: column;
     align-items: flex-start;
-    gap: min(0.79vh, 8px);
-    font-family: 'GATRH Home Inter', sans-serif;
-    font-size: min(1.97vh, 20px);
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    line-height: 1.4;
+    gap: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(14px, 1.1vw, 22px);
+    line-height: 1.35;
 }
 
 .home-feature-list img {
     display: block;
-    width: min(3.94vh, 40px);
-    height: min(3.94vh, 40px);
+    width: clamp(28px, 2.1vw, 44px);
+    height: clamp(28px, 2.1vw, 44px);
 }
 
 .features-panel {
-    position: absolute;
-    inset: var(--panel-content-top) 40px 14px;
-    box-sizing: border-box;
-    padding: 0;
-    color: #172B4D;
-    text-align: center;
-
+    position: relative;
+    left: clamp(-36px, -1.9vw, -14px);
+    width: min(100%, clamp(420px, 35vw, 540px));
 }
 
 .feature-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(270px, 1fr));
-    grid-template-rows: repeat(2, minmax(0, clamp(190px, 36vh, 260px)));
-    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
 }
 
 .feature-card {
-    box-sizing: border-box;
     display: flex;
+    min-width: 0;
     flex-direction: column;
-    padding: 12px 16px;
-    border-radius: 24px;
-    background: white;
+    align-items: center;
+    padding: clamp(16px, 1.2vw, 24px);
+    border-radius: 16px;
+    background: #fff;
+    color: var(--login-navy);
+    text-align: center;
 }
 
 .feature-icon-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    flex: 0 0 52px;
-    align-self: center;
-    border: 1px solid #172B4D;
+    display: grid;
+    width: clamp(48px, 3.3vw, 68px);
+    height: clamp(48px, 3.3vw, 68px);
+    flex: 0 0 clamp(48px, 3.3vw, 68px);
+    place-items: center;
+    border: 1px solid var(--login-navy);
     border-radius: 50%;
 }
 
 .feature-icon {
-    width: 32px;
-    height: 32px;
+    width: clamp(30px, 2.1vw, 42px);
+    height: clamp(30px, 2.1vw, 42px);
 }
 
 .feature-card h3 {
-    margin: 12px 0;
-    font-size: 18px;
-    line-height: 1.2;
+    margin: 10px 0 6px;
+    font-size: clamp(17px, 1.25vw, 24px);
+    line-height: 1.25;
 }
 
 .feature-card p {
-    color: #53677f;
-    font-size: 12px;
+    margin: 0;
+    color: var(--login-muted);
+    font-size: clamp(13px, 0.94vw, 18px);
     line-height: 1.4;
     text-align: left;
-    margin-left: 10px;
 }
 
 .feature-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-self: stretch;
     margin-top: auto;
-    padding-top: 12px;
+    padding-top: 8px;
+    text-align: right;
 }
 
 .feature-index {
-    color: #172B4D;
-    font-size: 18px;
+    display: inline-grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 50%;
+    background: #b9c7d9;
+    font-size: 11px;
     font-weight: 600;
-}
-
-.process-panel {
-    position: absolute;
-    inset: var(--panel-content-top) 40px 14px;
-    box-sizing: border-box;
-    height: auto;
-    margin: 0;
-    padding: 0;
 }
 
 .process-flow {
     display: flex;
-    height: 100%;
     flex-direction: column;
     gap: 8px;
 }
 
 .process-card {
-    box-sizing: border-box;
-    min-height: 0;
-    flex: 0 1 clamp(78px, 14vh, 112px);
-    background: white;
+    padding: clamp(12px, 0.9vw, 18px) clamp(18px, 1.2vw, 24px);
     border-radius: 12px;
-    padding: 8px 18px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
+    background: #fff;
+    color: var(--login-navy);
 }
 
 .process-card-row {
@@ -574,68 +565,63 @@
 }
 
 .process-card-title {
-    color: #172B4D;
     margin: 0;
-    font-size: 18px;
-    line-height: 1.2;
+    font-size: clamp(17px, 1.25vw, 24px);
+    line-height: 1.25;
 }
 
 .process-card-copy {
-    text-align: left;
-    color: #526174;
-    font-size: 12px;
-    line-height: 1.35;
+    margin: 4px 0 0;
+    color: var(--login-muted);
+    font-size: clamp(13px, 0.94vw, 18px);
+    line-height: 1.4;
 }
 
 .process-card-number {
+    display: grid;
     width: 32px;
     height: 32px;
     flex: 0 0 32px;
-    border-radius: 30%;
-    background-color: #172B4D;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--login-navy);
     color: #fff;
-    font-size: 18px;
-    font-weight: bold;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    font-size: clamp(15px, 1.05vw, 20px);
+    font-weight: 700;
 }
 
 .faq-list {
-    width: auto;
     display: flex;
     flex-direction: column;
-    margin: 0;
-    gap: 14px;
-}
-
-.faq-panel {
-    position: absolute;
-    inset: var(--panel-content-top) 40px 14px;
-    box-sizing: border-box;
-    height: auto;
-    margin: 0;
+    gap: 12px;
 }
 
 .faq-list details {
+    padding: clamp(16px, 1.2vw, 24px) clamp(20px, 1.5vw, 30px);
     border-radius: 12px;
     background: #fff;
-    color: #172B4D;
-    padding: 16px 20px;
+    color: var(--login-navy);
 }
 
 .faq-list summary {
-    cursor: pointer;
-    font-weight: bold;
-    list-style: none;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
+    font-size: clamp(16px, 1.15vw, 23px);
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
 }
 
-.faq-list .faq-dropdown-icon {
-    width: 28px;
-    height: 28px;
+.faq-list summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-dropdown-icon {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
 }
 
 .faq-list details[open] .faq-dropdown-icon {
@@ -643,429 +629,101 @@
 }
 
 .faq-list details p {
-    text-align: left;
-    max-width: 620px;
-    padding-top: 10px;
-    color: #53677f;
-    font-size: 14px;
+    margin: 8px 0 0;
+    color: var(--login-muted);
+    font-size: clamp(14px, 0.94vw, 18px);
+    line-height: 1.4;
 }
 
-/* Keep the form controls within the left panel at supported narrow widths. */
-@media (min-width: 901px) and (max-width: 1599px) {
-    .form-group,
-    .form-options,
-    .login-button {
-        width: 100%;
-    }
-
-    .form-options,
-    .account-help {
-        flex-wrap: wrap;
-    }
-
-    .form-options {
-        gap: 12px;
-    }
-
-    .admin-contact-link {
-        min-width: 0;
-        max-width: 100%;
-        overflow-wrap: anywhere;
-    }
-
-    .features-panel,
-    .process-panel,
-    .faq-panel {
-        overflow-y: auto;
-        overflow-wrap: anywhere;
-    }
-
-    .process-panel,
-    .faq-panel {
-        inset: 100px 24px 24px;
-    }
-
-    .feature-card h3,
-    .feature-card p,
-    .process-card-title,
-    .process-card-copy,
-    .faq-list details p,
-    .faq-list summary {
-        overflow-wrap: anywhere;
-    }
-
-    .process-card {
-        flex-basis: auto;
-        min-height: 92px;
-    }
+.login-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
-/* The minimum supported viewport needs shorter fields to keep the form in view. */
-@media (min-width: 901px) and (max-width: 1599px) and (max-height: 560px) {
-    .form-group {
-        height: 42px;
-        margin-bottom: 7px;
-        padding: 6px 12px 0;
-    }
-
-    .form-group label {
-        padding-top: 2px;
-        font-size: 10px;
-    }
-
-    .form-group input,
-    .form-group input::placeholder {
-        margin-top: 3px;
-        font-size: 11px;
-    }
-
-    .password-group {
-        padding-right: 38px;
-    }
-
-    .form-options {
-        gap: 8px;
-        margin: 8px 0;
-        font-size: 11px;
-    }
-
-    .login-button {
-        height: 34px;
-        border-radius: 12px;
-        font-size: 11px;
-    }
-
-    .login-error {
-        margin-top: 3px;
-        font-size: 11px;
-        line-height: 1.15;
-    }
+.login-page :is(button, input, a, summary):focus-visible {
+    outline: none;
 }
-/* Keep the branding, form, and account help aligned across supported desktop sizes. */
-@media (min-width: 901px) {
+
+.login-page .login-button:not(:disabled):focus-visible {
+    outline: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.login-page .remember-option input:focus-visible + span,
+.login-page .forgot-password:focus-visible,
+.login-page .admin-contact-link:focus-visible,
+.login-page .faq-list summary:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.login-page .login-nav button:focus-visible::after {
+    transform: scaleX(1);
+}
+
+.login-page .show-password-toggle:focus-visible .show-password-icon {
+    transform: scale(1.15);
+}
+
+@media (max-width: 1050px) and (min-width: 901px) {
+    .login-right { padding-inline: 28px; }
+    .features-panel, .info-panel { left: 0; }
+    .home-headline { font-size: 32px; }
+    .home-description br { display: none; }
+}
+
+@media (max-width: 900px) {
     .login-page {
-        height: max(100svh, 500px);
-        min-height: 500px;
-        overflow: visible;
+        display: flex;
+        flex-direction: column;
+        min-height: 100svh;
     }
 
     .login-left {
-        --login-column-width: 374px;
-        position: absolute;
-        inset: 0 50% 0 0;
-        box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        min-width: 0;
-        padding: 28px clamp(32px, 5vw, 80px);
-        text-align: left;
+        align-items: center;
+        gap: 32px;
+        padding: 24px max(24px, env(safe-area-inset-right)) 36px max(24px, env(safe-area-inset-left));
     }
 
+    .login-brand,
     .login-content,
     .login-main,
     .account-help {
-        box-sizing: border-box;
-        width: min(100%, var(--login-column-width));
+        width: min(100%, 486px);
     }
 
-    .login-brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 0;
+    .login-main { align-self: auto; }
+    .login-right {
+        min-height: 440px;
+        padding: 24px max(24px, env(safe-area-inset-right)) 40px max(24px, env(safe-area-inset-left));
     }
 
-    .login-lvcc-logo {
-        position: static;
-        flex: 0 0 76px;
-        width: 76px;
-        margin: 0;
-    }
-
-    .login-title {
-        position: static;
-        max-width: none;
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        font-size: clamp(19px, 1.65vw, 21px);
-        line-height: 1.25;
-    }
-
-    .login-title span {
-        display: block;
-    }
-
-    .login-main {
-        margin-block: auto;
-    }
-
-    .welcome-title,
-    .welcome-message {
-        position: static;
-        inset: auto;
-        margin: 0;
-    }
-
-    .welcome-title {
-        font-size: clamp(38px, 3vw, 44px);
-        line-height: 1.12;
-    }
-
-    .welcome-message {
-        margin-top: 6px;
-        max-width: 34ch;
-        font-size: 14px;
-        line-height: 1.25;
-    }
-
-    .login-form {
-        position: static;
-        width: 100%;
-        max-width: var(--login-column-width);
-        margin-top: 26px;
-    }
-
-    .account-help {
-        position: static;
-        max-width: 100%;
-        font-size: 12px;
-        line-height: 1.3;
-    }
+    .login-panel-content { min-height: 300px; }
+    .panel-content { max-height: none; overflow: visible; }
+    .features-panel, .info-panel { left: 0; }
+    .info-panel { min-height: 0; }
 }
 
-@media (min-width: 1600px) {
-    .login-page {
-        height: max(100svh, 600px);
-        min-height: 600px;
-    }
-
-    .login-left {
-        align-items: center;
-    }
-
-    .form-group,
-    .form-options,
-    .login-button {
-        width: 100%;
-    }
-
-    .features-panel,
-    .process-panel,
-    .faq-panel {
-        overflow-y: auto;
-    }
-
-    .process-panel,
-    .faq-panel {
-        right: 0;
-        left: 0;
-        width: min(calc(100% - 80px), 640px);
-        margin-inline: auto;
-    }
-
-    .process-flow {
-        justify-content: center;
-    }
-
-    .faq-panel {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .faq-list {
-        width: 100%;
-        margin-block: auto;
-    }
-}
-
-@media (min-width: 901px) {
-    .login-nav {
-        top: 54px;
-        right: 20px;
-        left: 20px;
-        justify-content: center;
-        flex-wrap: nowrap;
-        gap: 40px;
-        margin-left: 0;
-    }
-
-    .login-nav a {
-        font-size: 18px;
-        white-space: nowrap;
-    }
-
-    .features-panel {
-        inset: clamp(100px, 15vh, 160px) 24px 24px;
-        height: auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .feature-grid {
-        width: min(100%, 470px, calc(85svh - 102px));
-        min-width: 300px;
-        height: min(100%, 548px);
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-template-rows: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-    }
-
-    .feature-card {
-        min-width: 0;
-        min-height: 0;
-    }
-}
-
-@media (min-width: 901px) and (max-height: 600px) {
-    .feature-card {
-        padding: 8px;
-    }
-
-    .feature-icon-wrap {
-        width: 38px;
-        height: 38px;
-        flex-basis: 38px;
-    }
-
-    .feature-icon {
-        width: 24px;
-        height: 24px;
-    }
-
-    .feature-card h3 {
-        margin: 8px 0;
-        font-size: 12px;
-    }
-
-    .feature-card p {
-        margin-left: 0;
-        font-size: 9px;
-        line-height: 1.2;
-    }
-
-    .feature-footer {
-        padding-top: 4px;
-    }
-
-    .feature-index {
-        font-size: 12px;
-    }
-}
-
-@media (min-width: 901px) and (max-width: 1050px) {
-    .home-panel {
-        right: 22px;
-        left: clamp(76px, 8.8vw, 92px);
-    }
-
-    .home-introduction,
-    .home-description,
-    .home-feature-list {
-        max-width: 100%;
-    }
-
-    .home-headline {
-        font-size: clamp(32px, 3.7vw, 38px);
-        line-height: 1.2;
-    }
-
-    .feature-card {
-        padding: 10px 12px;
-    }
-
-    .feature-icon-wrap {
-        width: 48px;
-        height: 48px;
-        flex-basis: 48px;
-    }
-
-    .feature-icon {
-        width: 30px;
-        height: 30px;
-    }
-
-    .feature-card h3 {
-        align-self: center;
-        max-width: 150px;
-        margin: 8px 0 4px;
-        font-size: 17px;
-    }
-
-    .feature-card p {
-        margin: 4px 0 0;
-        font-size: 12px;
-        line-height: 1.3;
-    }
-
-    .feature-footer {
-        flex-shrink: 0;
-        padding-top: 4px;
-    }
-
-    .feature-index {
-        font-size: 16px;
-        line-height: 1;
-    }
-
-    .faq-list {
-        gap: 12px;
-    }
-
-    .faq-list details {
-        padding: 14px 18px;
-    }
-
-    .faq-list summary {
-        font-size: 17px;
-        line-height: 1.2;
-    }
-
-    .faq-list .faq-dropdown-icon {
-        width: 26px;
-        height: 26px;
-        flex: 0 0 26px;
-    }
-
-    .faq-list details p {
-        margin: 6px 0 0;
-        padding-top: 0;
-        font-size: 13.5px;
-        line-height: 1.4;
-    }
-}
-
-@media (min-width: 901px) and (max-width: 1050px) and (max-height: 600px) {
-    .features-panel {
-        align-items: flex-start;
-    }
-
-    .feature-grid {
-        flex: 0 0 auto;
-        height: auto;
-        grid-template-rows: repeat(2, minmax(247px, auto));
-    }
-
-    .faq-panel {
-        inset: 96px 24px 16px;
-    }
-
-    .faq-list {
-        gap: clamp(8px, 1.7vh, 10px);
-    }
-
-    .faq-list details {
-        padding: clamp(10px, 2vh, 12px) 16px;
-    }
-
-    .faq-list summary {
-        font-size: clamp(14px, 2.8vh, 16px);
-    }
-
-    .faq-list details p {
-        margin-top: 4px;
-        font-size: clamp(12px, 2.3vh, 13px);
-        line-height: 1.3;
-    }
+@media (max-width: 520px) {
+    .login-left { gap: 28px; }
+    .login-brand { --login-logo-size: clamp(64px, 17vw, 76px); }
+    .login-title { font-size: clamp(13px, 3.9vw, 19px); }
+    .welcome-title { font-size: 38px; }
+    .welcome-message { font-size: 15px; }
+    .form-group input { font-size: 16px; }
+    .home-headline { font-size: clamp(28px, 8vw, 36px); }
+    .home-description { font-size: 16px; }
+    .home-description br { display: none; }
+    .home-feature-list { gap: 8px; }
+    .home-feature-list li { font-size: 12px; }
+    .feature-grid { grid-template-columns: 1fr; }
 }

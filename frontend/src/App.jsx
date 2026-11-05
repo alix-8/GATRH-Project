@@ -5,6 +5,12 @@ import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import LoadingCircle from './components/feedback/LoadingCircle'
+import SecretaryDashboardSkeleton from './user/secretary/dashboard/DashboardSkeleton'
+import ProgramDashboardSkeleton from './user/program-head/dashboard/DashboardSkeleton'
+import AdminDashboardSkeleton from './user/admin/dashboard/DashboardSkeleton'
+import ChancellorDashboardSkeleton from './user/chancellor/dashboard/DashboardSkeleton'
+import CoordinatorMonitoringSkeleton from './user/coordinator/monitoring/skeleton/MonitoringSkeleton'
+import { isLoginSkeletonPending } from './utils/loginSkeletonState'
 
 // Authenticated pages are downloaded only when the user visits them.
 const Dashboard = lazy(() => import('./user/secretary/dashboard/Dashboard'))
@@ -73,9 +79,28 @@ function getSession() {
 
 function RoleRoute({ roles, children }) {
   const user = getSession()
+  const location = useLocation()
   if (!user) return <Navigate to="/" replace />
   if (!roles.includes(user.role)) return <Navigate to={landingByRole[user.role] || '/unauthorized'} replace />
-  return <Suspense fallback={<AuthenticatedPageLoading />}>{children}</Suspense>
+  const showLoginSkeleton = location.pathname === landingByRole[user.role] && isLoginSkeletonPending()
+  return <Suspense fallback={showLoginSkeleton
+    ? <LoginLandingSkeleton role={user.role} />
+    : <AuthenticatedPageLoading />}>{children}</Suspense>
+}
+
+function LoginLandingSkeleton({ role }) {
+  if (role === 'secretary') return <SecretaryDashboardSkeleton />
+  if (role === 'program_secretary' || role === 'program_head') {
+    return <ProgramDashboardSkeleton programSecretary={role === 'program_secretary'} />
+  }
+  if (role === 'admin') return <AdminDashboardSkeleton />
+  if (role === 'chancellor') return <ChancellorDashboardSkeleton />
+  if (role === 'cm_coordinator') {
+    const today = new Date()
+    const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+    return <CoordinatorMonitoringSkeleton month={month} />
+  }
+  return <AuthenticatedPageLoading />
 }
 
 function AuthenticatedPageLoading() {
@@ -164,7 +189,7 @@ function ResponsiveApp() {
   }, [])
 
   const isPasswordFlow = ['/forgot-password', '/reset-password'].includes(location.pathname)
-  const showScreenSizeNotice = isCompactScreen && !isPasswordFlow
+  const showScreenSizeNotice = isCompactScreen && !isPasswordFlow && location.pathname !== '/'
 
   return (
     <>
