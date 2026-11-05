@@ -97,7 +97,7 @@ function preserveHeader(rawText, serializedStudents) {
     return header ? `${header}\n\n${serializedStudents}` : serializedStudents
 }
 
-export default function PreviewImportPanel({ rawText, onChange, errors, gatheringRangeLabels, onRowsParsed }) {
+export default function PreviewImportPanel({ rawText, onChange, errors, gatheringRanges, gatheringRangeLabels, onRowsParsed }) {
     const [students, setStudents] = useState([])
 
     useEffect(() => {
@@ -143,6 +143,7 @@ export default function PreviewImportPanel({ rawText, onChange, errors, gatherin
                                         field,
                                         value: s[slotType][field],
                                         venue: s[slotType].venue,
+                                        range: gatheringRanges?.[slotType],
                                         rangeLabel: gatheringRangeLabels?.[slotType],
                                     })
                                     return (

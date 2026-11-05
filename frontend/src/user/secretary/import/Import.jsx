@@ -421,6 +421,9 @@ function Import({ onGoToAttendance = () => {} }) {
         setModal('select-week')
     }
 
+    const gatheringRanges = Object.fromEntries(
+        ['pm', 'ws', 'tg'].map((type) => [type, periods?.[weekPeriod]?.[type] || null])
+    )
     const gatheringRangeLabels = Object.fromEntries(
         ['pm', 'ws', 'tg'].map((type) => [type, periods?.[weekPeriod]?.[type]?.label || ''])
     )
@@ -503,8 +506,8 @@ function Import({ onGoToAttendance = () => {} }) {
                     preview={
                         isPreviewing
                             ? (isWeekMode
-                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} gatheringRangeLabels={gatheringRangeLabels} onRowsParsed={setPreviewRowCount} onChange={updatePreviewText} />
-                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} gatheringRangeLabel={gatheringRangeLabels[form.gathering_type]} onRowsParsed={setPreviewRowCount} onChange={updatePreviewText} />
+                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} gatheringRanges={gatheringRanges} gatheringRangeLabels={gatheringRangeLabels} onRowsParsed={setPreviewRowCount} onChange={updatePreviewText} />
+                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} gatheringRange={gatheringRanges[form.gathering_type]} gatheringRangeLabel={gatheringRangeLabels[form.gathering_type]} onRowsParsed={setPreviewRowCount} onChange={updatePreviewText} />
                             )
                             : null
                     }

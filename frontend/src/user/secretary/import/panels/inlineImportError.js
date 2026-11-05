@@ -1,4 +1,8 @@
-import { attendanceTimeError } from '../../attendance/attendanceEditValidation'
+import {
+    ATTENDANCE_TIME_RE,
+    attendanceTimeError,
+    resolveAttendanceDay,
+} from '../../attendance/attendanceEditValidation'
 
 const REQUIRED_MESSAGES = {
     day: 'Day is required',
@@ -8,7 +12,7 @@ const REQUIRED_MESSAGES = {
     venue: 'Venue is required',
 }
 
-const TIME_FORMAT_MESSAGE = 'Invalid format.'
+const TIME_FORMAT_MESSAGE = 'Use 4:30 AM'
 
 function matchingErrorEntries(errors, studentName, gatheringType) {
     return errors?.format_errors?.filter((entry) => {
@@ -43,12 +47,25 @@ function conciseServerMessage(reason, field, rangeLabel) {
     return reason || ''
 }
 
-export function inlineImportError({ errors, studentName, gatheringType, field, value, venue, rangeLabel }) {
-    if ((field === 'time' || field === 'batch') && value) {
+export function inlineImportError({ errors, studentName, gatheringType, field, value, venue, range, rangeLabel }) {
+    const input = String(value ?? '').trim()
+
+    if ((field === 'time' || field === 'batch') && input) {
+        if (input.length > 10) return 'Use 10 characters or fewer'
+        if (!ATTENDANCE_TIME_RE.test(input)) return TIME_FORMAT_MESSAGE
+
         const timeError = attendanceTimeError(value, gatheringType, venue)
         if (timeError) {
             const earliestTime = timeError.match(/must be (.+) or later\./)?.[1]
             return `Earliest ${String(gatheringType).toUpperCase()} time: ${earliestTime}`
+        }
+    }
+
+    if (field === 'day' && input) {
+        if (input.length > 9) return 'Use 9 characters or fewer'
+        if (range && !resolveAttendanceDay(input, range, venue)) {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(input) && input > todayIso()) return 'Future dates aren’t allowed'
+            return isDayOrDate(input) ? `Allowed date range: ${rangeLabel}` : 'Use a valid day'
         }
     }
 
@@ -66,6 +83,17 @@ export function inlineImportError({ errors, studentName, gatheringType, field, v
     }
 
     return ''
+}
+
+function todayIso() {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date())
+}
+
+function isDayOrDate(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value)
+        || /^(sun(day)?|mon(day)?|tue(s|sday)?|wed(nesday)?|thu(r|rs|rsday)?|fri(day)?|sat(urday)?)$/i.test(value)
 }
 
 export function hasInlineImportError(options) {

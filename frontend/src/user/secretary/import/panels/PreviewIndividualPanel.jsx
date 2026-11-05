@@ -46,7 +46,7 @@ function preserveHeader(rawText, serializedStudents) {
     return header ? `${header}\n\n${serializedStudents}` : serializedStudents
 }
 
-export default function PreviewIndividualPanel({ rawText, onChange, errors, gatheringType, gatheringRangeLabel, onRowsParsed }) {
+export default function PreviewIndividualPanel({ rawText, onChange, errors, gatheringType, gatheringRange, gatheringRangeLabel, onRowsParsed }) {
     const [students, setStudents] = useState([])
 
     useEffect(() => {
@@ -78,9 +78,9 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
 
             {students.map((s, i) => {
                 const isUnmatched = errors?.unmatched_lines?.some((u) => u.extracted_name === s.name)
-                const timeError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'batch', value: s.slot.batch, venue: s.slot.venue, rangeLabel: gatheringRangeLabel })
-                const venueError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'venue', value: s.slot.venue, venue: s.slot.venue, rangeLabel: gatheringRangeLabel })
-                const dayError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'day', value: s.slot.day, venue: s.slot.venue, rangeLabel: gatheringRangeLabel })
+                const timeError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'batch', value: s.slot.batch, venue: s.slot.venue, range: gatheringRange, rangeLabel: gatheringRangeLabel })
+                const venueError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'venue', value: s.slot.venue, venue: s.slot.venue, range: gatheringRange, rangeLabel: gatheringRangeLabel })
+                const dayError = inlineImportError({ errors, studentName: s.name, gatheringType, field: 'day', value: s.slot.day, venue: s.slot.venue, range: gatheringRange, rangeLabel: gatheringRangeLabel })
 
                 return (
                     <div key={i} className={`preview-card preview-card-single ${isUnmatched ? 'preview-card-error' : ''}`}>
