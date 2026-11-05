@@ -17,6 +17,7 @@ import './Login.css'
 import { prepareLoginSkeleton } from '../../utils/loginSkeletonState'
 
 const DEFAULT_SYSTEM_NAME = 'Gathering Attendance Tracking and Reporting Hub'
+const DEFAULT_ADMIN_EMAIL = 'admin@laverdad.edu.ph'
 
 export function AdminContactLink({ adminEmail }) {
     if (!adminEmail) return <span>Contact your administrator</span>
@@ -43,7 +44,7 @@ function Login({ initialEmail = '' }) {
     const location = useLocation()
 
     const [systemName, setSystemName] = useState(DEFAULT_SYSTEM_NAME)
-    const [adminEmail, setAdminEmail] = useState('')
+    const [adminEmail, setAdminEmail] = useState(DEFAULT_ADMIN_EMAIL)
     useEffect(() => {
         let cancelled = false
         initializeCsrf().catch(() => {})
@@ -51,7 +52,9 @@ function Login({ initialEmail = '' }) {
             .then(data => {
                 if (cancelled) return
                 if (data.system_name) setSystemName(data.system_name)
-                if (typeof data.admin_email === 'string') setAdminEmail(data.admin_email)
+                if (typeof data.admin_email === 'string' && data.admin_email.trim()) {
+                    setAdminEmail(data.admin_email.trim())
+                }
             })
             .catch(() => {})
         return () => { cancelled = true }
@@ -177,24 +180,24 @@ function Login({ initialEmail = '' }) {
                             alt="LVCC Logo"
                         />
 
-                        <h4 className="login-title">
+                        <p className="login-title">
                             {systemName === DEFAULT_SYSTEM_NAME ? (
                                 <>
                                     <span>Gathering Attendance</span>
                                     <span>Tracking and Reporting Hub</span>
                                 </>
                             ) : systemName}
-                        </h4>
+                        </p>
                     </div>
                 </section>
 
                 <div className="login-main">
                     <div className="login-intro">
-                        <h2 className="welcome-title">
+                        <h1 className="welcome-title">
                             Welcome
                             <br />
                             Back!
-                        </h2>
+                        </h1>
 
                         <p className="welcome-message">
                             Sign in to monitor and manage student attendance.
@@ -299,47 +302,35 @@ function Login({ initialEmail = '' }) {
             {/* RIGHT SIDE */}
             <section className="login-right">
 
-                <nav className="login-nav">
-                    <a
+                <nav className="login-nav" aria-label="Landing page sections">
+                    <button type="button"
                         className={activeNav === 'home' ? 'active' : ''}
-                        href="/"
-                        onClick={(event) => {
-                            event.preventDefault()
-                            setActiveNav('home')
-                        }}
+                        aria-pressed={activeNav === 'home'}
+                        onClick={() => setActiveNav('home')}
                     >
                         Home
-                    </a>
-                    <a
+                    </button>
+                    <button type="button"
                         className={activeNav === 'features' ? 'active' : ''}
-                        href="/features"
-                        onClick={(event) => {
-                            event.preventDefault()
-                            setActiveNav('features')
-                        }}
+                        aria-pressed={activeNav === 'features'}
+                        onClick={() => setActiveNav('features')}
                     >
                         Features
-                    </a>
-                    <a
+                    </button>
+                    <button type="button"
                         className={activeNav === 'how-it-works' ? 'active' : ''}
-                        href="/how-it-works"
-                        onClick={(event) => {
-                            event.preventDefault()
-                            setActiveNav('how-it-works')
-                        }}
+                        aria-pressed={activeNav === 'how-it-works'}
+                        onClick={() => setActiveNav('how-it-works')}
                     >
                         How it works
-                    </a>
-                    <a
+                    </button>
+                    <button type="button"
                         className={activeNav === 'faqs' ? 'active' : ''}
-                        href="/faqs"
-                        onClick={(event) => {
-                            event.preventDefault()
-                            setActiveNav('faqs')
-                        }}
+                        aria-pressed={activeNav === 'faqs'}
+                        onClick={() => setActiveNav('faqs')}
                     >
                         FAQs
-                    </a>
+                    </button>
                 </nav>
 
                 <div className="login-panel-content"
@@ -356,7 +347,8 @@ function Login({ initialEmail = '' }) {
                                     Monitor student participation, organize
                                     <br/>
                                     spiritual reports, and provide timely,
-                                    compassionate support—all in one place.
+                                    <br/>
+                                    compassionate&nbsp;support—all in one place.
                                 </p>
                                 <button className="home-how-link" type="button" onClick={() => setActiveNav('how-it-works')}>
                                     See how GATRH works <span aria-hidden="true">→</span>
@@ -376,6 +368,7 @@ function Login({ initialEmail = '' }) {
                             className="panel-content features-panel"
                             aria-labelledby="features-title"
                         >
+                            <h2 id="features-title" className="login-visually-hidden">Features</h2>
                             <div className="feature-grid">
                                 <article className="feature-card">
                                     <div className="feature-icon-wrap">
@@ -469,6 +462,7 @@ function Login({ initialEmail = '' }) {
                             className="panel-content info-panel process-panel"
                             aria-labelledby="how-title"
                         >
+                            <h2 id="how-title" className="login-visually-hidden">How it works</h2>
                             <div className="process-flow">
                                 <article className="process-card">
                                     <div className="process-card-row">
@@ -527,6 +521,7 @@ function Login({ initialEmail = '' }) {
                         <section className="panel-content info-panel faq-panel"
                             aria-labelledby="faq-title"
                         >
+                            <h2 id="faq-title" className="login-visually-hidden">FAQs</h2>
                             <div className="faq-list">
                                 <details>
                                     <summary>
