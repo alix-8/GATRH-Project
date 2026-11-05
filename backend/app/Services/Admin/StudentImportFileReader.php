@@ -9,6 +9,7 @@ use SimpleXMLElement;
 class StudentImportFileReader
 {
     private const XML_NAMESPACE = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+    private const MAX_TOTAL_UNCOMPRESSED_BYTES = 25 * 1024 * 1024;
 
     public function read(UploadedFile $file): array
     {
@@ -130,6 +131,7 @@ class StudentImportFileReader
         }
         $position = $directory['offset'];
         $entries = [];
+        $totalUncompressedSize = 0;
         for ($index = 0; $index < $directory['items']; $index++) {
             if ($position + 46 > $end || substr($archive, $position, 4) !== "PK\x01\x02") {
                 $this->invalidFile('The Excel workbook is damaged.');
@@ -138,6 +140,12 @@ class StudentImportFileReader
                 + unpack('Vcompressed/Vuncompressed', substr($archive, $position + 20, 8))
                 + unpack('vnameLength/vextraLength/vcommentLength', substr($archive, $position + 28, 6))
                 + unpack('VlocalOffset', substr($archive, $position + 42, 4));
+
+            $totalUncompressedSize += $entry['uncompressed'];
+            if ($totalUncompressedSize > self::MAX_TOTAL_UNCOMPRESSED_BYTES) {
+                $this->invalidFile('The Excel file is too large to import safely.');
+            }
+
             $name = substr($archive, $position + 46, $entry['nameLength']);
             $entries[$name] = $entry;
             $position += 46 + $entry['nameLength'] + $entry['extraLength'] + $entry['commentLength'];
