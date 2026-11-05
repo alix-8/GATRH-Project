@@ -467,21 +467,21 @@ function Login({ initialEmail = '' }) {
                             <div className="process-flow">
                                 <article className="process-card">
                                     <div className="process-card-row">
-                                        <h3 className="process-card-title">Collect</h3>
+                                        <h3 className="process-card-title">Standardize</h3>
                                         <span className="process-card-number">01</span>
                                     </div>
                                     <p className="process-card-copy">
-                                        Students submit their PM, WS, and TG attendance through the existing Messenger channel.
+                                        The Spiritual Secretary copies the generated attendance template, and sends it to the students through Messenger.
                                     </p>
                                 </article>
 
                                 <article className="process-card">
                                     <div className="process-card-row">
-                                        <h3 className="process-card-title">Standardize</h3>
+                                        <h3 className="process-card-title">Collect</h3>
                                         <span className="process-card-number">02</span>
                                     </div>
                                     <p className="process-card-copy">
-                                        The Spiritual Secretary prepares the attendance using the required template.
+                                        Students fill up their PM, WS, and TG attendance on the template through the existing Messenger channel.
                                     </p>
                                 </article>
 
@@ -491,7 +491,7 @@ function Login({ initialEmail = '' }) {
                                         <span className="process-card-number">03</span>
                                     </div>
                                     <p className="process-card-copy">
-                                        The secretary copies the formatted report and pastes it into the system.
+                                        The secretary copies the attendance report text and pastes it into the system.
                                     </p>
                                 </article>
 
