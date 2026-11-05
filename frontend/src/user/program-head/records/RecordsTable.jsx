@@ -5,7 +5,7 @@ import GatheringIcon from '../../../assets/icons/GatheringFilterIcon.svg'
 import YearIcon from '../../../assets/icons/FilterYearIcon.svg'
 import FilterDropdown from '../../../components/Filters/FilterDropdown'
 import CalendarFilter from '../../../components/Filters/CalendarFilter'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
+import ProgramTableSkeleton from '../shared/ProgramTableSkeleton'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
 import SubmissionDrawer from '../submissions/SubmissionDrawer'
@@ -169,7 +169,7 @@ export default function RecordsTable() {
             )}
             <section className="ph-submissions-table-panel" aria-label="Approved attendance records">
                 <div className="ph-submissions-table-scroll">
-                    <table className="ph-submissions-table ph-records-table">
+                    <table className="ph-submissions-table ph-records-table" aria-busy={loading}>
                         <thead>
                             <tr>
                                 <th>Secretary</th>
@@ -183,11 +183,7 @@ export default function RecordsTable() {
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr>
-                                    <td className="ph-submissions-state" colSpan="7">
-                                        <LoadingCircle label="Loading records…" />
-                                    </td>
-                                </tr>
+                                <ProgramTableSkeleton count={6} />
                             ) : loadError ? (
                                 <tr>
                                     <td className="ph-submissions-state ph-submissions-error" colSpan="7">

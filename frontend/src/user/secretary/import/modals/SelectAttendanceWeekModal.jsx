@@ -1,4 +1,5 @@
 import './SelectAttendanceWeekModal.css'
+import LoadingCircle from '../../../../components/feedback/LoadingCircle'
 
 const gatheringLabels = [
     ['pm', 'Prayer Meeting'],
@@ -17,7 +18,7 @@ function SelectAttendanceWeekModal({ periods, loading, error, onSelect, onCancel
             <section className="import-week-dialog" role="dialog" aria-modal="true" aria-labelledby="import-week-title">
                 <h2 id="import-week-title">Choose an attendance week</h2>
                 <p className="import-week-intro">The date ranges below will be used to format and save attendance.</p>
-                {loading ? <p className="import-week-status">Preparing attendance weeks…</p> : null}
+                {loading ? <div className="import-week-loading"><LoadingCircle label="Preparing attendance weeks…" /></div> : null}
                 {error ? <p className="import-week-error" role="alert">{error}</p> : null}
                 {!loading && !error && (
                     <div className="import-week-options" data-import-guide="week">

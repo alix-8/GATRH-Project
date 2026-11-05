@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import CalendarIcon from '../../assets/icons/calendar-icon.svg'
 import NotificationIcon from '../../assets/icons/notification-icon.svg'
 import MyReminderIcon from '../../assets/icons/my-reminder-icon.svg'
@@ -67,6 +67,7 @@ function Notification() {
     const [items, setItems] = useState([])
     const [hasUnreadReminder, setHasUnreadReminder] = useState(false)
     const panelRef = useRef(null)
+    const location = useLocation()
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -198,6 +199,9 @@ function Notification() {
                     .filter(item => !dismissedIds.has(item.id))
                 const trackedIds = nextItems.filter(item => item.tracksBellDot).map(item => item.id)
                 trackedNotificationIdsRef.current = trackedIds
+                if (location.pathname === '/reminders' && trackedIds.length > 0) {
+                    markNotificationIdsSeen(trackedIds)
+                }
                 const seenIds = getSeenNotificationIds()
                 setHasUnreadReminder(trackedIds.some(id => !seenIds.has(String(id))))
                 setItems(nextItems.slice(0, 8))
@@ -206,7 +210,7 @@ function Notification() {
         } finally {
             if (fetchControllerRef.current === controller) fetchControllerRef.current = null
         }
-    }, [])
+    }, [location.pathname])
 
     useEffect(() => {
         fetchNotifications()

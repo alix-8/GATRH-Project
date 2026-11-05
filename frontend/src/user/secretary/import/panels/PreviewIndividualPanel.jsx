@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { inlineImportError } from './inlineImportError'
 import './PreviewImportPanel.css'
 
@@ -48,8 +48,15 @@ function preserveHeader(rawText, serializedStudents) {
 
 export default function PreviewIndividualPanel({ rawText, onChange, errors, gatheringType, gatheringRange, gatheringRangeLabel, onRowsParsed }) {
     const [students, setStudents] = useState([])
+    const lastEmittedText = useRef(null)
 
     useEffect(() => {
+        // Avoid reparsing our own keystroke update, which trims a just-entered
+        // trailing space and makes users press Space twice.
+        if (rawText === lastEmittedText.current) {
+            lastEmittedText.current = null
+            return
+        }
         const parsedStudents = parseStudents(rawText || '')
         setStudents(parsedStudents)
         onRowsParsed?.(parsedStudents.length)
@@ -64,7 +71,9 @@ export default function PreviewIndividualPanel({ rawText, onChange, errors, gath
             i === index ? { ...s, slot: { ...s.slot, [field]: value } } : s
         )
         setStudents(next)
-        onChange?.(preserveHeader(rawText, serializeStudents(next)))
+        const nextRawText = preserveHeader(rawText, serializeStudents(next))
+        lastEmittedText.current = nextRawText
+        onChange?.(nextRawText)
     }
 
     return (

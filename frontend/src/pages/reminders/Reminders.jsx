@@ -23,7 +23,6 @@ import useLiveRefresh from '../../hooks/useLiveRefresh'
 import useAutoDismissNotice from '../../hooks/useAutoDismissNotice'
 import Calendar from '../../components/Calendar/Calendar'
 import { TrashIcon } from '../../components/Icons/Reusables'
-import LoadingCircle from '../../components/feedback/LoadingCircle'
 import ReviewDrawer from '../../user/secretary/attendance/ReviewDrawer'
 import { markNotificationIdsSeen } from '../../components/feedback/notificationReadState'
 import './Reminders.css'
@@ -49,6 +48,38 @@ const GATHERING_OPTIONS = [
     { value: 'ws', label: 'Worship Service' },
     { value: 'tg', label: 'Thanksgiving' },
 ]
+
+function ReminderListSkeleton({ count = 5 }) {
+    return (
+        <div className="reminders-skeleton-list" role="status" aria-label="Loading reminders" aria-busy="true">
+            {Array.from({ length: count }, (_, index) => (
+                <div className="reminders-skeleton-item" key={`reminder-skeleton-${index}`} aria-hidden="true">
+                    <div className="reminders-skeleton-copy">
+                        <i />
+                        <span><b /><b /><b /></span>
+                    </div>
+                    <div className="reminders-skeleton-actions"><i /><i /></div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function EscalationReportSkeleton() {
+    return (
+        <div className="escalation-report-skeleton" role="status" aria-label="Loading attendance history" aria-busy="true">
+            <div className="escalation-report-summary" aria-hidden="true">
+                {[0, 1, 2].map(index => <div className="escalation-report-card" key={index}><i /><b /></div>)}
+            </div>
+            <div className="escalation-report-history">
+                <table className="escalation-report-table" aria-hidden="true">
+                    <thead><tr><th>Gathering</th><th>Time</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
+                    <tbody>{[0, 1, 2, 3].map(row => <tr key={row}>{[0, 1, 2, 3, 4].map(cell => <td key={cell}><i className={`escalation-skeleton-cell escalation-skeleton-cell-${cell}`} /></td>)}</tr>)}</tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
 
 function escalationLevelNumber(value) {
     return Math.min(3, Math.max(0, Number(value?.match(/\d+/)?.[0]) || 0))
@@ -327,9 +358,28 @@ function Reminders() {
                 ])
 
                 const nextReminders = remindersData.data ?? []
-                markNotificationIdsSeen(nextReminders
-                    .filter(reminder => reminder.status !== 'completed' && reminder.reminder_type !== 'submission_countdown')
-                    .map(reminder => `reminder-${reminder.id}`))
+                const seenNotificationIds = nextReminders.flatMap(reminder => {
+                    if (reminder.status === 'completed') return []
+
+                    if (reminder.reminder_type === 'submission_countdown') {
+                        const dueAt = reminder.due_date ? new Date(reminder.due_date).getTime() : NaN
+                        return Number.isFinite(dueAt) && dueAt <= Date.now()
+                            ? [`deadline-${reminder.parent_reminder_id ?? reminder.id}`]
+                            : []
+                    }
+
+                    const ids = [`reminder-${reminder.id}`]
+                    if (reminder.reminder_type === 'custom' && reminder.due_date) {
+                        const dueAt = new Date(reminder.due_date).getTime()
+                        if (Number.isFinite(dueAt) && dueAt <= Date.now()) {
+                            ids.push(`my-reminder-due-${reminder.id}`)
+                        }
+                    }
+                    return ids
+                })
+                // Opening the Reminders page marks its current reminder and
+                // deadline notifications as seen for every role.
+                markNotificationIdsSeen(seenNotificationIds)
                 const nextEscalations = ['secretary', 'program_head', 'cm_coordinator'].includes(role) ? remindersData.escalations ?? [] : []
                 const attendanceRows = attendanceData?.data ?? []
                 const submissionDeadlines = new Map(
@@ -1050,8 +1100,8 @@ function Reminders() {
                         ))}
                     </div>
 
-                    <div className="reminders-task-list">
-                        {loading && <p className="reminders-state"><LoadingCircle label="Loading reminders…" /></p>}
+                    <div className="reminders-task-list" aria-busy={loading}>
+                        {loading && <ReminderListSkeleton />}
                         {!isAddOpen && !loading && error && <p className="reminders-state reminders-state-error">{error}</p>}
                         {showReminderList && visibleItems.length === 0 && (
                             <p className="reminders-state">No reminders found.</p>
@@ -1202,7 +1252,7 @@ function Reminders() {
                             <span className="escalation-report-alert-icon" aria-hidden="true" />
                             <span><strong>{reportAlertName}</strong> has reached Escalation Level {reportLevel}.</span>
                         </div>
-                        {escalationReport.loading && <p className="escalation-report-state"><LoadingCircle label="Loading attendance history…" /></p>}
+                        {escalationReport.loading && <EscalationReportSkeleton />}
                         {escalationReport.error && <p className="escalation-report-state escalation-report-error" role="alert">{escalationReport.error}</p>}
                         {escalationReport.details && (
                             <>

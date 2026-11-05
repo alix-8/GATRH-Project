@@ -227,6 +227,48 @@
     background: #ffffff;
 }
 
+.reminders-skeleton-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, auto);
+    align-items: center;
+    gap: 24px;
+    min-height: 78px;
+    padding: 16px 24px 16px 20px;
+    border-bottom: 1px solid #d4dbe6;
+}
+
+.reminders-skeleton-item:last-child { border-bottom: 0; }
+.reminders-skeleton-copy { display: flex; min-width: 0; align-items: center; gap: 14px; }
+.reminders-skeleton-copy > i,
+.reminders-skeleton-copy b,
+.reminders-skeleton-actions i,
+.escalation-report-skeleton .escalation-report-card i,
+.escalation-report-skeleton .escalation-report-card b,
+.escalation-skeleton-cell {
+    display: block;
+    border-radius: 5px;
+    background: #e9ecf1;
+    animation: reminders-skeleton-pulse 1.4s ease-in-out infinite;
+}
+.reminders-skeleton-copy > i { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; }
+.reminders-skeleton-copy > span { display: grid; width: min(420px, 75%); gap: 7px; }
+.reminders-skeleton-copy b:first-child { width: 64%; height: 10px; }
+.reminders-skeleton-copy b:nth-child(2) { width: 88%; height: 8px; }
+.reminders-skeleton-copy b:last-child { width: 42%; height: 8px; }
+.reminders-skeleton-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.reminders-skeleton-actions i { width: 62px; height: 28px; border-radius: 7px; }
+
+@keyframes reminders-skeleton-pulse { 50% { opacity: .52; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .reminders-skeleton-copy > i,
+    .reminders-skeleton-copy b,
+    .reminders-skeleton-actions i,
+    .escalation-report-skeleton .escalation-report-card i,
+    .escalation-report-skeleton .escalation-report-card b,
+    .escalation-skeleton-cell { animation: none; }
+}
+
 .reminders-task-item {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
@@ -768,6 +810,16 @@
     font-size: 11px;
     line-height: 1.2;
 }
+
+.escalation-report-skeleton .escalation-report-card { gap: 10px; }
+.escalation-report-skeleton .escalation-report-card i:first-child { width: 40%; height: 8px; }
+.escalation-report-skeleton .escalation-report-card b { width: 55%; height: 10px; }
+.escalation-report-skeleton .escalation-skeleton-cell { height: 8px; margin: 0 auto; }
+.escalation-report-skeleton .escalation-skeleton-cell-0 { width: 80%; }
+.escalation-report-skeleton .escalation-skeleton-cell-1 { width: 70%; }
+.escalation-report-skeleton .escalation-skeleton-cell-2 { width: 75%; }
+.escalation-report-skeleton .escalation-skeleton-cell-3 { width: 82%; }
+.escalation-report-skeleton .escalation-skeleton-cell-4 { width: 76%; }
 
 .escalation-level-bars {
     display: flex;

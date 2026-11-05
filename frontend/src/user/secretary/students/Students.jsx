@@ -8,7 +8,6 @@ import ResponseIcon from '../../../assets/icons/response-icon.svg'
 import LevelIcon from '../../../assets/icons/level-icon.svg'
 import SearchIcon from '../../../assets/icons/search-icon.svg'
 import CalendarIcon from '../../../assets/icons/calendar-icon.svg'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
 import VenueLabel from '../../../components/VenueLabel'
@@ -36,6 +35,19 @@ function OverviewHistorySkeletonRows({ count = 4 }) {
             <td><OverviewSkeletonBlock className="overview-skeleton-cell overview-skeleton-date" /></td>
             <td><OverviewSkeletonBlock className="overview-skeleton-cell overview-skeleton-location" /></td>
             <td><OverviewSkeletonBlock className="overview-skeleton-cell overview-skeleton-status" /></td>
+        </tr>
+    ))
+}
+
+function StudentsTableSkeletonRows({ count = 6 }) {
+    return Array.from({ length: count }, (_, index) => (
+        <tr key={`students-table-skeleton-${index}`} aria-hidden="true">
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell students-skeleton-name" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell students-skeleton-year" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell students-skeleton-program" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell students-skeleton-response" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell students-skeleton-escalation" /></td>
+            <td><OverviewSkeletonBlock className="overview-skeleton-cell students-skeleton-action" /></td>
         </tr>
     ))
 }
@@ -459,8 +471,8 @@ function Students() {
                     <div className="students-table-heading">
                         <h2>Students</h2>
                     </div>
-                    <div className="students-table-wrapper">
-                        <table className="students-table">
+                    <div className="students-table-wrapper" role="region" aria-label="Student list" tabIndex="0" aria-busy={loading}>
+                        <table className="students-table" aria-busy={loading}>
                             <thead>
                                 <tr>
                                     <th>Name</th><th>Year</th><th>Program</th>
@@ -475,7 +487,7 @@ function Students() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {loading && <tr><td colSpan="6" className="students-table-state"><LoadingCircle label="Loading students…" /></td></tr>}
+                                {loading && <StudentsTableSkeletonRows />}
                                 {!loading && filteredStudents.length === 0 && <tr><td colSpan="6" className="students-table-state">No students found.</td></tr>}
                                 {!loading && filteredStudents.map((student) => (
                                     <tr key={student.id}>

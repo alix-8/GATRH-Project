@@ -8,12 +8,12 @@ import ApprovedIcon from '../../../assets/icons/ApprovedIcon.svg'
 import EscalationsIcon from '../../../assets/icons/escalations-icon.svg'
 import TotalSubmissionsIcon from '../../../assets/icons/TotalSubmissionsIcon.svg'
 import SubmittedIcon from '../../../assets/icons/SubmittedIcon.svg'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDate from '../../../components/RecordDate'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
 import DashboardSkeleton from './DashboardSkeleton'
+import ProgramTableSkeleton from '../shared/ProgramTableSkeleton'
 import './Dashboard.css'
 
 const metrics = [
@@ -136,10 +136,10 @@ function ProgramHeadDashboard() {
                             <button type="button" className="ph-view-all" onClick={openReview}>View all submissions <span aria-hidden="true">→</span></button>
                         </div>
                         <div className="ph-table-scroll">
-                            <table className="ph-submission-table">
+                            <table className="ph-submission-table" aria-busy={loading}>
                                 <thead><tr><th>Secretary</th><th>Gathering</th><th>Program</th><th>Year</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
                                 <tbody>
-                                    {loading ? <tr><td colSpan="7" className="ph-empty"><LoadingCircle label="Loading submissions…" /></td></tr> : pending.map((submission) => (
+                                    {loading ? <ProgramTableSkeleton count={3} /> : pending.map((submission) => (
                                         <tr key={submission.id}>
                                             <td><UserAvatar className="ph-secretary-avatar" name={submission.secretary} program={submission.program} />{submission.secretary}</td>
                                             <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td><RecordDate value={submission.date_iso || submission.date} /></td>
@@ -156,7 +156,7 @@ function ProgramHeadDashboard() {
                     <section className="ph-panel ph-activity-panel" aria-labelledby="ph-activity-title">
                         <div className="ph-panel-heading"><div><h2 id="ph-activity-title">Recent Activities</h2><p>Latest updates from attendance submissions and reviews.</p></div></div>
                         <div className="ph-activity-scroll">
-                            {loading ? <p className="ph-empty"><LoadingCircle label="Loading recent activity…" /></p> : activities.length === 0 ? <p className="ph-empty">Recent submission activity will appear here.</p> : (
+                            {loading ? <div className="ph-activity-skeleton" role="status" aria-label="Loading recent activities" aria-busy="true">{[0, 1, 2, 3].map(index => <div className="ph-activity-skeleton-row" key={index}><i /><span><b /><b /></span><em /></div>)}</div> : activities.length === 0 ? <p className="ph-empty">Recent submission activity will appear here.</p> : (
                                 <ul className="ph-activity-list">
                                     {activities.map((activity, index) => <li key={activity.id ?? index}>
                                         <img className="ph-activity-icon" src={activityIcons[activity.icon_type] || SubmittedIcon} alt="" />

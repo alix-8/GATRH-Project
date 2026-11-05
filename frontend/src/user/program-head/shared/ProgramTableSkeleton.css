@@ -1,0 +1,41 @@
+.ph-loading-row td {
+    height: 44px;
+}
+
+.ph-loading-block,
+.ph-loading-avatar {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    flex: 0 0 auto;
+    border-radius: 5px;
+    background: #e9ecf1;
+}
+
+.ph-loading-block::after,
+.ph-loading-avatar::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
+    content: '';
+    transform: translateX(-100%);
+    animation: ph-table-loading-shimmer 1.5s ease-in-out infinite;
+}
+
+.ph-loading-avatar { display: inline-block; width: 24px; height: 24px; margin-right: 9px; border-radius: 50%; vertical-align: middle; }
+.ph-loading-name { display: inline-block; width: 72px; height: 9px; vertical-align: middle; }
+.ph-loading-gathering { width: 66px; height: 9px; }
+.ph-loading-program { width: 40px; height: 9px; }
+.ph-loading-year { width: 32px; height: 9px; }
+.ph-loading-date { width: 78px; height: 9px; }
+.ph-loading-status { width: 58px; height: 9px; }
+.ph-loading-action { width: 58px; height: 25px; border-radius: 7px; }
+
+@keyframes ph-table-loading-shimmer {
+    to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ph-loading-block::after,
+    .ph-loading-avatar::after { animation: none; }
+}

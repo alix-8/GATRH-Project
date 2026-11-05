@@ -5,7 +5,6 @@ import './ReviewDrawer.css'
 import { headerTitle } from './header-title'
 import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../components/Icons/AttendanceIcons'
 import { FilterIcon, ChevronDownIcon } from '../../../components/Icons/Reusables'
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import SearchPill from '../../../components/search/SearchPill'
 import ConfirmOverrideModal from '../import/modals/ConfirmOverrideModal'
@@ -307,7 +306,12 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                         </p>
                     </div>
 
-                    {loading && <p><LoadingCircle label="Loading attendance details…" /></p>}
+                    {loading && <div className="review-drawer-skeleton" role="status" aria-label="Loading attendance details" aria-busy="true">
+                        <div className="review-drawer-skeleton-person"><i /><span><b /><b /></span></div>
+                        <div className="review-drawer-skeleton-metrics">{[0, 1, 2].map(index => <i key={index} />)}</div>
+                        <div className="review-drawer-skeleton-title" />
+                        {[0, 1, 2, 3, 4].map(index => <div className="review-drawer-skeleton-row" key={index}><i /><span /><b /></div>)}
+                    </div>}
                     {error && <p style={{ color: '#e52328' }}>{error}</p>}
 
                     {!loading && draft && !duplicateConfirm && (
