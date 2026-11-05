@@ -69,13 +69,25 @@ function EscalationReportSkeleton() {
     return (
         <div className="escalation-report-skeleton" role="status" aria-label="Loading attendance history" aria-busy="true">
             <div className="escalation-report-summary" aria-hidden="true">
-                {[0, 1, 2].map(index => <div className="escalation-report-card" key={index}><i /><b /></div>)}
+                {[0, 1, 2].map(card => (
+                    <div className="escalation-report-card escalation-report-skeleton-card" key={card}>
+                        <span className="escalation-report-skeleton-block escalation-report-skeleton-label" />
+                        <span className="escalation-report-skeleton-block escalation-report-skeleton-icon" />
+                        <span className="escalation-report-skeleton-block escalation-report-skeleton-value" />
+                    </div>
+                ))}
             </div>
             <div className="escalation-report-history">
-                <table className="escalation-report-table" aria-hidden="true">
-                    <thead><tr><th>Gathering</th><th>Time</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
-                    <tbody>{[0, 1, 2, 3].map(row => <tr key={row}>{[0, 1, 2, 3, 4].map(cell => <td key={cell}><i className={`escalation-skeleton-cell escalation-skeleton-cell-${cell}`} /></td>)}</tr>)}</tbody>
-                </table>
+                <div className="escalation-report-skeleton-head" aria-hidden="true">
+                    {['Gathering', 'Time', 'Date', 'Location', 'Status'].map(heading => <span key={heading}>{heading}</span>)}
+                </div>
+                {[0, 1, 2, 3].map(row => (
+                    <div className="escalation-report-skeleton-row" key={row} aria-hidden="true">
+                        {[0, 1, 2, 3, 4].map(cell => (
+                            <span className={`escalation-report-skeleton-block escalation-report-skeleton-cell-${cell}`} key={cell} />
+                        ))}
+                    </div>
+                ))}
             </div>
         </div>
     )

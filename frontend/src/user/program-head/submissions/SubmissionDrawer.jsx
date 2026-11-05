@@ -10,6 +10,7 @@ import RecordCalendarIcon from '../../../assets/icons/RecordCalendarIcon.svg'
 import RecordClockIcon from '../../../assets/icons/RecordClockIcon.svg'
 import RecordProgramIcon from '../../../assets/icons/RecordProgramIcon.svg'
 import ExportIcon from '../../../assets/icons/export-icon.svg'
+import SubmissionDrawerSkeleton from './SubmissionDrawerSkeleton'
 import UserAvatar from '../../../components/identity/UserAvatar'
 import RecordDay from '../../../components/RecordDay'
 import VenueLabel from '../../../components/VenueLabel'
@@ -183,14 +184,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                         <button type="button" className="ph-drawer-header-close" aria-label="Close details" onClick={onClose}>×</button>
                     </header>
 
-                    {loading && (
-                        <div className="ph-drawer-loading" role="status" aria-label="Loading submission details" aria-busy="true">
-                            <div className="ph-drawer-loading-person"><i /><span><b /><b /></span></div>
-                            <div className="ph-drawer-loading-kpis">{[0, 1, 2].map(index => <i key={index} />)}</div>
-                            <div className="ph-drawer-loading-title" />
-                            {[0, 1, 2, 3, 4].map(index => <div className="ph-drawer-loading-row" key={index}><i /><span /><b /></div>)}
-                        </div>
-                    )}
+                    {loading && <SubmissionDrawerSkeleton isRecordView={isRecordView} approved={submission.status === 'approved'} />}
                     {error && <p className="ph-drawer-error" role="alert">{error}</p>}
 
                     {!loading && detail && (

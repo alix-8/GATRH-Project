@@ -244,6 +244,7 @@
 .reminders-skeleton-actions i,
 .escalation-report-skeleton .escalation-report-card i,
 .escalation-report-skeleton .escalation-report-card b,
+.escalation-report-skeleton-block,
 .escalation-skeleton-cell {
     display: block;
     border-radius: 5px;
@@ -266,6 +267,7 @@
     .reminders-skeleton-actions i,
     .escalation-report-skeleton .escalation-report-card i,
     .escalation-report-skeleton .escalation-report-card b,
+.escalation-report-skeleton-block,
     .escalation-skeleton-cell { animation: none; }
 }
 
@@ -814,6 +816,37 @@
 .escalation-report-skeleton .escalation-report-card { gap: 10px; }
 .escalation-report-skeleton .escalation-report-card i:first-child { width: 40%; height: 8px; }
 .escalation-report-skeleton .escalation-report-card b { width: 55%; height: 10px; }
+.escalation-report-skeleton-card { gap: 8px; }
+.escalation-report-skeleton-label { width: 40%; height: 8px; }
+.escalation-report-skeleton-icon { width: 25px; height: 25px; border-radius: 50%; }
+.escalation-report-skeleton-value { width: 55%; height: 10px; }
+.escalation-report-skeleton-head,
+.escalation-report-skeleton-row {
+    display: grid;
+    grid-template-columns: 25% 12% 21% 17% 25%;
+    align-items: center;
+    min-width: 100%;
+    box-sizing: border-box;
+}
+.escalation-report-skeleton-head {
+    height: 36px;
+    padding: 0 5px 0 16px;
+    background: #d3deea;
+    color: #32435c;
+    font-size: 10px;
+    font-weight: 600;
+}
+.escalation-report-skeleton-row {
+    height: 36px;
+    padding: 0 5px;
+    border-top: 1px solid #edf1f6;
+}
+.escalation-report-skeleton-row:nth-child(odd) { background: #edf8fc; }
+.escalation-report-skeleton-block.escalation-report-skeleton-cell-0 { width: 80%; height: 8px; }
+.escalation-report-skeleton-block.escalation-report-skeleton-cell-1 { width: 70%; height: 8px; }
+.escalation-report-skeleton-block.escalation-report-skeleton-cell-2 { width: 75%; height: 8px; }
+.escalation-report-skeleton-block.escalation-report-skeleton-cell-3 { width: 82%; height: 8px; }
+.escalation-report-skeleton-block.escalation-report-skeleton-cell-4 { width: 76%; height: 8px; }
 .escalation-report-skeleton .escalation-skeleton-cell { height: 8px; margin: 0 auto; }
 .escalation-report-skeleton .escalation-skeleton-cell-0 { width: 80%; }
 .escalation-report-skeleton .escalation-skeleton-cell-1 { width: 70%; }
