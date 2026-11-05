@@ -12,6 +12,10 @@
     background-color: #DBDEE4;
 }
 
+.reminders .review-drawer-panel {
+    width: min(100vw, max(450px, 34vw));
+}
+
 .reminders-success-notice {
     position: sticky;
     z-index: 20;
@@ -426,10 +430,6 @@
     width: 14px;
     height: 14px;
     flex-shrink: 0;
-}
-
-.task-status > .task-undo-button {
-    min-width: 72px;
 }
 
 .task-status > .task-undo-button:disabled {

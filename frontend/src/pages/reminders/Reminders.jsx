@@ -86,7 +86,7 @@ const ATTENDANCE_TASK_STATUS = {
     approved: {
         label: 'Attendance record approved',
         tone: 'completed',
-        action: 'view',
+        action: 'View',
     },
 }
 
