@@ -12,7 +12,6 @@ import GenerateTemplate from './modals/GenerateTemplate'
 import ConfirmBlankModal from './modals/ConfirmBlankModal'
 import ConfirmOverrideModal from './modals/ConfirmOverrideModal'
 import SelectAttendanceWeekModal from './modals/SelectAttendanceWeekModal'
-import ErrorModal from './modals/ErrorModal'
 import SuccessModal from './modals/SuccessModal'
 
 //Panels
@@ -59,7 +58,7 @@ function Import({ onGoToAttendance = () => {} }) {
     const [result, setResult] = useState(null)
     const navigate = useNavigate()
 
-    // modal: null | 'generate' | 'success' | 'error'
+    // modal: null | 'generate' | 'success' | confirmation modals
     const [modal, setModal] = useState('select-week')
     const [modalMessage, setModalMessage] = useState('')
     const [parseErrors, setParseErrors] = useState(null)
@@ -95,9 +94,7 @@ function Import({ onGoToAttendance = () => {} }) {
             .then(data => { if (active) setPeriods(data.periods) })
             .catch(error => {
                 if (!active) return
-                setModalMessage(error.message)
-                setParseErrors(error.details || null)
-                setModal('error')
+                setFieldWarning(error.message || 'Unable to load attendance weeks. Please refresh and try again.')
             })
             .finally(() => { if (active) setIsLoadingPeriods(false) })
         return () => { active = false }
@@ -115,6 +112,12 @@ function Import({ onGoToAttendance = () => {} }) {
         const { name, value } = event.target
         resetValidation()
         setForm(current => ({ ...current, [name]: value }))
+    }
+
+    const updatePreviewText = value => {
+        validationRevision.current += 1
+        setFieldWarning(null)
+        setForm(current => ({ ...current, raw_text: value }))
     }
 
     const openGenerateModal = () => {
@@ -252,9 +255,9 @@ function Import({ onGoToAttendance = () => {} }) {
                 setParseErrors(details)
                 setModal('confirm-blank')
             } else {
-                setModalMessage(error.message)
                 setParseErrors(details)
-                setModal('error')
+                setFieldWarning(error.message || 'Review the highlighted entries.')
+                setModal(null)
             }
         } finally {
             setIsProcessing(false)
@@ -320,9 +323,9 @@ function Import({ onGoToAttendance = () => {} }) {
                 setDuplicateSource('preview')
                 setModal('confirm-override')
             } else {
-                setModalMessage(error.message)
                 setParseErrors(details)
-                setModal('error')
+                setFieldWarning(error.message || 'Unable to preview this attendance text.')
+                setModal(null)
             }
         } finally {
             setIsProcessing(false)
@@ -418,6 +421,10 @@ function Import({ onGoToAttendance = () => {} }) {
         setModal('select-week')
     }
 
+    const gatheringRangeLabels = Object.fromEntries(
+        ['pm', 'ws', 'tg'].map((type) => [type, periods?.[weekPeriod]?.[type]?.label || ''])
+    )
+
     return (
         <div className="import">
             <Sidebar />
@@ -496,8 +503,8 @@ function Import({ onGoToAttendance = () => {} }) {
                     preview={
                         isPreviewing
                             ? (isWeekMode
-                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} onRowsParsed={setPreviewRowCount} onChange={(value) => updateField({ target: { name: 'raw_text', value } })} />
-                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} onRowsParsed={setPreviewRowCount} onChange={(value) => updateField({ target: { name: 'raw_text', value } })} />
+                                ? <PreviewImportPanel rawText={form.raw_text} errors={parseErrors} gatheringRangeLabels={gatheringRangeLabels} onRowsParsed={setPreviewRowCount} onChange={updatePreviewText} />
+                                : <PreviewIndividualPanel rawText={form.raw_text} errors={parseErrors} gatheringType={form.gathering_type} gatheringRangeLabel={gatheringRangeLabels[form.gathering_type]} onRowsParsed={setPreviewRowCount} onChange={updatePreviewText} />
                             )
                             : null
                     }
@@ -558,14 +565,6 @@ function Import({ onGoToAttendance = () => {} }) {
                 />
             )}
 
-            {modal === 'error' && (
-                <ErrorModal
-                    errorMessage={modalMessage}
-                    errorDetails={parseErrors}
-                    attendanceLocked={parseErrors?.status === 'attendance_locked'}
-                    onClose={() => setModal(null)}
-                />
-            )}
             <div id="import-walkthrough-portal" />
         </div>
     )
