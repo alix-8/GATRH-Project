@@ -1,5 +1,11 @@
 export const ATTENDANCE_TIME_RE = /^(?:(?:[1-9]|1[0-2])\s*(?:AM|PM)|\d{1,2}:\d{2}\s*(?:AM|PM)?)$/i
 
+const MINIMUM_GATHERING_TIMES = {
+    pm: { minutes: 3 * 60, label: 'Prayer Meeting', time: '3:00 AM' },
+    ws: { minutes: 3 * 60, label: 'Worship Service', time: '3:00 AM' },
+    tg: { minutes: 16 * 60, label: 'Thanksgiving', time: '4:00 PM' },
+}
+
 function hasValue(value) {
     return Boolean(value && String(value).trim() && String(value).trim() !== '---')
 }
@@ -31,6 +37,31 @@ function isoDateIsValid(value) {
 
 export function isSpecialVenue(venue) {
     return String(venue ?? '').trim().toLowerCase() === 'special'
+}
+
+function attendanceTimeMinutes(value) {
+    const match = String(value ?? '').trim().match(/^(?:(\d{1,2})\s*(AM|PM)|(\d{1,2}):(\d{2})\s*(AM|PM)?)$/i)
+    if (!match) return null
+
+    const hour = Number(match[1] ?? match[3])
+    const minute = Number(match[4] ?? 0)
+    const meridiem = (match[2] ?? match[5] ?? '').toUpperCase()
+    if (minute > 59) return null
+
+    if (meridiem) {
+        if (hour < 1 || hour > 12) return null
+        return ((hour % 12) + (meridiem === 'PM' ? 12 : 0)) * 60 + minute
+    }
+
+    return hour <= 23 ? hour * 60 + minute : null
+}
+
+export function attendanceTimeError(value, gatheringType, venue) {
+    if (!hasValue(value) || !ATTENDANCE_TIME_RE.test(String(value).trim()) || isSpecialVenue(venue)) return ''
+    const minimum = MINIMUM_GATHERING_TIMES[String(gatheringType ?? '').toLowerCase()]
+    const minutes = attendanceTimeMinutes(value)
+    if (!minimum || minutes === null || minutes >= minimum.minutes) return ''
+    return `${minimum.label} attendance time must be ${minimum.time} or later.`
 }
 
 function todayIso() {
@@ -83,13 +114,14 @@ export function displayAttendanceDay(value, venue) {
     return value || ''
 }
 
-export function getAutomaticAttendanceStatus(student, weekRange) {
+export function getAutomaticAttendanceStatus(student, weekRange, gatheringType) {
     const validTime = hasValue(student.batch) && ATTENDANCE_TIME_RE.test(String(student.batch).trim())
+        && !attendanceTimeError(student.batch, gatheringType, student.venue)
     const validDay = hasProvidedDay(student) && Boolean(resolveAttendanceDay(student.day, weekRange, student.venue))
     return validDay && validTime && hasValue(student.venue) ? 'present' : 'no_response'
 }
 
-export function getAttendanceEditErrors(students, weekRange) {
+export function getAttendanceEditErrors(students, weekRange, gatheringType) {
     const formatErrors = []
     const incompleteRecords = []
 
@@ -112,6 +144,14 @@ export function getAttendanceEditErrors(students, weekRange) {
                     value: student.batch,
                     reason: 'Batch time must be in a valid time format, e.g. "8AM" or "8:30 AM".',
                 }],
+            })
+        }
+
+        const timeError = attendanceTimeError(student.batch, gatheringType, student.venue)
+        if (hasTime && timeError) {
+            formatErrors.push({
+                raw_line: student.student_name,
+                errors: [{ field: 'batch', value: student.batch, reason: timeError }],
             })
         }
 

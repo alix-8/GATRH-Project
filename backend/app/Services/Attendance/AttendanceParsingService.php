@@ -11,6 +11,18 @@ use Illuminate\Support\Collection;
 
 class AttendanceParsingService
 {
+    private const MINIMUM_GATHERING_TIMES = [
+        'pm' => '03:00:00',
+        'ws' => '03:00:00',
+        'tg' => '16:00:00',
+    ];
+
+    private const MINIMUM_GATHERING_TIME_LABELS = [
+        'pm' => '3:00 AM',
+        'ws' => '3:00 AM',
+        'tg' => '4:00 PM',
+    ];
+
     /**
      * FOR SUBMIT: Converts raw time strings (e.g., "8AM", "10:30 AM", "2:15 PM") into MySQL TIME format (HH:MM:SS).
      */
@@ -62,6 +74,26 @@ class AttendanceParsingService
             preg_match('/^(?:[1-9]|1[0-2])\s*(?:AM|PM)$/i', $time)
             || preg_match('/^\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?$/i', $time)
         );
+    }
+
+    /** Regular gatherings cannot start before their configured attendance time. */
+    public function minimumGatheringTimeError(?string $rawBatch, string $gatheringType, ?string $venue = null): ?string
+    {
+        if (empty($rawBatch) || $this->isSpecialVenue($venue)) return null;
+
+        $formattedTime = $this->formatBatchTime($rawBatch);
+        $type = strtolower($gatheringType);
+        $minimumTime = self::MINIMUM_GATHERING_TIMES[$type] ?? null;
+        if ($formattedTime === null || $minimumTime === null || $formattedTime >= $minimumTime) return null;
+
+        $label = match ($type) {
+            'pm' => 'Prayer Meeting',
+            'ws' => 'Worship Service',
+            'tg' => 'Thanksgiving',
+            default => ucfirst($type),
+        };
+
+        return "{$label} attendance time must be " . self::MINIMUM_GATHERING_TIME_LABELS[$type] . ' or later.';
     }
 
     /**
@@ -437,11 +469,11 @@ class AttendanceParsingService
 
         $hasAnyDetails = !empty($parts['raw_batch']) || !empty($parts['venue']) || !empty($parts['raw_date']);
 
-        if (mb_strlen((string) $parts['raw_date']) > 10) {
+        if (mb_strlen((string) $parts['raw_date']) > 9) {
             $formatErrors[] = [
                 'field'  => 'day',
                 'value'  => $parts['raw_date'],
-                'reason' => 'Day must be 10 characters or fewer.',
+                'reason' => 'Day must be 9 characters or fewer.',
             ];
         } elseif (!empty($parts['raw_date'])) {
             $range = $this->getApplicableWeekRange($gatheringType, $cycle, $rawText);
@@ -460,6 +492,14 @@ class AttendanceParsingService
                 'field'  => 'day',
                 'value'  => null,
                 'reason' => 'Weekday is missing. Please provide a weekday name (e.g., Monday or Mon).',
+            ];
+        }
+
+        if ($timeError = $this->minimumGatheringTimeError($parts['raw_batch'], $gatheringType, $parts['venue'])) {
+            $formatErrors[] = [
+                'field' => 'batch',
+                'value' => $parts['raw_batch'],
+                'reason' => $timeError,
             ];
         }
 
@@ -671,13 +711,16 @@ class AttendanceParsingService
                 $hasTime = !empty($slot['time']);
                 $hasVenue = !empty($slot['venue']);
 
-                if ($hasTime && (mb_strlen((string) $slot['time']) > 10 || !$this->isValidBatchFormat($slot['time']))) {
+                $timeError = $hasTime
+                    ? $this->minimumGatheringTimeError($slot['time'], $type, $slot['venue'])
+                    : null;
+                if ($hasTime && (mb_strlen((string) $slot['time']) > 10 || !$this->isValidBatchFormat($slot['time']) || $timeError)) {
                     $timeErr = [
                         'field'  => 'time',
                         'value'  => $slot['time'],
                         'reason' => mb_strlen((string) $slot['time']) > 10
                             ? 'Time must be 10 characters or fewer.'
-                            : 'Time must be in a valid format, e.g. "8AM" or "8:30 AM".',
+                            : ($timeError ?: 'Time must be in a valid format, e.g. "8AM" or "8:30 AM".'),
                     ];
                     $formatErrorLines[] = [
                         'student_name'   => $student->name,
@@ -714,11 +757,11 @@ class AttendanceParsingService
                     continue;
                 }
 
-                if ($hasDay && mb_strlen((string) $slot['day']) > 10) {
+                if ($hasDay && mb_strlen((string) $slot['day']) > 9) {
                     $dayErr = [
                         'field' => 'day',
                         'value' => $slot['day'],
-                        'reason' => 'Day must be 10 characters or fewer.',
+                        'reason' => 'Day must be 9 characters or fewer.',
                     ];
                     $formatErrorLines[] = [
                         'student_name' => $student->name,

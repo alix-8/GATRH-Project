@@ -58,6 +58,13 @@
     line-height: 1.45;
 }
 
+.confirm-override-gathering {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #fff3bf;
+}
+
 .confirm-override-subtext {
     margin: 0.5rem 0 1.25rem;
     font-size: 0.8rem;
