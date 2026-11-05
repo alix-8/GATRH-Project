@@ -444,15 +444,16 @@
 
 .student-overview-drawer {
     background: #fff;
-    border-radius: 10px 0 0;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, .16);
+    border-radius: 0;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, .12);
     box-sizing: border-box;
     color: #172b4d;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
     overflow: hidden;
     position: relative;
-    width: clamp(450px, 33vw, 720px);
+    width: min(100vw, max(450px, 34vw));
     max-width: 100vw;
 }
 
@@ -460,13 +461,13 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 24px 20px 20px;
+    padding: 24px 16px 20px;
     scrollbar-width: none;
 }
 
 .student-overview-footer {
     flex: none;
-    padding: 16px 20px 24px;
+    padding: 16px;
     background: #fff;
 }
 

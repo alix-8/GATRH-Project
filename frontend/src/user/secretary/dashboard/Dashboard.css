@@ -16,7 +16,7 @@
 }
 
 .dashboard > .review-drawer-backdrop .review-drawer-panel {
-    width: min(100vw, max(412px, 34vw));
+    width: min(100vw, max(450px, 34vw));
 }
 
 .dashboard-header .header-title h3 {
