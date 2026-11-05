@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Program;
 use App\Models\User;
+use App\Rules\ProgramName;
 use App\Services\Admin\AdminProgramService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,8 +58,8 @@ class AdminProgramController extends Controller
     {
         $request->merge(['name' => trim((string) $request->input('name'))]);
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:6', 'regex:/^[A-Za-z0-9_-]+$/', 'unique:programs,code'],
-            'name' => ['required', 'string', 'max:50', Rule::unique('programs', 'name')],
+            'code' => ['required', 'string', 'max:6', 'regex:/^[A-Za-z0-9]+$/', 'unique:programs,code'],
+            'name' => ['required', 'string', 'max:50', new ProgramName(), Rule::unique('programs', 'name')],
             'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['nullable', 'array'],
             'program_head_ids.*' => [
@@ -85,8 +86,8 @@ class AdminProgramController extends Controller
             $request->merge(['code' => strtoupper(trim((string) $request->input('code')))]);
         }
         $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('programs', 'name')->ignore($program->id)],
-            'code' => ['sometimes', 'required', 'string', 'max:6', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('programs', 'code')->ignore($program->id)],
+            'name' => ['sometimes', 'required', 'string', 'max:50', new ProgramName(), Rule::unique('programs', 'name')->ignore($program->id)],
+            'code' => ['sometimes', 'required', 'string', 'max:6', 'regex:/^[A-Za-z0-9]+$/', Rule::unique('programs', 'code')->ignore($program->id)],
             'max_year_level' => ['sometimes', 'integer', Rule::in([2, 4])],
             'program_head_ids' => ['sometimes', 'nullable', 'array'],
             'program_head_ids.*' => [

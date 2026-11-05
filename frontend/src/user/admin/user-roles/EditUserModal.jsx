@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from '../dashboard/ModalSelect'
 import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
+import { sanitizePersonName } from '../adminTextValidation'
 import '../dashboard/AddUserModal.css'
 import './EditUserModal.css'
 
@@ -117,7 +118,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
         <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="user-roles-edit-name">Full Name<span>*</span></label>
-                <input id="user-roles-edit-name" autoFocus={!areFieldsDisabled} required maxLength={255} value={form.name} disabled={areFieldsDisabled} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
+                <input id="user-roles-edit-name" autoFocus={!areFieldsDisabled} required maxLength={255} value={form.name} disabled={areFieldsDisabled} onChange={event => updateField('name', sanitizePersonName(event.target.value))} aria-invalid={Boolean(fieldErrors.name)} />
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
             </div>
             <div className="admin-add-user-field">

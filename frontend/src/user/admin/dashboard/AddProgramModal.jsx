@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from './ModalSelect'
 import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
+import { sanitizeProgramCode, sanitizeProgramName } from '../adminTextValidation'
 import './AddUserModal.css'
 import './AddProgramModal.css'
 
@@ -88,12 +89,12 @@ function AddProgramModal({ onClose, onCreated }) {
         <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-program-name">Program Name<span>*</span></label>
-                <input id="admin-add-program-name" name="name" autoFocus required maxLength={255} placeholder="Name of the program" value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
+                <input id="admin-add-program-name" name="name" autoFocus required maxLength={255} placeholder="Name of the program" value={form.name} onChange={event => updateField('name', sanitizeProgramName(event.target.value))} aria-invalid={Boolean(fieldErrors.name)} />
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-add-program-code">Program Code<span>*</span></label>
-                <input id="admin-add-program-code" name="code" required maxLength={20} pattern="[A-Za-z0-9_-]+" placeholder="Enter the program shortcut name" value={form.code} onChange={event => updateField('code', event.target.value.toUpperCase())} aria-invalid={Boolean(fieldErrors.code)} />
+                <input id="admin-add-program-code" name="code" required maxLength={20} pattern="[A-Za-z0-9]+" placeholder="Enter the program shortcut name" value={form.code} onChange={event => updateField('code', sanitizeProgramCode(event.target.value))} aria-invalid={Boolean(fieldErrors.code)} />
                 {fieldErrors.code && <small className="admin-add-user-field-error">{fieldErrors.code[0]}</small>}
             </div>
             <div className="admin-add-user-field">

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from './ModalSelect'
 import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
+import { sanitizePersonName } from '../adminTextValidation'
 import './AddUserModal.css'
 
 const roleOptions = [
@@ -142,7 +143,7 @@ function AddUserModal({ onClose, onCreated }) {
             <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
                 <div className="admin-add-user-field">
                     <label htmlFor="admin-add-user-name">Full Name<span>*</span></label>
-                    <input id="admin-add-user-name" name="name" autoFocus required maxLength={255} placeholder="Enter full name" value={form.name} onChange={event => updateField('name', event.target.value)} aria-invalid={Boolean(fieldErrors.name)} />
+                    <input id="admin-add-user-name" name="name" autoFocus required maxLength={255} placeholder="Enter full name" value={form.name} onChange={event => updateField('name', sanitizePersonName(event.target.value))} aria-invalid={Boolean(fieldErrors.name)} />
                     {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
                 </div>
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Program;
 use App\Models\Student;
+use App\Rules\StudentName;
 use App\Services\Admin\AdminStudentService;
 use App\Services\Admin\StudentImportFileReader;
 use Illuminate\Http\JsonResponse;
@@ -48,7 +49,7 @@ class AdminStudentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:50', new StudentName()],
             'program' => ['required', 'string', Rule::exists('programs', 'code')->where('is_active', true)],
             'year_level' => ['required', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],
@@ -149,7 +150,7 @@ class AdminStudentController extends Controller
             $program = strtoupper(trim((string) ($validated['program'] ?? ($programColumn === null ? '' : ($values[$programColumn] ?? '')))));
             $yearLevel = trim((string) ($validated['year_level'] ?? ($yearColumn === null ? '' : ($values[$yearColumn] ?? ''))));
             $status = strtolower(trim((string) ($values[$columns['status'] ?? -1] ?? 'active')));
-            if ($name === '' || mb_strlen($name) > 255 || ! in_array($program, $validPrograms, true)
+            if ($name === '' || mb_strlen($name) > 255 || ! $this->isValidStudentName($name) || ! in_array($program, $validPrograms, true)
                 || ! in_array($yearLevel, $program === 'ACT' ? ['1', '2'] : ['1', '2', '3', '4'], true)
                 || (! isset($validated['is_active']) && ! in_array($status, ['active', 'inactive'], true))) {
                 throw ValidationException::withMessages(['file' => ['Invalid student data on row ' . ($index + 2) . '. Check the name, program, year level, and status.']]);
@@ -225,7 +226,7 @@ class AdminStudentController extends Controller
     public function update(Request $request, Student $student): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:50'],
+            'name' => ['sometimes', 'required', 'string', 'max:50', new StudentName()],
             'program' => ['sometimes', 'required', 'string', Rule::exists('programs', 'code')],
             'year_level' => ['sometimes', 'required', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],
@@ -246,6 +247,26 @@ class AdminStudentController extends Controller
         return response()->json([
             'message' => 'Student marked as inactive successfully.',
         ]);
+    }
+
+    private function isValidStudentName(string $name): bool
+    {
+        $parts = array_map(
+            fn (string $part) => preg_replace('/\s+/u', ' ', trim($part)),
+            explode(',', $name)
+        );
+
+        if (count($parts) !== 2 || in_array('', $parts, true)) {
+            return false;
+        }
+
+        foreach ($parts as $part) {
+            if (! preg_match("/^\\p{L}+(?:[ '’\\-]\\p{L}+)*$/u", $part)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function studentImportKey(string $name, string $program, string $yearLevel): string

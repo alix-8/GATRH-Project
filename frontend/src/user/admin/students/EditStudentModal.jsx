@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { request } from '../../../api/request'
 import ModalSelect from '../dashboard/ModalSelect'
 import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
+import { sanitizePersonName } from '../adminTextValidation'
 import '../dashboard/AddUserModal.css'
 import '../dashboard/AddStudentModal.css'
 
@@ -106,12 +107,12 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
         <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-student-lname">Last Name<span>*</span></label>
-                <input id="admin-edit-student-lname" name="lname" autoFocus={!areFieldsDisabled} required maxLength={255} placeholder="Enter last name" value={form.lname} disabled={areFieldsDisabled} onChange={event => updateField('lname', event.target.value)} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
+                <input id="admin-edit-student-lname" name="lname" autoFocus={!areFieldsDisabled} required maxLength={255} placeholder="Enter last name" value={form.lname} disabled={areFieldsDisabled} onChange={event => updateField('lname', sanitizePersonName(event.target.value))} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
                 {fieldErrors.lname && <small className="admin-add-user-field-error">{fieldErrors.lname[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-student-fname">First Name<span>*</span></label>
-                <input id="admin-edit-student-fname" name="fname" required maxLength={255} placeholder="Enter first name" value={form.fname} disabled={areFieldsDisabled} onChange={event => updateField('fname', event.target.value)} aria-invalid={Boolean(fieldErrors.fname || fieldErrors.name)} />
+                <input id="admin-edit-student-fname" name="fname" required maxLength={255} placeholder="Enter first name" value={form.fname} disabled={areFieldsDisabled} onChange={event => updateField('fname', sanitizePersonName(event.target.value))} aria-invalid={Boolean(fieldErrors.fname || fieldErrors.name)} />
                 {fieldErrors.fname && <small className="admin-add-user-field-error">{fieldErrors.fname[0]}</small>}
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
             </div>
