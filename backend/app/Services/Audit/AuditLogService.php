@@ -23,9 +23,9 @@ class AuditLogService
         }
     }
 
-    public function record(string $action, Model $subject, ?User $actor = null): void
+    public function record(string $action, Model $subject, ?User $actor = null, ?string $details = null): void
     {
-        $this->recordAction($action, $subject->getTable(), (string) $subject->getKey(), $actor);
+        $this->recordAction($action, $subject->getTable(), (string) $subject->getKey(), $actor, 'success', $details);
     }
 
     public function recordAction(

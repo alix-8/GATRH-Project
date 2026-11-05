@@ -68,20 +68,26 @@ class AdminActivityLogController extends Controller
                 ->get(['id', 'code', 'name'])->keyBy('id'),
         ];
 
-        $activityLogs->getCollection()->transform(fn (AuditLog $log) => [
-            'id' => $log->id,
-            'action' => $log->action,
-            'target_table' => $log->target_table,
-            'target_id' => $log->target_id,
-            'module' => $log->moduleLabel(),
-            'module_key' => $log->moduleKey(),
-            'affected_record' => $this->affectedRecord($log, $targets),
-            'performed_by' => $log->actor?->name ?? 'Unknown user',
-            'performed_by_email' => $log->actor?->email,
-            'result' => $log->resultLabel(),
-            'details' => $log->details,
-            'created_at' => $log->created_at?->toIso8601String(),
-        ]);
+        $activityLogs->getCollection()->transform(function (AuditLog $log) use ($targets): array {
+            $auditDetails = $this->auditDetails($log->details);
+
+            return [
+                'id' => $log->id,
+                'action' => $log->action,
+                'target_table' => $log->target_table,
+                'target_id' => $log->target_id,
+                'module' => $log->moduleLabel(),
+                'module_key' => $log->moduleKey(),
+                'affected_record' => $this->affectedRecord($log, $targets, $auditDetails),
+                'performed_by' => $log->actor?->name ?? 'Unknown user',
+                'performed_by_email' => $log->actor?->email,
+                'result' => $log->resultLabel(),
+                'details' => $auditDetails ? null : $log->details,
+                'snapshot' => $this->presentSnapshot($auditDetails),
+                'changes' => $this->presentChanges($auditDetails),
+                'created_at' => $log->created_at?->toIso8601String(),
+            ];
+        });
 
         return response()->json(['summary' => $summary, 'activity_log' => $activityLogs]);
     }
@@ -126,13 +132,25 @@ class AdminActivityLogController extends Controller
         };
     }
 
-    private function affectedRecord(AuditLog $log, array $targets): string
+    private function affectedRecord(AuditLog $log, array $targets, ?array $auditDetails = null): string
     {
         $record = $targets[$log->target_table][$log->target_id] ?? null;
 
         if ($record instanceof User) return $record->name . ' · ' . Str::headline($record->role);
         if ($record instanceof Student) return $record->name . ' · ' . $record->program . ' · ' . Str::headline((string) $record->year_level);
         if ($record instanceof Program) return $record->code . ' · ' . $record->name;
+
+        $snapshot = $auditDetails['snapshot'] ?? [];
+        $entity = $auditDetails['entity'] ?? null;
+        if ($entity === 'user') {
+            return ($snapshot['name'] ?? 'User account') . ' · ' . Str::headline((string) ($snapshot['role'] ?? ''));
+        }
+        if ($entity === 'student') {
+            return ($snapshot['name'] ?? 'Student') . ' · ' . ($snapshot['program'] ?? '—') . ' · ' . $this->yearLabel($snapshot['year_level'] ?? null);
+        }
+        if ($entity === 'program') {
+            return ($snapshot['code'] ?? 'Program') . ' · ' . ($snapshot['name'] ?? '—');
+        }
 
         return match ($log->target_table) {
             'users' => "User account #{$log->target_id}",
@@ -143,5 +161,96 @@ class AdminActivityLogController extends Controller
             'school_year_rollovers' => "School-year rollover #{$log->target_id}",
             default => Str::headline($log->target_table) . " #{$log->target_id}",
         };
+    }
+
+    private function auditDetails(?string $details): ?array
+    {
+        if (! $details) {
+            return null;
+        }
+
+        $decoded = json_decode($details, true);
+        if (! is_array($decoded) || ($decoded['audit_snapshot'] ?? false) !== true) {
+            return null;
+        }
+
+        return $decoded;
+    }
+
+    private function presentSnapshot(?array $auditDetails): array
+    {
+        if (! $auditDetails) {
+            return [];
+        }
+
+        $snapshot = $auditDetails['snapshot'] ?? [];
+        return collect($this->attributesForEntity($auditDetails['entity'] ?? ''))
+            ->filter(fn (string $attribute) => array_key_exists($attribute, $snapshot))
+            ->map(fn (string $attribute) => [
+                'label' => $this->attributeLabel($attribute),
+                'value' => $this->displayValue($attribute, $snapshot[$attribute]),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function presentChanges(?array $auditDetails): array
+    {
+        if (! $auditDetails) {
+            return [];
+        }
+
+        return collect($auditDetails['changes'] ?? [])
+            ->map(fn (array $change, string $attribute) => [
+                'label' => $this->attributeLabel($attribute),
+                'from' => $this->displayValue($attribute, $change['from'] ?? null),
+                'to' => $this->displayValue($attribute, $change['to'] ?? null),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function attributesForEntity(string $entity): array
+    {
+        return match ($entity) {
+            'user' => ['name', 'email', 'role', 'program', 'year_level', 'is_active'],
+            'student' => ['name', 'program', 'year_level', 'is_active', 'inactive_reason'],
+            'program' => ['code', 'name', 'is_active', 'max_year_level'],
+            default => [],
+        };
+    }
+
+    private function attributeLabel(string $attribute): string
+    {
+        return match ($attribute) {
+            'is_active' => 'Status',
+            'year_level' => 'Year level',
+            'max_year_level' => 'Maximum year level',
+            'inactive_reason' => 'Inactive reason',
+            default => Str::headline($attribute),
+        };
+    }
+
+    private function displayValue(string $attribute, mixed $value): string
+    {
+        if ($attribute === 'is_active') {
+            return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'Active' : 'Inactive';
+        }
+        if (in_array($attribute, ['year_level', 'max_year_level'], true)) {
+            return $value === null || $value === '' ? 'Not assigned' : "Year {$value}";
+        }
+        if ($attribute === 'role') {
+            return $value ? Str::headline((string) $value) : 'Not assigned';
+        }
+        if ($attribute === 'inactive_reason') {
+            return $value ? Str::headline((string) $value) : '—';
+        }
+
+        return $value === null || $value === '' ? 'Not assigned' : (string) $value;
+    }
+
+    private function yearLabel(mixed $yearLevel): string
+    {
+        return $yearLevel === null || $yearLevel === '' ? 'Not assigned' : "Year {$yearLevel}";
     }
 }

@@ -87,6 +87,11 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
         }
     }
 
+    const isInitialInactive = !student.is_active
+    const areFieldsDisabled = isInitialInactive || !form.is_active
+    const isStatusChanged = form.is_active !== Boolean(student.is_active)
+    const isSaveDisabled = isSubmitting || (isInitialInactive && !isStatusChanged)
+
     return <dialog ref={dialogRef} className="admin-add-user-modal admin-add-student-modal" aria-labelledby="admin-edit-student-title" onCancel={event => {
         event.preventDefault()
         if (!isSubmitting) onClose()
@@ -101,18 +106,18 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
         <form onSubmit={handleSubmit} onKeyDown={handleModalFormEnter}>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-student-lname">Last Name<span>*</span></label>
-                <input id="admin-edit-student-lname" name="lname" autoFocus required maxLength={255} placeholder="Enter last name" value={form.lname} onChange={event => updateField('lname', event.target.value)} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
+                <input id="admin-edit-student-lname" name="lname" autoFocus={!areFieldsDisabled} required maxLength={255} placeholder="Enter last name" value={form.lname} disabled={areFieldsDisabled} onChange={event => updateField('lname', event.target.value)} aria-invalid={Boolean(fieldErrors.lname || fieldErrors.name)} />
                 {fieldErrors.lname && <small className="admin-add-user-field-error">{fieldErrors.lname[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-student-fname">First Name<span>*</span></label>
-                <input id="admin-edit-student-fname" name="fname" required maxLength={255} placeholder="Enter first name" value={form.fname} onChange={event => updateField('fname', event.target.value)} aria-invalid={Boolean(fieldErrors.fname || fieldErrors.name)} />
+                <input id="admin-edit-student-fname" name="fname" required maxLength={255} placeholder="Enter first name" value={form.fname} disabled={areFieldsDisabled} onChange={event => updateField('fname', event.target.value)} aria-invalid={Boolean(fieldErrors.fname || fieldErrors.name)} />
                 {fieldErrors.fname && <small className="admin-add-user-field-error">{fieldErrors.fname[0]}</small>}
                 {fieldErrors.name && <small className="admin-add-user-field-error">{fieldErrors.name[0]}</small>}
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-student-program">Program<span>*</span></label>
-                <ModalSelect id="admin-edit-student-program" required value={form.program} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
+                <ModalSelect id="admin-edit-student-program" required value={form.program} disabled={areFieldsDisabled} onChange={event => updateField('program', event.target.value)} aria-invalid={Boolean(fieldErrors.program)}>
                     {!programs.some(program => program.code === student.program) && <option value={student.program} disabled>{student.program} (inactive)</option>}
                     {programs.map(program => <option key={program.id} value={program.code}>{program.code}</option>)}
                 </ModalSelect>
@@ -120,7 +125,7 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
             </div>
             <div className="admin-add-user-field">
                 <label htmlFor="admin-edit-student-year">Year Level<span>*</span></label>
-                <ModalSelect id="admin-edit-student-year" required value={form.year_level} onChange={event => updateField('year_level', event.target.value)} aria-invalid={Boolean(fieldErrors.year_level)}>
+                <ModalSelect id="admin-edit-student-year" required value={form.year_level} disabled={areFieldsDisabled} onChange={event => updateField('year_level', event.target.value)} aria-invalid={Boolean(fieldErrors.year_level)}>
                     <option value="">Select Year Level</option>
                     {(form.program === 'ACT' ? years.slice(0, 2) : years).map(year => <option key={year.value} value={year.value}>{year.label}</option>)}
                 </ModalSelect>
@@ -130,8 +135,15 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
                 <span>Student Status</span>
                 <div><button type="button" role="switch" aria-checked={form.is_active} aria-label="Student active" className={`admin-add-user-switch${form.is_active ? ' active' : ''}`} onClick={() => updateField('is_active', !form.is_active)}><span /></button><span className={form.is_active ? 'active' : 'inactive'}>{form.is_active ? 'Active' : 'Inactive'}</span></div>
             </div>
+            {isInitialInactive && (
+                <p className="admin-add-user-helper-note">
+                    {form.is_active
+                        ? 'Save changes to activate this student. Details can be edited once active.'
+                        : 'This student is currently inactive. Turn on Student Status and save to activate before editing.'}
+                </p>
+            )}
             {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
-            <button className="admin-add-user-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving…' : 'Save Changes'}</button>
+            <button className="admin-add-user-submit" type="submit" disabled={isSaveDisabled}>{isSubmitting ? 'Saving…' : 'Save Changes'}</button>
         </form>
     </dialog>
 }
