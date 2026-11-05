@@ -139,6 +139,7 @@ function Login({ initialEmail = '' }) {
 
             // Store the user information
             localStorage.setItem('user', JSON.stringify(data.user))
+            window.dispatchEvent(new CustomEvent('auth:changed', { detail: { user: data.user } }))
             prepareLoginSkeleton(data.user.role)
 
             // Send each role directly to a page it can access.
