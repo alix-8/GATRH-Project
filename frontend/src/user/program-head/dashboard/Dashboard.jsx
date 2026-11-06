@@ -139,7 +139,7 @@ function ProgramHeadDashboard() {
                             <table className="ph-submission-table" aria-busy={loading}>
                                 <thead><tr><th>Secretary</th><th>Gathering</th><th>Program</th><th>Year</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
                                 <tbody>
-                                    {loading ? <ProgramTableSkeleton count={3} /> : pending.map((submission) => (
+                                    {loading ? <ProgramTableSkeleton count={3} /> : pending.slice(0, 3).map((submission) => (
                                         <tr key={submission.id}>
                                             <td><UserAvatar className="ph-secretary-avatar" name={submission.secretary} program={submission.program} />{submission.secretary}</td>
                                             <td>{submission.gathering}</td><td>{submission.program}</td><td>{submission.year_level}{/^\d+$/.test(String(submission.year_level)) ? ' Year' : ''}</td><td><RecordDate value={submission.date_iso || submission.date} /></td>

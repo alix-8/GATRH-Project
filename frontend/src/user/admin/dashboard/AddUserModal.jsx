@@ -198,7 +198,7 @@ function AddUserModal({ onClose, onCreated }) {
                 {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
                 <button className="admin-add-user-submit" type="submit" disabled={isSubmitting || (needsProgram && (programsLoading || Boolean(programsError) || programs.length === 0))}>{isSubmitting ? 'Creating User…' : 'Add User'}</button>
 
-                <div className="admin-add-user-note permissions">
+                <div className="admin-add-user-note permissions admin-add-user-role-note">
                     <span aria-hidden="true">i</span>
                     <p><strong>Role Permissions</strong><br />Each role has specific access levels. Administrators can manage all settings while other roles are limited to their assigned functions.</p>
                 </div>

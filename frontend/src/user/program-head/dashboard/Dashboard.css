@@ -160,25 +160,22 @@
 }
 
 .ph-pending-panel {
-    flex: 1 1 180px;
-    min-height: 180px;
+    flex: none;
 }
 
 .ph-activity-panel {
-    flex: 1.1 1 200px;
-    min-height: 200px;
+    flex: none;
 }
 
 .ph-table-scroll,
 .ph-activity-scroll {
     min-height: 0;
-    flex: 1;
-    overflow: auto;
 }
 
 .ph-table-scroll {
     display: flex;
     flex-direction: column;
+    overflow-x: auto;
 }
 
 .ph-pending-empty {
@@ -289,9 +286,7 @@
 
 .ph-activity-skeleton {
     display: grid;
-    min-height: 100%;
     grid-template-columns: 1fr 1fr;
-    align-content: space-around;
     column-gap: 12px;
 }
 
@@ -358,10 +353,8 @@
 .ph-activity-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    align-content: space-around;
     column-gap: 12px;
     row-gap: 0;
-    min-height: 100%;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -502,16 +495,6 @@
 
     .ph-panel {
         padding: 11px 9px 8px;
-    }
-
-    .ph-pending-panel {
-        flex-basis: 220px;
-        min-height: 220px;
-    }
-
-    .ph-activity-panel {
-        flex-basis: 250px;
-        min-height: 250px;
     }
 
     .ph-panel-heading h2 {
