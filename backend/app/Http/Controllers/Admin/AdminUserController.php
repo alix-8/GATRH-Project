@@ -96,6 +96,7 @@ class AdminUserController extends Controller
             'program_ids.*' => ['integer', 'distinct', Rule::exists('programs', 'id')],
             'year_level' => ['sometimes', 'nullable', 'string', 'max:20'],
             'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', Rule::in(['active', 'inactive', 'graduated'])],
         ]);
 
         if (isset($validated['program'])) {

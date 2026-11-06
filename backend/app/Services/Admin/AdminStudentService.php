@@ -288,10 +288,15 @@ class AdminStudentService
                 $graduates = in_array($secretary->id, $graduatedSecretaryIds, true);
                 return [
                     'id' => $secretary->id,
-                    'before' => ['year_level' => $secretary->year_level, 'is_active' => (bool) $secretary->is_active],
+                    'before' => [
+                        'year_level' => $secretary->year_level,
+                        'is_active' => (bool) $secretary->is_active,
+                        'inactive_reason' => $secretary->inactive_reason,
+                    ],
                     'after' => [
                         'year_level' => $graduates ? $secretary->year_level : (string) ((int) $secretary->year_level + 1),
                         'is_active' => ! $graduates,
+                        'inactive_reason' => $graduates ? 'graduated' : null,
                     ],
                 ];
             })->all();
@@ -337,6 +342,7 @@ class AdminStudentService
             foreach ($secretaries as $secretary) {
                 if (in_array($secretary->id, $graduatedSecretaryIds, true)) {
                     $secretary->is_active = false;
+                    $secretary->inactive_reason = 'graduated';
                     $secretary->save();
                     $secretary->tokens()->delete();
                     continue;
@@ -403,7 +409,11 @@ class AdminStudentService
             }
             foreach ($snapshot['secretaries'] as $item) {
                 $secretary = User::query()->lockForUpdate()->find($item['id']);
-                if (! $secretary || (string) $secretary->year_level !== (string) $item['after']['year_level'] || (bool) $secretary->is_active !== (bool) $item['after']['is_active']) {
+                $hasInactiveReason = array_key_exists('inactive_reason', $item['after']);
+                if (! $secretary
+                    || (string) $secretary->year_level !== (string) $item['after']['year_level']
+                    || (bool) $secretary->is_active !== (bool) $item['after']['is_active']
+                    || ($hasInactiveReason && ($secretary->inactive_reason ?? null) !== $item['after']['inactive_reason'])) {
                     throw ValidationException::withMessages(['rollover' => ['A secretary account changed after the rollover. Resolve the later change before trying to undo.']]);
                 }
             }

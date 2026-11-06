@@ -12,3 +12,33 @@
     color: #64748b;
     cursor: not-allowed;
 }
+
+.user-roles-edit-modal .admin-add-user-status .admin-modal-select {
+    width: 150px;
+}
+
+.user-roles-edit-modal .admin-add-user-status select {
+    width: 100%;
+    height: 34px;
+    box-sizing: border-box;
+    padding: 0 34px 0 10px;
+    appearance: none;
+    border: 1px solid #d6dce7;
+    border-radius: 4px;
+    background: #fff;
+    color: #253957;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.user-roles-edit-modal .admin-add-user-status .admin-modal-select.is-disabled select {
+    background: #f3f6fa;
+    color: #64748b;
+}
+
+.user-roles-edit-modal .admin-add-user-status .graduated {
+    color: #704214;
+    font-size: 11px;
+    font-weight: 600;
+}
