@@ -520,6 +520,11 @@
     color: #bd9027;
 }
 
+.user-roles-status.graduated {
+    color: #704214;
+    background: #fff4d6;
+}
+
 .user-roles-edit-button {
     display: grid;
     width: 28px;

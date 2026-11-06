@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'role',        // 'secretary', 'program_head', 'cm_coordinator', 'chancellor', 'admin'
         'is_active',
+        'inactive_reason',
         'program',
         'year_level',
         'contact_number',

@@ -6,7 +6,7 @@ import { sanitizePersonName } from '../adminTextValidation'
 import '../dashboard/AddUserModal.css'
 import './EditUserModal.css'
 
-function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
+function EditUserModal({ user, roles, programs, canMarkGraduated, onClose, onUpdated }) {
     const dialogRef = useRef(null)
     const isProgramHead = user.role === 'program_head'
     const assignedProgram = user.programs?.length
@@ -20,7 +20,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
         role: user.role,
         program: initialProgram,
         year_level: initialYearLevel,
-        is_active: user.is_active,
+        status: user.inactive_reason === 'graduated' ? 'graduated' : user.is_active ? 'active' : 'inactive',
     })
     const [saving, setSaving] = useState(false)
     const [confirmSave, setConfirmSave] = useState(false)
@@ -40,20 +40,28 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
 
     const needsProgram = ['secretary', 'program_secretary', 'program_head'].includes(form.role)
     const needsYearLevel = form.role === 'secretary'
+    const canGraduate = form.role === 'program_secretary'
     const roleLabel = role => roles.find(option => option.value === role)?.label || role
     const currentProgram = isProgramHead ? assignedProgram : initialProgram
     const updatedProgram = isProgramHead ? assignedProgram : (needsProgram ? form.program : '')
     const isInitialInactive = !user.is_active
-    const areFieldsDisabled = isInitialInactive || !form.is_active
-    const isStatusChanged = form.is_active !== Boolean(user.is_active)
-    const isSaveDisabled = saving || (isInitialInactive && !isStatusChanged)
+    const isGraduated = user.inactive_reason === 'graduated'
+    const formIsActive = form.status === 'active'
+    const areFieldsDisabled = isInitialInactive || !formIsActive
+    const initialStatus = isGraduated ? 'graduated' : user.is_active ? 'active' : 'inactive'
+    const isStatusChanged = form.status !== initialStatus
+    const isSaveDisabled = saving || isGraduated || (isInitialInactive && !isStatusChanged)
 
     function updateField(field, value) {
         setForm(current => ({
             ...current,
             [field]: value,
             ...(field === 'role' && value !== current.role
-                ? { ...(!isProgramHead ? { program: '' } : {}), year_level: '' }
+                ? {
+                    ...(!isProgramHead ? { program: '' } : {}),
+                    year_level: '',
+                    ...(current.status === 'graduated' && !['secretary', 'program_secretary'].includes(value) ? { status: 'inactive' } : {}),
+                }
                 : {}),
         }))
         setError('')
@@ -69,7 +77,8 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
             name: form.name.trim(),
             email: form.email.trim(),
             role: form.role,
-            is_active: form.is_active,
+            is_active: formIsActive,
+            status: form.status,
         }
 
         if (!isProgramHead && (form.role !== user.role || form.program !== initialProgram)) {
@@ -156,16 +165,32 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
             <div className="admin-add-user-status">
                 <span>Account Status</span>
                 <div>
-                    <button type="button" role="switch" aria-checked={form.is_active} aria-label="Account active" className={`admin-add-user-switch${form.is_active ? ' active' : ''}`} onClick={() => updateField('is_active', !form.is_active)}><span /></button>
-                    <span className={form.is_active ? 'active' : 'inactive'}>{form.is_active ? 'Active' : 'Inactive'}</span>
+                    {canGraduate ? <ModalSelect aria-label="Account status" value={form.status} disabled={isGraduated} onChange={event => updateField('status', event.target.value)}>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="graduated" disabled={!canMarkGraduated}>Graduated{!canMarkGraduated ? ' (after rollover)' : ''}</option>
+                    </ModalSelect> : isGraduated ? <span className="graduated">Graduated</span> : <>
+                        <button type="button" role="switch" aria-checked={formIsActive} aria-label="Account active" className={`admin-add-user-switch${formIsActive ? ' active' : ''}`} onClick={() => updateField('status', formIsActive ? 'inactive' : 'active')}>
+                            <span />
+                        </button>
+                        <span className={formIsActive ? 'active' : 'inactive'}>{formIsActive ? 'Active' : 'Inactive'}</span>
+                    </>}
                 </div>
             </div>
-            {isInitialInactive && (
+            {isGraduated ? (
+                <aside className="admin-add-user-helper-note" role="note">
+                    <strong>Graduated account guide</strong><br />
+                    Graduated accounts cannot be reactivated. Program Secretaries can be marked Graduated after a school-year rollover has been applied.
+                </aside>
+            ) : isInitialInactive && (
                 <p className="admin-add-user-helper-note">
-                    {form.is_active
+                    {formIsActive
                         ? 'Save changes to activate this user account. Details can be edited once active.'
                         : 'This user account is currently inactive. Turn on Account Status and save to activate before editing.'}
                 </p>
+            )}
+            {canGraduate && !canMarkGraduated && !isGraduated && (
+                <p className="admin-add-user-helper-note">Graduated status will be available after the school-year rollover is applied.</p>
             )}
             {error && <p className="admin-add-user-submit-error" role="alert">{error}</p>}
             <button className="admin-add-user-submit" type="submit" disabled={isSaveDisabled}>{saving ? 'Saving…' : 'Save Changes'}</button>
@@ -181,7 +206,7 @@ function EditUserModal({ user, roles, programs, onClose, onUpdated }) {
                     <div className="admin-change-confirm-summary">
                         <p>Role: <strong>{roleLabel(user.role)} → {roleLabel(form.role)}</strong></p>
                         <p>Program: <strong>{currentProgram || 'Unassigned'} → {updatedProgram || 'Unassigned'}</strong></p>
-                        <p>Status: <strong>{user.is_active ? 'Active' : 'Inactive'} → {form.is_active ? 'Active' : 'Inactive'}</strong></p>
+                        <p>Status: <strong>{initialStatus === 'graduated' ? 'Graduated' : initialStatus === 'active' ? 'Active' : 'Inactive'} → {form.status === 'graduated' ? 'Graduated' : form.status === 'active' ? 'Active' : 'Inactive'}</strong></p>
                     </div>
                     <div className="admin-change-confirm-actions">
                         <button type="button" className="admin-add-user-cancel" onClick={() => setConfirmSave(false)} disabled={saving}>Cancel</button>
