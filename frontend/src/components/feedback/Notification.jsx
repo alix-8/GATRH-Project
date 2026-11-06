@@ -315,7 +315,7 @@ function Notification() {
                                     item.id
                                 )}
                             >
-                                <span className={`notification-item-icon ${item.iconType}`} aria-hidden="true">
+                                <span className={`notification-item-icon ${item.iconType === 'attendance' ? 'notification-attendance-icon' : item.iconType}`} aria-hidden="true">
                                     <img src={iconMap[item.iconType]} alt="" />
                                 </span>
                                 <span className="notification-item-copy">
