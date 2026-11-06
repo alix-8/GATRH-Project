@@ -165,6 +165,12 @@
     background: #e8f6ff;
 }
 
+.admin-add-user-note.warning,
+.admin-add-user-role-note {
+    min-height: 70px;
+    align-items: center;
+}
+
 .admin-add-user-note.permissions>span {
     background: #159ff2;
 }

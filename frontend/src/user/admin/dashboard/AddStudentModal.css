@@ -6,3 +6,8 @@
     margin-top: 12px;
 }
 
+.admin-add-student-modal .admin-add-user-note.permissions {
+    min-height: 58px;
+    align-items: center;
+}
+
