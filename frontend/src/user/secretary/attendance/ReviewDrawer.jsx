@@ -58,7 +58,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             .then((json) => {
                 if (cancelled) return
                 setDraft(json.data)
-                if (json.data?.duplicate?.status === 'duplicate_detected') {
+                if (json.data?.duplicate?.status === 'duplicate_detected' && !json.data?.override_confirmed) {
                     setDuplicateConfirm(json.data.duplicate)
                 }
             })
@@ -149,7 +149,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 body: JSON.stringify({
                     draft_id: draft.id,
                     records,
-                    override: isOverride,
+                    override: isOverride || Boolean(draft.override_confirmed),
                     week_range: draft.week_range,
                 }),
             })

@@ -847,6 +847,7 @@ class AttendanceController extends Controller
             'format_errors'  => $formatErrorLines,
             'total_detected' => $sectionData['total_students'],
             'matched_count'  => $presentCount,
+            'override_confirmed' => $isOverride,
         ], $request->user()->id);
 
         $this->auditLogService->recordAction(
@@ -1036,6 +1037,7 @@ class AttendanceController extends Controller
                 'parsed_data'    => $sectionData['records'],
                 'total_detected' => $sectionData['total_students'],
                 'matched_count'  => $presentCount,
+                'override_confirmed' => $isOverride,
             ], $user->id);
 
             $drafts[$type] = $draft->id;
@@ -1141,7 +1143,7 @@ class AttendanceController extends Controller
             ->keyBy('id');
 
         $submittedBy = $request->user()->id;
-        $isOverride = (bool) $request->boolean('override');
+        $isOverride = (bool) $request->boolean('override') || (bool) ($sourceDraft?->override_confirmed);
         $cycle = $this->importPeriodCycle($request->input('week_period')) ?? $request->input('cycle') ?? $request->input('week_range');
         if ($sourceDraft) {
             $cycle = GatheringCycle::getRangesForWeekStart(Carbon::parse($sourceDraft->day));
