@@ -96,7 +96,7 @@
     background: #e8f6ff;
 }
 
-.notification-item-icon.attendance {
+.notification-item-icon.notification-attendance-icon {
     position: static;
     border-color: #f2c94c;
     background: #fff4c8;
@@ -119,7 +119,7 @@
     filter: brightness(0) saturate(100%) invert(56%) sepia(94%) saturate(1568%) hue-rotate(176deg) brightness(100%) contrast(95%);
 }
 
-.notification-item-icon.attendance img,
+.notification-item-icon.notification-attendance-icon img,
 .notification-item-icon.my-reminder img {
     filter: brightness(0) saturate(100%) invert(10%) sepia(36%) saturate(1637%) hue-rotate(181deg) brightness(94%) contrast(93%);
 }
