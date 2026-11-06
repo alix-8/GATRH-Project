@@ -1,9 +1,3 @@
-.admin-add-student-modal {
-    width: min(390px, calc(100vw - 24px));
-    max-height: calc(100vh - 24px);
-    padding: 16px;
-}
-
 .admin-add-student-modal .admin-add-user-description {
     margin: 2px 0 15px;
 }
