@@ -89,9 +89,10 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
     }
 
     const isInitialInactive = !student.is_active
+    const isGraduated = student.inactive_reason === 'graduated'
     const areFieldsDisabled = isInitialInactive || !form.is_active
     const isStatusChanged = form.is_active !== Boolean(student.is_active)
-    const isSaveDisabled = isSubmitting || (isInitialInactive && !isStatusChanged)
+    const isSaveDisabled = isSubmitting || isGraduated || (isInitialInactive && !isStatusChanged)
 
     return <dialog ref={dialogRef} className="admin-add-user-modal admin-add-student-modal" aria-labelledby="admin-edit-student-title" onCancel={event => {
         event.preventDefault()
@@ -134,9 +135,14 @@ function EditStudentModal({ student, programs, onClose, onUpdated }) {
             </div>
             <div className="admin-add-user-status">
                 <span>Student Status</span>
-                <div><button type="button" role="switch" aria-checked={form.is_active} aria-label="Student active" className={`admin-add-user-switch${form.is_active ? ' active' : ''}`} onClick={() => updateField('is_active', !form.is_active)}><span /></button><span className={form.is_active ? 'active' : 'inactive'}>{form.is_active ? 'Active' : 'Inactive'}</span></div>
+                <div><button type="button" role="switch" aria-checked={form.is_active} aria-label="Student active" className={`admin-add-user-switch${form.is_active ? ' active' : ''}`} onClick={() => updateField('is_active', !form.is_active)} disabled={isGraduated}><span /></button><span className={form.is_active ? 'active' : 'inactive'}>{isGraduated ? 'Graduated' : form.is_active ? 'Active' : 'Inactive'}</span></div>
             </div>
-            {isInitialInactive && (
+            {isGraduated ? (
+                <aside className="admin-add-user-helper-note" role="note">
+                    <strong>Graduated status guide</strong><br />
+                    Graduated students remain inactive and cannot be reactivated. If this graduation was recorded by mistake, contact your system administrator.
+                </aside>
+            ) : isInitialInactive && (
                 <p className="admin-add-user-helper-note">
                     {form.is_active
                         ? 'Save changes to activate this student. Details can be edited once active.'

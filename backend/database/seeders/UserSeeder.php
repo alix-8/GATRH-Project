@@ -37,7 +37,7 @@ class UserSeeder extends Seeder
 
             // Admin
             [
-                'name' => 'System Admin Test',
+                'name' => 'Gian Gallon',
                 'email' => 'admin@laverdad.edu.ph',
                 'password' => Hash::make('Password123!'),
                 'role' => 'admin',
@@ -57,16 +57,16 @@ class UserSeeder extends Seeder
                 'year_level' => null,
                 'contact_number' => '09111111111'
             ],
-            [
-                'name' => 'Pedro Santos',
-                'email' => 'bssw.head@laverdad.edu.ph',
-                'password' => Hash::make('Password123!'),
-                'role' => 'program_head',
-                'program' => 'BSSW',
-                'programs' => ['BSSW'],
-                'year_level' => null,
-                'contact_number' => '09111111222'
-            ],
+            // [
+            //     'name' => 'Pedro Santos',
+            //     'email' => 'bssw.head@laverdad.edu.ph',
+            //     'password' => Hash::make('Password123!'),
+            //     'role' => 'program_head',
+            //     'program' => 'BSSW',
+            //     'programs' => ['BSSW'],
+            //     'year_level' => null,
+            //     'contact_number' => '09111111222'
+            // ],
 
             
             // Program Secretaries
@@ -118,24 +118,24 @@ class UserSeeder extends Seeder
                 'year_level' => "4",
                 'contact_number' => '09666666666'
             ],
-            [
-                'name' => 'John Doe',
-                'email' => 'sec.bssw1@laverdad.edu.ph',
-                'password' => Hash::make('Password123!'),
-                'role' => 'secretary',
-                'program' => 'BSSW',
-                'year_level' => '1',
-                'contact_number' => '09777777777'
-            ],
-            [
-                'name' => 'Jane Smith',
-                'email' => 'sec.bsa3@laverdad.edu.ph',
-                'password' => Hash::make('Password123!'),
-                'role' => 'secretary',
-                'program' => 'BSA',
-                'year_level' => '1',
-                'contact_number' => '09888888888'
-            ],
+            // [
+            //     'name' => 'John Doe',
+            //     'email' => 'sec.bssw1@laverdad.edu.ph',
+            //     'password' => Hash::make('Password123!'),
+            //     'role' => 'secretary',
+            //     'program' => 'BSSW',
+            //     'year_level' => '1',
+            //     'contact_number' => '09777777777'
+            // ],
+            // [
+            //     'name' => 'Jane Smith',
+            //     'email' => 'sec.bsa3@laverdad.edu.ph',
+            //     'password' => Hash::make('Password123!'),
+            //     'role' => 'secretary',
+            //     'program' => 'BSA',
+            //     'year_level' => '1',
+            //     'contact_number' => '09888888888'
+            // ],
         ];
 
         foreach ($users as $userData) {

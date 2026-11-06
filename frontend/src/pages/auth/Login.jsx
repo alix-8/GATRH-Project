@@ -195,9 +195,7 @@ function Login({ initialEmail = '' }) {
                 <div className="login-main">
                     <div className="login-intro">
                         <h1 className="welcome-title">
-                            Welcome
-                            <br />
-                            Back!
+                            Welcome!
                         </h1>
 
                         <p className="welcome-message">

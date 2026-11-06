@@ -15,6 +15,10 @@
     background-color: #ffffff;
 }
 
+.dashboard > .review-drawer-backdrop .review-drawer-panel {
+    width: min(100vw, max(450px, 34vw));
+}
+
 .dashboard-header .header-title h3 {
     font-size: 20px;
 }
@@ -726,14 +730,11 @@
 
 .dashboard-reminder-description {
     min-width: 0;
-    max-height: 32px;
     overflow: hidden;
     text-align: left;
     line-height: 1.25;
-    overflow-wrap: anywhere;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dashboard-reminder-item time {

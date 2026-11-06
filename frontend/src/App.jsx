@@ -88,9 +88,9 @@ function RoleRoute({ roles, children, user, authStatus, onRetry }) {
     : <AuthenticatedPageLoading />}>{children}</Suspense>
 }
 
-function AuthStatusScreen({ message, onRetry }) {
+function AuthStatusScreen({ style, message, onRetry }) {
   return (
-    <main style={{ display: 'grid', minHeight: '100vh', placeContent: 'center', gap: 16, color: '#172b4d', textAlign: 'center' }}>
+    <main style={{ display: 'grid', minHeight: '100vh', placeContent: 'center', gap: 16, color: '#ffffff', textAlign: 'center', ...style }}>
       <p>{message}</p>
       {onRetry && <button type="button" onClick={onRetry}>Retry</button>}
     </main>
@@ -269,7 +269,7 @@ function ResponsiveApp() {
   }, [])
 
   const isPasswordFlow = ['/forgot-password', '/reset-password'].includes(location.pathname)
-  const showScreenSizeNotice = isCompactScreen && !isPasswordFlow && location.pathname !== '/'
+  const showScreenSizeNotice = isCompactScreen && !isPasswordFlow
 
   return (
     <>

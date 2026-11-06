@@ -15,65 +15,65 @@ class StudentSeeder extends Seeder
     {
         $students = [
             // ACT - Year 1
-            [
-                'name' => 'Adams, John',
-                'program' => 'ACT',
-                'year_level' => 1,
-            ],
+            // [
+            //     'name' => 'Adams, John',
+            //     'program' => 'ACT',
+            //     'year_level' => 1,
+            // ],
 
-            // BSIS - Year 1
-            [
-                'name' => 'Abrigo, Marielle',
-                'program' => 'BSIS',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Concepcion, Jhon Carlo',
-                'program' => 'BSIS',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Dizon, Kaye',
-                'program' => 'BSIS',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Espino, Ranier',
-                'program' => 'BSIS',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Fontanilla, Trisha',
-                'program' => 'BSIS',
-                'year_level' => 1,
-            ],
+            // // BSIS - Year 1
+            // [
+            //     'name' => 'Abrigo, Marielle',
+            //     'program' => 'BSIS',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Concepcion, Jhon Carlo',
+            //     'program' => 'BSIS',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Dizon, Kaye',
+            //     'program' => 'BSIS',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Espino, Ranier',
+            //     'program' => 'BSIS',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Fontanilla, Trisha',
+            //     'program' => 'BSIS',
+            //     'year_level' => 1,
+            // ],
 
-            // BSIS - Year 2
-            [
-                'name' => 'Gatchalian, Miguel',
-                'program' => 'BSIS',
-                'year_level' => 2,
-            ],
-            [
-                'name' => 'Hernandez, Andrea',
-                'program' => 'BSIS',
-                'year_level' => 2,
-            ],
-            [
-                'name' => 'Ilagan, Christian',
-                'program' => 'BSIS',
-                'year_level' => 2,
-            ],
-            [
-                'name' => 'Josol, Bianca',
-                'program' => 'BSIS',
-                'year_level' => 2,
-            ],
-            [
-                'name' => 'Katigbak, Renz',
-                'program' => 'BSIS',
-                'year_level' => 2,
-            ],
+            // // BSIS - Year 2
+            // [
+            //     'name' => 'Gatchalian, Miguel',
+            //     'program' => 'BSIS',
+            //     'year_level' => 2,
+            // ],
+            // [
+            //     'name' => 'Hernandez, Andrea',
+            //     'program' => 'BSIS',
+            //     'year_level' => 2,
+            // ],
+            // [
+            //     'name' => 'Ilagan, Christian',
+            //     'program' => 'BSIS',
+            //     'year_level' => 2,
+            // ],
+            // [
+            //     'name' => 'Josol, Bianca',
+            //     'program' => 'BSIS',
+            //     'year_level' => 2,
+            // ],
+            // [
+            //     'name' => 'Katigbak, Renz',
+            //     'program' => 'BSIS',
+            //     'year_level' => 2,
+            // ],
             
             //BSIS - Year 3
             [
@@ -187,86 +187,86 @@ class StudentSeeder extends Seeder
                 'year_level' => 3,
             ],
 
-            // BSIS - Year 4
-            [
-                'name' => 'Lacson, Ferdinand',
-                'program' => 'BSIS',
-                'year_level' => 4,
-            ],
-            [
-                'name' => 'Macalintal, Joyce',
-                'program' => 'BSIS',
-                'year_level' => 4,
-            ],
-            [
-                'name' => 'Nepomuceno, Aaron',
-                'program' => 'BSIS',
-                'year_level' => 4,
-            ],
-            [
-                'name' => 'Orlanda, Sheila',
-                'program' => 'BSIS',
-                'year_level' => 4,
-            ],
-            [
-                'name' => 'Pineda, Justin',
-                'program' => 'BSIS',
-                'year_level' => 4,
-            ],
+            // // BSIS - Year 4
+            // [
+            //     'name' => 'Lacson, Ferdinand',
+            //     'program' => 'BSIS',
+            //     'year_level' => 4,
+            // ],
+            // [
+            //     'name' => 'Macalintal, Joyce',
+            //     'program' => 'BSIS',
+            //     'year_level' => 4,
+            // ],
+            // [
+            //     'name' => 'Nepomuceno, Aaron',
+            //     'program' => 'BSIS',
+            //     'year_level' => 4,
+            // ],
+            // [
+            //     'name' => 'Orlanda, Sheila',
+            //     'program' => 'BSIS',
+            //     'year_level' => 4,
+            // ],
+            // [
+            //     'name' => 'Pineda, Justin',
+            //     'program' => 'BSIS',
+            //     'year_level' => 4,
+            // ],
 
-            // BSSW - Year 1
-            [
-                'name' => 'Quiambao, Angelica',
-                'program' => 'BSSW',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Rosales, Kevin',
-                'program' => 'BSSW',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Sarmiento, Faith',
-                'program' => 'BSSW',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Tolentino, Marc',
-                'program' => 'BSSW',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Uy, Camille',
-                'program' => 'BSSW',
-                'year_level' => 1,
-            ],
+            // // BSSW - Year 1
+            // [
+            //     'name' => 'Quiambao, Angelica',
+            //     'program' => 'BSSW',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Rosales, Kevin',
+            //     'program' => 'BSSW',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Sarmiento, Faith',
+            //     'program' => 'BSSW',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Tolentino, Marc',
+            //     'program' => 'BSSW',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Uy, Camille',
+            //     'program' => 'BSSW',
+            //     'year_level' => 1,
+            // ],
 
-            // BSA - Year 1
-            [
-                'name' => 'Villaruel, Nathaniel',
-                'program' => 'BSA',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Wenceslao, Patricia',
-                'program' => 'BSA',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Ynares, Carlos',
-                'program' => 'BSA',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Zamora, Denise',
-                'program' => 'BSA',
-                'year_level' => 1,
-            ],
-            [
-                'name' => 'Aquino, Marc Julian',
-                'program' => 'BSA',
-                'year_level' => 1,
-            ],
+            // // BSA - Year 1
+            // [
+            //     'name' => 'Villaruel, Nathaniel',
+            //     'program' => 'BSA',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Wenceslao, Patricia',
+            //     'program' => 'BSA',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Ynares, Carlos',
+            //     'program' => 'BSA',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Zamora, Denise',
+            //     'program' => 'BSA',
+            //     'year_level' => 1,
+            // ],
+            // [
+            //     'name' => 'Aquino, Marc Julian',
+            //     'program' => 'BSA',
+            //     'year_level' => 1,
+            // ],
         ];
 
         foreach($students as $student) {

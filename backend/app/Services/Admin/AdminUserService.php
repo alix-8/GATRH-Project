@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\Program;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +30,7 @@ class AdminUserService
                 ->orderBy('code')
                 ->get(['id', 'code', 'name']),
             'roles' => $this->getRoleOptions(),
+            'can_mark_program_secretaries_graduated' => $this->canMarkProgramSecretariesGraduated(),
         ];
     }
 
@@ -44,6 +46,7 @@ class AdminUserService
             'program' => $user->program,
             'year_level' => $user->year_level,
             'is_active' => $user->is_active,
+            'inactive_reason' => $user->inactive_reason,
             'programs' => $user->programs->map(fn (Program $program) => [
                 'id' => $program->id,
                 'code' => $program->code,
@@ -98,9 +101,36 @@ class AdminUserService
 
     public function update(User $user, array $data, User $actor): User
     {
-        $this->ensureActorCanUpdateAccount($user, $actor, $data);
+        $requestedStatus = $data['status'] ?? null;
+        $requestedRole = $data['role'] ?? $user->role;
+
+        if ($requestedStatus === 'graduated' && $requestedRole !== 'program_secretary') {
+            throw ValidationException::withMessages([
+                'status' => ['Only Program Secretary accounts can be manually marked as graduated.'],
+            ]);
+        }
+
+        if ($requestedStatus === 'graduated' && ! $this->canMarkProgramSecretariesGraduated()) {
+            throw ValidationException::withMessages([
+                'status' => ['Program Secretaries can be marked as graduated only after a school-year rollover has been applied.'],
+            ]);
+        }
+
+        if ($user->inactive_reason === 'graduated'
+            && ($requestedStatus === 'active' || ($data['is_active'] ?? false))) {
+            throw ValidationException::withMessages([
+                'status' => ['Graduated accounts cannot be reactivated.'],
+            ]);
+        }
+
+        $authorizationData = $data;
+        if ($requestedStatus !== null) {
+            $authorizationData['is_active'] = $requestedStatus === 'active';
+        }
+        $this->ensureActorCanUpdateAccount($user, $actor, $authorizationData);
 
         return DB::transaction(function () use ($user, $data) {
+            $data = $this->applyAccountStatus($user, $data);
             $programIds = $this->resolveProgramIds($data, $user);
 
             if (array_key_exists('program', $data) || array_key_exists('program_ids', $data)) {
@@ -124,6 +154,41 @@ class AdminUserService
 
             return $user->fresh()->load('programs:id,code,name');
         });
+    }
+
+    private function applyAccountStatus(User $user, array $data): array
+    {
+        $status = $data['status'] ?? null;
+        unset($data['status']);
+
+        if ($status === 'graduated') {
+            $data['is_active'] = false;
+            $data['inactive_reason'] = 'graduated';
+        } elseif ($status === 'inactive') {
+            $data['is_active'] = false;
+            $data['inactive_reason'] = 'manual';
+        } elseif ($status === 'active') {
+            $data['is_active'] = true;
+            $data['inactive_reason'] = null;
+        } elseif (array_key_exists('is_active', $data) && $user->inactive_reason !== 'graduated') {
+            $data['inactive_reason'] = $data['is_active'] ? null : 'manual';
+        }
+
+        return $data;
+    }
+
+    private function canMarkProgramSecretariesGraduated(): bool
+    {
+        $rollover = DB::table('school_year_rollovers')->orderByDesc('id')->first();
+        if (! $rollover || $rollover->undone_at !== null) {
+            return false;
+        }
+
+        $snapshot = json_decode($rollover->snapshot ?? '', true);
+        $nextSchoolYear = is_array($snapshot) ? ($snapshot['next_academic_year'] ?? null) : null;
+        $currentSchoolYear = SystemSetting::query()->find(1)?->academic_year;
+
+        return $nextSchoolYear !== null && $currentSchoolYear === $nextSchoolYear;
     }
 
     private function getSummary(): array

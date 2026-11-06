@@ -334,7 +334,7 @@ export default function SubmissionDrawer({ submission, onClose, onUpdated, onExp
                         <button
                             type="button"
                             className="ph-record-detail-export"
-                            disabled={busy}
+                            disabled={loading || !detail || busy}
                             onClick={exportRecord}
                         >
                             <img src={ExportIcon} alt="" /> {busy ? 'Exporting…' : 'Export'}

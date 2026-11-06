@@ -1175,6 +1175,7 @@ class AttendanceParsingService
                 'total_detected' => $data['total_detected'],
                 'matched_count'  => $data['matched_count'],
                 'status'         => 'draft',
+                'override_confirmed' => (bool) ($data['override_confirmed'] ?? false),
             ]
         );
     }

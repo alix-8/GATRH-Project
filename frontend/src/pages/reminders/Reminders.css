@@ -12,6 +12,10 @@
     background-color: #DBDEE4;
 }
 
+.reminders .review-drawer-panel {
+    width: min(100vw, max(450px, 34vw));
+}
+
 .reminders-success-notice {
     position: sticky;
     z-index: 20;
@@ -472,10 +476,6 @@
     flex-shrink: 0;
 }
 
-.task-status > .task-undo-button {
-    min-width: 72px;
-}
-
 .task-status > .task-undo-button:disabled {
     opacity: 0.65;
     cursor: wait;
@@ -786,6 +786,58 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 18px;
+}
+
+.escalation-report-skeleton-block {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 5px;
+    background: #e9ecf1;
+}
+
+.escalation-report-skeleton-block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 60%), transparent);
+    transform: translateX(-100%);
+    animation: escalation-report-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.escalation-report-skeleton-card { gap: 7px; }
+.escalation-report-skeleton-label { width: 70%; height: 9px; }
+.escalation-report-skeleton-icon { width: 25px; height: 25px; border-radius: 50%; }
+.escalation-report-skeleton-value { width: 28%; height: 10px; }
+
+.escalation-report-skeleton-head,
+.escalation-report-skeleton-row {
+    display: grid;
+    grid-template-columns: 25% 12% 21% 17% 25%;
+    align-items: center;
+}
+
+.escalation-report-skeleton-head {
+    min-height: 36px;
+    background: #d3deea;
+    color: #32435c;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.escalation-report-skeleton-head span,
+.escalation-report-skeleton-row span { margin: 0 5px; }
+.escalation-report-skeleton-head span:first-child { margin-left: 16px; }
+.escalation-report-skeleton-row { min-height: 36px; }
+.escalation-report-skeleton-row:nth-child(odd) { background: #edf8fc; }
+.escalation-report-skeleton-row .escalation-report-skeleton-block { height: 8px; }
+
+@keyframes escalation-report-skeleton-shimmer {
+    to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .escalation-report-skeleton-block::after { animation: none; }
 }
 
 .escalation-report-card {

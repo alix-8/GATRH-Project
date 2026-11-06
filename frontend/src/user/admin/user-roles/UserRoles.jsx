@@ -195,7 +195,7 @@ function UserRoles() {
                                                 <td className="user-roles-email">{user.email}</td>
                                                 <td><span className={`user-roles-role ${user.role}`}>{roleLabel(user.role)}</span></td>
                                                 <td className="user-roles-program">{programLabels(user, activeProgramCodes)}</td>
-                                                <td><span className={`user-roles-status ${user.is_active ? 'active' : 'inactive'}`}>{user.is_active ? 'Active' : 'Inactive'}</span></td>
+                                                <td><span className={`user-roles-status ${user.is_active ? 'active' : user.inactive_reason === 'graduated' ? 'graduated' : 'inactive'}`}>{user.is_active ? 'Active' : user.inactive_reason === 'graduated' ? 'Graduated' : 'Inactive'}</span></td>
                                                 <td><button className="user-roles-edit-button" type="button" aria-label={`Edit ${user.name}`} onClick={() => setEditingUser(user)}><img src={EditIcon} alt="" /></button></td>
                                             </tr>)}
                                 </tbody>
@@ -211,7 +211,7 @@ function UserRoles() {
                 </div>
             </main>
             {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onCreated={handleUserCreated} />}
-            {editingUser && <EditUserModal user={editingUser} roles={pageData?.roles ?? []} programs={orderedPrograms} onClose={() => setEditingUser(null)} onUpdated={handleUserUpdated} />}
+            {editingUser && <EditUserModal user={editingUser} roles={pageData?.roles ?? []} programs={orderedPrograms} canMarkGraduated={Boolean(pageData?.can_mark_program_secretaries_graduated)} onClose={() => setEditingUser(null)} onUpdated={handleUserUpdated} />}
         </div>
     )
 }

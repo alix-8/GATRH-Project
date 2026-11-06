@@ -58,7 +58,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
             .then((json) => {
                 if (cancelled) return
                 setDraft(json.data)
-                if (json.data?.duplicate?.status === 'duplicate_detected') {
+                if (json.data?.duplicate?.status === 'duplicate_detected' && !json.data?.override_confirmed) {
                     setDuplicateConfirm(json.data.duplicate)
                 }
             })
@@ -149,7 +149,7 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 body: JSON.stringify({
                     draft_id: draft.id,
                     records,
-                    override: isOverride,
+                    override: isOverride || Boolean(draft.override_confirmed),
                     week_range: draft.week_range,
                 }),
             })
@@ -285,8 +285,8 @@ export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
                 }
                 return (
                     <div className="drawer-footer-actions">
-                        {record.source === 'draft' && <AttendanceEditButton editing={false} disabled={submitting} onClick={() => setEditing(true)} />}
-                        <button type="button" className="drawer-submit-btn" onClick={handleSubmit} disabled={submitting}>
+                        {record.source === 'draft' && <AttendanceEditButton editing={false} disabled={loading || !draft || submitting} onClick={() => setEditing(true)} />}
+                        <button type="button" className="drawer-submit-btn" onClick={handleSubmit} disabled={loading || !draft || submitting}>
                             {submitting ? 'Submitting…' : '✓ Submit'}
                         </button>
                     </div>

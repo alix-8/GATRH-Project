@@ -59,7 +59,7 @@ export default function DashboardSkeleton({ programSecretary = false }) {
                                 <div className="ph-skeleton-table-heading">
                                     {[0, 1, 2, 3, 4, 5, 6].map(index => <Placeholder key={index} />)}
                                 </div>
-                                {[0, 1].map(index => (
+                                {[0, 1, 2].map(index => (
                                     <div className="ph-skeleton-table-row" key={index}>
                                         {[0, 1, 2, 3, 4, 5, 6].map(column => <Placeholder key={column} />)}
                                     </div>

@@ -142,7 +142,7 @@ function AddStudentModal({ onClose, onCreated }) {
             </div>
             {submitError && <p className="admin-add-user-submit-error" role="alert">{submitError}</p>}
             <button className="admin-add-user-submit" type="submit" disabled={isSubmitting || programsLoading || Boolean(programsError) || programOptions.length === 0}>{isSubmitting ? 'Adding Student…' : 'Add Student'}</button>
-            <div className="admin-add-user-note permissions"><span aria-hidden="true">i</span><p><strong>Student Records</strong><br />Review and update student details from the Students page.</p></div>
+            <div className="admin-add-user-note permissions"><span aria-hidden="true">i</span><p><strong>Role Permissions</strong><br />Each role has specific access levels. Administrators can manage all settings while other roles are limited to their assigned functions.</p></div>
         </form>
     </dialog>
 }

@@ -427,7 +427,7 @@ function AttendanceTable() {
                                             className={record.status === 'validating' ? 'action-btn action-btn-review' : 'action-btn'}
                                             onClick={() => handleActionClick(record)}
                                         >
-                                            {record.status === 'validating' ? 'Review' : 'View'} &gt;
+                                            {record.status === 'validating' ? 'Review' : 'View'} <span aria-hidden="true">›</span>
                                         </button>
                                     </td>
                                 </tr>
