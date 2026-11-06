@@ -47,6 +47,12 @@ class AdminStudentService
 
     public function update(Student $student, array $data): Student
     {
+        if ($student->inactive_reason === 'graduated' && (bool) ($data['is_active'] ?? false)) {
+            throw ValidationException::withMessages([
+                'is_active' => ['Graduated students cannot be reactivated.'],
+            ]);
+        }
+
         if (($data['program'] ?? $student->program) !== $student->program
             || ($data['is_active'] ?? $student->is_active)) {
             $this->assertActiveProgram($data['program'] ?? $student->program);

@@ -11,6 +11,7 @@ import GenerateTemplate from './modals/GenerateTemplate'
 // Modals
 import ConfirmBlankModal from './modals/ConfirmBlankModal'
 import ConfirmOverrideModal from './modals/ConfirmOverrideModal'
+import ErrorModal from './modals/ErrorModal'
 import SelectAttendanceWeekModal from './modals/SelectAttendanceWeekModal'
 import SuccessModal from './modals/SuccessModal'
 
@@ -246,7 +247,10 @@ function Import({ onGoToAttendance = () => {} }) {
         } catch (error) {
             if (revision !== validationRevision.current) return
             const details = error.details || {}
-            if (details.status === 'duplicate_detected' || (details.requires_confirmation && details.duplicate_records)) {
+            if (details.status === 'attendance_locked') {
+                setModalMessage(error.message || details.message || 'This attendance has already been submitted and cannot be edited.')
+                setModal('attendance-locked')
+            } else if (details.status === 'duplicate_detected' || (details.requires_confirmation && details.duplicate_records)) {
                 setDuplicateData(details)
                 setDuplicateSource('process')
                 setModal('confirm-override')
@@ -318,7 +322,10 @@ function Import({ onGoToAttendance = () => {} }) {
         } catch (error) {
             if (revision !== validationRevision.current) return
             const details = error.details || {}
-            if (details.status === 'duplicate_detected') {
+            if (details.status === 'attendance_locked') {
+                setModalMessage(error.message || details.message || 'This attendance has already been submitted and cannot be edited.')
+                setModal('attendance-locked')
+            } else if (details.status === 'duplicate_detected') {
                 setDuplicateData(details)
                 setDuplicateSource('preview')
                 setModal('confirm-override')
@@ -520,6 +527,16 @@ function Import({ onGoToAttendance = () => {} }) {
                     isSubmitting={isProcessing}
                     onCancel={handleCancelOverride}
                     onOverride={handleConfirmOverrideProceed}
+                />
+            )}
+            {modal === 'attendance-locked' && (
+                <ErrorModal
+                    attendanceLocked
+                    errorMessage={modalMessage}
+                    title="Attendance Already Submitted"
+                    showRetryButton={false}
+                    closeLabel="Close"
+                    onClose={() => setModal(null)}
                 />
             )}
             {modal === 'select-week' && (
