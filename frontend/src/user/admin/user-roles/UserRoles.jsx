@@ -9,10 +9,10 @@ import McgiCoordinatorIcon from '../../../assets/icons/mcgi-coordinator-icon.svg
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import SecretariesIcon from '../../../assets/icons/secretaries-icon.svg'
 import EditIcon from '../../../assets/icons/edit-icon.svg'
-import AddUserModal from '../dashboard/AddUserModal'
-import ModalSelect from '../dashboard/ModalSelect'
+import AddUserModal from '../modals/users/AddUserModal'
+import ModalSelect from '../shared/ModalSelect'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
-import EditUserModal from './EditUserModal'
+import EditUserModal from '../modals/users/EditUserModal'
 import './UserRoles.css'
 
 const programOrder = ['ACT', 'BSIS', 'BSSW', 'BSA', 'BSAIS', 'BAB']

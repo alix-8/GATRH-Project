@@ -1,23 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { request } from '../../../api/request'
-import RecordDate from '../../../components/RecordDate'
+import { request } from '../../../../api/request'
+import RecordDate from '../../../../components/record-display/RecordDate'
 import './ReviewDrawer.css'
 import { headerTitle } from './header-title'
-import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../components/Icons/AttendanceIcons'
-import { FilterIcon, ChevronDownIcon } from '../../../components/Icons/Reusables'
+import { RespondedIcon, TotalStudentsIcon, NoResponseIcon } from '../../../../components/Icons/AttendanceIcons'
+import { FilterIcon, ChevronDownIcon } from '../../../../components/Icons/Reusables'
 import ReviewDrawerSkeleton from './ReviewDrawerSkeleton'
-import UserAvatar from '../../../components/identity/UserAvatar'
-import SearchPill from '../../../components/search/SearchPill'
-import ConfirmOverrideModal from '../import/modals/ConfirmOverrideModal'
-import ErrorModal from '../import/modals/ErrorModal'
-import AttendanceEditButton from './AttendanceEditButton'
-import EditableAttendanceTable from './EditableAttendanceTable'
+import UserAvatar from '../../../../components/identity/UserAvatar'
+import SearchPill from '../../../../components/search/SearchPill'
+import ConfirmOverrideModal from '../../import/modals/ConfirmOverrideModal'
+import ErrorModal from '../../import/modals/ErrorModal'
+import AttendanceEditButton from './edit/AttendanceEditButton'
+import EditableAttendanceTable from './edit/EditableAttendanceTable'
 import {
     getAttendanceEditErrors,
     getAutomaticAttendanceStatus,
     hasAttendanceEditErrors,
     resolveAttendanceDay,
-} from './attendanceEditValidation'
+} from './edit/attendanceEditValidation'
 
 export default function ReviewDrawer({ isOpen, onClose, record, onSubmitted }) {
     const [draft, setDraft] = useState(null)

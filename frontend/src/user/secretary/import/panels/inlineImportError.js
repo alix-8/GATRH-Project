@@ -2,7 +2,7 @@ import {
     ATTENDANCE_TIME_RE,
     attendanceTimeError,
     resolveAttendanceDay,
-} from '../../attendance/attendanceEditValidation'
+} from '../../attendance/review/edit/attendanceEditValidation'
 
 const REQUIRED_MESSAGES = {
     day: 'Day is required',

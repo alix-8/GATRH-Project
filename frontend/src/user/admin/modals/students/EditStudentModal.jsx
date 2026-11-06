@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { request } from '../../../api/request'
-import ModalSelect from '../dashboard/ModalSelect'
-import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
-import { sanitizePersonName } from '../adminTextValidation'
-import '../dashboard/AddUserModal.css'
-import '../dashboard/AddStudentModal.css'
+import { request } from '../../../../api/request'
+import ModalSelect from '../../shared/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../../utils/modalDialogInteractions'
+import { sanitizePersonName } from '../../shared/adminTextValidation'
+import '../users/AddUserModal.css'
+import './AddStudentModal.css'
 
 const years = [
     { value: '1', label: '1st Year' },

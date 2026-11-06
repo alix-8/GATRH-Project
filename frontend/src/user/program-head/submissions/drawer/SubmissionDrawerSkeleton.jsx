@@ -1,4 +1,4 @@
-import RecordApprovedIcon from '../../../assets/icons/RecordApprovedIcon.svg'
+import RecordApprovedIcon from '../../../../assets/icons/RecordApprovedIcon.svg'
 import './SubmissionDrawerSkeleton.css'
 
 function Block({ className = '' }) {

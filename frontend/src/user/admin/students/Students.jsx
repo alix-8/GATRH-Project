@@ -10,11 +10,11 @@ import InactiveClockIcon from '../../../assets/icons/in-progress-programs-icon.s
 import ProgramsIcon from '../../../assets/icons/active-programs-icon.svg'
 import EditIcon from '../../../assets/icons/edit-icon.svg'
 import ImportIcon from '../../../assets/icons/admin-import-icon.svg'
-import ModalSelect from '../dashboard/ModalSelect'
-import AddStudentModal from '../dashboard/AddStudentModal'
+import ModalSelect from '../shared/ModalSelect'
+import AddStudentModal from '../modals/students/AddStudentModal'
 import LoadingCircle from '../../../components/feedback/LoadingCircle'
-import EditStudentModal from './EditStudentModal'
-import ImportStudentsModal from './ImportStudentsModal'
+import EditStudentModal from '../modals/students/EditStudentModal'
+import ImportStudentsModal from '../modals/students/ImportStudentsModal'
 import './Students.css'
 
 const programOrder = ['ACT', 'BSIS', 'BSSW', 'BSA', 'BSAIS', 'BAB']

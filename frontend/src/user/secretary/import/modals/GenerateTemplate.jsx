@@ -1,4 +1,4 @@
-import DisabledImportButton from '../DisabledImportButton'
+import DisabledImportButton from '../components/DisabledImportButton'
 
 import { useEffect, useState } from 'react'
 

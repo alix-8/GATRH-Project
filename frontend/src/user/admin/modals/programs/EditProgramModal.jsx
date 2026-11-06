@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { request } from '../../../api/request'
-import ModalSelect from '../dashboard/ModalSelect'
-import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
-import { sanitizeProgramCode, sanitizeProgramName } from '../adminTextValidation'
-import '../dashboard/AddUserModal.css'
-import '../dashboard/AddProgramModal.css'
+import { request } from '../../../../api/request'
+import ModalSelect from '../../shared/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../../utils/modalDialogInteractions'
+import { sanitizeProgramCode, sanitizeProgramName } from '../../shared/adminTextValidation'
+import '../users/AddUserModal.css'
+import './AddProgramModal.css'
 
 function EditProgramModal({ program, heads, onClose, onUpdated }) {
     const dialogRef = useRef(null)

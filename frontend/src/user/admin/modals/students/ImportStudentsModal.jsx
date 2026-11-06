@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { request } from '../../../api/request'
-import ModalSelect from '../dashboard/ModalSelect'
-import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
-import '../dashboard/AddUserModal.css'
-import '../dashboard/AddStudentModal.css'
+import { request } from '../../../../api/request'
+import ModalSelect from '../../shared/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../../utils/modalDialogInteractions'
+import '../users/AddUserModal.css'
+import './AddStudentModal.css'
 import './ImportStudentsModal.css'
 
 const years = [

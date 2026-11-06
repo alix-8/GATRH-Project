@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { request } from '../../../api/request'
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
-import RecordDate from '../../../components/RecordDate'
+import RecordDate from '../../../components/record-display/RecordDate'
 import useLiveRefresh from '../../../hooks/useLiveRefresh'
 import useLoginSkeleton from '../../../hooks/useLoginSkeleton'
 
@@ -15,8 +15,8 @@ import TotalStudentsKpiIcon from '../../../assets/icons/total-students-kpi-icon.
 import ResponseKpiIcon from '../../../assets/icons/response-kpi-icon.svg'
 import NoResponseKpiIcon from '../../../assets/icons/no-response-kpi-icon.svg'
 import PendingSubmissionKpiIcon from '../../../assets/icons/pending-submission-kpi-icon.svg'
-import DashboardSkeleton from './DashboardSkeleton'
-import ReviewDrawer from '../attendance/ReviewDrawer'
+import DashboardSkeleton from './skeleton/DashboardSkeleton'
+import ReviewDrawer from '../attendance/review/ReviewDrawer'
 import './Dashboard.css'
 
 const gatheringLabels = {

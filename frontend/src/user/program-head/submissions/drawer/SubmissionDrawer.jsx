@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
-import { request } from '../../../api/request'
+import { request } from '../../../../api/request'
 import {
     TotalStudentsIcon,
     RespondedIcon,
     NoResponseIcon,
-} from '../../../components/Icons/AttendanceIcons'
-import RecordApprovedIcon from '../../../assets/icons/RecordApprovedIcon.svg'
-import RecordCalendarIcon from '../../../assets/icons/RecordCalendarIcon.svg'
-import RecordClockIcon from '../../../assets/icons/RecordClockIcon.svg'
-import RecordProgramIcon from '../../../assets/icons/RecordProgramIcon.svg'
-import ExportIcon from '../../../assets/icons/export-icon.svg'
+} from '../../../../components/Icons/AttendanceIcons'
+import RecordApprovedIcon from '../../../../assets/icons/RecordApprovedIcon.svg'
+import RecordCalendarIcon from '../../../../assets/icons/RecordCalendarIcon.svg'
+import RecordClockIcon from '../../../../assets/icons/RecordClockIcon.svg'
+import RecordProgramIcon from '../../../../assets/icons/RecordProgramIcon.svg'
+import ExportIcon from '../../../../assets/icons/export-icon.svg'
 import SubmissionDrawerSkeleton from './SubmissionDrawerSkeleton'
-import UserAvatar from '../../../components/identity/UserAvatar'
-import RecordDay from '../../../components/RecordDay'
-import VenueLabel from '../../../components/VenueLabel'
-import SearchPill from '../../../components/search/SearchPill'
+import UserAvatar from '../../../../components/identity/UserAvatar'
+import RecordDay from '../../../../components/record-display/RecordDay'
+import VenueLabel from '../../../../components/record-display/VenueLabel'
+import SearchPill from '../../../../components/search/SearchPill'
 import './SubmissionDrawer.css'
 
 export default function SubmissionDrawer({ submission, onClose, onUpdated, onExport, detailOverride = null, readOnly = false, embedded = false }) {

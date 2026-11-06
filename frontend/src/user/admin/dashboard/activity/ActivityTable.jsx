@@ -1,4 +1,4 @@
-import LoadingCircle from '../../../components/feedback/LoadingCircle'
+import LoadingCircle from '../../../../components/feedback/LoadingCircle'
 import './ActivityTable.css'
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' })

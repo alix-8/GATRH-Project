@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { request } from '../../../api/request'
-import ModalSelect from './ModalSelect'
-import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
-import { sanitizeProgramCode, sanitizeProgramName } from '../adminTextValidation'
-import './AddUserModal.css'
+import { request } from '../../../../api/request'
+import ModalSelect from '../../shared/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../../utils/modalDialogInteractions'
+import { sanitizeProgramCode, sanitizeProgramName } from '../../shared/adminTextValidation'
+import '../users/AddUserModal.css'
 import './AddProgramModal.css'
 
 function AddProgramModal({ onClose, onCreated }) {
