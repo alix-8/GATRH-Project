@@ -229,9 +229,10 @@ function SystemSettings() {
                                             <h3 id="admin-rollover-title">Academic Year Rollover</h3>
                                             <p>Preview student and secretary promotions for the current year before applying them.</p>
                                         </div>
-                                        <button className="admin-settings-save admin-rollover-preview-button" type="button" onClick={previewRollover} disabled={saving || rolloverBusy || !currentSchoolYear}>
+                                        <button className="admin-settings-save admin-rollover-preview-button" type="button" onClick={previewRollover} disabled={saving || rolloverBusy || !currentSchoolYear || rolloverStatus?.can_rollover === false}>
                                             {rolloverBusy ? 'Please wait…' : 'Preview Rollover'}
                                         </button>
+                                        {rolloverStatus?.can_rollover === false && <p className="admin-rollover-error" role="status">{rolloverStatus.rollover_message}</p>}
                                         {rolloverError && <p className="admin-rollover-error" role="alert">{rolloverError}</p>}
                                         {rolloverStatus?.latest_rollover?.can_undo && (
                                             <div className="admin-rollover-undo" role="status">
