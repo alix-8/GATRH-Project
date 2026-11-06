@@ -83,6 +83,7 @@ class AdminStudentService
     {
         $settings = SystemSetting::query()->findOrFail(1);
         $this->assertCurrentSchoolYear($schoolYear, $settings->academic_year);
+        $this->assertSchoolYearHasNotRolledOver($schoolYear);
 
         $students = Student::query()->active()->get(['name', 'program', 'year_level']);
         $secretaries = User::query()->where('role', 'secretary')->where('is_active', true)->get(['email', 'program', 'year_level']);
@@ -153,6 +154,9 @@ class AdminStudentService
     {
         $settings = SystemSetting::query()->findOrFail(1);
         $rollover = DB::table('school_year_rollovers')->orderByDesc('id')->first();
+        $currentYearHasRollover = DB::table('school_year_rollovers')
+            ->where('school_year', $settings->academic_year)
+            ->exists();
         $canUndo = $rollover
             && $rollover->undone_at === null
             && $rollover->undo_expires_at !== null
@@ -164,12 +168,18 @@ class AdminStudentService
 
         return [
             'current_school_year' => $settings->academic_year,
+            'can_rollover' => ! $currentYearHasRollover,
+            'rollover_message' => $currentYearHasRollover
+                ? "The {$settings->academic_year} school-year rollover has already been completed and cannot be run again."
+                : null,
             'latest_rollover' => $rollover ? [
                 'id' => $rollover->id,
                 'school_year' => $rollover->school_year,
                 'undo_expires_at' => $undoExpiresAt?->toIso8601String(),
                 'can_undo' => (bool) $canUndo,
-                'remaining_seconds' => $canUndo ? max(0, Carbon::parse($rollover->undo_expires_at)->diffInSeconds(now())) : 0,
+                'remaining_seconds' => $canUndo
+                    ? max(0, now()->diffInSeconds(Carbon::parse($rollover->undo_expires_at), false))
+                    : 0,
             ] : null,
         ];
     }
@@ -183,11 +193,7 @@ class AdminStudentService
             if (! hash_equals($currentPreviewToken, $previewToken)) {
                 throw ValidationException::withMessages(['rollover' => ['Student or secretary records changed after the preview. Refresh the preview before confirming.']]);
             }
-            if (DB::table('school_year_rollovers')->where('school_year', $schoolYear)->whereNull('undone_at')->exists()) {
-                throw ValidationException::withMessages([
-                    'school_year' => ["The {$schoolYear} school-year rollover has already been applied."],
-                ]);
-            }
+            $this->assertSchoolYearHasNotRolledOver($schoolYear);
 
             $students = Student::query()->active()->orderBy('id')->lockForUpdate()->get();
             $secretaries = User::query()
@@ -463,6 +469,15 @@ class AdminStudentService
         }
         if ($schoolYear !== $currentSchoolYear) {
             throw ValidationException::withMessages(['school_year' => ['Only the current academic year can be rolled over.']]);
+        }
+    }
+
+    private function assertSchoolYearHasNotRolledOver(string $schoolYear): void
+    {
+        if (DB::table('school_year_rollovers')->where('school_year', $schoolYear)->exists()) {
+            throw ValidationException::withMessages([
+                'school_year' => ["The {$schoolYear} school-year rollover has already been completed and cannot be run again."],
+            ]);
         }
     }
 
