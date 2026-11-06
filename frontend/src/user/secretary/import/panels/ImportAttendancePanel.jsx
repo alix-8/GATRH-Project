@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import DisabledImportButton from '../DisabledImportButton'
+import DisabledImportButton from '../components/DisabledImportButton'
 import './ImportAttendancePanel.css'
 
 function ImportAttendancePanel({

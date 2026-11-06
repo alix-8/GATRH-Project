@@ -1,6 +1,6 @@
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
-import RecordsTable from './RecordsTable'
+import RecordsTable from './table/RecordsTable'
 import './Records.css'
 
 export default function ProgramHeadRecords() {

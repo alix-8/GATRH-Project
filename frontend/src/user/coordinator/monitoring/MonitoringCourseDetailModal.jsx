@@ -7,9 +7,9 @@ import IncompleteEntryIcon from '../../../assets/icons/incomplete-entry-icon.svg
 import ProgramHeadIcon from '../../../assets/icons/program-head-icon.svg'
 import { API_BASE_URL, request } from '../../../api/request'
 import backendPercentage from '../../../utils/backendPercentage'
-import RecordDate from '../../../components/RecordDate'
+import RecordDate from '../../../components/record-display/RecordDate'
 import MonitoringDetailSkeleton from './skeleton/MonitoringDetailSkeleton'
-import SubmissionDrawer from '../../program-head/submissions/SubmissionDrawer'
+import SubmissionDrawer from '../../program-head/submissions/drawer/SubmissionDrawer'
 import './Monitoring.css'
 
 const PROGRAM_DISPLAY_NAMES = {

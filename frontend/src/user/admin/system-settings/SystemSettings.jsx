@@ -7,7 +7,7 @@ import GeneralIcon from '../../../assets/icons/system-settings-icon.svg'
 import SecurityIcon from '../../../assets/icons/system-status-icon.svg'
 import SaveChangesIcon from '../../../assets/icons/save-changes-icon.svg'
 import SecuritySettingsForm from './SecuritySettingsForm'
-import '../dashboard/AddUserModal.css'
+import '../modals/users/AddUserModal.css'
 import './SystemSettings.css'
 
 const normalizeSystemName = value => value.replace(/\s+/g, ' ').trim()

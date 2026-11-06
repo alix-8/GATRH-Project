@@ -1,6 +1,6 @@
 import Sidebar from '../../../components/layout/Sidebar'
 import Header from '../../../components/layout/Header'
-import AttendanceTable from './AttendanceTable'
+import AttendanceTable from './table/AttendanceTable'
 import './Attendance.css'
 
 function Attendance() {

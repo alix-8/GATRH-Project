@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { request } from '../../../api/request'
-import ModalSelect from './ModalSelect'
-import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
-import { sanitizePersonName } from '../adminTextValidation'
+import { request } from '../../../../api/request'
+import ModalSelect from '../../shared/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../../utils/modalDialogInteractions'
+import { sanitizePersonName } from '../../shared/adminTextValidation'
 import './AddUserModal.css'
 
 const roleOptions = [

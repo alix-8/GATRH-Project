@@ -175,6 +175,7 @@
 .ph-table-scroll {
     display: flex;
     flex-direction: column;
+    min-height: 192px;
     overflow-x: auto;
 }
 

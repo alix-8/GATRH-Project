@@ -1,5 +1,5 @@
-import RecordDay from '../../../components/RecordDay'
-import VenueLabel from '../../../components/VenueLabel'
+import RecordDay from '../../../../../components/record-display/RecordDay'
+import VenueLabel from '../../../../../components/record-display/VenueLabel'
 import {
     ATTENDANCE_TIME_RE,
     attendanceTimeError,

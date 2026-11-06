@@ -20,7 +20,7 @@ import ImportAttendancePanel from './panels/ImportAttendancePanel'
 import PreviewImportPanel from './panels/PreviewImportPanel'
 import PreviewIndividualPanel from './panels/PreviewIndividualPanel'
 import './Import.css'
-import DisabledImportButton from './DisabledImportButton'
+import DisabledImportButton from './components/DisabledImportButton'
 import ImportWalkthrough from './walkthrough/ImportWalkthrough'
 
 const getGatheringTypeFromText = text => {

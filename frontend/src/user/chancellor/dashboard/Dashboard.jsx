@@ -15,7 +15,7 @@ import IncompleteReportsIcon from '../../../assets/icons/incomplete-reports-icon
 import NoReportsIcon from '../../../assets/icons/no-reports-icon.svg'
 import RecordedNoResponseIcon from '../../../assets/icons/recorded-no-response-icon.svg'
 import MonitoringCourseDetailModal from '../../coordinator/monitoring/MonitoringCourseDetailModal'
-import DashboardSkeleton from './DashboardSkeleton'
+import DashboardSkeleton from './skeleton/DashboardSkeleton'
 import './Dashboard.css'
 
 const YEAR_LEVEL_OPTIONS = ['1', '2', '3', '4']

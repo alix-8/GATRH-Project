@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { request } from '../../../api/request'
-import ModalSelect from '../dashboard/ModalSelect'
-import { handleModalFormEnter, isBackdropClick } from '../../../utils/modalDialogInteractions'
-import { sanitizePersonName } from '../adminTextValidation'
-import '../dashboard/AddUserModal.css'
+import { request } from '../../../../api/request'
+import ModalSelect from '../../shared/ModalSelect'
+import { handleModalFormEnter, isBackdropClick } from '../../../../utils/modalDialogInteractions'
+import { sanitizePersonName } from '../../shared/adminTextValidation'
+import './AddUserModal.css'
 import './EditUserModal.css'
 
 function EditUserModal({ user, roles, programs, canMarkGraduated, onClose, onUpdated }) {
