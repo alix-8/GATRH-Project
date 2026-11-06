@@ -186,7 +186,7 @@ function Sidebar() {
                         <h2 id="logout-modal-title">Confirm logout?</h2>
                         <div className="logout-modal-divider" />
                         <p>
-                            Are you sure you want to log out? You will need to log in again to access your account.
+                            You will need to log in again to access your account.
                         </p>
                         <div className="logout-modal-actions">
                             <button
